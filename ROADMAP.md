@@ -1,10 +1,10 @@
 # FinTrack Development Roadmap
 
 ## 🎯 Project Overview
-**Mixed Architecture Approach:**
-- Frontend: Next.js + TypeScript → Vercel
+**PWA-First Architecture Approach:**
+- Frontend: Next.js + TypeScript + PWA → Vercel
 - Backend: FastAPI + Python + Docker → Railway
-- Database: PostgreSQL → Railway (managed)
+- Database: SQLite (Development) → PostgreSQL (Production) → Railway (managed)
 
 ## 🏗️ Architecture Diagram
 
@@ -12,11 +12,12 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                        USER INTERFACE                          │
 ├─────────────────────────────────────────────────────────────────┤
-│  🌐 Frontend (Next.js + TypeScript)                           │
+│  📱 PWA Frontend (Next.js + TypeScript + PWA)                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  📱 Landing Page    📊 Dashboard    💰 Transactions    │   │
 │  │  🔐 Auth Pages     📈 Analytics    🎯 Budgets         │   │
 │  │  📋 Categories     ⚙️ Settings     👤 Profile         │   │
+│  │  📴 Offline Mode   🔔 Notifications  📱 Installable   │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          ↓ HTTP/API Calls                      │
 └─────────────────────────────────────────────────────────────────┘
@@ -49,7 +50,7 @@
 🌐 External Services:
 ├── 📧 Email Service (SendGrid/Resend)
 ├── 💳 Payment Processing (Stripe)
-├── 📱 Push Notifications (Firebase)
+├── 📱 Push Notifications (PWA Service Worker)
 └── 📊 Analytics (Vercel Analytics)
 ```
 
@@ -73,14 +74,27 @@
 - [ ] Set up API client for backend communication
 - [ ] Deploy to Vercel
 
+#### Database Strategy:
+- [ ] SQLite for development (fast iteration)
+- [ ] PostgreSQL for production (scalable)
+- [ ] Database migration scripts
+- [ ] Environment-based configuration
+
 #### Database Setup:
 - [ ] Design database schema
 - [ ] Create migration files
 - [ ] Set up database models
 - [ ] Configure connection pooling
 
-### Phase 2: Core Features (Week 3-4)
-**Goal:** Build essential finance tracking features
+### Phase 2: Core Features + PWA (Week 3-4)
+**Goal:** Build essential finance tracking features with PWA capabilities
+
+#### PWA Foundation:
+- [ ] Install next-pwa package
+- [ ] Configure service worker
+- [ ] Create web app manifest
+- [ ] Set up offline caching strategy
+- [ ] Make app installable
 
 #### Authentication System:
 - [ ] User registration and login
@@ -95,6 +109,7 @@
 - [ ] Income vs expense tracking
 - [ ] Transaction search and filtering
 - [ ] Bulk import/export
+- [ ] Offline transaction entry
 
 #### Category Management:
 - [ ] Create custom categories
@@ -126,8 +141,15 @@
 - [ ] Budget vs actual spending
 - [ ] Financial health indicators
 
-### Phase 4: User Experience (Week 7-8)
-**Goal:** Polish UI/UX and add convenience features
+### Phase 4: User Experience + PWA Enhancement (Week 7-8)
+**Goal:** Polish UI/UX and enhance PWA features
+
+#### PWA Enhancement:
+- [ ] Advanced offline capabilities
+- [ ] Push notifications for budget alerts
+- [ ] Background sync for data updates
+- [ ] App-like navigation and gestures
+- [ ] Splash screen and app icons
 
 #### UI/UX Improvements:
 - [ ] Responsive design optimization
@@ -135,6 +157,7 @@
 - [ ] Loading states and error handling
 - [ ] Form validation and feedback
 - [ ] Accessibility improvements
+- [ ] Mobile-first design optimization
 
 #### Convenience Features:
 - [ ] Quick transaction entry
@@ -142,6 +165,7 @@
 - [ ] Transaction templates
 - [ ] Smart categorization suggestions
 - [ ] Data backup and restore
+- [ ] Offline data synchronization
 
 ### Phase 5: Production Ready (Week 9-10)
 **Goal:** Prepare for production deployment
@@ -257,7 +281,7 @@ fintrack/
 
 ## 🛠️ Technology Stack
 
-### Frontend (Next.js + TypeScript)
+### Frontend (Next.js + TypeScript + PWA)
 - **Framework**: Next.js 14 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -266,6 +290,7 @@ fintrack/
 - **Forms**: React Hook Form + Zod
 - **State**: React Query (TanStack Query)
 - **Auth**: NextAuth.js
+- **PWA**: next-pwa, Service Worker
 - **Deployment**: Vercel
 
 ### Backend (FastAPI + Python)
@@ -279,33 +304,36 @@ fintrack/
 - **Deployment**: Railway (Docker)
 
 ### Database & Services
-- **Database**: PostgreSQL (Railway managed)
+- **Database**: SQLite (Development) → PostgreSQL (Production)
 - **Email Service**: SendGrid or Resend
 - **Payment**: Stripe (for subscriptions)
 - **Analytics**: Vercel Analytics
 - **Monitoring**: Railway metrics
+- **PWA**: Service Worker, Web App Manifest
 
 ## 🚀 Deployment Strategy
 
 ### Development Environment:
 ```bash
-# Local development with Docker Compose
-docker-compose up -d
-
-# Frontend: http://localhost:3000
+# Local development with SQLite (fast iteration)
+# Frontend: http://localhost:3000 (PWA enabled)
 # Backend: http://localhost:8000
-# Database: localhost:5432
+# Database: SQLite file (./fintrack.db)
+
+# Optional: Docker Compose for PostgreSQL
+docker-compose up -d
 ```
 
 ### Production Environment:
 ```bash
-# Frontend: Deploy to Vercel
+# Frontend: Deploy to Vercel (PWA enabled)
 vercel --prod
 
 # Backend: Deploy to Railway
 railway up
 
 # Database: Railway managed PostgreSQL
+# PWA: Installable from browser, works offline
 ```
 
 ## 📊 Key Features Roadmap
@@ -320,27 +348,36 @@ railway up
    - Add/edit/delete transactions
    - Category assignment
    - Income vs expense tracking
+   - Offline transaction entry
 
 3. **Basic Dashboard**
    - Total balance
    - Recent transactions
    - Basic charts
 
+4. **PWA Features**
+   - Installable app
+   - Offline access
+   - App-like experience
+
 ### Core Features (Phase 3-4):
 1. **Budgeting System**
    - Create budgets
    - Track progress
    - Budget alerts
+   - Push notifications
 
 2. **Analytics Dashboard**
    - Spending trends
    - Category breakdown
    - Financial insights
+   - Offline analytics
 
 3. **Advanced Features**
    - Recurring transactions
    - Data export
    - Goal tracking
+   - Background sync
 
 ### Premium Features (Phase 5+):
 1. **AI-Powered Insights**
@@ -377,9 +414,9 @@ railway up
 | Phase | Duration | Key Deliverables |
 |-------|----------|------------------|
 | **Phase 1** | Week 1-2 | Development environment, basic structure |
-| **Phase 2** | Week 3-4 | Authentication, core features |
+| **Phase 2** | Week 3-4 | Authentication, core features, PWA foundation |
 | **Phase 3** | Week 5-6 | Budgeting, analytics |
-| **Phase 4** | Week 7-8 | UI/UX polish, convenience features |
+| **Phase 4** | Week 7-8 | UI/UX polish, PWA enhancement |
 | **Phase 5** | Week 9-10 | Production ready, testing |
 
 ## 🚀 Next Steps
