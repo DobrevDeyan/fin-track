@@ -20,10 +20,11 @@ FinTrack is a modern, AI-powered personal finance management platform that helps
 
 ## 🏗️ Architecture
 
-**Mixed Architecture Approach:**
-- **Frontend**: Next.js + TypeScript → Vercel (free hosting)
-- **Backend**: FastAPI + Python + Docker → Railway ($5 credit/month)
-- **Database**: PostgreSQL → Railway (managed)
+**Firebase-First Architecture:**
+- **Frontend**: Next.js + TypeScript → Firebase Hosting (free)
+- **Backend**: Cloud Functions (Node.js) → Firebase (free tier)
+- **Database**: Firestore → Firebase (free tier)
+- **Authentication**: Firebase Auth → Firebase (free)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -35,18 +36,18 @@ FinTrack is a modern, AI-powered personal finance management platform that helps
 │  │  🔐 Auth Pages     📈 Analytics    🎯 Budgets         │   │
 │  │  📋 Categories     ⚙️ Settings     👤 Profile         │   │
 │  └─────────────────────────────────────────────────────────┘   │
-│                          ↓ HTTP/API Calls                      │
+│                          ↓ Firebase SDK                        │
 └─────────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                        API LAYER                               │
+│                    FIREBASE CLOUD PLATFORM                     │
 ├─────────────────────────────────────────────────────────────────┤
-│  🐍 Backend (FastAPI + Python + Docker)                       │
+│  🔥 Firebase Services                                          │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  🔐 Auth Service    💰 Transaction API   📊 Analytics  │   │
-│  │  👤 User Service   📋 Category API       🎯 Budget API │   │
-│  │  📈 Reports API    🔍 Search API         📱 Mobile API │   │
+│  │  🔐 Firebase Auth    💰 Firestore DB    📊 Cloud Func  │   │
+│  │  🌐 Firebase Hosting 📱 Real-time Sync   🔒 Security   │   │
+│  │  📈 Analytics        🔍 Search           📱 Offline    │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                          ↓ Database Queries                     │
 └─────────────────────────────────────────────────────────────────┘

@@ -175,3 +175,9 @@ dmypy.json
 
 # Vercel
 .vercel
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.runtimeconfig.json

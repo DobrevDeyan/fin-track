@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DollarSign, Eye, EyeOff } from 'lucide-react'
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -11,29 +12,20 @@ export default function LoginPage() {
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   
+  const { login, isLoading } = useFirebaseAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
 
     try {
-      // TODO: Implement actual login logic
-      console.log('Login attempt:', formData)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Redirect to dashboard
-      router.push('/dashboard')
-    } catch (err) {
-      setError('Invalid email or password')
-    } finally {
-      setIsLoading(false)
+      await login(formData.email, formData.password)
+      // Login successful - user will be redirected to dashboard
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password')
     }
   }
 

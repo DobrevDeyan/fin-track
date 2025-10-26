@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { FirebaseAuthProvider } from '@/contexts/FirebaseAuthContext'
 
 export const metadata: Metadata = {
   title: 'FinTrack - Personal Finance Management',
@@ -17,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <FirebaseAuthProvider>
+          {children}
+        </FirebaseAuthProvider>
       </body>
     </html>
   )

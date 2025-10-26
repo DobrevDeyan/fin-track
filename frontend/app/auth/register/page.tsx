@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DollarSign, Eye, EyeOff, Check } from 'lucide-react'
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -16,43 +17,39 @@ export default function RegisterPage() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   
+  const { register, isLoading } = useFirebaseAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
-      setIsLoading(false)
       return
     }
 
     if (!agreedToTerms) {
       setError('Please agree to the terms and conditions')
-      setIsLoading(false)
       return
     }
 
     try {
-      // TODO: Implement actual registration logic
-      console.log('Registration attempt:', formData)
+      await register({
+        email: formData.email,
+        username: formData.username,
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+      })
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Redirect to dashboard
-      router.push('/dashboard')
-    } catch (err) {
-      setError('Registration failed. Please try again.')
-    } finally {
-      setIsLoading(false)
+      // Registration successful - user will be automatically logged in and redirected
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.')
     }
   }
 

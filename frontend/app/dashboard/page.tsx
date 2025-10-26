@@ -1,10 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { DollarSign, TrendingUp, TrendingDown, Plus, Settings, LogOut } from 'lucide-react'
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext'
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const { user, logout, isLoading, isAuthenticated } = useFirebaseAuth()
+  const router = useRouter()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/auth/login')
+    }
+  }, [isLoading, isAuthenticated, router])
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null
+  }
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(true)
+  }
+
+  const confirmLogout = () => {
+    logout()
+    setShowLogoutConfirm(false)
+  }
 
   // Mock data - will be replaced with real data from API
   const mockData = {
@@ -39,10 +77,24 @@ export default function DashboardPage() {
               <span className="text-2xl font-bold text-gray-900">FinTrack</span>
             </div>
             <div className="flex items-center space-x-4">
+              {/* User info */}
+              {user && (
+                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                  <span>Welcome,</span>
+                  <span className="font-medium text-gray-900">
+                    {user.displayName || user.email?.split('@')[0]}
+                  </span>
+                </div>
+              )}
+              
               <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Settings className="h-5 w-5" />
               </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <button 
+                onClick={handleLogout}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                title="Logout"
+              >
                 <LogOut className="h-5 w-5" />
               </button>
             </div>
@@ -54,7 +106,9 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's your financial overview.</p>
+          <p className="text-gray-600">
+            Welcome back{user ? `, ${user.displayName?.split(' ')[0] || user.email?.split('@')[0]}` : ''}! Here's your financial overview.
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -185,6 +239,32 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Logout</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to logout? You'll need to sign in again to access your account.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
