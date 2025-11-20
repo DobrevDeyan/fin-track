@@ -1,30 +1,111 @@
 "use client"
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, User } from "lucide-react";
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
+import { MetricsCards } from "@/components/dashboard/MetricsCards"
+import { SpendingChart } from "@/components/dashboard/SpendingChart"
+import { CategoryChart } from "@/components/dashboard/CategoryChart"
+import { TransactionsTable } from "@/components/dashboard/TransactionsTable"
+import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog"
+import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
+import { Navbar } from "@/components/Navbar"
+
+interface Transaction {
+  id: string
+  description: string
+  amount: number
+  category: string
+  date: string
+  type: "income" | "expense"
+}
 
 export default function DashboardPage() {
-  const { user, loading, logout } = useAuth();
-  const router = useRouter();
+  const { user, loading, logout } = useAuth()
+  const router = useRouter()
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    {
+      id: "1",
+      description: "Grocery Shopping",
+      amount: 125.50,
+      category: "Food & Dining",
+      date: new Date().toISOString(),
+      type: "expense",
+    },
+    {
+      id: "2",
+      description: "Salary",
+      amount: 3500.00,
+      category: "Salary",
+      date: new Date(Date.now() - 86400000).toISOString(),
+      type: "income",
+    },
+    {
+      id: "3",
+      description: "Uber Ride",
+      amount: 25.00,
+      category: "Transportation",
+      date: new Date(Date.now() - 172800000).toISOString(),
+      type: "expense",
+    },
+    {
+      id: "4",
+      description: "Netflix Subscription",
+      amount: 15.99,
+      category: "Entertainment",
+      date: new Date(Date.now() - 259200000).toISOString(),
+      type: "expense",
+    },
+    {
+      id: "5",
+      description: "Electric Bill",
+      amount: 85.00,
+      category: "Bills & Utilities",
+      date: new Date(Date.now() - 345600000).toISOString(),
+      type: "expense",
+    },
+  ])
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/auth/login");
+      router.push("/auth/login")
     }
-  }, [user, loading, router]);
+  }, [user, loading, router])
 
   const handleLogout = async () => {
     try {
-      await logout();
-      router.push("/");
+      await logout()
+      router.push("/")
     } catch (error) {
-      console.error("Failed to logout:", error);
+      console.error("Failed to logout:", error)
     }
-  };
+  }
+
+  const handleAddTransaction = (data: {
+    description: string
+    amount: number
+    category: string
+    type: "income" | "expense"
+    date: string
+  }) => {
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      ...data,
+    }
+    setTransactions([newTransaction, ...transactions])
+  }
+
+  const handleEditTransaction = (id: string) => {
+    // TODO: Implement edit functionality
+    console.log("Edit transaction:", id)
+  }
+
+  const handleDeleteTransaction = (id: string) => {
+    setTransactions(transactions.filter((t) => t.id !== id))
+  }
 
   if (loading) {
     return (
@@ -34,70 +115,76 @@ export default function DashboardPage() {
           <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (!user) {
-    return null;
+    return null
   }
 
+  // Calculate metrics
+  const totalIncome = transactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalExpenses = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0)
+  const totalBalance = totalIncome - totalExpenses
+  const savings = totalBalance
+
   return (
-    <div className="container py-12">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome back, {user.email}
-          </p>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Welcome back, {user.email?.split("@")[0]}
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
-        <Button variant="outline" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile
-            </CardTitle>
-            <CardDescription>Your account information</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium">Email:</span> {user.email}
-              </p>
-              <p className="text-sm">
-                <span className="font-medium">User ID:</span> {user.uid}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Metrics Cards */}
+        <div className="mb-8">
+          <MetricsCards
+            totalBalance={totalBalance}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            savings={savings}
+          />
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Transactions</CardTitle>
-            <CardDescription>Manage your transactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Coming soon...</p>
-          </CardContent>
-        </Card>
+        {/* Charts Row */}
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <SpendingChart />
+          <CategoryChart />
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-            <CardDescription>View your spending insights</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Coming soon...</p>
-          </CardContent>
-        </Card>
+        {/* Transactions Table */}
+        <TransactionsTable
+          transactions={transactions}
+          onAdd={() => setDialogOpen(true)}
+          onEdit={handleEditTransaction}
+          onDelete={handleDeleteTransaction}
+        />
+
+        {/* Add Transaction Dialog */}
+        <AddTransactionDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onSubmit={handleAddTransaction}
+        />
+
+        {/* Quick Expense FAB */}
+        <QuickExpenseFAB onSubmit={handleAddTransaction} />
       </div>
     </div>
-  );
+  )
 }
-
