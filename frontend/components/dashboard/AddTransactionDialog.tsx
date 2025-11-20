@@ -81,9 +81,9 @@ export function AddTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Transaction</DialogTitle>
+          <DialogTitle>Add Entry</DialogTitle>
           <DialogDescription>
-            Add a new income or expense transaction to track your finances.
+            Add a new income or expense entry to track your finances.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -152,7 +152,7 @@ export function AddTransactionDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Transaction</Button>
+            <Button type="submit">Add Entry</Button>
           </DialogFooter>
         </form>
       </DialogContent>

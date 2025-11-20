@@ -27,7 +27,7 @@ export function CategoryChart() {
   const total = categoryData.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10">
+    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10 w-full overflow-hidden">
       <CardHeader>
         <CardTitle className="text-xl font-bold bg-gradient-to-r from-[#61DAFB] via-[#1fc0f1] to-[#03a3d7] text-transparent bg-clip-text">
           Spending by Category
@@ -36,8 +36,9 @@ export function CategoryChart() {
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-2">
-          <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <PieChart>
+          <div className="flex items-center justify-center w-full">
+            <ChartContainer config={chartConfig} className="h-[250px] w-full max-w-[250px]">
+              <PieChart>
               <ChartTooltip
                 cursor={false}
                 content={<ChartTooltipContent hideLabel />}
@@ -46,6 +47,8 @@ export function CategoryChart() {
                 data={categoryData}
                 dataKey="value"
                 nameKey="name"
+                cx="50%"
+                cy="50%"
                 innerRadius={60}
                 strokeWidth={5}
               >
@@ -55,6 +58,7 @@ export function CategoryChart() {
               </Pie>
             </PieChart>
           </ChartContainer>
+          </div>
           <div className="space-y-3">
             {categoryData.map((item) => {
               const percentage = ((item.value / total) * 100).toFixed(1)

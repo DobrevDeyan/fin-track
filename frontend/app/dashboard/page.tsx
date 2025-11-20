@@ -133,9 +133,9 @@ export default function DashboardPage() {
   const savings = totalBalance
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
-      <div className="container py-8">
+      <div className="container py-8 px-4 sm:px-6">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           <CategoryChart />
         </div>
 
-        {/* Transactions Table */}
+        {/* Entries Table */}
         <TransactionsTable
           transactions={entries}
           onAdd={() => setDialogOpen(true)}
@@ -175,7 +175,7 @@ export default function DashboardPage() {
           onDelete={handleDeleteEntry}
         />
 
-        {/* Add Transaction Dialog */}
+        {/* Add Entry Dialog */}
         <AddTransactionDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}

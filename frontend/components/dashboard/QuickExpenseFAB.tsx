@@ -21,23 +21,29 @@ export function QuickExpenseFAB({ onSubmit }: QuickExpenseFABProps) {
 
   return (
     <>
-      <Button
+      <button
         onClick={() => setIsOpen(true)}
-        size="lg"
         className={cn(
           "fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl",
           "bg-gradient-to-r from-[#F596D3] to-[#D247BF]",
           "hover:from-[#D247BF] hover:to-[#F596D3]",
-          "text-white border-0",
+          "border-0",
           "z-50",
           "transition-all duration-300",
           "hover:scale-110 active:scale-95",
-          "md:bottom-8 md:right-8 md:h-20 md:w-20"
+          "md:bottom-8 md:right-8 md:h-20 md:w-20",
+          "flex items-center justify-center",
+          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
         )}
         aria-label="Add quick expense"
       >
-        <Plus className="h-8 w-8 md:h-10 md:w-10" strokeWidth={3} />
-      </Button>
+        <Plus 
+          className="h-8 w-8 md:h-10 md:w-10" 
+          strokeWidth={3}
+          stroke="white"
+          fill="none"
+        />
+      </button>
 
       <QuickExpenseSheet
         open={isOpen}

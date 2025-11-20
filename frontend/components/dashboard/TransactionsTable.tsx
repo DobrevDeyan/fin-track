@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-interface Transaction {
+interface Entry {
   id: string
   description: string
   amount: number
@@ -23,7 +23,7 @@ interface Transaction {
 }
 
 interface TransactionsTableProps {
-  transactions: Transaction[]
+  transactions: Entry[]
   onAdd: () => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -53,92 +53,104 @@ export function TransactionsTable({
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     })
   }
 
+  const formatDateCompact = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+  }
+
   return (
     <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10">
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="text-xl font-bold">Recent Transactions</CardTitle>
-            <CardDescription>Your latest financial activity</CardDescription>
+            <CardTitle className="text-xl font-bold">Recent Entries</CardTitle>
+            <CardDescription className="mt-1">Your latest financial activity</CardDescription>
           </div>
-          <Button onClick={onAdd} className="gap-2">
+          <Button onClick={onAdd} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
-            Add Transaction
+            Add Entry
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         {transactions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No transactions yet. Add your first transaction to get started!
+          <div className="text-center py-12 text-muted-foreground">
+            No entries yet. Add your first entry to get started!
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">
-                    {transaction.description}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={categoryColors[transaction.category] || categoryColors.Other}
-                    >
-                      {transaction.category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(transaction.date)}
-                  </TableCell>
-                  <TableCell
-                    className={`text-right font-semibold ${
-                      transaction.type === "income"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {transaction.type === "income" ? "+" : "-"}
-                    {formatCurrency(Math.abs(transaction.amount))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(transaction.id)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(transaction.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-4">Description</TableHead>
+                  <TableHead className="py-4">Category</TableHead>
+                  <TableHead className="py-4">Date</TableHead>
+                  <TableHead className="text-right py-4">Amount</TableHead>
+                  <TableHead className="text-right py-4">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((transaction) => (
+                  <TableRow key={transaction.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium py-4">
+                      {transaction.description}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge
+                        variant="secondary"
+                        className={categoryColors[transaction.category] || categoryColors.Other}
+                      >
+                        {transaction.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground py-4 whitespace-nowrap min-w-[110px]">
+                      <span className="hidden sm:inline">{formatDate(transaction.date)}</span>
+                      <span className="sm:hidden">{formatDateCompact(transaction.date)}</span>
+                    </TableCell>
+                    <TableCell
+                      className={`text-right font-semibold py-4 ${
+                        transaction.type === "income"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      {transaction.type === "income" ? "+" : "-"}
+                      {formatCurrency(Math.abs(transaction.amount))}
+                    </TableCell>
+                    <TableCell className="text-right py-4">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(transaction.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(transaction.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -27,7 +27,7 @@ const chartConfig = {
 
 export function SpendingChart() {
   return (
-    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10">
+    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10 w-full overflow-hidden">
       <CardHeader>
         <CardTitle className="text-xl font-bold bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">
           Spending Overview
@@ -42,7 +42,7 @@ export function SpendingChart() {
               left: 12,
               right: 12,
               top: 12,
-              bottom: 12,
+              bottom: 24,
             }}
           >
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -52,6 +52,7 @@ export function SpendingChart() {
               axisLine={false}
               tickMargin={8}
               className="text-xs"
+              interval={0}
             />
             <ChartTooltip
               cursor={false}
