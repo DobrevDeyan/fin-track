@@ -9,8 +9,10 @@ import {
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
+  AuthError,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getAuthErrorMessage } from "@/lib/utils";
 
 interface AuthContextType {
   user: User | null;
@@ -37,16 +39,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      const authError = error as AuthError;
+      throw new Error(getAuthErrorMessage(authError.code));
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      const authError = error as AuthError;
+      throw new Error(getAuthErrorMessage(authError.code));
+    }
   };
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      const authError = error as AuthError;
+      throw new Error(getAuthErrorMessage(authError.code));
+    }
   };
 
   const logout = async () => {
