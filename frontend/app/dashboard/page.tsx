@@ -13,7 +13,7 @@ import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialo
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
 import { Navbar } from "@/components/Navbar"
 
-interface Transaction {
+interface Entry {
   id: string
   description: string
   amount: number
@@ -25,7 +25,7 @@ interface Transaction {
 export default function DashboardPage() {
   const { user, loading, logout } = useAuth()
   const router = useRouter()
-  const [transactions, setTransactions] = useState<Transaction[]>([
+  const [entries, setEntries] = useState<Entry[]>([
     {
       id: "1",
       description: "Grocery Shopping",
@@ -84,27 +84,27 @@ export default function DashboardPage() {
     }
   }
 
-  const handleAddTransaction = (data: {
+  const handleAddEntry = (data: {
     description: string
     amount: number
     category: string
     type: "income" | "expense"
     date: string
   }) => {
-    const newTransaction: Transaction = {
+    const newEntry: Entry = {
       id: Date.now().toString(),
       ...data,
     }
-    setTransactions([newTransaction, ...transactions])
+    setEntries([newEntry, ...entries])
   }
 
-  const handleEditTransaction = (id: string) => {
+  const handleEditEntry = (id: string) => {
     // TODO: Implement edit functionality
-    console.log("Edit transaction:", id)
+    console.log("Edit entry:", id)
   }
 
-  const handleDeleteTransaction = (id: string) => {
-    setTransactions(transactions.filter((t) => t.id !== id))
+  const handleDeleteEntry = (id: string) => {
+    setEntries(entries.filter((e) => e.id !== id))
   }
 
   if (loading) {
@@ -123,12 +123,12 @@ export default function DashboardPage() {
   }
 
   // Calculate metrics
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0)
-  const totalExpenses = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0)
+  const totalIncome = entries
+    .filter((e) => e.type === "income")
+    .reduce((sum, e) => sum + e.amount, 0)
+  const totalExpenses = entries
+    .filter((e) => e.type === "expense")
+    .reduce((sum, e) => sum + e.amount, 0)
   const totalBalance = totalIncome - totalExpenses
   const savings = totalBalance
 
@@ -169,21 +169,21 @@ export default function DashboardPage() {
 
         {/* Transactions Table */}
         <TransactionsTable
-          transactions={transactions}
+          transactions={entries}
           onAdd={() => setDialogOpen(true)}
-          onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
+          onEdit={handleEditEntry}
+          onDelete={handleDeleteEntry}
         />
 
         {/* Add Transaction Dialog */}
         <AddTransactionDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          onSubmit={handleAddTransaction}
+          onSubmit={handleAddEntry}
         />
 
         {/* Quick Expense FAB */}
-        <QuickExpenseFAB onSubmit={handleAddTransaction} />
+        <QuickExpenseFAB onSubmit={handleAddEntry} />
       </div>
     </div>
   )

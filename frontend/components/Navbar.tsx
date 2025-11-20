@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -50,6 +51,41 @@ const routeList: RouteProps[] = [
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const { user, loading } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleNavClick = (href: string, e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const hash = href.replace("#", "");
+    
+    if (pathname === "/") {
+      // Already on home page, just scroll to section
+      const element = document.getElementById(hash);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // Navigate to home page first, then scroll to section
+      router.push(`/${href}`);
+    }
+    setIsOpen(false);
+  };
+
+  // Handle hash navigation after page load
+  useEffect(() => {
+    if (pathname === "/" && typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      if (hash) {
+        // Wait for page to render, then scroll
+        setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+      }
+    }
+  }, [pathname]);
 
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-slate-700 dark:bg-background">
@@ -94,7 +130,7 @@ export const Navbar = () => {
                       rel="noreferrer noopener"
                       key={label}
                       href={href}
-                      onClick={() => setIsOpen(false)}
+                      onClick={(e) => handleNavClick(href, e)}
                       className={buttonVariants({ variant: "ghost" })}
                     >
                       {label}
@@ -133,6 +169,7 @@ export const Navbar = () => {
                 rel="noreferrer noopener"
                 href={route.href}
                 key={i}
+                onClick={(e) => handleNavClick(route.href, e)}
                 className={`text-[17px] ${buttonVariants({
                   variant: "ghost",
                 })}`}
