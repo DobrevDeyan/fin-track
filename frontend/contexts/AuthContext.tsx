@@ -14,6 +14,7 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { getAuthErrorMessage } from "@/lib/utils";
+import { useSessionTimeout } from "@/lib/session-timeout";
 
 interface AuthContextType {
   user: User | null;
@@ -52,7 +53,7 @@ const createUserDocument = async (user: User, isNewUser: boolean = false) => {
     firstName,
     lastName,
     avatarUrl,
-    currency: "USD",
+    currency: "EUR",
     language: "en",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
     providerId,
@@ -81,6 +82,25 @@ const createUserDocument = async (user: User, isNewUser: boolean = false) => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Use session timeout service
+  useSessionTimeout(!!user, {
+    onWarning: (timeLeftMinutes) => {
+      if (typeof window !== "undefined" && window.confirm(
+        `You've been inactive for a while. You'll be logged out in ${timeLeftMinutes} minute${timeLeftMinutes !== 1 ? 's' : ''} due to inactivity. Click OK to stay logged in.`
+      )) {
+        return true; // User clicked OK, reset timer
+      }
+      return false; // User cancelled, don't reset
+    },
+    onTimeout: async () => {
+      console.log("Session timeout: Logging out due to inactivity");
+      await signOut(auth);
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/login";
+      }
+    },
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

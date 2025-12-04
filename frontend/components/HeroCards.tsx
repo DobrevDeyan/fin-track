@@ -118,7 +118,7 @@ export const HeroCards = () => {
 
         <CardFooter className="flex">
           <div className="space-y-4">
-            {["100 transactions/month", "Basic categorization", "Mobile app access"].map(
+            {["Unlimited entries", "Manual expense tracking", "Real-time analytics"].map(
               (benefit: string) => (
                 <span
                   key={benefit}
@@ -140,9 +140,9 @@ export const HeroCards = () => {
             <LightBulbIcon />
           </div>
           <div>
-            <CardTitle>AI-Powered Insights</CardTitle>
+            <CardTitle>Smart Insights</CardTitle>
             <CardDescription className="text-md mt-2">
-              Automatically categorize your transactions with machine learning.
+              Manually track and categorize your expenses with ease.
             </CardDescription>
           </div>
         </CardHeader>

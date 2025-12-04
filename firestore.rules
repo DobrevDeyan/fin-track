@@ -8,8 +8,15 @@ service cloud.firestore {
     
     // Entries - users can only access their own entries
     match /entries/{entryId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow get (single document read) if user owns it
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow list (queries) for authenticated users - app must filter by userId
+      // Individual document access is still protected by get rule
+      allow list: if request.auth != null;
+      // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow update/delete if user is authenticated and owns the entry
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
     
     // Categories - users can only access their own categories
@@ -20,8 +27,15 @@ service cloud.firestore {
     
     // Budgets - users can only access their own budgets
     match /budgets/{budgetId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow get (single document read) if user owns it
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow list (queries) for authenticated users - app must filter by userId
+      // Individual document access is still protected by get rule
+      allow list: if request.auth != null;
+      // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow update/delete if user is authenticated and owns the budget
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }

@@ -18,9 +18,9 @@ interface FeatureProps {
 
 const features: FeatureProps[] = [
   {
-    title: "AI-Powered Categorization",
+    title: "Manual Expense Categorization",
     description:
-      "Automatically categorize your transactions using machine learning. Save time and get accurate insights.",
+      "Manually track and categorize your expenses. Save time and get accurate insights into your spending patterns.",
     icon: "🤖",
   },
   {

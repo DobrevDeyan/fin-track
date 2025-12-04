@@ -3,7 +3,7 @@
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true, // Skip type checking of declaration files (faster)
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "incremental": true,
+    "incremental": true, // Enable incremental compilation (faster rebuilds)
     "plugins": [
       {
         "name": "next"

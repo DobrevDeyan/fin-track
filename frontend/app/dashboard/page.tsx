@@ -1,17 +1,54 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef } from "react"
+import dynamic from "next/dynamic"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
+import { LogOut, Plus } from "lucide-react"
 import { MetricsCards } from "@/components/dashboard/MetricsCards"
-import { SpendingChart } from "@/components/dashboard/SpendingChart"
-import { CategoryChart } from "@/components/dashboard/CategoryChart"
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable"
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog"
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
+import { TransactionFilters } from "@/components/dashboard/TransactionFilters"
+import { SalaryReminderNotification } from "@/components/SalaryReminderNotification"
+import { BudgetList } from "@/components/dashboard/BudgetList"
+import { BudgetDialog } from "@/components/dashboard/BudgetDialog"
 import { Navbar } from "@/components/Navbar"
+
+// Lazy load charts (Recharts is ~200KB) - only load when needed
+const SpendingChart = dynamic(() => import("@/components/dashboard/SpendingChart").then(mod => ({ default: mod.SpendingChart })), {
+  loading: () => (
+    <div className="flex items-center justify-center h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  ),
+  ssr: false, // Disable SSR for charts (client-only)
+});
+const CategoryChart = dynamic(() => import("@/components/dashboard/CategoryChart").then(mod => ({ default: mod.CategoryChart })), {
+  loading: () => (
+    <div className="flex items-center justify-center h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  ),
+  ssr: false, // Disable SSR for charts (client-only)
+});
+import { createEntry, getUserEntries, deleteEntry, updateEntry } from "@/lib/firestore-entries"
+import {
+  createBudget,
+  getUserBudgets,
+  deleteBudget,
+  updateBudget,
+} from "@/lib/firestore-budgets"
+import { Timestamp } from "firebase/firestore"
+import { Toast } from "@/components/ui/toast"
+import { exportEntriesToCSV } from "@/lib/export-utils"
+import { getUniqueCategories } from "@/lib/categories"
+import {
+  calculateMetricsWithComparison,
+  getCurrentMonthEntries,
+  getPreviousMonthEntries,
+} from "@/lib/metrics-utils"
+import { getMonthName, getPreviousMonth } from "@/lib/date-utils"
 
 interface Entry {
   id: string
@@ -20,94 +57,452 @@ interface Entry {
   category: string
   date: string
   type: "income" | "expense"
+  notes?: string
 }
 
-export default function DashboardPage() {
+interface Budget {
+  id: string
+  name: string
+  category?: string
+  amount: number
+  currency: string
+  period: "weekly" | "monthly" | "yearly"
+  startDate: string // Always converted to ISO string when loaded
+  endDate: string // Always converted to ISO string when loaded
+  isActive: boolean
+  alertThreshold?: number
+}
+
+function DashboardContent() {
   const { user, loading, logout } = useAuth()
-  const router = useRouter()
-  const [entries, setEntries] = useState<Entry[]>([
-    {
-      id: "1",
-      description: "Grocery Shopping",
-      amount: 125.50,
-      category: "Food & Dining",
-      date: new Date().toISOString(),
-      type: "expense",
-    },
-    {
-      id: "2",
-      description: "Salary",
-      amount: 3500.00,
-      category: "Salary",
-      date: new Date(Date.now() - 86400000).toISOString(),
-      type: "income",
-    },
-    {
-      id: "3",
-      description: "Uber Ride",
-      amount: 25.00,
-      category: "Transportation",
-      date: new Date(Date.now() - 172800000).toISOString(),
-      type: "expense",
-    },
-    {
-      id: "4",
-      description: "Netflix Subscription",
-      amount: 15.99,
-      category: "Entertainment",
-      date: new Date(Date.now() - 259200000).toISOString(),
-      type: "expense",
-    },
-    {
-      id: "5",
-      description: "Electric Bill",
-      amount: 85.00,
-      category: "Bills & Utilities",
-      date: new Date(Date.now() - 345600000).toISOString(),
-      type: "expense",
-    },
-  ])
+  const [entries, setEntries] = useState<Entry[]>([])
+  const [filteredEntries, setFilteredEntries] = useState<Entry[]>([])
+  const [entriesLoading, setEntriesLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const salaryReminderShown = useRef(false)
+  const hasLoadedRef = useRef(false)
+  
+  // Budget state
+  const [budgets, setBudgets] = useState<Budget[]>([])
+  const [budgetsLoading, setBudgetsLoading] = useState(true)
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
+
+  // Load entries from Firestore - ensure it runs on mount and when auth state is ready
+  useEffect(() => {
+    // Always reset loading states on mount to prevent stuck states from previous renders
+    const isMounted = !hasLoadedRef.current
+    if (isMounted) {
+      hasLoadedRef.current = true
+    }
+    
+    // Load data when auth is ready and user is available
+    if (!loading && user) {
+      // Always reload data on mount or when user changes
+      if (isMounted || entries.length === 0) {
+        loadEntries()
+      }
+      if (isMounted || budgets.length === 0) {
+        loadBudgets()
+      }
+    } else if (!loading && !user) {
+      // Reset loading states if no user
+      setEntriesLoading(false)
+      setBudgetsLoading(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading])
+  
+  // Safety timeout - ensure loading states don't get stuck forever
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (entriesLoading && user && !loading) {
+        console.warn("Entries loading timeout - forcing to false")
+        setEntriesLoading(false)
+      }
+      if (budgetsLoading && user && !loading) {
+        console.warn("Budgets loading timeout - forcing to false")
+        setBudgetsLoading(false)
+      }
+    }, 15000) // 15 second timeout
+    
+    return () => clearTimeout(timeout)
+  }, [entriesLoading, budgetsLoading, user, loading])
+
+  // Load budgets from Firestore
+  const loadBudgets = async () => {
+    if (!user) return
+
+    try {
+      setBudgetsLoading(true)
+      const firestoreBudgets = await getUserBudgets(user.uid)
+      
+      // Convert Firestore budgets to local format
+      const convertedBudgets: Budget[] = firestoreBudgets.map((budget) => ({
+        id: budget.id,
+        name: budget.name,
+        category: budget.category,
+        amount: budget.amount,
+        currency: budget.currency,
+        period: budget.period,
+        startDate: budget.startDate instanceof Timestamp 
+          ? budget.startDate.toDate().toISOString()
+          : typeof budget.startDate === "string"
+          ? budget.startDate
+          : new Date(budget.startDate as any).toISOString(),
+        endDate: budget.endDate instanceof Timestamp 
+          ? budget.endDate.toDate().toISOString()
+          : typeof budget.endDate === "string"
+          ? budget.endDate
+          : new Date(budget.endDate as any).toISOString(),
+        isActive: budget.isActive,
+        alertThreshold: budget.alertThreshold,
+      }))
+      
+      setBudgets(convertedBudgets)
+    } catch (error) {
+      console.error("Error loading budgets:", error)
+      // Set empty array on error so section still shows
+      setBudgets([])
+    } finally {
+      setBudgetsLoading(false)
+    }
+  }
+
+  // Check for salary reminder (28th to 5th of next month)
+  useEffect(() => {
+    if (!user || loading || entriesLoading || salaryReminderShown.current) return
+
+    const checkSalaryReminder = () => {
+      const today = new Date()
+      const currentDay = today.getDate()
+      const currentMonth = today.getMonth()
+      const currentYear = today.getFullYear()
+
+      // Check if we're between 28th of current month and 5th of next month
+      const isReminderPeriod = currentDay >= 28 || currentDay <= 5
+
+      if (!isReminderPeriod) return
+
+      // Determine which month to check for salary
+      // If it's 28th-31st, check current month
+      // If it's 1st-5th, check previous month
+      let monthToCheck = currentMonth
+      let yearToCheck = currentYear
+
+      if (currentDay <= 5) {
+        // Check previous month
+        const prev = getPreviousMonth(currentMonth, currentYear)
+        monthToCheck = prev.month
+        yearToCheck = prev.year
+      }
+
+      // Check if user has a salary entry for the month we're checking
+      const hasSalaryEntry = entries.some((entry) => {
+        if (entry.type !== "income" || entry.category.toLowerCase() !== "salary") {
+          return false
+        }
+
+        const entryDate = new Date(entry.date)
+        return (
+          entryDate.getMonth() === monthToCheck &&
+          entryDate.getFullYear() === yearToCheck
+        )
+      })
+
+      // Show reminder if no salary entry found (only once per session)
+      if (!hasSalaryEntry && !salaryReminderShown.current) {
+        const monthName = getMonthName(new Date(yearToCheck, monthToCheck))
+        setToast({
+          message: `💼 Reminder: Please enter your ${monthName} salary to track your monthly budget!`,
+          type: "success",
+        })
+        salaryReminderShown.current = true
+      }
+    }
+
+    // Small delay to ensure entries are loaded
+    const timer = setTimeout(checkSalaryReminder, 1000)
+    return () => clearTimeout(timer)
+  }, [user, loading, entriesLoading, entries])
 
   useEffect(() => {
+    if (typeof window === "undefined") return
     if (!loading && !user) {
-      router.push("/auth/login")
+      window.location.href = "/auth/login"
     }
-  }, [user, loading, router])
+  }, [user, loading])
+
+  const loadEntries = async () => {
+    if (!user) return
+
+    try {
+      setEntriesLoading(true)
+      const firestoreEntries = await getUserEntries(user.uid)
+      
+      // Convert Firestore entries to local format
+      const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
+        id: entry.id,
+        description: entry.description,
+        amount: entry.amount,
+        category: entry.category,
+        date: entry.date instanceof Timestamp 
+          ? entry.date.toDate().toISOString()
+          : typeof entry.date === "string"
+          ? entry.date
+          : new Date(entry.date as any).toISOString(),
+        type: entry.type,
+        notes: entry.notes,
+      }))
+      
+      setEntries(convertedEntries)
+      setFilteredEntries(convertedEntries) // Initialize filtered entries
+    } catch (error) {
+      console.error("Error loading entries:", error)
+    } finally {
+      setEntriesLoading(false)
+    }
+  }
+
+  const handleExportCSV = () => {
+    try {
+      exportEntriesToCSV(filteredEntries.length > 0 ? filteredEntries : entries)
+      setToast({
+        message: "Transactions exported successfully!",
+        type: "success",
+      })
+    } catch (error) {
+      console.error("Error exporting CSV:", error)
+      setToast({
+        message: "Failed to export transactions. Please try again.",
+        type: "error",
+      })
+    }
+  }
 
   const handleLogout = async () => {
     try {
       await logout()
-      router.push("/")
+      if (typeof window !== "undefined") {
+        window.location.href = "/"
+      }
     } catch (error) {
       console.error("Failed to logout:", error)
     }
   }
 
-  const handleAddEntry = (data: {
+  const handleAddEntry = async (data: {
     description: string
     amount: number
     category: string
     type: "income" | "expense"
     date: string
+    notes?: string
   }) => {
-    const newEntry: Entry = {
-      id: Date.now().toString(),
-      ...data,
+    if (!user) return
+
+    try {
+      if (editingEntry) {
+        // Update existing entry
+        await updateEntry(editingEntry.id, {
+          type: data.type,
+          amount: data.amount,
+          description: data.description,
+          category: data.category,
+          date: data.date as any, // Will be converted to Timestamp in updateEntry
+          notes: data.notes,
+        })
+
+        // Reload entries from Firestore
+        await loadEntries()
+
+        setToast({
+          message: "Entry updated successfully!",
+          type: "success",
+        })
+        setEditingEntry(null)
+      } else {
+        // Create new entry
+        await createEntry(user.uid, {
+          type: data.type,
+          amount: data.amount,
+          currency: "EUR",
+          description: data.description,
+          category: data.category,
+          date: data.date,
+          notes: data.notes,
+        })
+
+        // Reload entries from Firestore to get the complete data
+        await loadEntries()
+
+        // Show success message
+        setToast({
+          message: `${data.type === "income" ? "Income" : "Expense"} entry added successfully!`,
+          type: "success",
+        })
+      }
+    } catch (error: any) {
+      console.error("Error saving entry:", error)
+      setToast({
+        message: error.message || "Failed to save entry. Please try again.",
+        type: "error",
+      })
+      throw error // Re-throw to show error in UI
     }
-    setEntries([newEntry, ...entries])
   }
 
   const handleEditEntry = (id: string) => {
-    // TODO: Implement edit functionality
-    console.log("Edit entry:", id)
+    const entry = entries.find((e) => e.id === id)
+    if (entry) {
+      setEditingEntry(entry)
+      setDialogOpen(true)
+    }
   }
 
-  const handleDeleteEntry = (id: string) => {
-    setEntries(entries.filter((e) => e.id !== id))
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open)
+    if (!open) {
+      setEditingEntry(null)
+    }
   }
 
-  if (loading) {
+  const handleDeleteEntry = async (id: string) => {
+    if (!user) return
+
+    try {
+      // Delete from Firestore
+      await deleteEntry(id)
+      
+      // Update local state
+      setEntries(entries.filter((e) => e.id !== id))
+      
+      // Show success message
+      setToast({
+        message: "Entry deleted successfully!",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error deleting entry:", error)
+      setToast({
+        message: "Failed to delete entry. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  // Budget handlers
+  const handleAddBudget = async (data: {
+    name: string
+    category?: string
+    amount: number
+    currency: string
+    period: "weekly" | "monthly" | "yearly"
+    startDate: string
+    endDate: string
+    isActive: boolean
+    alertThreshold?: number
+  }) => {
+    if (!user) return
+
+    try {
+      if (editingBudget) {
+        // Update existing budget
+        await updateBudget(editingBudget.id, {
+          name: data.name,
+          category: data.category,
+          amount: data.amount,
+          currency: data.currency,
+          period: data.period,
+          startDate: data.startDate as any,
+          endDate: data.endDate as any,
+          isActive: data.isActive,
+          alertThreshold: data.alertThreshold,
+        })
+
+        await loadBudgets()
+
+        setToast({
+          message: "Budget updated successfully!",
+          type: "success",
+        })
+        setEditingBudget(null)
+      } else {
+        // Create new budget
+        await createBudget(user.uid, {
+          name: data.name,
+          category: data.category,
+          amount: data.amount,
+          currency: data.currency,
+          period: data.period,
+          startDate: data.startDate as any, // Will be converted to Timestamp in createBudget
+          endDate: data.endDate as any, // Will be converted to Timestamp in createBudget
+          isActive: data.isActive,
+          alertThreshold: data.alertThreshold,
+        })
+
+        await loadBudgets()
+
+        setToast({
+          message: "Budget created successfully!",
+          type: "success",
+        })
+      }
+    } catch (error: any) {
+      console.error("Error saving budget:", error)
+      setToast({
+        message: error.message || "Failed to save budget. Please try again.",
+        type: "error",
+      })
+      throw error
+    }
+  }
+
+  const handleEditBudget = (budget: Budget) => {
+    setEditingBudget(budget)
+    setBudgetDialogOpen(true)
+  }
+
+  const handleDeleteBudget = async (budgetId: string) => {
+    if (!user) return
+
+    try {
+      await deleteBudget(budgetId)
+      await loadBudgets()
+      
+      setToast({
+        message: "Budget deleted successfully!",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error deleting budget:", error)
+      setToast({
+        message: "Failed to delete budget. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleBudgetDialogClose = (open: boolean) => {
+    setBudgetDialogOpen(open)
+    if (!open) {
+      setEditingBudget(null)
+    }
+  }
+
+  // Get unique categories from entries
+  const categories = getUniqueCategories(entries)
+
+  // Client-side mount check to prevent hydration issues
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Show loading only on initial auth load, not on data loading
+  if (!mounted || loading) {
     return (
       <div className="container flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -122,15 +517,22 @@ export default function DashboardPage() {
     return null
   }
 
-  // Calculate metrics
-  const totalIncome = entries
-    .filter((e) => e.type === "income")
-    .reduce((sum, e) => sum + e.amount, 0)
-  const totalExpenses = entries
-    .filter((e) => e.type === "expense")
-    .reduce((sum, e) => sum + e.amount, 0)
-  const totalBalance = totalIncome - totalExpenses
-  const savings = totalBalance
+  // Calculate metrics with comparison to previous month
+  const metrics = calculateMetricsWithComparison(entries)
+  const {
+    current: {
+      totalIncome,
+      totalExpenses,
+      totalBalance,
+      savings,
+    },
+    changes: {
+      balance: balanceChange,
+      income: incomeChange,
+      expenses: expensesChange,
+      savings: savingsChange,
+    },
+  } = metrics
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -158,33 +560,98 @@ export default function DashboardPage() {
             totalIncome={totalIncome}
             totalExpenses={totalExpenses}
             savings={savings}
+            balanceChange={balanceChange}
+            incomeChange={incomeChange}
+            expensesChange={expensesChange}
+            savingsChange={savingsChange}
           />
         </div>
 
         {/* Charts Row */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <SpendingChart />
-          <CategoryChart />
+          <SpendingChart entries={entries} />
+          <CategoryChart entries={entries} />
         </div>
+
+        {/* Budget Management Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Budget Management</h2>
+            <Button onClick={() => setBudgetDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Budget
+            </Button>
+          </div>
+          {budgetsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading budgets...</p>
+              </div>
+            </div>
+          ) : (
+            <BudgetList
+              budgets={budgets}
+              entries={entries}
+              categories={categories}
+              onAdd={() => setBudgetDialogOpen(true)}
+              onEdit={handleEditBudget}
+              onDelete={handleDeleteBudget}
+            />
+          )}
+        </div>
+
+        {/* Transaction Filters */}
+        <TransactionFilters
+          entries={entries}
+          onFilterChange={setFilteredEntries}
+          onExport={handleExportCSV}
+        />
 
         {/* Entries Table */}
         <TransactionsTable
-          transactions={entries}
+          transactions={filteredEntries.length > 0 ? filteredEntries : entries}
           onAdd={() => setDialogOpen(true)}
           onEdit={handleEditEntry}
           onDelete={handleDeleteEntry}
         />
 
-        {/* Add Entry Dialog */}
+        {/* Add/Edit Entry Dialog */}
         <AddTransactionDialog
           open={dialogOpen}
-          onOpenChange={setDialogOpen}
+          onOpenChange={handleDialogClose}
           onSubmit={handleAddEntry}
+          editingEntry={editingEntry}
+        />
+
+        {/* Add/Edit Budget Dialog */}
+        <BudgetDialog
+          open={budgetDialogOpen}
+          onOpenChange={handleBudgetDialogClose}
+          onSubmit={handleAddBudget}
+          editingBudget={editingBudget}
+          categories={categories}
         />
 
         {/* Quick Expense FAB */}
         <QuickExpenseFAB onSubmit={handleAddEntry} />
+
+        {/* Salary Reminder Notifications */}
+        <SalaryReminderNotification entries={entries} />
+
+        {/* Toast Notification */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
       </div>
     </div>
   )
+}
+
+export default function DashboardPage() {
+  return <DashboardContent />
 }

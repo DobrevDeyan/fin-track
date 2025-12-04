@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -19,10 +18,19 @@ import {
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { buttonVariants } from "./ui/button";
 import { Button } from "./ui/button";
-import { Menu } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import { LogoIcon } from "./Icons";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface RouteProps {
   href: string;
@@ -50,15 +58,42 @@ const routeList: RouteProps[] = [
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const { user, loading } = useAuth();
-  const pathname = usePathname();
-  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to logout:", error);
+    }
+  };
+
+  const getUserInitials = (user: any) => {
+    if (user?.displayName) {
+      const names = user.displayName.split(" ");
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[1][0]}`.toUpperCase();
+      }
+      return names[0][0].toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  };
 
   const handleNavClick = (href: string, e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const hash = href.replace("#", "");
+    if (typeof window === "undefined") return;
     
-    if (pathname === "/") {
+    const hash = href.replace("#", "");
+    const currentPath = window.location.pathname;
+    
+    if (currentPath === "/") {
       // Already on home page, just scroll to section
       const element = document.getElementById(hash);
       if (element) {
@@ -66,14 +101,17 @@ export const Navbar = () => {
       }
     } else {
       // Navigate to home page first, then scroll to section
-      router.push(`/${href}`);
+      window.location.href = `/${href}`;
     }
     setIsOpen(false);
   };
 
   // Handle hash navigation after page load
   useEffect(() => {
-    if (pathname === "/" && typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+    
+    const currentPath = window.location.pathname;
+    if (currentPath === "/") {
       const hash = window.location.hash.replace("#", "");
       if (hash) {
         // Wait for page to render, then scroll
@@ -85,7 +123,7 @@ export const Navbar = () => {
         }, 100);
       }
     }
-  }, [pathname]);
+  }, []);
 
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-slate-700 dark:bg-background">
@@ -139,13 +177,23 @@ export const Navbar = () => {
                   {!loading && (
                     <>
                       {user ? (
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setIsOpen(false)}
-                          className={buttonVariants({ variant: "default" })}
-                        >
-                          Dashboard
-                        </Link>
+                        <>
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setIsOpen(false)}
+                            className={buttonVariants({ variant: "default" })}
+                          >
+                            Dashboard
+                          </Link>
+                          <Button
+                            variant="outline"
+                            onClick={handleLogout}
+                            className="w-full"
+                          >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Logout
+                          </Button>
+                        </>
                       ) : (
                         <Link
                           href="/auth/login"
@@ -179,13 +227,51 @@ export const Navbar = () => {
             ))}
           </nav>
 
-          <div className="hidden md:flex gap-2">
+          <div className="hidden md:flex gap-2 items-center">
             {!loading && (
               <>
                 {user ? (
-                  <Link href="/dashboard">
-                    <Button>Dashboard</Button>
-                  </Link>
+                  <>
+                    <Link href="/dashboard">
+                      <Button>Dashboard</Button>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
+                            <AvatarFallback className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-white">
+                              {getUserInitials(user)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56" align="end" forceMount>
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">
+                              {user.displayName || "User"}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {user.email}
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/dashboard" className="cursor-pointer">
+                            <User className="mr-2 h-4 w-4" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 dark:text-red-400">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </>
                 ) : (
                   <Link href="/auth/login">
                     <Button>Login</Button>

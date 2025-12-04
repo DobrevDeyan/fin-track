@@ -13,7 +13,7 @@ interface QuickExpenseFABProps {
     category: string
     type: "expense"
     date: string
-  }) => void
+  }) => Promise<void>
 }
 
 export function QuickExpenseFAB({ onSubmit }: QuickExpenseFABProps) {

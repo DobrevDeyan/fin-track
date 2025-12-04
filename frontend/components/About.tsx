@@ -10,7 +10,7 @@ export const About = () => {
           </h2>
           <p className="text-muted-foreground text-xl mt-4 mb-8">
             FinTrack is a modern financial management platform designed to help you take control of your finances. 
-            With AI-powered categorization, real-time analytics, and intuitive budgeting tools, managing your money has never been easier.
+            With manual expense tracking, real-time analytics, and intuitive budgeting tools, managing your money has never been easier.
           </p>
         </div>
         <div className="flex justify-center">

@@ -11,11 +11,11 @@ export const FAQ = () => {
   const faqs = [
     {
       question: "How does AI categorization work?",
-      answer: "Our AI uses machine learning to analyze transaction descriptions and automatically assign them to categories based on patterns from millions of transactions.",
+      answer: "You can manually categorize your expenses when adding them. Simply select the appropriate category for each entry to keep your finances organized.",
     },
     {
       question: "Is my financial data secure?",
-      answer: "Yes, we use bank-level encryption and never store your banking credentials. All data is encrypted in transit and at rest.",
+      answer: "Yes, we use bank-level encryption to protect your data. All your entries are stored securely and encrypted in transit and at rest.",
     },
     {
       question: "Can I use FinTrack on mobile?",
@@ -23,7 +23,7 @@ export const FAQ = () => {
     },
     {
       question: "What happens if I exceed my free tier limits?",
-      answer: "You can upgrade to Pro at any time to get unlimited transactions and advanced features.",
+      answer: "FinTrack is currently free to use. All features are available to help you track and manage your finances.",
     },
   ];
 

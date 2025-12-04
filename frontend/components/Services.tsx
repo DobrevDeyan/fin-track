@@ -8,7 +8,7 @@ export const Services = () => {
       </h2>
       <div className="grid md:grid-cols-3 gap-8">
         <div className="text-center p-6 border rounded-lg">
-          <h3 className="text-xl font-semibold mb-2">Transaction Tracking</h3>
+          <h3 className="text-xl font-semibold mb-2">Expense Tracking</h3>
           <p className="text-muted-foreground">Track all your income and expenses in one place</p>
         </div>
         <div className="text-center p-6 border rounded-lg">

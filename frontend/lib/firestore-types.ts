@@ -109,9 +109,10 @@ export const DEFAULT_INCOME_CATEGORIES = [
 // Helper type for creating new documents (without timestamps)
 export type CreateEntryInput = Omit<
   EntryDocument,
-  "userId" | "createdAt" | "updatedAt"
+  "userId" | "createdAt" | "updatedAt" | "date"
 > & {
   userId: string
+  date: string | Date | Timestamp // Allow string, Date, or Timestamp for input
 }
 
 export type CreateCategoryInput = Omit<

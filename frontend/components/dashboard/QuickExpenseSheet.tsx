@@ -24,6 +24,8 @@ import {
   Check,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { QUICK_EXPENSE_CATEGORIES } from "@/lib/categories"
+import { formatDateForInput } from "@/lib/date-utils"
 
 interface QuickExpenseSheetProps {
   open: boolean
@@ -34,17 +36,23 @@ interface QuickExpenseSheetProps {
     category: string
     type: "expense"
     date: string
-  }) => void
+  }) => Promise<void>
 }
 
-const quickCategories = [
-  { id: "Food & Dining", label: "Food", icon: UtensilsCrossed, color: "bg-red-500" },
-  { id: "Shopping", label: "Shopping", icon: ShoppingCart, color: "bg-blue-500" },
-  { id: "Transportation", label: "Fuel", icon: Car, color: "bg-green-500" },
-  { id: "Bills & Utilities", label: "Bills", icon: Zap, color: "bg-yellow-500" },
-  { id: "Entertainment", label: "Fun", icon: Gamepad2, color: "bg-purple-500" },
-  { id: "Other", label: "Other", icon: CreditCard, color: "bg-gray-500" },
-]
+// Map icons to categories
+const categoryIcons: Record<string, any> = {
+  "Food & Dining": UtensilsCrossed,
+  "Shopping": ShoppingCart,
+  "Transportation": Car,
+  "Bills & Utilities": Zap,
+  "Entertainment": Gamepad2,
+  "Other": CreditCard,
+}
+
+const quickCategories = QUICK_EXPENSE_CATEGORIES.map((cat) => ({
+  ...cat,
+  icon: categoryIcons[cat.id] || CreditCard,
+}))
 
 export function QuickExpenseSheet({
   open,
@@ -98,19 +106,22 @@ export function QuickExpenseSheet({
     }
 
     setIsSubmitting(true)
-    onSubmit({
-      description: description || quickCategories.find((c) => c.id === selectedCategory)?.label || "Expense",
-      amount: parseFloat(amount),
-      category: selectedCategory,
-      type: "expense",
-      date: new Date().toISOString(),
-    })
-
-    // Small delay for better UX
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await onSubmit({
+        description: description || quickCategories.find((c) => c.id === selectedCategory)?.label || "Expense",
+        amount: parseFloat(amount),
+        category: selectedCategory,
+        type: "expense",
+        date: formatDateForInput(new Date()),
+      })
+      // Close sheet on success
       onOpenChange(false)
-    }, 300)
+    } catch (error) {
+      // Error is handled by parent component
+      console.error("Error submitting expense:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const canSubmit = selectedCategory && amount && parseFloat(amount) > 0

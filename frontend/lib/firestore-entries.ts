@@ -1,0 +1,206 @@
+/**
+ * Firestore Entries Service
+ * 
+ * Functions for CRUD operations on entries collection
+ */
+
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  Timestamp,
+  serverTimestamp,
+  getDoc,
+} from "firebase/firestore"
+import { db } from "./firebase"
+import { EntryDocument, CreateEntryInput } from "./firestore-types"
+
+/**
+ * Create a new entry in Firestore
+ */
+export async function createEntry(
+  userId: string,
+  entryData: Omit<CreateEntryInput, "userId"> & { date: string | Date | Timestamp }
+): Promise<string> {
+  try {
+    const entryRef = collection(db, "entries")
+    
+    // Convert date to Timestamp
+    let dateTimestamp: Timestamp
+    if (entryData.date instanceof Timestamp) {
+      dateTimestamp = entryData.date
+    } else if (entryData.date instanceof Date) {
+      dateTimestamp = Timestamp.fromDate(entryData.date)
+    } else {
+      dateTimestamp = Timestamp.fromDate(new Date(entryData.date))
+    }
+    
+    // Build entry object, only including defined fields
+    const newEntry: any = {
+      userId,
+      type: entryData.type,
+      amount: entryData.amount,
+      currency: entryData.currency || "EUR",
+      description: entryData.description,
+      category: entryData.category,
+      date: dateTimestamp,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }
+
+    // Only add optional fields if they are defined
+    if (entryData.categoryId !== undefined) {
+      newEntry.categoryId = entryData.categoryId
+    }
+    if (entryData.tags !== undefined && entryData.tags.length > 0) {
+      newEntry.tags = entryData.tags
+    }
+    if (entryData.notes !== undefined && entryData.notes.trim() !== "") {
+      newEntry.notes = entryData.notes
+    }
+    if (entryData.location !== undefined) {
+      newEntry.location = entryData.location
+    }
+    if (entryData.receiptUrl !== undefined && entryData.receiptUrl.trim() !== "") {
+      newEntry.receiptUrl = entryData.receiptUrl
+    }
+    if (entryData.recurring !== undefined) {
+      newEntry.recurring = entryData.recurring
+    }
+    if (entryData.recurringId !== undefined && entryData.recurringId.trim() !== "") {
+      newEntry.recurringId = entryData.recurringId
+    }
+
+    const docRef = await addDoc(entryRef, newEntry)
+
+    return docRef.id
+  } catch (error) {
+    console.error("Error creating entry:", error)
+    throw error
+  }
+}
+
+/**
+ * Get all entries for a user
+ */
+export async function getUserEntries(userId: string): Promise<(EntryDocument & { id: string })[]> {
+  try {
+    const entriesRef = collection(db, "entries")
+    
+    // Try with orderBy first (requires index)
+    let q = query(
+      entriesRef,
+      where("userId", "==", userId),
+      orderBy("date", "desc")
+    )
+
+    let querySnapshot
+    try {
+      querySnapshot = await getDocs(q)
+    } catch (indexError: any) {
+      // If index error, try without orderBy and sort in memory
+      if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
+        console.warn("Firestore index not found, fetching without orderBy and sorting in memory")
+        q = query(
+          entriesRef,
+          where("userId", "==", userId)
+        )
+        querySnapshot = await getDocs(q)
+      } else {
+        throw indexError
+      }
+    }
+
+    const entries: (EntryDocument & { id: string })[] = []
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data() as EntryDocument
+      entries.push({
+        ...data,
+        id: docSnap.id,
+      })
+    })
+
+    // Sort by date if we didn't use orderBy
+    if (entries.length > 0 && entries[0].date instanceof Timestamp) {
+      entries.sort((a, b) => {
+        const dateA = a.date instanceof Timestamp ? a.date.toMillis() : new Date(a.date as any).getTime()
+        const dateB = b.date instanceof Timestamp ? b.date.toMillis() : new Date(b.date as any).getTime()
+        return dateB - dateA // Descending order
+      })
+    }
+
+    return entries
+  } catch (error) {
+    console.error("Error fetching entries:", error)
+    throw error
+  }
+}
+
+/**
+ * Update an existing entry
+ */
+export async function updateEntry(
+  entryId: string,
+  updates: Partial<Omit<EntryDocument, "id" | "userId" | "createdAt">>
+): Promise<void> {
+  try {
+    const entryRef = doc(db, "entries", entryId)
+    
+    // Convert date string to Timestamp if provided
+    const updateData: any = { ...updates }
+    if (updates.date && typeof updates.date === "string") {
+      updateData.date = Timestamp.fromDate(new Date(updates.date))
+    }
+    
+    await updateDoc(entryRef, {
+      ...updateData,
+      updatedAt: serverTimestamp(),
+    })
+  } catch (error) {
+    console.error("Error updating entry:", error)
+    throw error
+  }
+}
+
+/**
+ * Delete an entry
+ */
+export async function deleteEntry(entryId: string): Promise<void> {
+  try {
+    const entryRef = doc(db, "entries", entryId)
+    await deleteDoc(entryRef)
+  } catch (error) {
+    console.error("Error deleting entry:", error)
+    throw error
+  }
+}
+
+/**
+ * Get a single entry by ID
+ */
+export async function getEntry(entryId: string): Promise<EntryDocument | null> {
+  try {
+    const entryRef = doc(db, "entries", entryId)
+    const docSnap = await getDoc(entryRef)
+
+    if (docSnap.exists()) {
+      return {
+        id: docSnap.id,
+        ...(docSnap.data() as Omit<EntryDocument, "id">),
+      } as EntryDocument
+    }
+
+    return null
+  } catch (error) {
+    console.error("Error fetching entry:", error)
+    throw error
+  }
+}
+

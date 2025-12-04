@@ -12,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { formatCurrency, formatAmount } from "@/lib/currency-utils"
+import { formatDate, formatDateCompact } from "@/lib/date-utils"
 
 interface Entry {
   id: string
@@ -20,6 +22,7 @@ interface Entry {
   category: string
   date: string
   type: "income" | "expense"
+  notes?: string
 }
 
 interface TransactionsTableProps {
@@ -45,29 +48,6 @@ export function TransactionsTable({
   onEdit,
   onDelete,
 }: TransactionsTableProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
-  }
-
-  const formatDateCompact = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    })
-  }
 
   return (
     <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10">
@@ -104,7 +84,14 @@ export function TransactionsTable({
                 {transactions.map((transaction) => (
                   <TableRow key={transaction.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium py-4">
-                      {transaction.description}
+                      <div>
+                        {transaction.description}
+                        {transaction.notes && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {transaction.notes}
+                          </p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <Badge
@@ -126,7 +113,7 @@ export function TransactionsTable({
                       }`}
                     >
                       {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(Math.abs(transaction.amount))}
+                      {formatCurrency(Math.abs(transaction.amount), { currency: "EUR" })}
                     </TableCell>
                     <TableCell className="text-right py-4">
                       <div className="flex justify-end gap-2">

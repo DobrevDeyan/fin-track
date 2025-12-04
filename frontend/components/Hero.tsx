@@ -30,7 +30,7 @@ export const Hero = () => {
         </main>
 
         <p className="text-xl text-muted-foreground md:w-10/12 mx-auto lg:mx-0">
-          Track your expenses, manage your budget, and gain insights into your spending with AI-powered categorization.
+          Track your expenses, manage your budget, and gain insights into your spending with manual entry tracking.
         </p>
 
         <div className="space-y-4 md:space-y-0 md:space-x-4 md:flex md:flex-row">

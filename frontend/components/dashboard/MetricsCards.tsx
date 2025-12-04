@@ -2,12 +2,17 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react"
+import { formatCurrency } from "@/lib/currency-utils"
 
 interface MetricsCardsProps {
   totalBalance: number
   totalIncome: number
   totalExpenses: number
   savings: number
+  balanceChange: { change: string; trend: "up" | "down" | "neutral" }
+  incomeChange: { change: string; trend: "up" | "down" | "neutral" }
+  expensesChange: { change: string; trend: "up" | "down" | "neutral" }
+  savingsChange: { change: string; trend: "up" | "down" | "neutral" }
 }
 
 export function MetricsCards({
@@ -15,46 +20,43 @@ export function MetricsCards({
   totalIncome,
   totalExpenses,
   savings,
+  balanceChange,
+  incomeChange,
+  expensesChange,
+  savingsChange,
 }: MetricsCardsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
-
   const metrics = [
     {
       title: "Total Balance",
-      value: formatCurrency(totalBalance),
+      value: formatCurrency(totalBalance, { currency: "EUR" }),
       icon: Wallet,
       gradient: "from-[#F596D3] to-[#D247BF]",
-      change: "+12.5%",
-      trend: "up",
+      change: balanceChange.change,
+      trend: balanceChange.trend,
     },
     {
       title: "Total Income",
-      value: formatCurrency(totalIncome),
+      value: formatCurrency(totalIncome, { currency: "EUR" }),
       icon: TrendingUp,
       gradient: "from-[#61DAFB] via-[#1fc0f1] to-[#03a3d7]",
-      change: "+8.2%",
-      trend: "up",
+      change: incomeChange.change,
+      trend: incomeChange.trend,
     },
     {
       title: "Total Expenses",
-      value: formatCurrency(totalExpenses),
+      value: formatCurrency(totalExpenses, { currency: "EUR" }),
       icon: TrendingDown,
       gradient: "from-[#FF6B6B] to-[#EE5A6F]",
-      change: "-3.1%",
-      trend: "down",
+      change: expensesChange.change,
+      trend: expensesChange.trend,
     },
     {
       title: "Savings",
-      value: formatCurrency(savings),
+      value: formatCurrency(savings, { currency: "EUR" }),
       icon: PiggyBank,
       gradient: "from-[#4ECDC4] to-[#44A08D]",
-      change: "+15.3%",
-      trend: "up",
+      change: savingsChange.change,
+      trend: savingsChange.trend,
     },
   ]
 
@@ -82,7 +84,9 @@ export function MetricsCards({
                 className={`text-xs mt-1 ${
                   metric.trend === "up"
                     ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
+                    : metric.trend === "down"
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-muted-foreground"
                 }`}
               >
                 {metric.change} from last month
