@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#F596D3",
+  themeColor: "#3B82F6",
 }
 
 export default function RootLayout({
@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#F596D3" />
+        <meta name="theme-color" content="#3B82F6" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

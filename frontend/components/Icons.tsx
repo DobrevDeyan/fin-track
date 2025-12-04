@@ -4,21 +4,47 @@ export const LogoIcon = () => {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-panels-top-left mr-2 w-6 h-6"
+      className="mr-2 w-6 h-6"
     >
+      {/* Modern wallet/money icon with gradient */}
+      <defs>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3B82F6" />
+          <stop offset="100%" stopColor="#1E40AF" />
+        </linearGradient>
+      </defs>
       <rect
-        width="18"
-        height="18"
-        x="3"
-        y="3"
-        rx="2"
+        width="20"
+        height="16"
+        x="2"
+        y="4"
+        rx="3"
+        fill="url(#logoGradient)"
+        className="dark:opacity-90"
       />
-      <path d="M3 9h18" />
-      <path d="M9 21V9" />
+      <rect
+        width="12"
+        height="8"
+        x="6"
+        y="8"
+        rx="1.5"
+        fill="white"
+        fillOpacity="0.2"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="2"
+        fill="white"
+        fillOpacity="0.9"
+      />
+      <path
+        d="M18 10h2M18 14h2"
+        stroke="white"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeOpacity="0.8"
+      />
     </svg>
   );
 };

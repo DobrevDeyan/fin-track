@@ -129,13 +129,15 @@ export const Navbar = () => {
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-slate-700 dark:bg-background">
       <NavigationMenu className="mx-auto">
         <NavigationMenuList className="container h-14 px-4 w-screen flex justify-between ">
-          <NavigationMenuItem className="font-bold flex">
+          <NavigationMenuItem className="flex">
             <Link
               href="/"
-              className="ml-2 font-bold text-xl flex"
+              className="ml-2 font-semibold text-xl tracking-tight flex items-center gap-2"
             >
               <LogoIcon />
-              FinTrack
+              <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] bg-clip-text text-transparent">
+                FinTrack
+              </span>
             </Link>
           </NavigationMenuItem>
 
@@ -158,8 +160,10 @@ export const Navbar = () => {
 
               <SheetContent side={"left"}>
                 <SheetHeader>
-                  <SheetTitle className="font-bold text-xl">
-                    FinTrack
+                  <SheetTitle className="font-semibold text-xl">
+                    <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] bg-clip-text text-transparent">
+                      FinTrack
+                    </span>
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col justify-center items-center gap-2 mt-4">
