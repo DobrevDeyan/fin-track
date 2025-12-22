@@ -9,6 +9,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   doc,
   query,
   where,
@@ -159,10 +160,60 @@ export async function updateEntry(
       updateData.date = Timestamp.fromDate(new Date(updates.date))
     }
     
-    await updateDoc(entryRef, {
-      ...updateData,
+    // Build update object, filtering out undefined values
+    // Firestore doesn't allow undefined values in updateDoc()
+    const cleanUpdateData: any = {
       updatedAt: serverTimestamp(),
-    })
+    }
+    
+    // Only include defined fields
+    if (updateData.type !== undefined) {
+      cleanUpdateData.type = updateData.type
+    }
+    if (updateData.amount !== undefined) {
+      cleanUpdateData.amount = updateData.amount
+    }
+    if (updateData.currency !== undefined) {
+      cleanUpdateData.currency = updateData.currency
+    }
+    if (updateData.description !== undefined) {
+      cleanUpdateData.description = updateData.description
+    }
+    if (updateData.category !== undefined) {
+      cleanUpdateData.category = updateData.category
+    }
+    if (updateData.date !== undefined) {
+      cleanUpdateData.date = updateData.date
+    }
+    if (updateData.categoryId !== undefined) {
+      cleanUpdateData.categoryId = updateData.categoryId
+    }
+    if (updateData.tags !== undefined) {
+      cleanUpdateData.tags = updateData.tags
+    }
+    // Handle notes: only include if defined and not empty string
+    if (updateData.notes !== undefined) {
+      if (updateData.notes === "" || updateData.notes === null) {
+        // Use deleteField() to remove the field if it's empty
+        cleanUpdateData.notes = deleteField()
+      } else {
+        cleanUpdateData.notes = updateData.notes
+      }
+    }
+    if (updateData.location !== undefined) {
+      cleanUpdateData.location = updateData.location
+    }
+    if (updateData.receiptUrl !== undefined) {
+      cleanUpdateData.receiptUrl = updateData.receiptUrl
+    }
+    if (updateData.recurring !== undefined) {
+      cleanUpdateData.recurring = updateData.recurring
+    }
+    if (updateData.recurringId !== undefined) {
+      cleanUpdateData.recurringId = updateData.recurringId
+    }
+    
+    await updateDoc(entryRef, cleanUpdateData)
   } catch (error) {
     console.error("Error updating entry:", error)
     throw error

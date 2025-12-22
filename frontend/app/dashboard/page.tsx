@@ -82,6 +82,7 @@ function DashboardContent() {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const salaryReminderShown = useRef(false)
+  const budgetReminderShown = useRef(false)
   const hasLoadedRef = useRef(false)
   
   // Budget state
@@ -171,9 +172,17 @@ function DashboardContent() {
     }
   }
 
-  // Check for salary reminder (28th to 5th of next month)
+  // Check for salary reminder (1st-5th of current month, or 28th-31st for next month)
   useEffect(() => {
-    if (!user || loading || entriesLoading || salaryReminderShown.current) return
+    if (!user || loading || entriesLoading || salaryReminderShown.current) {
+      console.log("[Salary Reminder] Skipping check:", {
+        user: !!user,
+        loading,
+        entriesLoading,
+        alreadyShown: salaryReminderShown.current
+      })
+      return
+    }
 
     const checkSalaryReminder = () => {
       const today = new Date()
@@ -181,30 +190,52 @@ function DashboardContent() {
       const currentMonth = today.getMonth()
       const currentYear = today.getFullYear()
 
-      // Check if we're between 28th of current month and 5th of next month
+      console.log("[Salary Reminder] Checking reminder:", {
+        currentDay,
+        currentMonth: currentMonth + 1, // 0-indexed to 1-indexed
+        currentYear,
+        entriesCount: entries.length
+      })
+
+      // Check if we're in a reminder period
+      // 1st-5th: remind about CURRENT month (to set up budget early)
+      // 28th-31st: remind about NEXT month (to prepare for upcoming month)
       const isReminderPeriod = currentDay >= 28 || currentDay <= 5
 
-      if (!isReminderPeriod) return
+      if (!isReminderPeriod) {
+        console.log("[Salary Reminder] Not in reminder period (day must be 1-5 or 28-31)")
+        return
+      }
 
       // Determine which month to check for salary
-      // If it's 28th-31st, check current month
-      // If it's 1st-5th, check previous month
       let monthToCheck = currentMonth
       let yearToCheck = currentYear
 
       if (currentDay <= 5) {
-        // Check previous month
-        const prev = getPreviousMonth(currentMonth, currentYear)
-        monthToCheck = prev.month
-        yearToCheck = prev.year
+        // Early in month: remind about CURRENT month
+        monthToCheck = currentMonth
+        yearToCheck = currentYear
+        console.log("[Salary Reminder] Early in month - checking CURRENT month:", {
+          month: monthToCheck + 1,
+          year: yearToCheck
+        })
+      } else if (currentDay >= 28) {
+        // Late in month: remind about NEXT month
+        const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1
+        const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear
+        monthToCheck = nextMonth
+        yearToCheck = nextYear
+        console.log("[Salary Reminder] Late in month - checking NEXT month:", {
+          month: monthToCheck + 1,
+          year: yearToCheck
+        })
       }
 
       // Check if user has a salary entry for the month we're checking
-      const hasSalaryEntry = entries.some((entry) => {
+      const salaryEntries = entries.filter((entry) => {
         if (entry.type !== "income" || entry.category.toLowerCase() !== "salary") {
           return false
         }
-
         const entryDate = new Date(entry.date)
         return (
           entryDate.getMonth() === monthToCheck &&
@@ -212,14 +243,32 @@ function DashboardContent() {
         )
       })
 
+      const hasSalaryEntry = salaryEntries.length > 0
+
+      console.log("[Salary Reminder] Salary check result:", {
+        monthToCheck: monthToCheck + 1,
+        yearToCheck,
+        hasSalaryEntry,
+        salaryEntriesFound: salaryEntries.length,
+        salaryEntries: salaryEntries.map(e => ({
+          id: e.id,
+          description: e.description,
+          amount: e.amount,
+          date: e.date
+        }))
+      })
+
       // Show reminder if no salary entry found (only once per session)
       if (!hasSalaryEntry && !salaryReminderShown.current) {
         const monthName = getMonthName(new Date(yearToCheck, monthToCheck))
+        console.log("[Salary Reminder] Showing reminder for:", monthName)
         setToast({
           message: `💼 Reminder: Please enter your ${monthName} salary to track your monthly budget!`,
           type: "success",
         })
         salaryReminderShown.current = true
+      } else if (hasSalaryEntry) {
+        console.log("[Salary Reminder] Salary entry found - no reminder needed")
       }
     }
 

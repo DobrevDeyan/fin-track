@@ -116,18 +116,27 @@ export function TransactionsTable({
                       {formatCurrency(Math.abs(transaction.amount), { currency: "EUR" })}
                     </TableCell>
                     <TableCell className="text-right py-4">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-3">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => onEdit(transaction.id)}
+                          className="hover:bg-primary/10"
+                          title="Edit entry"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDelete(transaction.id)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (window.confirm(`Are you sure you want to delete "${transaction.description}"? This action cannot be undone.`)) {
+                              onDelete(transaction.id)
+                            }
+                          }}
+                          className="hover:bg-destructive/10 hover:text-destructive"
+                          title="Delete entry"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
