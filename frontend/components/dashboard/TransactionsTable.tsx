@@ -63,7 +63,7 @@ export function TransactionsTable({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-4 sm:px-6">
+      <CardContent className="px-2 sm:px-4 md:px-6">
         {transactions.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             No entries yet. Add your first entry to get started!
@@ -73,17 +73,17 @@ export function TransactionsTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="py-4">Description</TableHead>
-                  <TableHead className="py-4">Category</TableHead>
-                  <TableHead className="py-4">Date</TableHead>
-                  <TableHead className="text-right py-4">Amount</TableHead>
-                  <TableHead className="text-right py-4">Actions</TableHead>
+                  <TableHead className="py-2 sm:py-4">Description</TableHead>
+                  <TableHead className="py-2 sm:py-4">Category</TableHead>
+                  <TableHead className="py-2 sm:py-4">Date</TableHead>
+                  <TableHead className="text-right py-2 sm:py-4 min-w-[120px] sm:min-w-[140px]">Amount</TableHead>
+                  <TableHead className="text-right py-2 sm:py-4">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.map((transaction) => (
                   <TableRow key={transaction.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium py-4">
+                    <TableCell className="font-medium py-2 sm:py-4">
                       <div>
                         {transaction.description}
                         {transaction.notes && (
@@ -93,7 +93,7 @@ export function TransactionsTable({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className="py-2 sm:py-4">
                       <Badge
                         variant="secondary"
                         className={categoryColors[transaction.category] || categoryColors.Other}
@@ -101,21 +101,23 @@ export function TransactionsTable({
                         {transaction.category}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground py-4 whitespace-nowrap min-w-[110px]">
+                    <TableCell className="text-muted-foreground py-2 sm:py-4 whitespace-nowrap min-w-[110px]">
                       <span className="hidden sm:inline">{formatDate(transaction.date)}</span>
                       <span className="sm:hidden">{formatDateCompact(transaction.date)}</span>
                     </TableCell>
                     <TableCell
-                      className={`text-right font-semibold py-4 ${
+                      className={`text-right font-semibold p-2 sm:p-4 min-h-[2.5rem] sm:min-h-0 min-w-[120px] sm:min-w-[140px] ${
                         transaction.type === "income"
                           ? "text-green-600 dark:text-green-400"
                           : "text-red-600 dark:text-red-400"
                       }`}
                     >
-                      {transaction.type === "income" ? "+" : "-"}
-                      {formatCurrency(Math.abs(transaction.amount), { currency: "EUR" })}
+                      <span className="inline-block leading-loose align-middle py-0.5">
+                        {transaction.type === "income" ? "+" : "-"}
+                        {formatCurrency(Math.abs(transaction.amount), { currency: "EUR" })}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-right py-4">
+                    <TableCell className="text-right py-2 sm:py-4">
                       <div className="flex justify-end gap-3">
                         <Button
                           variant="ghost"

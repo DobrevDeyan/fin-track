@@ -120,27 +120,28 @@ export function TransactionFilters({
   return (
     <Card className="mb-6">
       <CardHeader className="pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <CardTitle className="text-lg">Filter & Search Transactions</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {onExport && (
-              <Button variant="outline" size="sm" onClick={onExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
+              <Button variant="outline" size="sm" onClick={onExport} className="flex-shrink-0">
+                <Download className="h-4 w-4 mr-1.5 sm:mr-2" />
+                <span className="text-xs sm:text-sm">Export CSV</span>
               </Button>
             )}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
+              className="flex-shrink-0"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {showFilters ? "Hide" : "Show"} Filters
+              <Filter className="h-4 w-4 mr-1.5 sm:mr-2" />
+              <span className="text-xs sm:text-sm">{showFilters ? "Hide" : "Show"} Filters</span>
             </Button>
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-2" />
-                Clear
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="flex-shrink-0">
+                <X className="h-4 w-4 mr-1.5 sm:mr-2" />
+                <span className="text-xs sm:text-sm">Clear</span>
               </Button>
             )}
           </div>

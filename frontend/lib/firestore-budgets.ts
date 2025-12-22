@@ -257,10 +257,42 @@ export async function updateBudget(
       updateData.endDate = Timestamp.fromDate(new Date(updates.endDate))
     }
     
-    await updateDoc(budgetRef, {
-      ...updateData,
+    // Build update object, filtering out undefined values
+    // Firestore doesn't allow undefined values in updateDoc()
+    const cleanUpdateData: any = {
       updatedAt: serverTimestamp(),
-    })
+    }
+    
+    // Only include defined fields
+    if (updateData.name !== undefined) {
+      cleanUpdateData.name = updateData.name
+    }
+    if (updateData.category !== undefined) {
+      cleanUpdateData.category = updateData.category
+    }
+    if (updateData.amount !== undefined) {
+      cleanUpdateData.amount = updateData.amount
+    }
+    if (updateData.currency !== undefined) {
+      cleanUpdateData.currency = updateData.currency
+    }
+    if (updateData.period !== undefined) {
+      cleanUpdateData.period = updateData.period
+    }
+    if (updateData.startDate !== undefined) {
+      cleanUpdateData.startDate = updateData.startDate
+    }
+    if (updateData.endDate !== undefined) {
+      cleanUpdateData.endDate = updateData.endDate
+    }
+    if (updateData.isActive !== undefined) {
+      cleanUpdateData.isActive = updateData.isActive
+    }
+    if (updateData.alertThreshold !== undefined) {
+      cleanUpdateData.alertThreshold = updateData.alertThreshold
+    }
+    
+    await updateDoc(budgetRef, cleanUpdateData)
   } catch (error) {
     console.error("Error updating budget:", error)
     throw error

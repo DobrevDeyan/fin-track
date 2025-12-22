@@ -23,8 +23,8 @@ export function Toast({ message, type = "success", onClose, duration = 3000 }: T
   return (
     <div
       className={cn(
-        "fixed top-16 left-4 right-4 z-50 flex items-start gap-3 p-3 rounded-lg shadow-lg border-2 animate-in slide-in-from-top-5",
-        "sm:top-20 sm:left-auto sm:right-6 sm:max-w-md sm:p-4",
+        "fixed top-4 right-4 z-50 flex items-start gap-3 p-3 rounded-lg shadow-lg border-2 animate-in slide-in-from-top-5",
+        "sm:top-6 sm:right-6 sm:max-w-md sm:p-4",
         type === "success"
           ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200"
           : "bg-destructive/10 border-destructive/20 text-destructive"
