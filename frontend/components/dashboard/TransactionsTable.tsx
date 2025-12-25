@@ -33,13 +33,13 @@ interface TransactionsTableProps {
 }
 
 const categoryColors: Record<string, string> = {
-  "Food & Dining": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  "Shopping": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  "Transportation": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  "Bills & Utilities": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  "Entertainment": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-  "Salary": "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-  "Other": "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+  "Food & Dining": "bg-red-100 text-red-800",
+  "Shopping": "bg-blue-100 text-blue-800",
+  "Transportation": "bg-green-100 text-green-800",
+  "Bills & Utilities": "bg-yellow-100 text-yellow-800",
+  "Entertainment": "bg-purple-100 text-purple-800",
+  "Salary": "bg-emerald-100 text-emerald-800",
+  "Other": "bg-gray-100 text-gray-800",
 }
 
 export function TransactionsTable({
@@ -50,7 +50,7 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
 
   return (
-    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10">
+    <Card className="drop-shadow-xl shadow-black/10">
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -108,8 +108,8 @@ export function TransactionsTable({
                     <TableCell
                       className={`text-right font-semibold p-2 sm:p-4 min-h-[2.5rem] sm:min-h-0 min-w-[120px] sm:min-w-[140px] ${
                         transaction.type === "income"
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
+                          ? "text-green-600"
+                          : "text-red-600"
                       }`}
                     >
                       <span className="inline-block leading-loose align-middle py-0.5">

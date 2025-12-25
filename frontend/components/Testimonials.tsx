@@ -28,7 +28,7 @@ export const Testimonials = () => {
   return (
     <section id="testimonials" className="container py-24 sm:py-32">
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-        What Our <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">Users</span> Say
+        What Our <span className="text-foreground">Users</span> Say
       </h2>
       <div className="grid md:grid-cols-3 gap-8">
         {testimonials.map((testimonial) => (

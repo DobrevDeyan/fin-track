@@ -25,8 +25,8 @@ export function QuickExpenseFAB({ onSubmit }: QuickExpenseFABProps) {
         onClick={() => setIsOpen(true)}
         className={cn(
           "fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl",
-          "bg-gradient-to-r from-[#F596D3] to-[#D247BF]",
-          "hover:from-[#D247BF] hover:to-[#F596D3]",
+          "bg-black",
+          "hover:bg-gray-900",
           "border-0",
           "z-50",
           "transition-all duration-300",
@@ -38,9 +38,8 @@ export function QuickExpenseFAB({ onSubmit }: QuickExpenseFABProps) {
         aria-label="Add quick expense"
       >
         <Plus 
-          className="h-8 w-8 md:h-10 md:w-10" 
+          className="h-8 w-8 md:h-10 md:w-10 text-white" 
           strokeWidth={3}
-          stroke="white"
           fill="none"
         />
       </button>

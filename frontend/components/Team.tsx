@@ -4,7 +4,7 @@ export const Team = () => {
   return (
     <section id="team" className="container py-24 sm:py-32">
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-        Our <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">Team</span>
+        Our <span className="text-foreground">Team</span>
       </h2>
       <div className="grid md:grid-cols-3 gap-8">
         {["Alex Chen", "Sarah Johnson", "Mike Davis"].map((name) => (

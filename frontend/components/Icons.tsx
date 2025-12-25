@@ -20,7 +20,6 @@ export const LogoIcon = () => {
         y="4"
         rx="3"
         fill="url(#logoGradient)"
-        className="dark:opacity-90"
       />
       <rect
         width="12"

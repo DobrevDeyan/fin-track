@@ -18,8 +18,7 @@ import {
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { buttonVariants } from "./ui/button";
 import { Button } from "./ui/button";
-import { Menu, LogOut, User } from "lucide-react";
-import { ModeToggle } from "./mode-toggle";
+import { Menu, LogOut, User, ChevronRight } from "lucide-react";
 import { LogoIcon } from "./Icons";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -126,7 +125,7 @@ export const Navbar = () => {
   }, []);
 
   return (
-    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white dark:border-b-slate-700 dark:bg-background">
+    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white border-gray-200">
       <NavigationMenu className="mx-auto">
         <NavigationMenuList className="container h-14 px-4 w-screen flex justify-between ">
           <NavigationMenuItem className="flex">
@@ -135,7 +134,7 @@ export const Navbar = () => {
               className="ml-2 font-semibold text-xl tracking-tight flex items-center gap-2"
             >
               <LogoIcon />
-              <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] bg-clip-text text-transparent">
+              <span className="text-foreground">
                 FinTrack
               </span>
             </Link>
@@ -143,8 +142,6 @@ export const Navbar = () => {
 
           {/* mobile */}
           <span className="flex md:hidden">
-            <ModeToggle />
-
             <Sheet
               open={isOpen}
               onOpenChange={setIsOpen}
@@ -161,7 +158,7 @@ export const Navbar = () => {
               <SheetContent side={"left"}>
                 <SheetHeader>
                   <SheetTitle className="font-semibold text-xl">
-                    <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] bg-clip-text text-transparent">
+                    <span className="text-foreground">
                       FinTrack
                     </span>
                   </SheetTitle>
@@ -194,7 +191,7 @@ export const Navbar = () => {
                             onClick={handleLogout}
                             className="w-full"
                           >
-                            <LogOut className="mr-2 h-4 w-4" />
+                            <ChevronRight className="mr-2 h-4 w-4" />
                             Logout
                           </Button>
                         </>
@@ -244,7 +241,7 @@ export const Navbar = () => {
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || "User"} />
-                            <AvatarFallback className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-white">
+                            <AvatarFallback className="bg-black text-white">
                               {getUserInitials(user)}
                             </AvatarFallback>
                           </Avatar>
@@ -269,7 +266,7 @@ export const Navbar = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 dark:text-red-400">
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           <span>Log out</span>
                         </DropdownMenuItem>
@@ -283,7 +280,6 @@ export const Navbar = () => {
                 )}
               </>
             )}
-            <ModeToggle />
           </div>
         </NavigationMenuList>
       </NavigationMenu>

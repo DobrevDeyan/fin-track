@@ -13,7 +13,7 @@ export const HowItWorks = () => {
   return (
     <section id="how-it-works" className="container py-24 sm:py-32">
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-        How It <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">Works</span>
+        How It <span className="text-foreground">Works</span>
       </h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         {steps.map((step) => (

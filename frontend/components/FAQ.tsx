@@ -30,7 +30,7 @@ export const FAQ = () => {
   return (
     <section id="faq" className="container py-24 sm:py-32">
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-        Frequently Asked <span className="bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">Questions</span>
+        Frequently Asked <span className="text-foreground">Questions</span>
       </h2>
       <div className="max-w-3xl mx-auto">
         <Accordion type="single" collapsible className="w-full">

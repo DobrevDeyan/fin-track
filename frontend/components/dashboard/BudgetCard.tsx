@@ -110,23 +110,23 @@ export function BudgetCard({ budget, spent, onEdit, onDelete }: BudgetCardProps)
 
           {/* Status Indicator */}
           {isOverBudget && (
-            <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-950/20 rounded-md">
+            <div className="flex items-center gap-2 p-2 bg-red-50 rounded-md">
               <AlertCircle className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-red-700 dark:text-red-400">Over budget!</span>
+              <span className="text-sm text-red-700">Over budget!</span>
             </div>
           )}
           {isNearThreshold && !isOverBudget && (
-            <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-950/20 rounded-md">
+            <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded-md">
               <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-700 dark:text-yellow-400">
+              <span className="text-sm text-yellow-700">
                 Approaching budget limit ({budget.alertThreshold}%)
               </span>
             </div>
           )}
           {!isOverBudget && !isNearThreshold && percentage < 50 && (
-            <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
+            <div className="flex items-center gap-2 p-2 bg-green-50 rounded-md">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-green-700 dark:text-green-400">On track</span>
+              <span className="text-sm text-green-700">On track</span>
             </div>
           )}
 

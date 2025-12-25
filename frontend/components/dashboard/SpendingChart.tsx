@@ -61,9 +61,9 @@ export function SpendingChart({ entries }: SpendingChartProps) {
     return last7Months
   }, [entries])
   return (
-    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10 w-full overflow-hidden">
+    <Card className="drop-shadow-xl shadow-black/10 w-full overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-xl font-bold bg-gradient-to-r from-[#F596D3] to-[#D247BF] text-transparent bg-clip-text">
+        <CardTitle className="text-xl font-bold text-foreground">
           Spending Overview
         </CardTitle>
         <CardDescription>Your spending trends over the last 7 months</CardDescription>

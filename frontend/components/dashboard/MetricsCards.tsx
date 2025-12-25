@@ -30,7 +30,7 @@ export function MetricsCards({
       title: "Total Balance",
       value: formatCurrency(totalBalance, { currency: "EUR" }),
       icon: Wallet,
-      gradient: "from-[#F596D3] to-[#D247BF]",
+      gradient: "from-black to-gray-800",
       change: balanceChange.change,
       trend: balanceChange.trend,
     },
@@ -38,7 +38,7 @@ export function MetricsCards({
       title: "Total Income",
       value: formatCurrency(totalIncome, { currency: "EUR" }),
       icon: TrendingUp,
-      gradient: "from-[#61DAFB] via-[#1fc0f1] to-[#03a3d7]",
+      gradient: "from-black to-gray-800",
       change: incomeChange.change,
       trend: incomeChange.trend,
     },
@@ -46,7 +46,7 @@ export function MetricsCards({
       title: "Total Expenses",
       value: formatCurrency(totalExpenses, { currency: "EUR" }),
       icon: TrendingDown,
-      gradient: "from-[#FF6B6B] to-[#EE5A6F]",
+      gradient: "from-black to-gray-800",
       change: expensesChange.change,
       trend: expensesChange.trend,
     },
@@ -54,7 +54,7 @@ export function MetricsCards({
       title: "Savings",
       value: formatCurrency(savings, { currency: "EUR" }),
       icon: PiggyBank,
-      gradient: "from-[#4ECDC4] to-[#44A08D]",
+      gradient: "from-black to-gray-800",
       change: savingsChange.change,
       trend: savingsChange.trend,
     },
@@ -67,7 +67,7 @@ export function MetricsCards({
         return (
           <Card
             key={metric.title}
-            className="relative overflow-hidden drop-shadow-xl shadow-black/10 dark:shadow-white/10"
+            className="relative overflow-hidden drop-shadow-xl shadow-black/10"
           >
             <div
               className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5`}
@@ -83,9 +83,9 @@ export function MetricsCards({
               <p
                 className={`text-xs mt-1 ${
                   metric.trend === "up"
-                    ? "text-green-600 dark:text-green-400"
+                    ? "text-green-600"
                     : metric.trend === "down"
-                    ? "text-red-600 dark:text-red-400"
+                    ? "text-red-600"
                     : "text-muted-foreground"
                 }`}
               >

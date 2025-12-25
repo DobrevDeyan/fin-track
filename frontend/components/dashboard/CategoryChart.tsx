@@ -74,9 +74,9 @@ export function CategoryChart({ entries }: CategoryChartProps) {
   const total = categoryData.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <Card className="drop-shadow-xl shadow-black/10 dark:shadow-white/10 w-full overflow-hidden">
+    <Card className="drop-shadow-xl shadow-black/10 w-full overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-xl font-bold bg-gradient-to-r from-[#61DAFB] via-[#1fc0f1] to-[#03a3d7] text-transparent bg-clip-text">
+        <CardTitle className="text-xl font-bold text-foreground">
           Spending by Category
         </CardTitle>
         <CardDescription>Breakdown of your expenses this month</CardDescription>
