@@ -1,5 +1,9 @@
 # PWA Icons
 
+## Icon Design
+
+The FinTrack app icon features a simple black square with white "FT" text, matching the MarkerKit minimalist design style.
+
 ## Generate Icons
 
 To generate the required PWA icons:
@@ -8,6 +12,14 @@ To generate the required PWA icons:
 2. Click "Generate All Icons" button
 3. All icon files will be downloaded automatically
 4. Move the downloaded PNG files to this `icons` folder
+
+### Alternative: Node.js Script
+
+If you have the `canvas` package installed:
+```bash
+npm install canvas
+node generate-icons.js
+```
 
 ## Required Icon Sizes
 

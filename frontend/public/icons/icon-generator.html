@@ -6,15 +6,16 @@
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
-      background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
-      color: white;
+      background: #ffffff;
+      color: #000000;
     }
     .container {
       max-width: 800px;
       margin: 0 auto;
-      background: rgba(255,255,255,0.1);
+      background: #f5f5f5;
       padding: 30px;
       border-radius: 10px;
+      border: 1px solid #e0e0e0;
     }
     canvas {
       background: white;
@@ -22,8 +23,8 @@
       margin: 20px 0;
     }
     button {
-      background: white;
-      color: #1E40AF;
+      background: #000000;
+      color: #ffffff;
       border: none;
       padding: 10px 20px;
       border-radius: 5px;
@@ -32,7 +33,7 @@
       margin: 5px;
     }
     button:hover {
-      background: #f0f0f0;
+      background: #333333;
     }
     .sizes {
       display: grid;
@@ -50,6 +51,7 @@
     <canvas id="iconCanvas" width="512" height="512"></canvas>
     
     <div class="sizes">
+      <button onclick="generateIcon(32)">32x32 (Favicon)</button>
       <button onclick="generateIcon(72)">72x72</button>
       <button onclick="generateIcon(96)">96x96</button>
       <button onclick="generateIcon(128)">128x128</button>
@@ -60,7 +62,7 @@
       <button onclick="generateIcon(512)">512x512</button>
     </div>
     
-    <button onclick="generateAllIcons()" style="background: #3B82F6; color: white; font-weight: bold; padding: 15px 30px;">
+    <button onclick="generateAllIcons()" style="background: #000000; color: white; font-weight: bold; padding: 15px 30px;">
       Generate All Icons
     </button>
   </div>
@@ -70,8 +72,8 @@
       // Clear canvas
       ctx.clearRect(0, 0, size, size);
       
-      // Background with rounded corners (simulated)
-      const radius = size * 0.23; // ~120px for 512px
+      // Black square background with slightly rounded corners (like MarkerKit)
+      const radius = size * 0.1; // ~51px for 512px - subtle rounding
       ctx.beginPath();
       ctx.moveTo(radius, 0);
       ctx.lineTo(size - radius, 0);
@@ -84,89 +86,18 @@
       ctx.quadraticCurveTo(0, 0, radius, 0);
       ctx.closePath();
       
-      // Background gradient (blue)
-      const gradient = ctx.createLinearGradient(0, 0, size, size);
-      gradient.addColorStop(0, '#3B82F6');
-      gradient.addColorStop(1, '#1E40AF');
-      ctx.fillStyle = gradient;
+      // Solid black background
+      ctx.fillStyle = '#000000';
       ctx.fill();
       
-      // Wallet/card shape
-      const cardX = size * 0.25;
-      const cardY = size * 0.375;
-      const cardW = size * 0.5;
-      const cardH = size * 0.25;
-      const cardRadius = size * 0.047; // ~24px for 512px
-      
-      ctx.beginPath();
-      ctx.moveTo(cardX + cardRadius, cardY);
-      ctx.lineTo(cardX + cardW - cardRadius, cardY);
-      ctx.quadraticCurveTo(cardX + cardW, cardY, cardX + cardW, cardY + cardRadius);
-      ctx.lineTo(cardX + cardW, cardY + cardH - cardRadius);
-      ctx.quadraticCurveTo(cardX + cardW, cardY + cardH, cardX + cardW - cardRadius, cardY + cardH);
-      ctx.lineTo(cardX + cardRadius, cardY + cardH);
-      ctx.quadraticCurveTo(cardX, cardY + cardH, cardX, cardY + cardH - cardRadius);
-      ctx.lineTo(cardX, cardY + cardRadius);
-      ctx.quadraticCurveTo(cardX, cardY, cardX + cardRadius, cardY);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.fill();
-      
-      // Inner card detail
-      const innerX = cardX + size * 0.0625;
-      const innerY = cardY + size * 0.0625;
-      const innerW = cardW * 0.75;
-      const innerH = cardH * 0.5;
-      const innerRadius = size * 0.023;
-      
-      ctx.beginPath();
-      ctx.moveTo(innerX + innerRadius, innerY);
-      ctx.lineTo(innerX + innerW - innerRadius, innerY);
-      ctx.quadraticCurveTo(innerX + innerW, innerY, innerX + innerW, innerY + innerRadius);
-      ctx.lineTo(innerX + innerW, innerY + innerH - innerRadius);
-      ctx.quadraticCurveTo(innerX + innerW, innerY + innerH, innerX + innerW - innerRadius, innerY + innerH);
-      ctx.lineTo(innerX + innerRadius, innerY + innerH);
-      ctx.quadraticCurveTo(innerX, innerY + innerH, innerX, innerY + innerH - innerRadius);
-      ctx.lineTo(innerX, innerY + innerRadius);
-      ctx.quadraticCurveTo(innerX, innerY, innerX + innerRadius, innerY);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.fill();
-      
-      // Center circle with FT
-      const centerX = size / 2;
-      const centerY = size / 2;
-      const circleRadius = size * 0.094; // ~48px for 512px
-      
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-      ctx.fill();
-      
-      // Draw "FT" text
-      ctx.fillStyle = '#1E40AF';
-      ctx.font = `bold ${size * 0.125}px Arial`; // ~64px for 512px
+      // Draw "FT" text in white, centered
+      ctx.fillStyle = '#FFFFFF';
+      // Use a bold, sans-serif font similar to MarkerKit
+      const fontSize = size * 0.35; // ~179px for 512px
+      ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('FT', centerX, centerY);
-      
-      // Accent lines on the right
-      const lineX = size * 0.75;
-      const lineY1 = size * 0.46875;
-      const lineY2 = size * 0.53125;
-      const lineLength = size * 0.09375;
-      
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.lineWidth = size * 0.03125; // ~16px for 512px
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(lineX, lineY1);
-      ctx.lineTo(lineX + lineLength, lineY1);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(lineX, lineY2);
-      ctx.lineTo(lineX + lineLength, lineY2);
-      ctx.stroke();
+      ctx.fillText('FT', size / 2, size / 2);
     }
     
     function generateIcon(size) {
@@ -191,7 +122,7 @@
     }
     
     function generateAllIcons() {
-      const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+      const sizes = [32, 72, 96, 128, 144, 152, 192, 384, 512];
       let index = 0;
       
       function generateNext() {
