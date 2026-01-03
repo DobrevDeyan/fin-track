@@ -25,13 +25,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/icons/icon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-96x96.png", sizes: "96x96", type: "image/png" },
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
-    shortcut: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-32x32.png",
   },
 }
 
@@ -52,18 +53,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
-        <link rel="shortcut icon" href="/icons/icon-192x192.png" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="theme-color" content="#000000" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="FinTrack" />
       </head>
       <body className={inter.className}>
         <ThemeProvider

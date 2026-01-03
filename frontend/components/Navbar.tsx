@@ -19,7 +19,7 @@ import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { buttonVariants } from "./ui/button";
 import { Button } from "./ui/button";
 import { Menu, LogOut, User, ChevronRight } from "lucide-react";
-import { LogoIcon } from "./Icons";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -133,7 +133,14 @@ export const Navbar = () => {
               href="/"
               className="ml-2 font-semibold text-xl tracking-tight flex items-center gap-2"
             >
-              <LogoIcon />
+              <Image
+                src="/icons/icon-32x32.png"
+                alt="FinTrack Logo"
+                width={32}
+                height={32}
+                className="w-6 h-6"
+                priority
+              />
               <span className="text-foreground">
                 FinTrack
               </span>

@@ -15,6 +15,9 @@ export function RegisterSW() {
           .then((registration) => {
             console.log("Service Worker registered:", registration)
             
+            // Force immediate update check on registration
+            registration.update()
+            
             // Check for updates periodically
             registration.addEventListener("updatefound", () => {
               const newWorker = registration.installing
@@ -29,10 +32,10 @@ export function RegisterSW() {
               }
             })
             
-            // Check for updates every hour
+            // Check for updates every 5 minutes (more frequent for icon updates)
             setInterval(() => {
               registration.update()
-            }, 60 * 60 * 1000)
+            }, 5 * 60 * 1000)
           })
           .catch((error) => {
             console.log("Service Worker registration failed:", error)

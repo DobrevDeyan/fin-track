@@ -1,6 +1,6 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
-const CACHE_NAME = 'fintrack-v4';
+const CACHE_NAME = 'fintrack-v5';
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Install event - cache static assets only
@@ -59,19 +59,26 @@ self.addEventListener('fetch', (event) => {
   }
   
   // For icons and manifest, always fetch from network first to get latest version
+  // Never use cache for these to ensure users get the latest icons
   if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json') {
     event.respondWith(
-      fetch(request).then((response) => {
-        // Cache the new version
+      fetch(request, {
+        cache: 'no-store', // Force network fetch, never use cache
+      }).then((response) => {
+        // Only cache if it's a successful response
         if (response && response.status === 200) {
           const responseToCache = response.clone();
+          // Delete old cached version first
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
+            cache.delete(request).then(() => {
+              // Then cache the new version
+              cache.put(request, responseToCache);
+            });
           });
         }
         return response;
       }).catch(() => {
-        // Fallback to cache if network fails
+        // If network fails, try cache as last resort
         return caches.match(request);
       })
     );
@@ -120,6 +127,22 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Also delete all icon caches to force refresh
+      return caches.open(CACHE_NAME).then((cache) => {
+        return cache.keys().then((keys) => {
+          return Promise.all(
+            keys.map((key) => {
+              const url = new URL(key.url);
+              // Delete all icon and manifest entries to force fresh fetch
+              if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json') {
+                console.log('Deleting cached icon/manifest:', url.pathname);
+                return cache.delete(key);
+              }
+            })
+          );
+        });
+      });
     }).then(() => {
       // Claim all clients immediately to activate the new service worker
       return self.clients.claim();
