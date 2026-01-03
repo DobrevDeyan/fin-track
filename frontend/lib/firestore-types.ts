@@ -74,7 +74,7 @@ export interface BudgetDocument {
   updatedAt: Timestamp
 }
 
-// Recurring Entry Document (Future)
+// Recurring Entry Document
 export interface RecurringEntryDocument {
   userId: string
   name: string
@@ -83,6 +83,21 @@ export interface RecurringEntryDocument {
   category: string
   frequency: "weekly" | "monthly" | "yearly"
   nextDate: Timestamp
+  isActive: boolean
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// Financial Goal Document
+export interface GoalDocument {
+  userId: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  currency: string
+  deadline?: Timestamp
+  category?: string
+  description?: string
   isActive: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -127,5 +142,13 @@ export type CreateBudgetInput = Omit<
   "userId" | "createdAt" | "updatedAt"
 > & {
   userId: string
+}
+
+export type CreateGoalInput = Omit<
+  GoalDocument,
+  "userId" | "createdAt" | "updatedAt"
+> & {
+  userId: string
+  deadline?: string | Date | Timestamp
 }
 

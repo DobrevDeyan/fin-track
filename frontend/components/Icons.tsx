@@ -6,44 +6,24 @@ export const LogoIcon = () => {
       fill="none"
       className="mr-2 w-6 h-6"
     >
-      {/* Modern wallet/money icon with gradient */}
-      <defs>
-        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#1E40AF" />
-        </linearGradient>
-      </defs>
+      {/* Black square with white FT text - matching favicon */}
       <rect
-        width="20"
-        height="16"
-        x="2"
-        y="4"
-        rx="3"
-        fill="url(#logoGradient)"
+        width="24"
+        height="24"
+        rx="2.4"
+        fill="#000000"
       />
-      <rect
-        width="12"
-        height="8"
-        x="6"
-        y="8"
-        rx="1.5"
-        fill="white"
-        fillOpacity="0.2"
-      />
-      <circle
-        cx="12"
-        cy="12"
-        r="2"
-        fill="white"
-        fillOpacity="0.9"
-      />
-      <path
-        d="M18 10h2M18 14h2"
-        stroke="white"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeOpacity="0.8"
-      />
+      <text
+        x="12"
+        y="16"
+        fontSize="12"
+        fontWeight="bold"
+        fill="#FFFFFF"
+        textAnchor="middle"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+      >
+        FT
+      </text>
     </svg>
   );
 };

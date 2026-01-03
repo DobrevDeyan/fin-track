@@ -13,6 +13,10 @@ import { TransactionFilters } from "@/components/dashboard/TransactionFilters"
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification"
 import { BudgetList } from "@/components/dashboard/BudgetList"
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog"
+import { RecurringTransactionList } from "@/components/dashboard/RecurringTransactionList"
+import { RecurringTransactionDialog } from "@/components/dashboard/RecurringTransactionDialog"
+import { GoalList } from "@/components/dashboard/GoalList"
+import { GoalDialog } from "@/components/dashboard/GoalDialog"
 import { Navbar } from "@/components/Navbar"
 
 // Lazy load charts (Recharts is ~200KB) - only load when needed
@@ -39,6 +43,19 @@ import {
   deleteBudget,
   updateBudget,
 } from "@/lib/firestore-budgets"
+import {
+  createRecurringTransaction,
+  getUserRecurringTransactions,
+  deleteRecurringTransaction,
+  updateRecurringTransaction,
+  calculateNextDate,
+} from "@/lib/firestore-recurring"
+import {
+  createGoal,
+  getUserGoals,
+  deleteGoal,
+  updateGoal,
+} from "@/lib/firestore-goals"
 import { Timestamp } from "firebase/firestore"
 import { Toast } from "@/components/ui/toast"
 import { exportEntriesToCSV } from "@/lib/export-utils"
@@ -91,6 +108,26 @@ function DashboardContent() {
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
 
+  // Recurring transactions state
+  const [recurringTransactions, setRecurringTransactions] = useState<
+    (import("@/lib/firestore-types").RecurringEntryDocument & { id: string })[]
+  >([])
+  const [recurringLoading, setRecurringLoading] = useState(true)
+  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false)
+  const [editingRecurring, setEditingRecurring] = useState<
+    (import("@/lib/firestore-types").RecurringEntryDocument & { id: string }) | null
+  >(null)
+
+  // Goals state
+  const [goals, setGoals] = useState<
+    (import("@/lib/firestore-types").GoalDocument & { id: string })[]
+  >([])
+  const [goalsLoading, setGoalsLoading] = useState(true)
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false)
+  const [editingGoal, setEditingGoal] = useState<
+    (import("@/lib/firestore-types").GoalDocument & { id: string }) | null
+  >(null)
+
   // Load entries from Firestore - ensure it runs on mount and when auth state is ready
   useEffect(() => {
     // Always reset loading states on mount to prevent stuck states from previous renders
@@ -108,10 +145,18 @@ function DashboardContent() {
       if (isMounted || budgets.length === 0) {
         loadBudgets()
       }
+      if (isMounted || recurringTransactions.length === 0) {
+        loadRecurringTransactions()
+      }
+      if (isMounted || goals.length === 0) {
+        loadGoals()
+      }
     } else if (!loading && !user) {
       // Reset loading states if no user
       setEntriesLoading(false)
       setBudgetsLoading(false)
+      setRecurringLoading(false)
+      setGoalsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading])
@@ -127,10 +172,50 @@ function DashboardContent() {
         console.warn("Budgets loading timeout - forcing to false")
         setBudgetsLoading(false)
       }
+      if (recurringLoading && user && !loading) {
+        console.warn("Recurring transactions loading timeout - forcing to false")
+        setRecurringLoading(false)
+      }
+      if (goalsLoading && user && !loading) {
+        console.warn("Goals loading timeout - forcing to false")
+        setGoalsLoading(false)
+      }
     }, 15000) // 15 second timeout
     
     return () => clearTimeout(timeout)
-  }, [entriesLoading, budgetsLoading, user, loading])
+  }, [entriesLoading, budgetsLoading, recurringLoading, goalsLoading, user, loading])
+
+  // Load recurring transactions from Firestore
+  const loadRecurringTransactions = async () => {
+    if (!user) return
+
+    try {
+      setRecurringLoading(true)
+      const firestoreRecurring = await getUserRecurringTransactions(user.uid)
+      setRecurringTransactions(firestoreRecurring)
+    } catch (error) {
+      console.error("Error loading recurring transactions:", error)
+      setRecurringTransactions([])
+    } finally {
+      setRecurringLoading(false)
+    }
+  }
+
+  // Load goals from Firestore
+  const loadGoals = async () => {
+    if (!user) return
+
+    try {
+      setGoalsLoading(true)
+      const firestoreGoals = await getUserGoals(user.uid)
+      setGoals(firestoreGoals)
+    } catch (error) {
+      console.error("Error loading goals:", error)
+      setGoals([])
+    } finally {
+      setGoalsLoading(false)
+    }
+  }
 
   // Load budgets from Firestore
   const loadBudgets = async () => {
@@ -541,6 +626,197 @@ function DashboardContent() {
     }
   }
 
+  // Recurring transaction handlers
+  const handleAddRecurringTransaction = async (data: {
+    name: string
+    amount: number
+    type: "income" | "expense"
+    category: string
+    frequency: "weekly" | "monthly" | "yearly"
+    nextDate: string
+    isActive: boolean
+  }) => {
+    if (!user) return
+
+    try {
+      if (editingRecurring) {
+        // Update existing recurring transaction
+        await updateRecurringTransaction(editingRecurring.id, {
+          name: data.name,
+          amount: data.amount,
+          type: data.type,
+          category: data.category,
+          frequency: data.frequency,
+          nextDate: data.nextDate as any,
+          isActive: data.isActive,
+        })
+
+        await loadRecurringTransactions()
+
+        setToast({
+          message: "Recurring transaction updated successfully!",
+          type: "success",
+        })
+        setEditingRecurring(null)
+      } else {
+        // Create new recurring transaction
+        await createRecurringTransaction(user.uid, {
+          name: data.name,
+          amount: data.amount,
+          type: data.type,
+          category: data.category,
+          frequency: data.frequency,
+          nextDate: data.nextDate as any,
+          isActive: data.isActive,
+        })
+
+        await loadRecurringTransactions()
+
+        setToast({
+          message: "Recurring transaction created successfully!",
+          type: "success",
+        })
+      }
+    } catch (error: any) {
+      console.error("Error saving recurring transaction:", error)
+      setToast({
+        message: error.message || "Failed to save recurring transaction. Please try again.",
+        type: "error",
+      })
+      throw error
+    }
+  }
+
+  const handleEditRecurring = (
+    recurring: import("@/lib/firestore-types").RecurringEntryDocument & { id: string }
+  ) => {
+    setEditingRecurring(recurring)
+    setRecurringDialogOpen(true)
+  }
+
+  const handleDeleteRecurring = async (recurringId: string) => {
+    if (!user) return
+
+    try {
+      await deleteRecurringTransaction(recurringId)
+      await loadRecurringTransactions()
+
+      setToast({
+        message: "Recurring transaction deleted successfully!",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error deleting recurring transaction:", error)
+      setToast({
+        message: "Failed to delete recurring transaction. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleRecurringDialogClose = (open: boolean) => {
+    setRecurringDialogOpen(open)
+    if (!open) {
+      setEditingRecurring(null)
+    }
+  }
+
+  // Goal handlers
+  const handleAddGoal = async (data: {
+    name: string
+    targetAmount: number
+    currentAmount: number
+    currency: string
+    deadline?: string
+    category?: string
+    description?: string
+    isActive: boolean
+  }) => {
+    if (!user) return
+
+    try {
+      if (editingGoal) {
+        // Update existing goal
+        await updateGoal(editingGoal.id, {
+          name: data.name,
+          targetAmount: data.targetAmount,
+          currentAmount: data.currentAmount,
+          currency: data.currency,
+          deadline: data.deadline as any,
+          category: data.category,
+          description: data.description,
+          isActive: data.isActive,
+        })
+
+        await loadGoals()
+
+        setToast({
+          message: "Goal updated successfully!",
+          type: "success",
+        })
+        setEditingGoal(null)
+      } else {
+        // Create new goal
+        await createGoal(user.uid, {
+          name: data.name,
+          targetAmount: data.targetAmount,
+          currentAmount: data.currentAmount,
+          currency: data.currency,
+          deadline: data.deadline as any,
+          category: data.category,
+          description: data.description,
+          isActive: data.isActive,
+        })
+
+        await loadGoals()
+
+        setToast({
+          message: "Goal created successfully!",
+          type: "success",
+        })
+      }
+    } catch (error: any) {
+      console.error("Error saving goal:", error)
+      setToast({
+        message: error.message || "Failed to save goal. Please try again.",
+        type: "error",
+      })
+      throw error
+    }
+  }
+
+  const handleEditGoal = (goal: import("@/lib/firestore-types").GoalDocument & { id: string }) => {
+    setEditingGoal(goal)
+    setGoalDialogOpen(true)
+  }
+
+  const handleDeleteGoal = async (goalId: string) => {
+    if (!user) return
+
+    try {
+      await deleteGoal(goalId)
+      await loadGoals()
+
+      setToast({
+        message: "Goal deleted successfully!",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error deleting goal:", error)
+      setToast({
+        message: "Failed to delete goal. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleGoalDialogClose = (open: boolean) => {
+    setGoalDialogOpen(open)
+    if (!open) {
+      setEditingGoal(null)
+    }
+  }
+
   // Get unique categories from entries
   const categories = getUniqueCategories(entries)
 
@@ -596,10 +872,15 @@ function DashboardContent() {
               Welcome back, {user.email?.split("@")[0]}
             </p>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <a href="/reports">Reports</a>
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Metrics Cards */}
@@ -650,6 +931,58 @@ function DashboardContent() {
           )}
         </div>
 
+        {/* Recurring Transactions Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Recurring Transactions</h2>
+            <Button onClick={() => setRecurringDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Recurring Transaction
+            </Button>
+          </div>
+          {recurringLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading recurring transactions...</p>
+              </div>
+            </div>
+          ) : (
+            <RecurringTransactionList
+              recurringTransactions={recurringTransactions}
+              onAdd={() => setRecurringDialogOpen(true)}
+              onEdit={handleEditRecurring}
+              onDelete={handleDeleteRecurring}
+            />
+          )}
+        </div>
+
+        {/* Financial Goals Section */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Financial Goals</h2>
+            <Button onClick={() => setGoalDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Goal
+            </Button>
+          </div>
+          {goalsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading goals...</p>
+              </div>
+            </div>
+          ) : (
+            <GoalList
+              goals={goals}
+              onAdd={() => setGoalDialogOpen(true)}
+              onEdit={handleEditGoal}
+              onDelete={handleDeleteGoal}
+            />
+          )}
+        </div>
+
         {/* Transaction Filters */}
         <TransactionFilters
           entries={entries}
@@ -679,6 +1012,24 @@ function DashboardContent() {
           onOpenChange={handleBudgetDialogClose}
           onSubmit={handleAddBudget}
           editingBudget={editingBudget}
+          categories={categories}
+        />
+
+        {/* Add/Edit Recurring Transaction Dialog */}
+        <RecurringTransactionDialog
+          open={recurringDialogOpen}
+          onOpenChange={handleRecurringDialogClose}
+          onSubmit={handleAddRecurringTransaction}
+          editingRecurring={editingRecurring}
+          categories={categories}
+        />
+
+        {/* Add/Edit Goal Dialog */}
+        <GoalDialog
+          open={goalDialogOpen}
+          onOpenChange={handleGoalDialogClose}
+          onSubmit={handleAddGoal}
+          editingGoal={editingGoal}
           categories={categories}
         />
 
