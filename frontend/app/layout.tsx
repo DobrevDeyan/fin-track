@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { CurrencyProvider } from "@/contexts/CurrencyContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
 
@@ -63,9 +64,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
-            <RegisterSW />
-            <InstallPrompt />
+            <CurrencyProvider>
+              {children}
+              <RegisterSW />
+              <InstallPrompt />
+            </CurrencyProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

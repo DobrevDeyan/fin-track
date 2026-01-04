@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
+import { getTrendColor } from "@/lib/constants/ui.constants"
 
 interface MetricsCardsProps {
   totalBalance: number
@@ -13,6 +14,7 @@ interface MetricsCardsProps {
   incomeChange: { change: string; trend: "up" | "down" | "neutral" }
   expensesChange: { change: string; trend: "up" | "down" | "neutral" }
   savingsChange: { change: string; trend: "up" | "down" | "neutral" }
+  userCurrency?: string
 }
 
 export function MetricsCards({
@@ -24,11 +26,12 @@ export function MetricsCards({
   incomeChange,
   expensesChange,
   savingsChange,
+  userCurrency = "EUR",
 }: MetricsCardsProps) {
   const metrics = [
     {
       title: "Total Balance",
-      value: formatCurrency(totalBalance, { currency: "EUR" }),
+      value: formatCurrency(totalBalance, { currency: userCurrency }),
       icon: Wallet,
       gradient: "from-black to-gray-800",
       change: balanceChange.change,
@@ -36,7 +39,7 @@ export function MetricsCards({
     },
     {
       title: "Total Income",
-      value: formatCurrency(totalIncome, { currency: "EUR" }),
+      value: formatCurrency(totalIncome, { currency: userCurrency }),
       icon: TrendingUp,
       gradient: "from-black to-gray-800",
       change: incomeChange.change,
@@ -44,7 +47,7 @@ export function MetricsCards({
     },
     {
       title: "Total Expenses",
-      value: formatCurrency(totalExpenses, { currency: "EUR" }),
+      value: formatCurrency(totalExpenses, { currency: userCurrency }),
       icon: TrendingDown,
       gradient: "from-black to-gray-800",
       change: expensesChange.change,
@@ -52,7 +55,7 @@ export function MetricsCards({
     },
     {
       title: "Savings",
-      value: formatCurrency(savings, { currency: "EUR" }),
+      value: formatCurrency(savings, { currency: userCurrency }),
       icon: PiggyBank,
       gradient: "from-black to-gray-800",
       change: savingsChange.change,
@@ -80,15 +83,7 @@ export function MetricsCards({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
-              <p
-                className={`text-xs mt-1 ${
-                  metric.trend === "up"
-                    ? "text-green-600"
-                    : metric.trend === "down"
-                    ? "text-red-600"
-                    : "text-muted-foreground"
-                }`}
-              >
+              <p className={`text-xs mt-1 ${getTrendColor(metric.trend)}`}>
                 {metric.change} from last month
               </p>
             </CardContent>

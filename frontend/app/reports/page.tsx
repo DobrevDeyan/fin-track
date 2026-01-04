@@ -10,6 +10,7 @@ import { Navbar } from "@/components/Navbar"
 import { getUserEntries } from "@/lib/firestore-entries"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getDateRange, getCustomDateRange } from "@/lib/date-utils"
+import { exportReportToPDF } from "@/lib/pdf-export"
 import { Download, Calendar } from "lucide-react"
 import dynamic from "next/dynamic"
 
@@ -150,9 +151,25 @@ export default function ReportsPage() {
     }
   }, [filteredEntries])
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export
-    alert("PDF export coming soon!")
+  const handleExportPDF = async () => {
+    try {
+      if (!startDate || !endDate) {
+        alert("Please select a date range before exporting.")
+        return
+      }
+
+      await exportReportToPDF({
+        entries: filteredEntries,
+        metrics,
+        startDate,
+        endDate,
+        reportType,
+        userEmail: user?.email || undefined,
+      })
+    } catch (error) {
+      console.error("Error exporting PDF:", error)
+      alert("Failed to export PDF. Please try again.")
+    }
   }
 
   if (loading || entriesLoading) {

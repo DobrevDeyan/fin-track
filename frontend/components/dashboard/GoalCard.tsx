@@ -45,7 +45,7 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
             )}
           </div>
           {!goal.isActive && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+            <span className={`text-xs ${getBadgeStatusColor("inactive")} px-2 py-1 rounded`}>
               Inactive
             </span>
           )}

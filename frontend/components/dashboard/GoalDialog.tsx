@@ -21,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { GoalDocument } from "@/lib/firestore-types"
+import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
 
 interface GoalData {
   name: string
@@ -39,9 +40,10 @@ interface GoalDialogProps {
   onSubmit: (data: GoalData) => Promise<void>
   editingGoal?: (GoalDocument & { id: string }) | null
   categories: string[]
+  defaultCurrency?: string
 }
 
-const currencies = ["EUR", "USD", "BGN", "GBP"]
+const currencies = SUPPORTED_CURRENCIES
 
 export function GoalDialog({
   open,
@@ -49,11 +51,12 @@ export function GoalDialog({
   onSubmit,
   editingGoal,
   categories,
+  defaultCurrency = "EUR",
 }: GoalDialogProps) {
   const [name, setName] = useState("")
   const [targetAmount, setTargetAmount] = useState("")
   const [currentAmount, setCurrentAmount] = useState("")
-  const [currency, setCurrency] = useState("EUR")
+  const [currency, setCurrency] = useState(defaultCurrency)
   const [deadline, setDeadline] = useState("")
   const [category, setCategory] = useState<string>("")
   const [description, setDescription] = useState("")
@@ -80,13 +83,13 @@ export function GoalDialog({
       setName("")
       setTargetAmount("")
       setCurrentAmount("0")
-      setCurrency("EUR")
+      setCurrency(defaultCurrency)
       setDeadline("")
       setCategory("")
       setDescription("")
       setIsActive(true)
     }
-  }, [editingGoal, open])
+  }, [editingGoal, open, defaultCurrency])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -108,7 +111,7 @@ export function GoalDialog({
       setName("")
       setTargetAmount("")
       setCurrentAmount("0")
-      setCurrency("EUR")
+      setCurrency(defaultCurrency)
       setDeadline("")
       setCategory("")
       setDescription("")

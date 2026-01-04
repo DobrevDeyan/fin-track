@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Calendar, Repeat } from "lucide-react"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { formatCurrency } from "@/lib/currency-utils"
+import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
+import { getBudgetPeriodLabel } from "@/lib/constants/budget.constants"
+import type { BudgetPeriod } from "@/lib/constants/budget.constants"
 
 interface RecurringTransactionCardProps {
   recurring: RecurringEntryDocument & { id: string }
@@ -24,16 +27,7 @@ export function RecurringTransactionCard({
     year: "numeric",
   })
   
-  const frequencyLabels = {
-    weekly: "Weekly",
-    monthly: "Monthly",
-    yearly: "Yearly",
-  }
-
-  const typeColors = {
-    income: "text-green-600",
-    expense: "text-red-600",
-  }
+  // Use constants for colors and labels
 
   return (
     <Card className={`${!recurring.isActive ? "opacity-60" : ""}`}>
@@ -54,7 +48,7 @@ export function RecurringTransactionCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Amount</span>
-            <span className={`font-semibold ${typeColors[recurring.type]}`}>
+            <span className={`font-semibold ${getTransactionTypeColor(recurring.type)}`}>
               {recurring.type === "expense" ? "-" : "+"}
               {formatCurrency(recurring.amount, { currency: "EUR" })}
             </span>
@@ -62,7 +56,7 @@ export function RecurringTransactionCard({
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Repeat className="h-4 w-4" />
-            <span>{frequencyLabels[recurring.frequency]}</span>
+            <span>{getBudgetPeriodLabel(recurring.frequency as BudgetPeriod)}</span>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/table"
 import { formatCurrency, formatAmount } from "@/lib/currency-utils"
 import { formatDate, formatDateCompact } from "@/lib/date-utils"
+import { getCategoryColor } from "@/lib/constants/category.constants"
+import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
+import type { TransactionType } from "@/lib/constants/transaction.constants"
 
 interface Entry {
   id: string
@@ -21,7 +24,8 @@ interface Entry {
   amount: number
   category: string
   date: string
-  type: "income" | "expense"
+  type: TransactionType
+  currency?: string
   notes?: string
 }
 
@@ -30,16 +34,6 @@ interface TransactionsTableProps {
   onAdd: () => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
-}
-
-const categoryColors: Record<string, string> = {
-  "Food & Dining": "bg-red-100 text-red-800",
-  "Shopping": "bg-blue-100 text-blue-800",
-  "Transportation": "bg-green-100 text-green-800",
-  "Bills & Utilities": "bg-yellow-100 text-yellow-800",
-  "Entertainment": "bg-purple-100 text-purple-800",
-  "Salary": "bg-emerald-100 text-emerald-800",
-  "Other": "bg-gray-100 text-gray-800",
 }
 
 export function TransactionsTable({
@@ -96,7 +90,7 @@ export function TransactionsTable({
                     <TableCell className="py-2 sm:py-4">
                       <Badge
                         variant="secondary"
-                        className={categoryColors[transaction.category] || categoryColors.Other}
+                        className={getCategoryColor(transaction.category)}
                       >
                         {transaction.category}
                       </Badge>
@@ -106,15 +100,11 @@ export function TransactionsTable({
                       <span className="sm:hidden">{formatDateCompact(transaction.date)}</span>
                     </TableCell>
                     <TableCell
-                      className={`text-right font-semibold p-2 sm:p-4 min-h-[2.5rem] sm:min-h-0 min-w-[120px] sm:min-w-[140px] ${
-                        transaction.type === "income"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
+                      className={`text-right font-semibold p-2 sm:p-4 min-h-[2.5rem] sm:min-h-0 min-w-[120px] sm:min-w-[140px] ${getTransactionTypeColor(transaction.type)}`}
                     >
                       <span className="inline-block leading-loose align-middle py-0.5">
                         {transaction.type === "income" ? "+" : "-"}
-                        {formatCurrency(Math.abs(transaction.amount), { currency: "EUR" })}
+                        {formatCurrency(Math.abs(transaction.amount), { currency: transaction.currency || "EUR" })}
                       </span>
                     </TableCell>
                     <TableCell className="text-right py-2 sm:py-4">

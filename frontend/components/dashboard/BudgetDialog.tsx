@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Timestamp } from "firebase/firestore"
+import { DateRangeCalculator } from "@/lib/utils/date-range-utils"
+import type { BudgetPeriod } from "@/lib/constants/budget.constants"
 
 interface BudgetData {
   name: string
@@ -50,9 +52,13 @@ interface BudgetDialogProps {
     alertThreshold?: number
   } | null
   categories: string[]
+  defaultCurrency?: string
 }
 
-const currencies = ["EUR", "USD", "BGN", "GBP"]
+import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
+import { BUDGET_PERIODS, getBudgetPeriodLabel } from "@/lib/constants/budget.constants"
+
+const currencies = SUPPORTED_CURRENCIES
 
 export function BudgetDialog({
   open,
@@ -60,40 +66,17 @@ export function BudgetDialog({
   onSubmit,
   editingBudget,
   categories,
+  defaultCurrency = "EUR",
 }: BudgetDialogProps) {
   const [name, setName] = useState("")
   const [category, setCategory] = useState<string>("")
   const [amount, setAmount] = useState("")
-  const [currency, setCurrency] = useState("EUR")
-  const [period, setPeriod] = useState<"weekly" | "monthly" | "yearly">("monthly")
+  const [currency, setCurrency] = useState(defaultCurrency)
+  const [period, setPeriod] = useState<BudgetPeriod>("monthly")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [alertThreshold, setAlertThreshold] = useState("")
-
-  // Calculate default date range based on period
-  const calculateDateRange = (periodType: "weekly" | "monthly" | "yearly", start: Date) => {
-    const end = new Date(start)
-    
-    switch (periodType) {
-      case "weekly":
-        end.setDate(start.getDate() + 6) // 7 days total
-        break
-      case "monthly":
-        end.setMonth(start.getMonth() + 1)
-        end.setDate(0) // Last day of the month
-        break
-      case "yearly":
-        end.setFullYear(start.getFullYear() + 1)
-        end.setMonth(0, 0) // Last day of the year
-        break
-    }
-    
-    return {
-      start: start.toISOString().split("T")[0],
-      end: end.toISOString().split("T")[0],
-    }
-  }
 
   // Populate form when editing
   useEffect(() => {
@@ -113,22 +96,22 @@ export function BudgetDialog({
       setName("")
       setCategory("")
       setAmount("")
-      setCurrency("EUR")
+      setCurrency(defaultCurrency)
       setPeriod("monthly")
       const now = new Date()
-      const dates = calculateDateRange("monthly", now)
+      const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", now)
       setStartDate(dates.start)
       setEndDate(dates.end)
       setIsActive(true)
       setAlertThreshold("")
     }
-  }, [editingBudget, open])
+  }, [editingBudget, open, defaultCurrency])
 
   // Update end date when period or start date changes (for new budgets)
   useEffect(() => {
     if (!editingBudget && startDate && period) {
       const start = new Date(startDate)
-      const dates = calculateDateRange(period, start)
+      const dates = DateRangeCalculator.calculatePeriodRangeISO(period, start)
       setEndDate(dates.end)
     }
   }, [period, startDate, editingBudget])
@@ -154,10 +137,10 @@ export function BudgetDialog({
       setName("")
       setCategory("")
       setAmount("")
-      setCurrency("EUR")
+      setCurrency(defaultCurrency)
       setPeriod("monthly")
       const now = new Date()
-      const dates = calculateDateRange("monthly", now)
+      const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", now)
       setStartDate(dates.start)
       setEndDate(dates.end)
       setIsActive(true)
@@ -244,15 +227,17 @@ export function BudgetDialog({
               <Label htmlFor="period">Period</Label>
               <Select
                 value={period}
-                onValueChange={(value: "weekly" | "monthly" | "yearly") => setPeriod(value)}
+                onValueChange={(value: BudgetPeriod) => setPeriod(value)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                  {BUDGET_PERIODS.map((periodOption) => (
+                    <SelectItem key={periodOption} value={periodOption}>
+                      {getBudgetPeriodLabel(periodOption)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

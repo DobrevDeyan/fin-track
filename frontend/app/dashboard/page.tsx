@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import dynamic from "next/dynamic"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCurrency } from "@/contexts/CurrencyContext"
 import { Button } from "@/components/ui/button"
 import { LogOut, Plus } from "lucide-react"
 import { MetricsCards } from "@/components/dashboard/MetricsCards"
@@ -66,6 +67,7 @@ import {
   getPreviousMonthEntries,
 } from "@/lib/metrics-utils"
 import { getMonthName, getPreviousMonth } from "@/lib/date-utils"
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 
 interface Entry {
   id: string
@@ -74,6 +76,7 @@ interface Entry {
   category: string
   date: string
   type: "income" | "expense"
+  currency?: string // Currency of the entry
   notes?: string
 }
 
@@ -388,6 +391,7 @@ function DashboardContent() {
           ? entry.date
           : new Date(entry.date as any).toISOString(),
         type: entry.type,
+        currency: entry.currency,
         notes: entry.notes,
       }))
       
@@ -404,13 +408,13 @@ function DashboardContent() {
     try {
       exportEntriesToCSV(filteredEntries.length > 0 ? filteredEntries : entries)
       setToast({
-        message: "Transactions exported successfully!",
+        message: SUCCESS_MESSAGES.CSV_EXPORTED,
         type: "success",
       })
     } catch (error) {
       console.error("Error exporting CSV:", error)
       setToast({
-        message: "Failed to export transactions. Please try again.",
+        message: ERROR_MESSAGES.EXPORT_FAILED,
         type: "error",
       })
     }
@@ -453,7 +457,7 @@ function DashboardContent() {
         await loadEntries()
 
         setToast({
-          message: "Entry updated successfully!",
+          message: SUCCESS_MESSAGES.ENTRY_UPDATED,
           type: "success",
         })
         setEditingEntry(null)
@@ -462,7 +466,7 @@ function DashboardContent() {
         await createEntry(user.uid, {
           type: data.type,
           amount: data.amount,
-          currency: "EUR",
+          currency: userCurrency, // Use user's currency preference
           description: data.description,
           category: data.category,
           date: data.date,
@@ -474,14 +478,14 @@ function DashboardContent() {
 
         // Show success message
         setToast({
-          message: `${data.type === "income" ? "Income" : "Expense"} entry added successfully!`,
+          message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type),
           type: "success",
         })
       }
     } catch (error: any) {
       console.error("Error saving entry:", error)
       setToast({
-        message: error.message || "Failed to save entry. Please try again.",
+        message: error.message || ERROR_MESSAGES.SAVE_FAILED,
         type: "error",
       })
       throw error // Re-throw to show error in UI
@@ -521,7 +525,7 @@ function DashboardContent() {
     } catch (error: any) {
       console.error("Error deleting entry:", error)
       setToast({
-        message: "Failed to delete entry. Please try again.",
+        message: ERROR_MESSAGES.DELETE_FAILED,
         type: "error",
       })
     }
@@ -559,7 +563,7 @@ function DashboardContent() {
         await loadBudgets()
 
         setToast({
-          message: "Budget updated successfully!",
+          message: SUCCESS_MESSAGES.BUDGET_UPDATED,
           type: "success",
         })
         setEditingBudget(null)
@@ -580,14 +584,14 @@ function DashboardContent() {
         await loadBudgets()
 
         setToast({
-          message: "Budget created successfully!",
+          message: SUCCESS_MESSAGES.BUDGET_CREATED,
           type: "success",
         })
       }
     } catch (error: any) {
       console.error("Error saving budget:", error)
       setToast({
-        message: error.message || "Failed to save budget. Please try again.",
+        message: error.message || ERROR_MESSAGES.SAVE_FAILED,
         type: "error",
       })
       throw error
@@ -607,13 +611,13 @@ function DashboardContent() {
       await loadBudgets()
       
       setToast({
-        message: "Budget deleted successfully!",
+        message: SUCCESS_MESSAGES.BUDGET_DELETED,
         type: "success",
       })
     } catch (error: any) {
       console.error("Error deleting budget:", error)
       setToast({
-        message: "Failed to delete budget. Please try again.",
+        message: ERROR_MESSAGES.DELETE_FAILED,
         type: "error",
       })
     }
@@ -654,7 +658,7 @@ function DashboardContent() {
         await loadRecurringTransactions()
 
         setToast({
-          message: "Recurring transaction updated successfully!",
+          message: SUCCESS_MESSAGES.RECURRING_UPDATED,
           type: "success",
         })
         setEditingRecurring(null)
@@ -680,7 +684,7 @@ function DashboardContent() {
     } catch (error: any) {
       console.error("Error saving recurring transaction:", error)
       setToast({
-        message: error.message || "Failed to save recurring transaction. Please try again.",
+        message: error.message || ERROR_MESSAGES.SAVE_FAILED,
         type: "error",
       })
       throw error
@@ -702,7 +706,7 @@ function DashboardContent() {
       await loadRecurringTransactions()
 
       setToast({
-        message: "Recurring transaction deleted successfully!",
+        message: SUCCESS_MESSAGES.RECURRING_DELETED,
         type: "success",
       })
     } catch (error: any) {
@@ -751,7 +755,7 @@ function DashboardContent() {
         await loadGoals()
 
         setToast({
-          message: "Goal updated successfully!",
+          message: SUCCESS_MESSAGES.GOAL_UPDATED,
           type: "success",
         })
         setEditingGoal(null)
@@ -778,7 +782,7 @@ function DashboardContent() {
     } catch (error: any) {
       console.error("Error saving goal:", error)
       setToast({
-        message: error.message || "Failed to save goal. Please try again.",
+        message: error.message || ERROR_MESSAGES.SAVE_FAILED,
         type: "error",
       })
       throw error
@@ -798,7 +802,7 @@ function DashboardContent() {
       await loadGoals()
 
       setToast({
-        message: "Goal deleted successfully!",
+        message: SUCCESS_MESSAGES.GOAL_DELETED,
         type: "success",
       })
     } catch (error: any) {
@@ -859,6 +863,8 @@ function DashboardContent() {
     },
   } = metrics
 
+  const { userCurrency } = useCurrency()
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
@@ -894,6 +900,7 @@ function DashboardContent() {
             incomeChange={incomeChange}
             expensesChange={expensesChange}
             savingsChange={savingsChange}
+            userCurrency={userCurrency}
           />
         </div>
 
@@ -1013,6 +1020,7 @@ function DashboardContent() {
           onSubmit={handleAddBudget}
           editingBudget={editingBudget}
           categories={categories}
+          defaultCurrency={userCurrency}
         />
 
         {/* Add/Edit Recurring Transaction Dialog */}
@@ -1031,6 +1039,7 @@ function DashboardContent() {
           onSubmit={handleAddGoal}
           editingGoal={editingGoal}
           categories={categories}
+          defaultCurrency={userCurrency}
         />
 
         {/* Quick Expense FAB */}

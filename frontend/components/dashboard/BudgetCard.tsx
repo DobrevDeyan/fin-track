@@ -7,6 +7,8 @@ import { Pencil, Trash2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/date-utils"
+import { ColorUtils } from "@/lib/utils/color-utils"
+import { getTrendColor } from "@/lib/constants/ui.constants"
 
 interface Budget {
   id: string
@@ -100,7 +102,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete }: BudgetCardProps)
               <span className={`font-medium ${isOverBudget ? "text-red-500" : ""}`}>
                 {percentage.toFixed(1)}% used
               </span>
-              <span className={`font-medium ${remaining < 0 ? "text-red-500" : "text-green-600"}`}>
+              <span className={`font-medium ${ColorUtils.getTrendColorClassFromValue(remaining)}`}>
                 {remaining >= 0
                   ? `${budget.currency} ${remaining.toFixed(2)} remaining`
                   : `${budget.currency} ${Math.abs(remaining).toFixed(2)} over budget`}
@@ -125,7 +127,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete }: BudgetCardProps)
           )}
           {!isOverBudget && !isNearThreshold && percentage < 50 && (
             <div className="flex items-center gap-2 p-2 bg-green-50 rounded-md">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className={`h-4 w-4 ${getTrendColor("up")}`} />
               <span className="text-sm text-green-700">On track</span>
             </div>
           )}

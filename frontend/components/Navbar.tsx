@@ -30,6 +30,17 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { getUserDocument, updateUserCurrency } from "@/lib/firestore-users";
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { ERROR_MESSAGES } from "@/lib/constants/validation.constants";
 
 interface RouteProps {
   href: string;
@@ -57,7 +68,28 @@ const routeList: RouteProps[] = [
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
   const { user, loading, logout } = useAuth();
+  const { userCurrency, refreshCurrency } = useCurrency();
+
+  const handleCurrencyChange = async (currency: SupportedCurrency) => {
+    if (!user || currencyLoading) return;
+    try {
+      setCurrencyLoading(true);
+      await updateUserCurrency(user.uid, currency);
+      // Refresh currency context instead of reloading page
+      await refreshCurrency();
+      // Small delay to ensure context updates, then reload for full app refresh
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error) {
+      console.error("Error updating currency:", error);
+      alert(ERROR_MESSAGES.CURRENCY_UPDATE_FAILED);
+    } finally {
+      setCurrencyLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -186,6 +218,17 @@ export const Navbar = () => {
                     <>
                       {user ? (
                         <>
+                          <div className="w-full">
+                            <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="EUR" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <Link
                             href="/dashboard"
                             onClick={() => setIsOpen(false)}
@@ -240,6 +283,18 @@ export const Navbar = () => {
               <>
                 {user ? (
                   <>
+                    <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="EUR" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <SelectItem key={currency} value={currency}>
+                            {currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Link href="/dashboard">
                       <Button>Dashboard</Button>
                     </Link>
