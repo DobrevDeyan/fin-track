@@ -9,7 +9,7 @@ import { InstallPrompt } from "@/components/InstallPrompt"
 
 const inter = Inter({ 
   subsets: ["latin"],
-  display: "swap", // Optimize font loading
+  display: "swap",
   preload: true,
   variable: "--font-inter",
 })
@@ -54,6 +54,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        {/* PWA meta tags */}
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={inter.className}>
         <ThemeProvider

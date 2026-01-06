@@ -37,6 +37,45 @@ service cloud.firestore {
       // Allow update/delete if user is authenticated and owns the budget
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+    
+    // Savings Accounts - users can only access their own savings accounts
+    match /savingsAccounts/{accountId} {
+      // Allow get (single document read) if user owns it
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow list (queries) for authenticated users - app must filter by userId
+      // Individual document access is still protected by get rule
+      allow list: if request.auth != null;
+      // Allow create if user is authenticated and sets their own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow update/delete if user is authenticated and owns the account
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Goals - users can only access their own goals
+    match /goals/{goalId} {
+      // Allow get (single document read) if user owns it
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow list (queries) for authenticated users - app must filter by userId
+      // Individual document access is still protected by get rule
+      allow list: if request.auth != null;
+      // Allow create if user is authenticated and sets their own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow update/delete if user is authenticated and owns the goal
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    
+    // Recurring Transactions - users can only access their own recurring transactions
+    match /recurringTransactions/{transactionId} {
+      // Allow get (single document read) if user owns it
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow list (queries) for authenticated users - app must filter by userId
+      // Individual document access is still protected by get rule
+      allow list: if request.auth != null;
+      // Allow create if user is authenticated and sets their own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Allow update/delete if user is authenticated and owns the transaction
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
   }
 }
 

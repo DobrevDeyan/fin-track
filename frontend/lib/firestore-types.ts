@@ -103,6 +103,20 @@ export interface GoalDocument {
   updatedAt: Timestamp
 }
 
+// Savings Account Document
+export interface SavingsAccountDocument {
+  userId: string
+  name: string
+  balance: number
+  currency: string
+  description?: string
+  color?: string
+  icon?: string
+  isActive: boolean
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
 // Default Categories
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Food & Dining",
@@ -150,5 +164,12 @@ export type CreateGoalInput = Omit<
 > & {
   userId: string
   deadline?: string | Date | Timestamp
+}
+
+export type CreateSavingsAccountInput = Omit<
+  SavingsAccountDocument,
+  "userId" | "createdAt" | "updatedAt"
+> & {
+  userId: string
 }
 

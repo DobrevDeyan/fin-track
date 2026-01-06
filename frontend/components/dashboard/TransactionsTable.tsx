@@ -44,7 +44,7 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
 
   return (
-    <Card className="drop-shadow-xl shadow-black/10">
+    <Card className="drop-shadow-xl shadow-black/10 mb-8">
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

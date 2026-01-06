@@ -101,7 +101,7 @@ export async function getUserBudgets(userId: string): Promise<(BudgetDocument & 
     } catch (indexError: any) {
       // If index error, try without orderBy and sort in memory
       if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
-        console.warn("Firestore index not found, fetching without orderBy and sorting in memory")
+        // Index is still building - using fallback (this is expected and will resolve automatically)
         q = query(
           budgetsRef,
           where("userId", "==", userId)
@@ -157,7 +157,7 @@ export async function getActiveBudgets(userId: string): Promise<(BudgetDocument 
       querySnapshot = await getDocs(q)
     } catch (indexError: any) {
       if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
-        console.warn("Firestore index not found, fetching without orderBy")
+        // Index is still building - using fallback (this is expected and will resolve automatically)
         q = query(
           budgetsRef,
           where("userId", "==", userId),

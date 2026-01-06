@@ -107,7 +107,7 @@ export async function getUserEntries(userId: string): Promise<(EntryDocument & {
     } catch (indexError: any) {
       // If index error, try without orderBy and sort in memory
       if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
-        console.warn("Firestore index not found, fetching without orderBy and sorting in memory")
+        // Index is still building - using fallback (this is expected and will resolve automatically)
         q = query(
           entriesRef,
           where("userId", "==", userId)

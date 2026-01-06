@@ -18,6 +18,8 @@ import { RecurringTransactionList } from "@/components/dashboard/RecurringTransa
 import { RecurringTransactionDialog } from "@/components/dashboard/RecurringTransactionDialog"
 import { GoalList } from "@/components/dashboard/GoalList"
 import { GoalDialog } from "@/components/dashboard/GoalDialog"
+import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList"
+import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog"
 import { Navbar } from "@/components/Navbar"
 
 // Lazy load charts (Recharts is ~200KB) - only load when needed
@@ -57,6 +59,15 @@ import {
   deleteGoal,
   updateGoal,
 } from "@/lib/firestore-goals"
+import {
+  createSavingsAccount,
+  getUserSavingsAccounts,
+  deleteSavingsAccount,
+  updateSavingsAccount,
+  addToSavingsAccount,
+  withdrawFromSavingsAccount,
+  calculateTotalSavings,
+} from "@/lib/firestore-savings"
 import { Timestamp } from "firebase/firestore"
 import { Toast } from "@/components/ui/toast"
 import { exportEntriesToCSV } from "@/lib/export-utils"
@@ -95,6 +106,7 @@ interface Budget {
 
 function DashboardContent() {
   const { user, loading, logout } = useAuth()
+  const { userCurrency } = useCurrency() // Must be called before any conditional returns
   const [entries, setEntries] = useState<Entry[]>([])
   const [filteredEntries, setFilteredEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(true)
@@ -131,6 +143,16 @@ function DashboardContent() {
     (import("@/lib/firestore-types").GoalDocument & { id: string }) | null
   >(null)
 
+  // Savings accounts state
+  const [savingsAccounts, setSavingsAccounts] = useState<
+    (import("@/lib/firestore-types").SavingsAccountDocument & { id: string })[]
+  >([])
+  const [savingsAccountsLoading, setSavingsAccountsLoading] = useState(true)
+  const [savingsAccountDialogOpen, setSavingsAccountDialogOpen] = useState(false)
+  const [editingSavingsAccount, setEditingSavingsAccount] = useState<
+    (import("@/lib/firestore-types").SavingsAccountDocument & { id: string }) | null
+  >(null)
+
   // Load entries from Firestore - ensure it runs on mount and when auth state is ready
   useEffect(() => {
     // Always reset loading states on mount to prevent stuck states from previous renders
@@ -154,12 +176,16 @@ function DashboardContent() {
       if (isMounted || goals.length === 0) {
         loadGoals()
       }
+      if (isMounted || savingsAccounts.length === 0) {
+        loadSavingsAccounts()
+      }
     } else if (!loading && !user) {
       // Reset loading states if no user
       setEntriesLoading(false)
       setBudgetsLoading(false)
       setRecurringLoading(false)
       setGoalsLoading(false)
+      setSavingsAccountsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading])
@@ -183,10 +209,14 @@ function DashboardContent() {
         console.warn("Goals loading timeout - forcing to false")
         setGoalsLoading(false)
       }
+      if (savingsAccountsLoading && user && !loading) {
+        console.warn("Savings accounts loading timeout - forcing to false")
+        setSavingsAccountsLoading(false)
+      }
     }, 15000) // 15 second timeout
     
     return () => clearTimeout(timeout)
-  }, [entriesLoading, budgetsLoading, recurringLoading, goalsLoading, user, loading])
+  }, [entriesLoading, budgetsLoading, recurringLoading, goalsLoading, savingsAccountsLoading, user, loading])
 
   // Load recurring transactions from Firestore
   const loadRecurringTransactions = async () => {
@@ -217,6 +247,22 @@ function DashboardContent() {
       setGoals([])
     } finally {
       setGoalsLoading(false)
+    }
+  }
+
+  // Load savings accounts from Firestore
+  const loadSavingsAccounts = async () => {
+    if (!user) return
+
+    try {
+      setSavingsAccountsLoading(true)
+      const accounts = await getUserSavingsAccounts(user.uid)
+      setSavingsAccounts(accounts)
+    } catch (error) {
+      console.error("Error loading savings accounts:", error)
+      setSavingsAccounts([])
+    } finally {
+      setSavingsAccountsLoading(false)
     }
   }
 
@@ -438,6 +484,10 @@ function DashboardContent() {
     type: "income" | "expense"
     date: string
     notes?: string
+    allocateToSavings?: {
+      accountId: string
+      amount: number
+    }
   }) => {
     if (!user) return
 
@@ -476,11 +526,32 @@ function DashboardContent() {
         // Reload entries from Firestore to get the complete data
         await loadEntries()
 
-        // Show success message
-        setToast({
-          message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type),
-          type: "success",
-        })
+        // If income and savings allocation is specified, add to savings account
+        if (data.type === "income" && data.allocateToSavings) {
+          try {
+            await addToSavingsAccount(
+              data.allocateToSavings.accountId,
+              data.allocateToSavings.amount
+            )
+            await loadSavingsAccounts()
+            setToast({
+              message: `Entry added and ${data.allocateToSavings.amount} allocated to savings`,
+              type: "success",
+            })
+          } catch (savingsError: any) {
+            console.error("Error allocating to savings:", savingsError)
+            setToast({
+              message: `Entry added, but failed to allocate to savings: ${savingsError.message}`,
+              type: "error",
+            })
+          }
+        } else {
+          // Show success message
+          setToast({
+            message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type),
+            type: "success",
+          })
+        }
       }
     } catch (error: any) {
       console.error("Error saving entry:", error)
@@ -821,6 +892,156 @@ function DashboardContent() {
     }
   }
 
+  // Savings accounts handlers
+  const handleAddSavingsAccount = async (data: {
+    name: string
+    balance: number
+    currency: string
+    description?: string
+    color?: string
+    icon?: string
+    isActive: boolean
+  }) => {
+    if (!user) return
+
+    try {
+      await createSavingsAccount(user.uid, data)
+      await loadSavingsAccounts()
+
+      setToast({
+        message: "Savings account created successfully",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error creating savings account:", error)
+      setToast({
+        message: "Failed to create savings account. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleSubmitSavingsAccount = async (data: {
+    name: string
+    balance: number
+    currency: string
+    description?: string
+    color?: string
+    icon?: string
+    isActive: boolean
+  }) => {
+    if (editingSavingsAccount) {
+      await handleUpdateSavingsAccount(data)
+    } else {
+      await handleAddSavingsAccount(data)
+    }
+  }
+
+  const handleEditSavingsAccount = (
+    account: import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
+  ) => {
+    setEditingSavingsAccount(account)
+    setSavingsAccountDialogOpen(true)
+  }
+
+  const handleUpdateSavingsAccount = async (data: {
+    name: string
+    balance: number
+    currency: string
+    description?: string
+    color?: string
+    icon?: string
+    isActive: boolean
+  }) => {
+    if (!user || !editingSavingsAccount) return
+
+    try {
+      await updateSavingsAccount(editingSavingsAccount.id, data)
+      await loadSavingsAccounts()
+
+      setToast({
+        message: "Savings account updated successfully",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error updating savings account:", error)
+      setToast({
+        message: "Failed to update savings account. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleDeleteSavingsAccount = async (accountId: string) => {
+    if (!user) return
+
+    try {
+      await deleteSavingsAccount(accountId)
+      await loadSavingsAccounts()
+
+      setToast({
+        message: "Savings account deleted successfully",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error deleting savings account:", error)
+      setToast({
+        message: "Failed to delete savings account. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleAddMoneyToSavings = async (accountId: string, amount: number) => {
+    if (!user) return
+
+    try {
+      await addToSavingsAccount(accountId, amount)
+      await loadSavingsAccounts()
+
+      setToast({
+        message: "Money added to savings account",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error adding money to savings account:", error)
+      setToast({
+        message: "Failed to add money. Please try again.",
+        type: "error",
+      })
+    }
+  }
+
+  const handleWithdrawMoneyFromSavings = async (accountId: string, amount: number) => {
+    if (!user) return
+
+    try {
+      await withdrawFromSavingsAccount(accountId, amount)
+      await loadSavingsAccounts()
+
+      setToast({
+        message: "Money withdrawn from savings account",
+        type: "success",
+      })
+    } catch (error: any) {
+      console.error("Error withdrawing money from savings account:", error)
+      const errorMessage = error?.message?.includes("Insufficient")
+        ? "Insufficient balance in savings account"
+        : "Failed to withdraw money. Please try again."
+      setToast({
+        message: errorMessage,
+        type: "error",
+      })
+    }
+  }
+
+  const handleSavingsAccountDialogClose = (open: boolean) => {
+    setSavingsAccountDialogOpen(open)
+    if (!open) {
+      setEditingSavingsAccount(null)
+    }
+  }
+
   // Get unique categories from entries
   const categories = getUniqueCategories(entries)
 
@@ -863,7 +1084,8 @@ function DashboardContent() {
     },
   } = metrics
 
-  const { userCurrency } = useCurrency()
+  // Calculate total savings from savings accounts
+  const totalSavingsAccounts = calculateTotalSavings(savingsAccounts)
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -909,6 +1131,38 @@ function DashboardContent() {
           <SpendingChart entries={entries} />
           <CategoryChart entries={entries} />
         </div>
+
+        {/* Entries Table */}
+        <TransactionsTable
+          transactions={filteredEntries.length > 0 ? filteredEntries : entries}
+          onAdd={() => setDialogOpen(true)}
+          onEdit={handleEditEntry}
+          onDelete={handleDeleteEntry}  
+        />
+
+        {/* Savings Accounts Section */}
+                <div className="mb-8">
+          {savingsAccountsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm text-muted-foreground">Loading savings accounts...</p>
+              </div>
+            </div>
+          ) : (
+            <SavingsAccountList
+              accounts={savingsAccounts}
+              onAdd={() => setSavingsAccountDialogOpen(true)}
+              onEdit={handleEditSavingsAccount}
+              onDelete={handleDeleteSavingsAccount}
+              onAddMoney={handleAddMoneyToSavings}
+              onWithdrawMoney={handleWithdrawMoneyFromSavings}
+              defaultCurrency={userCurrency}
+            />
+          )}
+        </div>
+
+        
 
         {/* Budget Management Section */}
         <div className="mb-8">
@@ -997,20 +1251,18 @@ function DashboardContent() {
           onExport={handleExportCSV}
         />
 
-        {/* Entries Table */}
-        <TransactionsTable
-          transactions={filteredEntries.length > 0 ? filteredEntries : entries}
-          onAdd={() => setDialogOpen(true)}
-          onEdit={handleEditEntry}
-          onDelete={handleDeleteEntry}
-        />
-
         {/* Add/Edit Entry Dialog */}
         <AddTransactionDialog
           open={dialogOpen}
           onOpenChange={handleDialogClose}
           onSubmit={handleAddEntry}
           editingEntry={editingEntry}
+          savingsAccounts={savingsAccounts.filter(acc => acc.isActive).map(acc => ({
+            id: acc.id,
+            name: acc.name,
+            balance: acc.balance,
+            currency: acc.currency,
+          }))}
         />
 
         {/* Add/Edit Budget Dialog */}

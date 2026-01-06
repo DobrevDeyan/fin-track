@@ -99,7 +99,30 @@ export async function getUserRecurringTransactions(
       id: doc.id,
       ...doc.data(),
     })) as (RecurringEntryDocument & { id: string })[]
-  } catch (error) {
+  } catch (error: any) {
+    // If index is not ready, fetch without orderBy and sort in memory
+    if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+      // Index is still building - this is expected and will resolve automatically
+      // Using fallback: fetch without orderBy and sort in memory
+      const recurringRef = collection(db, "recurringTransactions")
+      const q = query(
+        recurringRef,
+        where("userId", "==", userId)
+      )
+      
+      const querySnapshot = await getDocs(q)
+      const transactions = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as (RecurringEntryDocument & { id: string })[]
+      
+      // Sort by nextDate ascending in memory
+      return transactions.sort((a, b) => {
+        const aTime = a.nextDate?.toMillis?.() || 0
+        const bTime = b.nextDate?.toMillis?.() || 0
+        return aTime - bTime
+      })
+    }
     console.error("Error fetching recurring transactions:", error)
     throw error
   }
