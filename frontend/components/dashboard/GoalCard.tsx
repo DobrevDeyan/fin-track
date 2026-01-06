@@ -6,6 +6,7 @@ import { Edit, Trash2, Target, Calendar } from "lucide-react"
 import { GoalDocument } from "@/lib/firestore-types"
 import { formatCurrency } from "@/lib/currency-utils"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
+import { getBadgeStatusColor } from "@/lib/constants/ui.constants"
 
 interface GoalCardProps {
   goal: GoalDocument & { id: string }
