@@ -512,40 +512,82 @@ function DashboardContent() {
         })
         setEditingEntry(null)
       } else {
-        // Create new entry
-        await createEntry(user.uid, {
-          type: data.type,
-          amount: data.amount,
-          currency: userCurrency, // Use user's currency preference
-          description: data.description,
-          category: data.category,
-          date: data.date,
-          notes: data.notes,
-        })
+        // Calculate the amount that should count towards balance (exclude savings allocation)
+        const allocatedToSavings = data.allocateToSavings?.amount || 0
+        const balanceAmount = data.type === "income" 
+          ? Math.max(0, data.amount - allocatedToSavings) // Ensure non-negative
+          : data.amount
 
-        // Reload entries from Firestore to get the complete data
-        await loadEntries()
-
-        // If income and savings allocation is specified, add to savings account
+        // If income with savings allocation, handle savings FIRST, then entry
         if (data.type === "income" && data.allocateToSavings) {
           try {
+            // Add to savings account FIRST
             await addToSavingsAccount(
               data.allocateToSavings.accountId,
               data.allocateToSavings.amount
             )
             await loadSavingsAccounts()
-            setToast({
-              message: `Entry added and ${data.allocateToSavings.amount} allocated to savings`,
-              type: "success",
-            })
+            
+            // Only create entry if there's a remaining amount after savings allocation
+            // (This ensures allocated savings don't affect total balance)
+            if (balanceAmount > 0) {
+              await createEntry(user.uid, {
+                type: data.type,
+                amount: balanceAmount, // Use remaining amount, not full amount
+                currency: userCurrency,
+                description: data.description,
+                category: data.category,
+                date: data.date,
+                notes: data.notes,
+              })
+              await loadEntries()
+              
+              setToast({
+                message: `Entry added (${balanceAmount.toFixed(2)} ${userCurrency} to balance) and ${data.allocateToSavings.amount.toFixed(2)} ${userCurrency} allocated to savings`,
+                type: "success",
+              })
+            } else {
+              // No entry created - 100% allocated to savings
+              setToast({
+                message: `${data.allocateToSavings.amount.toFixed(2)} ${userCurrency} allocated to savings (no entry created as 100% allocated to savings)`,
+                type: "success",
+              })
+            }
           } catch (savingsError: any) {
             console.error("Error allocating to savings:", savingsError)
+            // If savings allocation fails, still create the entry (fallback)
+            if (balanceAmount > 0) {
+              await createEntry(user.uid, {
+                type: data.type,
+                amount: balanceAmount,
+                currency: userCurrency,
+                description: data.description,
+                category: data.category,
+                date: data.date,
+                notes: data.notes,
+              })
+              await loadEntries()
+            }
             setToast({
-              message: `Entry added, but failed to allocate to savings: ${savingsError.message}`,
+              message: `Failed to allocate to savings: ${savingsError.message}. Entry may have been created with full amount.`,
               type: "error",
             })
           }
         } else {
+          // Regular entry (no savings allocation)
+          await createEntry(user.uid, {
+            type: data.type,
+            amount: balanceAmount,
+            currency: userCurrency,
+            description: data.description,
+            category: data.category,
+            date: data.date,
+            notes: data.notes,
+          })
+          
+          // Reload entries from Firestore to get the complete data
+          await loadEntries()
+          
           // Show success message
           setToast({
             message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type),
