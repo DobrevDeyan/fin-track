@@ -11,7 +11,7 @@ interface QuickExpenseFABProps {
     description: string
     amount: number
     category: string
-    type: "expense"
+    type: "income" | "expense"
     date: string
   }) => Promise<void>
 }

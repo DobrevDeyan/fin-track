@@ -16,8 +16,7 @@ import { LightBulbIcon } from "./Icons";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 
 export const HeroCards = () => {
-  return (
-    <div className="hidden lg:flex flex-row flex-wrap gap-8 relative w-[700px] h-[500px]">
+  return (    <div className="hidden lg:flex flex-row flex-wrap gap-8 relative w-[700px] h-[500px] z-10">
       {/* Testimonial */}
       <Card className="absolute w-[340px] -top-[15px] drop-shadow-xl shadow-black/10">
         <CardHeader className="flex flex-row items-center gap-4 pb-2">

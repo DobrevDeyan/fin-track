@@ -1133,7 +1133,7 @@ function DashboardContent() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       <div className="container py-8 px-4 sm:px-6">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-bold text-foreground">
               Dashboard
@@ -1142,14 +1142,14 @@ function DashboardContent() {
               Welcome back, {user.email?.split("@")[0]}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" asChild className="flex-1 md:flex-initial">
               <a href="/reports">Reports</a>
             </Button>
-            <Button variant="outline" onClick={handleLogout}>
+            {/* <Button variant="outline" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -1208,9 +1208,9 @@ function DashboardContent() {
 
         {/* Budget Management Section */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <h2 className="text-2xl font-bold">Budget Management</h2>
-            <Button onClick={() => setBudgetDialogOpen(true)}>
+            <Button onClick={() => setBudgetDialogOpen(true)} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Budget
             </Button>
@@ -1236,9 +1236,9 @@ function DashboardContent() {
 
         {/* Recurring Transactions Section */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <h2 className="text-2xl font-bold">Recurring Transactions</h2>
-            <Button onClick={() => setRecurringDialogOpen(true)}>
+            <Button onClick={() => setRecurringDialogOpen(true)} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Recurring Transaction
             </Button>
@@ -1262,9 +1262,9 @@ function DashboardContent() {
 
         {/* Financial Goals Section */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <h2 className="text-2xl font-bold">Financial Goals</h2>
-            <Button onClick={() => setGoalDialogOpen(true)}>
+            <Button onClick={() => setGoalDialogOpen(true)} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Goal
             </Button>

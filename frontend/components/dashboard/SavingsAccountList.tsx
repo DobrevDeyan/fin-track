@@ -33,14 +33,14 @@ export function SavingsAccountList({
   if (activeAccounts.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
             <p className="text-muted-foreground mt-1">
               Track your savings separately from your spending balance
             </p>
           </div>
-          <Button onClick={onAdd}>
+          <Button onClick={onAdd} className="w-full md:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Create Savings Account
           </Button>
@@ -62,7 +62,7 @@ export function SavingsAccountList({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
           <p className="text-muted-foreground mt-1">
@@ -72,7 +72,7 @@ export function SavingsAccountList({
             </span>
           </p>
         </div>
-        <Button onClick={onAdd}>
+        <Button onClick={onAdd} className="w-full md:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Create Savings Account
         </Button>

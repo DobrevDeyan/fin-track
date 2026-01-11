@@ -13,12 +13,13 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { buttonVariants } from "./ui/button";
 import { Button } from "./ui/button";
-import { Menu, LogOut, User, ChevronRight } from "lucide-react";
+import { Menu, LogOut, User, ChevronRight, X } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -194,22 +195,32 @@ export const Navbar = () => {
                 </Menu>
               </SheetTrigger>
 
-              <SheetContent side={"left"}>
-                <SheetHeader>
-                  <SheetTitle className="font-semibold text-xl">
-                    <span className="text-foreground">
-                      FinTrack
-                    </span>
-                  </SheetTitle>
+              <SheetContent side={"right"} className="w-[320px] sm:w-[380px] [&>button]:hidden">
+                <SheetHeader className="mb-6 relative">
+                  <div className="flex items-center justify-between">
+                    <SheetTitle className="font-bold text-2xl text-left">
+                      <span className="text-foreground">
+                        FinTrack
+                      </span>
+                    </SheetTitle>
+                    <SheetClose asChild>
+                      <button
+                        className="rounded-full p-2 hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 -mr-2"
+                        aria-label="Close menu"
+                      >
+                        <X className="h-6 w-6 text-foreground/70 hover:text-foreground transition-colors" strokeWidth={2.5} />
+                      </button>
+                    </SheetClose>
+                  </div>
                 </SheetHeader>
-                <nav className="flex flex-col justify-center items-center gap-2 mt-4">
+                <nav className="flex flex-col gap-2">
                   {routeList.map(({ href, label }: RouteProps) => (
                     <a
                       rel="noreferrer noopener"
                       key={label}
                       href={href}
                       onClick={(e) => handleNavClick(href, e)}
-                      className={buttonVariants({ variant: "ghost" })}
+                      className="text-center px-4 py-3 rounded-lg text-base font-medium text-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors duration-200"
                     >
                       {label}
                     </a>
@@ -218,30 +229,33 @@ export const Navbar = () => {
                     <>
                       {user ? (
                         <>
-                          <div className="w-full">
+                          <div className="w-full mt-4 mb-2">
                             <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
-                              <SelectTrigger className="w-full">
+                              <SelectTrigger className="w-full h-11 text-base font-medium border-2">
                                 <SelectValue placeholder="EUR" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="USD">USD</SelectItem>
+                                {SUPPORTED_CURRENCIES.map((currency) => (
+                                  <SelectItem key={currency} value={currency}>
+                                    {currency}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                           <Link
                             href="/dashboard"
                             onClick={() => setIsOpen(false)}
-                            className={buttonVariants({ variant: "default" })}
+                            className="w-full h-12 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-base shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
                           >
                             Dashboard
                           </Link>
                           <Button
                             variant="outline"
                             onClick={handleLogout}
-                            className="w-full"
+                            className="w-full h-12 px-6 py-3 rounded-lg border-2 font-semibold text-base hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive transition-all duration-200 flex items-center justify-center"
                           >
-                            <ChevronRight className="mr-2 h-4 w-4" />
+                            <LogOut className="mr-2 h-4 w-4" />
                             Logout
                           </Button>
                         </>
@@ -249,7 +263,7 @@ export const Navbar = () => {
                         <Link
                           href="/auth/login"
                           onClick={() => setIsOpen(false)}
-                          className={buttonVariants({ variant: "default" })}
+                          className="w-full h-12 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-base shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200 flex items-center justify-center mt-4"
                         >
                           Login
                         </Link>

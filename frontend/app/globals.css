@@ -77,65 +77,67 @@ html {
   scroll-behavior: smooth;
 }
 
-/* HeroCards background shadow */
+/* HeroCards background shadow - black/white theme optimized */
 .shadow {
   position: absolute;
-  background: hsl(var(--primary) / 0%);
+  background: rgba(0, 0, 0, 0.25); /* More visible black shadow */
   border-radius: 24px;
-  rotate: 35deg;
-  z-index: -1;
-  width: 260px;
-  top: 200px;
-  height: 400px;
-  filter: blur(150px);
-  will-change: transform;
-  animation: shadow-slide infinite 4s linear alternate;
+  z-index: 0;
+  width: 350px;
+  top: 50%;
+  left: 50%;
+  height: 500px;
+  filter: blur(90px);
+  will-change: transform, background;
+  animation: shadow-slide infinite 4s ease-in-out alternate;
+  pointer-events: none; /* Don't interfere with clicks */
 }
 
 @keyframes shadow-slide {
   from {
-    background: hsl(var(--primary) / 20%);
-    right: 460px;
+    background: rgba(0, 0, 0, 0.2);
+    transform: translate(-50%, -50%) translateX(-60px) rotate(35deg);
   }
   to {
-    background: hsl(var(--primary) / 80%);
-    right: 160px;
+    background: rgba(0, 0, 0, 0.3); /* Even more visible */
+    transform: translate(-50%, -50%) translateX(60px) rotate(35deg);
   }
 }
 
 @media (max-width: 1024px) {
   .shadow {
-    top: 70px;
+    width: 300px;
+    height: 450px;
+    filter: blur(85px);
   }
 
   @keyframes shadow-slide {
     from {
-      background: hsl(var(--primary) / 20%);
-      right: 460px;
+      background: rgba(0, 0, 0, 0.22);
+      transform: translate(-50%, -50%) translateX(-50px) rotate(35deg);
     }
     to {
-      background: hsl(var(--primary) / 50%);
-      right: 160px;
+      background: rgba(0, 0, 0, 0.3);
+      transform: translate(-50%, -50%) translateX(50px) rotate(35deg);
     }
   }
 }
 
 @media (max-width: 768px) {
   .shadow {
-    top: 70px;
-    width: 100px;
-    height: 350px;
-    filter: blur(60px);
+    width: 220px;
+    height: 380px;
+    filter: blur(65px);
   }
 
   @keyframes shadow-slide {
     from {
-      background: hsl(var(--primary) / 20%);
-      right: 280px;
+      background: rgba(0, 0, 0, 0.22);
+      transform: translate(-50%, -50%) translateX(-35px) rotate(35deg);
     }
     to {
-      background: hsl(var(--primary) / 30%);
-      right: 100px;
+      background: rgba(0, 0, 0, 0.3);
+      transform: translate(-50%, -50%) translateX(35px) rotate(35deg);
     }
   }
 }
