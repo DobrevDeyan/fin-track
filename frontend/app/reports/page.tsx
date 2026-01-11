@@ -192,14 +192,14 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       <div className="container py-8 px-4 sm:px-6">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-bold text-foreground">Reports & Analytics</h1>
             <p className="text-muted-foreground mt-2">
               Analyze your spending patterns and financial trends
             </p>
           </div>
-          <Button onClick={handleExportPDF} variant="outline">
+          <Button onClick={handleExportPDF} variant="outline" className="w-full md:w-auto">
             <Download className="mr-2 h-4 w-4" />
             Export PDF
           </Button>
