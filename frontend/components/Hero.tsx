@@ -11,25 +11,25 @@ export const Hero = () => {
   const { user } = useAuth();
   
   return (
-    <section className="container grid lg:grid-cols-2 place-items-center py-20 md:py-32 gap-10">
-      <div className="text-center lg:text-start space-y-6">
-        <main className="text-5xl md:text-6xl font-bold">
-          <h1 className="inline">
+    <section className="container grid lg:grid-cols-2 place-items-center py-12 px-4 sm:py-16 md:py-32 gap-8 md:gap-10">
+      <div className="text-center lg:text-start space-y-5 md:space-y-6">
+        <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight sm:leading-tight md:leading-normal">
+          <h1 className="block sm:inline">
             <span className="inline text-foreground">
               FinTrack
             </span>{" "}
             - Smart
           </h1>{" "}
-          Financial{" "}
+          <span className="block sm:inline">Financial{" "}
           <h2 className="inline">
             <span className="inline text-foreground">
               Management
             </span>{" "}
-            Made Easy
-          </h2>
+            Made Easy</h2>
+          </span>
         </main>
 
-        <p className="text-xl text-muted-foreground md:w-10/12 mx-auto lg:mx-0">
+        <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed md:w-10/12 mx-auto lg:mx-0 px-2 sm:px-0">
           Track your expenses, manage your budget, and gain insights into your spending with manual entry tracking.
         </p>
 

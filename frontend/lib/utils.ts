@@ -31,6 +31,8 @@ export function getAuthErrorMessage(errorCode: string): string {
     "auth/cancelled-popup-request": "Sign-in was cancelled. Please try again.",
     "auth/popup-blocked": "Pop-up was blocked by your browser. Please allow pop-ups and try again.",
     "auth/account-exists-with-different-credential": "An account already exists with the same email but different sign-in method.",
+    "auth/unauthorized-domain": "This domain is not authorized for OAuth operations. Please check Firebase Console settings.",
+    "auth/configuration-not-found": "OAuth configuration error. Please ensure Google sign-in is enabled in Firebase Console.",
   };
 
   return errorMessages[errorCode] || "An unexpected error occurred. Please try again.";

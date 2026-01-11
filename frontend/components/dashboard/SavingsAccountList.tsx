@@ -16,6 +16,7 @@ interface SavingsAccountListProps {
   onAddMoney: (accountId: string, amount: number) => Promise<void>
   onWithdrawMoney: (accountId: string, amount: number) => Promise<void>
   defaultCurrency?: string
+  hideHeader?: boolean
 }
 
 export function SavingsAccountList({
@@ -26,6 +27,7 @@ export function SavingsAccountList({
   onAddMoney,
   onWithdrawMoney,
   defaultCurrency = "EUR",
+  hideHeader = false,
 }: SavingsAccountListProps) {
   const activeAccounts = accounts.filter((acc) => acc.isActive)
   const totalSavings = activeAccounts.reduce((sum, acc) => sum + acc.balance, 0)
@@ -33,18 +35,20 @@ export function SavingsAccountList({
   if (activeAccounts.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
-            <p className="text-muted-foreground mt-1">
-              Track your savings separately from your spending balance
-            </p>
+        {!hideHeader && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
+              <p className="text-muted-foreground mt-1">
+                Track your savings separately from your spending balance
+              </p>
+            </div>
+            <Button onClick={onAdd} className="w-full md:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Savings Account
+            </Button>
           </div>
-          <Button onClick={onAdd} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Savings Account
-          </Button>
-        </div>
+        )}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-muted-foreground text-center mb-4">
@@ -62,21 +66,23 @@ export function SavingsAccountList({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
-          <p className="text-muted-foreground mt-1">
-            Total Savings:{" "}
-            <span className="font-semibold text-foreground">
-              {formatCurrency(totalSavings, { currency: defaultCurrency })}
-            </span>
-          </p>
+      {!hideHeader && (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
+            <p className="text-muted-foreground mt-1">
+              Total Savings:{" "}
+              <span className="font-semibold text-foreground">
+                {formatCurrency(totalSavings, { currency: defaultCurrency })}
+              </span>
+            </p>
+          </div>
+          <Button onClick={onAdd} className="w-full md:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Savings Account
+          </Button>
         </div>
-        <Button onClick={onAdd} className="w-full md:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Create Savings Account
-        </Button>
-      </div>
+      )}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {activeAccounts.map((account) => (
           <SavingsAccountCard

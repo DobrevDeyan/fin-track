@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,8 +18,15 @@ export default function RegisterPage() {
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -96,11 +103,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // signInWithRedirect will redirect the page, so we don't need to handle navigation here
       await signInWithGoogle();
-      router.push("/dashboard");
+      // The redirect will happen automatically - user will be redirected back after Google auth
     } catch (err: any) {
       setError(err.message || "An error occurred during Google sign in. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

@@ -160,7 +160,7 @@ export const Navbar = () => {
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white border-gray-200">
       <NavigationMenu className="mx-auto">
-        <NavigationMenuList className="container h-14 px-4 w-screen flex justify-between ">
+        <NavigationMenuList className="container h-14 px-4 flex justify-between w-full">
           <NavigationMenuItem className="flex">
             <Link
               href="/"

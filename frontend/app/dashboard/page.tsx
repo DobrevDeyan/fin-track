@@ -21,6 +21,7 @@ import { GoalDialog } from "@/components/dashboard/GoalDialog"
 import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList"
 import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog"
 import { Navbar } from "@/components/Navbar"
+import { CollapsibleSection } from "@/components/ui/collapsible-section"
 
 // Lazy load charts (Recharts is ~200KB) - only load when needed
 const SpendingChart = dynamic(() => import("@/components/dashboard/SpendingChart").then(mod => ({ default: mod.SpendingChart })), {
@@ -71,6 +72,7 @@ import {
 import { Timestamp } from "firebase/firestore"
 import { Toast } from "@/components/ui/toast"
 import { exportEntriesToCSV } from "@/lib/export-utils"
+import { formatCurrency } from "@/lib/currency-utils"
 import { getUniqueCategories } from "@/lib/categories"
 import {
   calculateMetricsWithComparison,
@@ -1182,8 +1184,25 @@ function DashboardContent() {
           onDelete={handleDeleteEntry}  
         />
 
+        {/* Transaction Filters */}
+        <TransactionFilters
+          entries={entries}
+          onFilterChange={setFilteredEntries}
+          onExport={handleExportCSV}
+        />
+
+
         {/* Savings Accounts Section */}
-                <div className="mb-8">
+        <CollapsibleSection
+          title="Savings Accounts"
+          description={`Track your savings separately from your spending balance${savingsAccounts.length > 0 ? ` • Total: ${formatCurrency(calculateTotalSavings(savingsAccounts), { currency: userCurrency })}` : ''}`}
+          actionButton={
+            <Button onClick={() => setSavingsAccountDialogOpen(true)} className="w-full md:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Savings Account
+            </Button>
+          }
+        >
           {savingsAccountsLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -1200,21 +1219,24 @@ function DashboardContent() {
               onAddMoney={handleAddMoneyToSavings}
               onWithdrawMoney={handleWithdrawMoneyFromSavings}
               defaultCurrency={userCurrency}
+              hideHeader={true}
             />
           )}
-        </div>
+        </CollapsibleSection>
 
         
 
         {/* Budget Management Section */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="text-2xl font-bold">Budget Management</h2>
+        <CollapsibleSection
+          title="Budget Management"
+          description="Track your spending limits and stay on budget"
+          actionButton={
             <Button onClick={() => setBudgetDialogOpen(true)} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Budget
             </Button>
-          </div>
+          }
+        >
           {budgetsLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -1232,17 +1254,19 @@ function DashboardContent() {
               onDelete={handleDeleteBudget}
             />
           )}
-        </div>
+        </CollapsibleSection>
 
         {/* Recurring Transactions Section */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="text-2xl font-bold">Recurring Transactions</h2>
+        <CollapsibleSection
+          title="Recurring Transactions"
+          description="Manage your recurring bills, subscriptions, and income"
+          actionButton={
             <Button onClick={() => setRecurringDialogOpen(true)} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Recurring Transaction
             </Button>
-          </div>
+          }
+        >
           {recurringLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -1258,17 +1282,19 @@ function DashboardContent() {
               onDelete={handleDeleteRecurring}
             />
           )}
-        </div>
+        </CollapsibleSection>
 
         {/* Financial Goals Section */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <h2 className="text-2xl font-bold">Financial Goals</h2>
+        <CollapsibleSection
+          title="Financial Goals"
+          description="Set and track your savings goals and milestones"
+          actionButton={
             <Button onClick={() => setGoalDialogOpen(true)} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Create Goal
             </Button>
-          </div>
+          }
+        >
           {goalsLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -1284,14 +1310,7 @@ function DashboardContent() {
               onDelete={handleDeleteGoal}
             />
           )}
-        </div>
-
-        {/* Transaction Filters */}
-        <TransactionFilters
-          entries={entries}
-          onFilterChange={setFilteredEntries}
-          onExport={handleExportCSV}
-        />
+        </CollapsibleSection>
 
         {/* Add/Edit Entry Dialog */}
         <AddTransactionDialog
