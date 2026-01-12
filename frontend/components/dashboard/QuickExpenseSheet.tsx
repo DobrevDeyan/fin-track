@@ -26,11 +26,13 @@ import {
   Briefcase,
   Gift,
   BarChart3,
+  ArrowLeft,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QUICK_EXPENSE_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
+import { getQuickItemsForCategory, type QuickItem } from "@/lib/quick-items"
 
 interface QuickExpenseSheetProps {
   open: boolean
@@ -68,6 +70,8 @@ const quickExpenseCategories = QUICK_EXPENSE_CATEGORIES.map((cat) => ({
   icon: expenseCategoryIcons[cat.id] || CircleDot,
 }))
 
+type QuickFlowStep = "category" | "item" | "price"
+
 export function QuickExpenseSheet({
   open,
   onOpenChange,
@@ -77,20 +81,27 @@ export function QuickExpenseSheet({
   const [transactionType, setTransactionType] = useState<"expense" | "income">("expense")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [description, setDescription] = useState("")
+  const [descriptionManuallyEdited, setDescriptionManuallyEdited] = useState(false) // Track if user manually edited description
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Quick flow states (expenses only)
+  const [useQuickFlow, setUseQuickFlow] = useState(false) // Toggle for quick flow mode
+  const [quickFlowStep, setQuickFlowStep] = useState<QuickFlowStep>("category")
+  const [selectedItem, setSelectedItem] = useState<QuickItem | null>(null)
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(null)
 
   // Get categories based on transaction type
   const categories = transactionType === "expense" ? quickExpenseCategories : incomeCategories
 
-  // Auto-generate description from category
+  // Auto-generate description from category (only if not manually edited)
   useEffect(() => {
-    if (selectedCategory && !description) {
+    if (selectedCategory && !description && !descriptionManuallyEdited) {
       const category = categories.find((c) => c.id === selectedCategory)
       if (category) {
         setDescription(category.label)
       }
     }
-  }, [selectedCategory, description, categories])
+  }, [selectedCategory, description, descriptionManuallyEdited, categories])
 
   // Reset form when sheet closes or transaction type changes
   useEffect(() => {
@@ -99,7 +110,12 @@ export function QuickExpenseSheet({
       setTransactionType("expense")
       setSelectedCategory(null)
       setDescription("")
+      setDescriptionManuallyEdited(false)
       setIsSubmitting(false)
+      setUseQuickFlow(false)
+      setQuickFlowStep("category")
+      setSelectedItem(null)
+      setSelectedPrice(null)
     }
   }, [open])
 
@@ -107,7 +123,97 @@ export function QuickExpenseSheet({
   useEffect(() => {
     setSelectedCategory(null)
     setDescription("")
+    setDescriptionManuallyEdited(false)
+    setUseQuickFlow(false)
+    setQuickFlowStep("category")
+    setSelectedItem(null)
+    setSelectedPrice(null)
   }, [transactionType])
+
+  // Handle category selection - only move to quick flow if enabled
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId)
+    if (transactionType === "expense" && useQuickFlow) {
+      const items = getQuickItemsForCategory(categoryId)
+      if (items.length > 0) {
+        setQuickFlowStep("item")
+      } else {
+        // No quick items for this category, stay on category step
+        setQuickFlowStep("category")
+      }
+    }
+  }
+
+  // Toggle quick flow mode
+  const handleToggleQuickFlow = () => {
+    setUseQuickFlow(!useQuickFlow)
+    if (!useQuickFlow) {
+      // Entering quick flow mode
+      setQuickFlowStep("category")
+      setSelectedCategory(null)
+      setSelectedItem(null)
+      setSelectedPrice(null)
+      setAmount("")
+      setDescription("")
+    } else {
+      // Exiting quick flow mode, reset to manual
+      setQuickFlowStep("category")
+      setSelectedItem(null)
+      setSelectedPrice(null)
+    }
+  }
+
+  // Handle item selection - move to price step
+  const handleItemSelect = (item: QuickItem) => {
+    setSelectedItem(item)
+    setDescription(item.label)
+    setQuickFlowStep("price")
+  }
+
+  // Generate price options based on item's base price
+  const generatePriceOptions = (basePrice: number): number[] => {
+    const options: number[] = []
+    // Generate options: base price, and multiples of 5 around it
+    const rounded = Math.round(basePrice / 5) * 5
+    for (let i = Math.max(5, rounded - 15); i <= rounded + 20; i += 5) {
+      if (i > 0 && !options.includes(i)) {
+        options.push(i)
+      }
+    }
+    // Always include the base price if not already there
+    if (!options.includes(basePrice)) {
+      options.push(basePrice)
+      options.sort((a, b) => a - b)
+    }
+    return options
+  }
+
+  // Handle price selection - ready to submit
+  const handlePriceSelect = (price: number) => {
+    setSelectedPrice(price)
+    setAmount(price.toString())
+  }
+
+  // Handle back button
+  const handleBack = () => {
+    if (quickFlowStep === "price") {
+      setQuickFlowStep("item")
+      setSelectedPrice(null)
+      setAmount("")
+    } else if (quickFlowStep === "item") {
+      setQuickFlowStep("category")
+      setSelectedItem(null)
+      setDescription("")
+    }
+  }
+
+  // Get quick items for selected category
+  const quickItems = selectedCategory && transactionType === "expense" 
+    ? getQuickItemsForCategory(selectedCategory)
+    : []
+  
+  // Price options for selected item
+  const priceOptions = selectedItem ? generatePriceOptions(selectedItem.amount) : []
 
   const handleNumberInput = (value: string) => {
     if (value === "." && amount.includes(".")) return
@@ -149,7 +255,19 @@ export function QuickExpenseSheet({
     }
   }
 
-  const canSubmit = selectedCategory && amount && parseFloat(amount) > 0
+  // For quick flow, can submit when price is selected
+  const canSubmitQuickFlow = transactionType === "expense" && 
+    quickFlowStep === "price" && 
+    selectedPrice !== null && 
+    selectedCategory && 
+    selectedItem
+
+  // For manual entry
+  const canSubmitManual = selectedCategory && amount && parseFloat(amount) > 0
+
+  const canSubmit = transactionType === "expense" && useQuickFlow && quickFlowStep === "price" 
+    ? canSubmitQuickFlow 
+    : canSubmitManual
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -160,16 +278,33 @@ export function QuickExpenseSheet({
       >
         <div className="px-4 pt-4 pb-2 flex-shrink-0">
           <SheetHeader className="text-left">
-            <SheetTitle className="text-xl font-bold">Quick Transaction</SheetTitle>
-            <SheetDescription className="text-xs mt-1">
-              Select type, category, enter amount, and save
-            </SheetDescription>
+            <div className="flex items-center gap-2">
+              {useQuickFlow && quickFlowStep !== "category" && transactionType === "expense" && (
+                <button
+                  onClick={handleBack}
+                  className="p-1.5 rounded-lg hover:bg-accent transition-colors -ml-1"
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              )}
+              <div className="flex-1">
+                <SheetTitle className="text-xl font-bold">Quick Transaction</SheetTitle>
+                <SheetDescription className="text-xs mt-1">
+                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "category" && "Select a category to get started"}
+                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "item" && "Choose an item"}
+                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && "Select approximate price"}
+                  {transactionType === "expense" && !useQuickFlow && "Select category, enter amount, and save"}
+                  {transactionType === "income" && "Select type, category, enter amount, and save"}
+                </SheetDescription>
+              </div>
+            </div>
           </SheetHeader>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pb-2 min-h-0">
           <div className="flex flex-col gap-2.5">
-            {/* Transaction Type Selector */}
+            {/* Transaction Type Selector - Always visible */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Type</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -202,106 +337,225 @@ export function QuickExpenseSheet({
               </div>
             </div>
 
-            {/* Category Selection */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Category</Label>
-              <div className="grid grid-cols-3 gap-1.5">
-                {categories.map((category) => {
-                  const Icon = category.icon
-                  const isSelected = selectedCategory === category.id
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={cn(
-                        "relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg border-2 transition-all",
-                        "active:scale-95",
-                        isSelected
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "p-1.5 rounded-full text-white",
-                          category.color,
-                          isSelected && "ring-2 ring-primary ring-offset-1"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <span className="text-[10px] font-medium leading-tight text-center">{category.label}</span>
-                      {isSelected && (
-                        <Check className="h-3 w-3 text-primary absolute top-1 right-1" />
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Amount Display */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Amount</Label>
-              <div className="relative">
-                <div className="text-2xl font-bold text-center py-2.5 px-4 bg-muted rounded-lg min-h-[60px] flex items-center justify-center">
-                  <span className="text-muted-foreground mr-1.5 text-lg">€</span>
-                  <span className={cn(
-                    amount ? "text-foreground" : "text-muted-foreground/50"
-                  )}>
-                    {amount || "0.00"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Description (Optional) */}
-            {selectedCategory && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Description (Optional)</Label>
-                <Input
-                  placeholder="e.g., Grocery store, Salary..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm h-9"
-                />
+            {/* Quick Flow Toggle Button - Only for Expenses */}
+            {transactionType === "expense" && (
+              <div>
+                <button
+                  onClick={handleToggleQuickFlow}
+                  className={cn(
+                    "w-full py-2 px-4 rounded-lg border-2 text-sm font-semibold transition-all",
+                    useQuickFlow
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/50"
+                  )}
+                >
+                  {useQuickFlow ? "✓ Quick Add Mode" : "⚡ Use Quick Add"}
+                </button>
               </div>
             )}
 
-            {/* Number Pad - More compact for mobile */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {[
-                "1", "2", "3",
-                "4", "5", "6",
-                "7", "8", "9",
-                ".", "0", "backspace",
-              ].map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => handleNumberInput(key)}
-                  className={cn(
-                    "h-11 text-base font-semibold rounded-lg border-2 flex items-center justify-center",
-                    "active:scale-95 transition-all",
-                    key === "backspace"
-                      ? "border-destructive/50 hover:bg-destructive/10 hover:border-destructive"
-                      : "border-border hover:bg-muted hover:border-primary/50"
-                  )}
-                >
-                  {key === "backspace" ? (
-                    <X className="h-4 w-4" />
-                  ) : (
-                    key
-                  )}
-                </button>
-              ))}
-            </div>
+            {/* Quick Flow for Expenses */}
+            {transactionType === "expense" && useQuickFlow && quickFlowStep === "category" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Category</Label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {quickExpenseCategories.map((category) => {
+                    const Icon = category.icon
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleCategorySelect(category.id)}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg border-2 transition-all",
+                          "active:scale-95",
+                          "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "p-1.5 rounded-full text-white",
+                            category.color
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-medium leading-tight text-center">{category.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {transactionType === "expense" && useQuickFlow && quickFlowStep === "item" && quickItems.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Select Item</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {quickItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleItemSelect(item)}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all",
+                        "active:scale-95",
+                        "border-border hover:border-primary hover:bg-primary/5"
+                      )}
+                    >
+                      <span className="text-3xl">{item.emoji || "📦"}</span>
+                      <span className="text-sm font-semibold">{item.label}</span>
+                      <span className="text-xs text-muted-foreground">€{item.amount.toFixed(2)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && priceOptions.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Select Price</Label>
+                <div className="text-center py-2 mb-2">
+                  <p className="text-sm text-muted-foreground">{selectedItem?.label}</p>
+                  <p className="text-xs text-muted-foreground">Suggested: €{selectedItem?.amount.toFixed(2)}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {priceOptions.map((price) => {
+                    const isSelected = selectedPrice === price
+                    return (
+                      <button
+                        key={price}
+                        type="button"
+                        onClick={() => handlePriceSelect(price)}
+                        className={cn(
+                          "flex flex-col items-center justify-center gap-1 p-4 rounded-lg border-2 transition-all",
+                          "active:scale-95",
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary font-bold"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <span className="text-lg font-semibold">€{price}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Manual Entry (Income or when quick flow is disabled) */}
+            {(transactionType === "income" || (transactionType === "expense" && !useQuickFlow)) && (
+              <>
+              {/* Category Selection for Manual Entry */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Category</Label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {categories.map((category) => {
+                    const Icon = category.icon
+                    const isSelected = selectedCategory === category.id
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg border-2 transition-all",
+                          "active:scale-95",
+                          isSelected
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "p-1.5 rounded-full text-white",
+                            category.color,
+                            isSelected && "ring-2 ring-primary ring-offset-1"
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-medium leading-tight text-center">{category.label}</span>
+                        {isSelected && (
+                          <Check className="h-3 w-3 text-primary absolute top-1 right-1" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Amount Display */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Amount</Label>
+                <div className="relative">
+                  <div className="text-2xl font-bold text-center py-2.5 px-4 bg-muted rounded-lg min-h-[60px] flex items-center justify-center">
+                    <span className="text-muted-foreground mr-1.5 text-lg">€</span>
+                    <span className={cn(
+                      amount ? "text-foreground" : "text-muted-foreground/50"
+                    )}>
+                      {amount || "0.00"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description (Optional) */}
+              {selectedCategory && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Description (Optional)</Label>
+                  <Input
+                    placeholder="e.g., Grocery store, Salary..."
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value)
+                      setDescriptionManuallyEdited(true)
+                    }}
+                    className="text-sm h-9"
+                  />
+                </div>
+              )}
+
+              {/* Number Pad - More compact for mobile */}
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  "1", "2", "3",
+                  "4", "5", "6",
+                  "7", "8", "9",
+                  ".", "0", "backspace",
+                ].map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleNumberInput(key)}
+                    className={cn(
+                      "h-11 text-base font-semibold rounded-lg border-2 flex items-center justify-center",
+                      "active:scale-95 transition-all",
+                      key === "backspace"
+                        ? "border-destructive/50 hover:bg-destructive/10 hover:border-destructive"
+                        : "border-border hover:bg-muted hover:border-primary/50"
+                    )}
+                  >
+                    {key === "backspace" ? (
+                      <X className="h-4 w-4" />
+                    ) : (
+                      key
+                    )}
+                  </button>
+                ))}
+              </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Submit Button - Fixed at bottom */}
         <div className="px-4 pb-4 pt-2 border-t flex-shrink-0 bg-background">
+          {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && selectedPrice !== null && (
+            <div className="mb-2 text-center">
+              <p className="text-xs text-muted-foreground">Selected: {selectedItem?.label} - €{selectedPrice.toFixed(2)}</p>
+            </div>
+          )}
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit || isSubmitting}

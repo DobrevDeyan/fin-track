@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { Sponsors } from "@/components/Sponsors";
+// import { Sponsors } from "@/components/Sponsors";
 
 // Lazy load below-the-fold components for better initial page load
 const About = dynamic(() => import("@/components/About").then(mod => ({ default: mod.About })), {
@@ -22,9 +22,9 @@ const Cta = dynamic(() => import("@/components/Cta").then(mod => ({ default: mod
 const Testimonials = dynamic(() => import("@/components/Testimonials").then(mod => ({ default: mod.Testimonials })), {
   loading: () => <div className="min-h-[400px]" />,
 });
-const Team = dynamic(() => import("@/components/Team").then(mod => ({ default: mod.Team })), {
-  loading: () => <div className="min-h-[400px]" />,
-});
+// const Team = dynamic(() => import("@/components/Team").then(mod => ({ default: mod.Team })), {
+//   loading: () => <div className="min-h-[400px]" />,
+// });
 const Pricing = dynamic(() => import("@/components/Pricing").then(mod => ({ default: mod.Pricing })), {
   loading: () => <div className="min-h-[400px]" />,
 });
@@ -44,14 +44,14 @@ export default function Home() {
     <>
       <Navbar />
       <Hero />
-      <Sponsors />
+      {/* <Sponsors /> */}
       <About />
       <HowItWorks />
       <Features />
       <Services />
       <Cta />
       <Testimonials />
-      <Team />
+      {/* <Team /> */}
       <Pricing />
       <Newsletter />
       <FAQ />
