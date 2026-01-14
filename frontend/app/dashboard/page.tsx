@@ -1197,7 +1197,13 @@ function DashboardContent() {
           title="Savings Accounts"
           description={`Track your savings separately from your spending balance${savingsAccounts.length > 0 ? ` • Total: ${formatCurrency(calculateTotalSavings(savingsAccounts), { currency: userCurrency })}` : ''}`}
           actionButton={
-            <Button onClick={() => setSavingsAccountDialogOpen(true)} className="w-full md:w-auto">
+            <Button 
+              onClick={() => {
+                console.log("Button clicked! Opening dialog...")
+                setSavingsAccountDialogOpen(true)
+              }} 
+              className="w-full md:w-auto"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Savings Account
             </Button>
@@ -1352,6 +1358,15 @@ function DashboardContent() {
           onSubmit={handleAddGoal}
           editingGoal={editingGoal}
           categories={categories}
+          defaultCurrency={userCurrency}
+        />
+
+        {/* Add/Edit Savings Account Dialog */}
+        <SavingsAccountDialog
+          open={savingsAccountDialogOpen}
+          onOpenChange={handleSavingsAccountDialogClose}
+          onSubmit={handleSubmitSavingsAccount}
+          editingAccount={editingSavingsAccount}
           defaultCurrency={userCurrency}
         />
 
