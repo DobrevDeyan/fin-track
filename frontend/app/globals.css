@@ -104,6 +104,32 @@
     p {
       line-height: 1.6;
     }
+
+    /* input,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="search"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    input[type="month"],
+    input[type="week"],
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+      
+    [class*="Input"],
+    [class*="input"],
+    input[class*="input"],
+    textarea[class*="textarea"] {
+      font-size: 16px !important;
+    } */
+
   }
 }
 
