@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, X, Download, ArrowUpDown } from "lucide-react"
+import { Search, Filter, X, ArrowUpDown } from "lucide-react"
 import { getUniqueCategories } from "@/lib/categories"
 import { filterAndSortTransactions } from "@/lib/transaction-filters"
 
@@ -28,13 +28,15 @@ interface Entry {
 interface TransactionFiltersProps {
   entries: Entry[]
   onFilterChange: (filtered: Entry[]) => void
-  onExport?: () => void
+  compact?: boolean
+  className?: string // Add className prop for styling
 }
 
 export function TransactionFilters({
   entries,
   onFilterChange,
-  onExport,
+  compact = false,
+  className,
 }: TransactionFiltersProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
@@ -117,46 +119,47 @@ export function TransactionFilters({
     customDateRange.startDate ||
     customDateRange.endDate
 
-  return (
-    <Card className="mb-6">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4">
-          <CardTitle className="text-lg">Filter & Search Transactions</CardTitle>
-          <div className="flex flex-wrap gap-2">
-            {onExport && (
-              <Button variant="outline" size="sm" onClick={onExport} className="flex-shrink-0">
-                <Download className="h-4 w-4 mr-1.5 sm:mr-2" />
-                <span className="text-xs sm:text-sm">Export CSV</span>
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex-shrink-0"
-            >
-              <Filter className="h-4 w-4 mr-1.5 sm:mr-2" />
-              <span className="text-xs sm:text-sm">{showFilters ? "Hide" : "Show"} Filters</span>
-            </Button>
-            {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="flex-shrink-0">
-                <X className="h-4 w-4 mr-1.5 sm:mr-2" />
-                <span className="text-xs sm:text-sm">Clear</span>
-              </Button>
-            )}
+  const filterControls = (
+    <div className="flex items-center gap-3">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowFilters(!showFilters)}
+        className="flex-shrink-0"
+        title={showFilters ? "Hide Filters" : "Show Filters"}
+      >
+        <Filter className="h-4 w-4" />
+      </Button>
+      {hasActiveFilters && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={clearFilters} 
+          className="flex-shrink-0"
+          title="Clear Filters"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  )
+
+  const filterContent = (
+    <div className="space-y-4">
+        {/* Search and Filter Controls in one row */}
+        <div className="flex items-center gap-2">
+          <div className="w-[20%] flex-shrink-0">
+            {filterControls}
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by description, category, or notes..."
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10"
-          />
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by description, category, or notes..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
         {/* Advanced Filters */}
@@ -268,6 +271,27 @@ export function TransactionFilters({
             </div>
           </div>
         )}
+      </div>
+  )
+
+  if (compact) {
+    return (
+      <div className={className || ""}>
+        {filterContent}
+      </div>
+    )
+  }
+
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col gap-4">
+          <CardTitle className="text-lg">Filter & Search Transactions</CardTitle>
+          {filterControls}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {filterContent}
       </CardContent>
     </Card>
   )

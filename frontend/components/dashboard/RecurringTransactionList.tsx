@@ -29,14 +29,14 @@ export function RecurringTransactionList({
   if (recurringTransactions.length === 0) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Repeat className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Recurring Transactions Yet</h3>
-          <p className="text-sm text-muted-foreground text-center mb-4 max-w-md">
+        <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
+          <Repeat className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4 md:mb-6" />
+          <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">No Recurring Transactions Yet</h3>
+          <p className="text-sm md:text-base text-muted-foreground text-center mb-4 md:mb-6 max-w-md md:max-w-lg px-4">
             Set up recurring bills and subscriptions to automatically create transactions. Perfect for
             monthly subscriptions, bills, or regular income.
           </p>
-          <Button onClick={onAdd}>
+          <Button onClick={onAdd} size="default" className="md:text-base">
             <Plus className="h-4 w-4 mr-2" />
             Create Your First Recurring Transaction
           </Button>
@@ -46,8 +46,8 @@ export function RecurringTransactionList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4 md:space-y-6">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         {sortedRecurring.map((recurring) => (
           <RecurringTransactionCard
             key={recurring.id}

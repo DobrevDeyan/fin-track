@@ -39,16 +39,25 @@ export async function createSavingsAccount(
   try {
     const accountsRef = collection(db, "savingsAccounts")
     
-    const newAccount: Omit<SavingsAccountDocument, "userId"> = {
+    // Build the account object, only including fields that are not undefined
+    const newAccount: any = {
       name: accountData.name.trim(),
       balance: accountData.balance ?? 0,
       currency: accountData.currency,
-      description: accountData.description?.trim(),
-      color: accountData.color,
-      icon: accountData.icon,
       isActive: accountData.isActive ?? true,
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
+    }
+    
+    // Only include optional fields if they have values
+    if (accountData.description !== undefined && accountData.description.trim() !== "") {
+      newAccount.description = accountData.description.trim()
+    }
+    if (accountData.color !== undefined) {
+      newAccount.color = accountData.color
+    }
+    if (accountData.icon !== undefined) {
+      newAccount.icon = accountData.icon
     }
     
     const docRef = await addDoc(accountsRef, {
@@ -161,7 +170,13 @@ export async function updateSavingsAccount(
       cleanUpdateData.currency = updateData.currency
     }
     if (updateData.description !== undefined) {
-      cleanUpdateData.description = updateData.description?.trim()
+      // Only include description if it has a value after trimming
+      const trimmedDescription = updateData.description?.trim()
+      if (trimmedDescription !== undefined && trimmedDescription !== "") {
+        cleanUpdateData.description = trimmedDescription
+      }
+      // If it's empty string, we can set it to empty string (Firebase allows empty strings)
+      // but we'll skip undefined values
     }
     if (updateData.color !== undefined) {
       cleanUpdateData.color = updateData.color

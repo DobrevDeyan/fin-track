@@ -11,7 +11,14 @@ import { getUserEntries } from "@/lib/firestore-entries"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getDateRange, getCustomDateRange } from "@/lib/date-utils"
 import { exportReportToPDF } from "@/lib/pdf-export"
-import { Download, Calendar } from "lucide-react"
+import { exportEntriesToCSV } from "@/lib/export-utils"
+import { Download, Calendar, FileText, FileSpreadsheet } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import dynamic from "next/dynamic"
 
 // Lazy load charts
@@ -172,6 +179,21 @@ export default function ReportsPage() {
     }
   }
 
+  const handleExportCSV = () => {
+    try {
+      if (!startDate || !endDate) {
+        alert("Please select a date range before exporting.")
+        return
+      }
+
+      const filename = `fintrack-report-${startDate}-to-${endDate}.csv`
+      exportEntriesToCSV(filteredEntries, filename)
+    } catch (error) {
+      console.error("Error exporting CSV:", error)
+      alert("Failed to export CSV. Please try again.")
+    }
+  }
+
   if (loading || entriesLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -199,10 +221,24 @@ export default function ReportsPage() {
               Analyze your spending patterns and financial trends
             </p>
           </div>
-          <Button onClick={handleExportPDF} variant="outline" className="w-full md:w-auto">
-            <Download className="mr-2 h-4 w-4" />
-            Export PDF
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full md:w-auto">
+                <Download className="mr-2 h-4 w-4" />
+                Export Report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPDF}>
+                <FileText className="mr-2 h-4 w-4" />
+                Export as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportCSV}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Export as CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Date Range Selector */}

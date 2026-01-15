@@ -51,8 +51,7 @@ import {
   createRecurringTransaction,
   getUserRecurringTransactions,
   deleteRecurringTransaction,
-  updateRecurringTransaction,
-  calculateNextDate,
+  updateRecurringTransaction
 } from "@/lib/firestore-recurring"
 import {
   createGoal,
@@ -71,15 +70,12 @@ import {
 } from "@/lib/firestore-savings"
 import { Timestamp } from "firebase/firestore"
 import { Toast } from "@/components/ui/toast"
-import { exportEntriesToCSV } from "@/lib/export-utils"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getUniqueCategories } from "@/lib/categories"
 import {
-  calculateMetricsWithComparison,
-  getCurrentMonthEntries,
-  getPreviousMonthEntries,
+  calculateMetricsWithComparison
 } from "@/lib/metrics-utils"
-import { getMonthName, getPreviousMonth } from "@/lib/date-utils"
+import { getMonthName } from "@/lib/date-utils"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 
 interface Entry {
@@ -452,21 +448,6 @@ function DashboardContent() {
     }
   }
 
-  const handleExportCSV = () => {
-    try {
-      exportEntriesToCSV(filteredEntries.length > 0 ? filteredEntries : entries)
-      setToast({
-        message: SUCCESS_MESSAGES.CSV_EXPORTED,
-        type: "success",
-      })
-    } catch (error) {
-      console.error("Error exporting CSV:", error)
-      setToast({
-        message: ERROR_MESSAGES.EXPORT_FAILED,
-        type: "error",
-      })
-    }
-  }
 
   const handleLogout = async () => {
     try {
@@ -1118,18 +1099,26 @@ function DashboardContent() {
       totalIncome,
       totalExpenses,
       totalBalance,
-      savings,
     },
     changes: {
       balance: balanceChange,
       income: incomeChange,
       expenses: expensesChange,
-      savings: savingsChange,
     },
   } = metrics
 
-  // Calculate total savings from savings accounts
+  // Calculate total savings from savings accounts (actual savings, not just balance)
   const totalSavingsAccounts = calculateTotalSavings(savingsAccounts)
+  
+  // For savings change, we show total across accounts since savings accounts are tracked separately
+  // and can change independently of monthly entries (via direct deposits/withdrawals)
+  const activeSavingsCount = savingsAccounts.filter(acc => acc.isActive).length
+  const savingsChange = { 
+    change: activeSavingsCount > 0 
+      ? `Total across ${activeSavingsCount} account${activeSavingsCount !== 1 ? 's' : ''}`
+      : "No savings accounts yet",
+    trend: "neutral" as const 
+  }
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -1161,7 +1150,7 @@ function DashboardContent() {
             totalBalance={totalBalance}
             totalIncome={totalIncome}
             totalExpenses={totalExpenses}
-            savings={savings}
+            savings={totalSavingsAccounts}
             balanceChange={balanceChange}
             incomeChange={incomeChange}
             expensesChange={expensesChange}
@@ -1181,14 +1170,14 @@ function DashboardContent() {
           transactions={filteredEntries.length > 0 ? filteredEntries : entries}
           onAdd={() => setDialogOpen(true)}
           onEdit={handleEditEntry}
-          onDelete={handleDeleteEntry}  
-        />
-
-        {/* Transaction Filters */}
-        <TransactionFilters
-          entries={entries}
-          onFilterChange={setFilteredEntries}
-          onExport={handleExportCSV}
+          onDelete={handleDeleteEntry}
+          filters={
+            <TransactionFilters
+              entries={entries}
+              onFilterChange={setFilteredEntries}
+              compact={true}
+            />
+          }
         />
 
 

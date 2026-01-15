@@ -84,7 +84,9 @@ export function MetricsCards({
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
               <p className={`text-xs mt-1 ${getTrendColor(metric.trend)}`}>
-                {metric.change} from last month
+                {metric.title === "Savings" 
+                  ? metric.change 
+                  : `${metric.change} from last month`}
               </p>
             </CardContent>
           </Card>

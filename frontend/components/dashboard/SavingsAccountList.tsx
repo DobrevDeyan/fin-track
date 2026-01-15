@@ -50,11 +50,11 @@ export function SavingsAccountList({
           </div>
         )}
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground text-center mb-4">
+          <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
+            <p className="text-sm md:text-base text-muted-foreground text-center mb-4 md:mb-6 max-w-md md:max-w-lg px-4">
               No savings accounts yet. Create one to start tracking your savings separately.
             </p>
-            <Button onClick={onAdd}>
+            <Button onClick={onAdd} size="default" className="md:text-base">
               <Plus className="mr-2 h-4 w-4" />
               Create Your First Savings Account
             </Button>
@@ -65,7 +65,7 @@ export function SavingsAccountList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 md:space-y-6">
       {!hideHeader && (
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -83,7 +83,7 @@ export function SavingsAccountList({
           </Button>
         </div>
       )}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         {activeAccounts.map((account) => (
           <SavingsAccountCard
             key={account.id}
