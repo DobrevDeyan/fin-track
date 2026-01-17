@@ -1,6 +1,6 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
-const CACHE_NAME = 'fintrack-v5';
+const CACHE_NAME = 'fintrack-v6';
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Install event - cache static assets only

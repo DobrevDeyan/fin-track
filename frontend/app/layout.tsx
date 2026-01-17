@@ -68,6 +68,15 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         {/* PWA meta tags */}
         <meta name="mobile-web-app-capable" content="yes" />
+        {/* Apple Touch Icons - iOS Safari uses these specifically */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128x128.png" />
+        <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-128x128.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-96x96.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className={`${inter.variable} ${poppins.variable} ${inter.className}`}>
         <ThemeProvider
