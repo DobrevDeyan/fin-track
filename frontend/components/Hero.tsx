@@ -13,20 +13,15 @@ export const Hero = () => {
   return (
     <section className="container flex flex-col justify-center min-h-[calc(100vh-4rem)] md:min-h-0 md:grid lg:grid-cols-2 md:place-items-center py-12 px-4 sm:py-16 md:py-32 gap-8 md:gap-10">
       <div className="text-center lg:text-start space-y-5 md:space-y-6 flex flex-col justify-center">
-        <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight sm:leading-tight md:leading-normal tracking-tight">
-          <h1 className="block sm:inline">
-            <span className="inline text-foreground">
+        <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight sm:leading-tight md:leading-normal tracking-tight">
+          <h1 className="block font-poppins font-bold text-foreground">
+            <span className="inline">
               Pocket
-            </span>{" "}
-            — Smart
-          </h1>{" "}
-          <span className="block sm:inline">Financial{" "}
-          <h2 className="inline">
-            <span className="inline text-foreground">
-              Management
-            </span>{" "}
-            Made Easy</h2>
-          </span>
+            </span>
+          </h1>
+          <h2 className="block font-inter font-semibold text-foreground/90">
+            Smart Financial Management Made Easy
+          </h2>
         </main>
 
         <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed md:w-10/12 mx-auto lg:mx-0 px-2 sm:px-0 font-normal">

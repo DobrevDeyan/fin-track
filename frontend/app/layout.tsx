@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
@@ -12,6 +12,14 @@ const inter = Inter({
   display: "swap",
   preload: true,
   variable: "--font-inter",
+})
+
+const poppins = Poppins({ 
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
 })
 
 export const metadata: Metadata = {
@@ -61,7 +69,7 @@ export default function RootLayout({
         {/* PWA meta tags */}
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${poppins.variable} ${inter.className}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

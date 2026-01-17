@@ -173,21 +173,80 @@ export function QuickExpenseSheet({
     setQuickFlowStep("price")
   }
 
-  // Generate price options based on item's base price
-  const generatePriceOptions = (basePrice: number): number[] => {
+  // Generate price options based on item's base price and category
+  const generatePriceOptions = (basePrice: number, item: QuickItem | null, category: string | null): number[] => {
     const options: number[] = []
-    // Generate options: base price, and multiples of 5 around it
-    const rounded = Math.round(basePrice / 5) * 5
-    for (let i = Math.max(5, rounded - 15); i <= rounded + 20; i += 5) {
-      if (i > 0 && !options.includes(i)) {
-        options.push(i)
+    
+    // Define low-cost items that need smaller price increments
+    const lowCostItems = ["coffee", "breakfast", "snacks", "drinks", "parking", "public_transport", "tip", "game"]
+    const isLowCost = item && lowCostItems.includes(item.id)
+    
+    // Define very low-cost items (under 5 EUR typically)
+    const veryLowCostItems = ["coffee", "snacks", "parking", "public_transport", "tip"]
+    const isVeryLowCost = item && veryLowCostItems.includes(item.id)
+    
+    if (isVeryLowCost) {
+      // For very low-cost items (coffee, snacks, etc.), generate prices: 1, 2, 3, 4, 5, 6, 7, 8, 10
+      const prices = [1, 2, 3, 4, 5, 6, 7, 8, 10]
+      prices.forEach(price => {
+        if (price >= 1 && price <= 15 && !options.includes(price)) {
+          options.push(price)
+        }
+      })
+      // Always include base price
+      if (basePrice > 0 && basePrice <= 15 && !options.includes(basePrice)) {
+        options.push(basePrice)
+      }
+    } else if (isLowCost) {
+      // For low-cost items (breakfast, drinks, etc.), generate prices: 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15
+      const prices = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15]
+      prices.forEach(price => {
+        if (price >= 2 && price <= 20 && !options.includes(price)) {
+          options.push(price)
+        }
+      })
+      // Always include base price
+      if (basePrice > 0 && basePrice <= 20 && !options.includes(basePrice)) {
+        options.push(basePrice)
+      }
+    } else if (basePrice <= 15) {
+      // For medium-low cost items (lunch, fast food, etc.), generate: 5, 8, 10, 12, 15, 18, 20, 25
+      const prices = [5, 8, 10, 12, 15, 18, 20, 25]
+      prices.forEach(price => {
+        if (price >= 5 && price <= 30 && !options.includes(price)) {
+          options.push(price)
+        }
+      })
+      if (basePrice > 0 && !options.includes(basePrice)) {
+        options.push(basePrice)
+      }
+    } else if (basePrice <= 30) {
+      // For medium cost items, generate: 10, 15, 20, 25, 30, 35, 40, 50
+      const prices = [10, 15, 20, 25, 30, 35, 40, 50]
+      prices.forEach(price => {
+        if (price >= 10 && price <= 60 && !options.includes(price)) {
+          options.push(price)
+        }
+      })
+      if (basePrice > 0 && !options.includes(basePrice)) {
+        options.push(basePrice)
+      }
+    } else {
+      // For high-cost items, generate multiples of 10: 20, 30, 40, 50, 60, 70, 80, 100
+      const rounded = Math.round(basePrice / 10) * 10
+      for (let i = Math.max(20, rounded - 30); i <= rounded + 50; i += 10) {
+        if (i > 0 && !options.includes(i)) {
+          options.push(i)
+        }
+      }
+      // Always include the base price if not already there
+      if (basePrice > 0 && !options.includes(basePrice)) {
+        options.push(basePrice)
       }
     }
-    // Always include the base price if not already there
-    if (!options.includes(basePrice)) {
-      options.push(basePrice)
-      options.sort((a, b) => a - b)
-    }
+    
+    // Sort and return
+    options.sort((a, b) => a - b)
     return options
   }
 
@@ -272,7 +331,7 @@ export function QuickExpenseSheet({
     : []
   
   // Price options for selected item
-  const priceOptions = selectedItem ? generatePriceOptions(selectedItem.amount) : []
+  const priceOptions = selectedItem ? generatePriceOptions(selectedItem.amount, selectedItem, selectedCategory) : []
 
   const handleNumberInput = (value: string) => {
     if (value === "." && amount.includes(".")) return
