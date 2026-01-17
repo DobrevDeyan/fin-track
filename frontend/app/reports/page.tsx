@@ -12,13 +12,8 @@ import { formatCurrency } from "@/lib/currency-utils"
 import { getDateRange, getCustomDateRange } from "@/lib/date-utils"
 import { exportReportToPDF } from "@/lib/pdf-export"
 import { exportEntriesToCSV } from "@/lib/export-utils"
-import { Download, Calendar, FileText, FileSpreadsheet } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Download, Calendar, FileText, FileSpreadsheet, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 import dynamic from "next/dynamic"
 
 // Lazy load charts
@@ -214,31 +209,31 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       <div className="container py-8 px-4 sm:px-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">Reports & Analytics</h1>
-            <p className="text-muted-foreground mt-2">
-              Analyze your spending patterns and financial trends
-            </p>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <Download className="mr-2 h-4 w-4" />
-                Export Report
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Link href="/dashboard">
+              <Button variant="outline" size="icon" className="flex-shrink-0">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Back to Dashboard</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportPDF}>
-                <FileText className="mr-2 h-4 w-4" />
-                Export as PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportCSV}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Export as CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reports & Analytics</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Analyze your spending patterns and financial trends
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 w-full">
+            <Button variant="outline" onClick={handleExportPDF} className="flex-1">
+              <FileText className="mr-2 h-4 w-4" />
+              Export PDF
+            </Button>
+            <Button variant="outline" onClick={handleExportCSV} className="flex-1">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         {/* Date Range Selector */}

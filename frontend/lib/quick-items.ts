@@ -66,6 +66,17 @@ export const QUICK_ITEMS_BY_CATEGORY: CategoryQuickItems[] = [
     ],
   },
   {
+    categoryId: "Taxes & Insurance",
+    items: [
+      { id: "kasko", label: "Kasko (Car Insurance)", amount: 300.00, emoji: "🚗" },
+      { id: "liability_insurance", label: "Liability Insurance", amount: 150.00, emoji: "🛡️" },
+      { id: "vehicle_tax", label: "Vehicle Tax", amount: 200.00, emoji: "📋" },
+      { id: "property_tax", label: "Property Tax", amount: 500.00, emoji: "🏠" },
+      { id: "municipal_tax", label: "Municipal Tax", amount: 100.00, emoji: "🏛️" },
+      { id: "home_insurance", label: "Home Insurance", amount: 400.00, emoji: "🏡" },
+    ],
+  },
+  {
     categoryId: "Entertainment",
     items: [
       { id: "movie", label: "Movie", amount: 12.00, emoji: "🎬" },

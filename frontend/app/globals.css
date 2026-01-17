@@ -133,6 +133,43 @@
   }
 }
 
+/* Make date inputs fully clickable - entire field opens calendar */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="month"] {
+  cursor: pointer;
+  position: relative;
+}
+
+/* Make the calendar picker indicator cover the entire input area */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 1;
+}
+
+/* For Firefox */
+input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
