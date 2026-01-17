@@ -6,7 +6,7 @@ export const LogoIcon = () => {
       fill="none"
       className="mr-2 w-6 h-6"
     >
-      {/* Black square with white FT text - matching favicon */}
+      {/* Black square with white P text - matching favicon */}
       <rect
         width="24"
         height="24"
@@ -15,14 +15,14 @@ export const LogoIcon = () => {
       />
       <text
         x="12"
-        y="16"
-        fontSize="12"
+        y="17"
+        fontSize="14"
         fontWeight="bold"
         fill="#FFFFFF"
         textAnchor="middle"
         fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
       >
-        FT
+        P
       </text>
     </svg>
   );

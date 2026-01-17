@@ -16,7 +16,7 @@ export const Hero = () => {
         <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight sm:leading-tight md:leading-normal tracking-tight">
           <h1 className="block sm:inline">
             <span className="inline text-foreground">
-              FinTrack
+              Pocket
             </span>{" "}
             — Smart
           </h1>{" "}

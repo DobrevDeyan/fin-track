@@ -168,14 +168,14 @@ export const Navbar = () => {
             >
               <Image
                 src="/icons/icon-32x32.png"
-                alt="FinTrack Logo"
+                alt="Pocket Logo"
                 width={32}
                 height={32}
                 className="w-6 h-6"
                 priority
               />
               <span className="text-foreground">
-                FinTrack
+                Pocket
               </span>
             </Link>
           </NavigationMenuItem>
@@ -200,7 +200,7 @@ export const Navbar = () => {
                   <div className="flex items-center justify-between">
                     <SheetTitle className="font-bold text-2xl text-left">
                       <span className="text-foreground">
-                        FinTrack
+                        Pocket
                       </span>
                     </SheetTitle>
                     <SheetClose asChild>

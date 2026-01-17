@@ -18,12 +18,12 @@ export const FAQ = () => {
       answer: "Yes, we use bank-level encryption to protect your data. All your entries are stored securely and encrypted in transit and at rest.",
     },
     {
-      question: "Can I use FinTrack on mobile?",
-      answer: "Yes, FinTrack is available as a Progressive Web App (PWA) that works on all mobile devices.",
+      question: "Can I use Pocket on mobile?",
+      answer: "Yes, Pocket is available as a Progressive Web App (PWA) that works on all mobile devices.",
     },
     {
       question: "What happens if I exceed my free tier limits?",
-      answer: "FinTrack is currently free to use. All features are available to help you track and manage your finances.",
+      answer: "Pocket is currently free to use. All features are available to help you track and manage your finances.",
     },
   ];
 

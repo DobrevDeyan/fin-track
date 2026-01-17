@@ -10,7 +10,7 @@ export const Cta = () => {
           Ready to take control of your finances?
         </h2>
         <p className="text-muted-foreground text-xl mb-8 max-w-2xl mx-auto">
-          Join thousands of users who are already managing their money smarter with FinTrack.
+          Join thousands of users who are already managing their money smarter with Pocket.
         </p>
         <Button size="lg" className="text-lg">
           Get Started Free

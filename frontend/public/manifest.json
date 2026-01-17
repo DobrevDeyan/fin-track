@@ -1,6 +1,6 @@
 {
-  "name": "FinTrack - Smart Financial Management",
-  "short_name": "FinTrack",
+  "name": "Pocket - Smart Financial Management",
+  "short_name": "Pocket",
   "description": "Track your expenses, manage your budget, and gain insights into your spending",
   "start_url": "/",
   "display": "standalone",

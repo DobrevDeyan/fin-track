@@ -15,14 +15,14 @@ export const Footer = () => {
               className="inline-flex items-center gap-2 mb-4"
             >
               <div className="w-10 h-10 rounded-md bg-black flex items-center justify-center">
-                <span className="text-white font-bold text-lg">FT</span>
+                <span className="text-white font-bold text-lg">P</span>
               </div>
               <span className="font-semibold text-xl text-foreground">
-                FinTrack
+                Pocket
               </span>
             </Link>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">FinTrack</p>
+              <p className="font-medium text-foreground">Pocket</p>
               <p>Smart financial management made easy.</p>
               <p className="mt-4">
                 The interactive layer for your
@@ -30,7 +30,7 @@ export const Footer = () => {
                 financial tracking and budgeting.
               </p>
               <p className="mt-6 text-xs">
-                &copy; {new Date().getFullYear()} FinTrack
+                &copy; {new Date().getFullYear()} Pocket
               </p>
             </div>
           </div>

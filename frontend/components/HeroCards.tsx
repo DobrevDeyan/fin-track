@@ -34,7 +34,7 @@ export const HeroCards = () => {
           </div>
         </CardHeader>
 
-        <CardContent>FinTrack has completely transformed how I manage my finances!</CardContent>
+        <CardContent>Pocket has completely transformed how I manage my finances!</CardContent>
       </Card>
 
       {/* Team */}

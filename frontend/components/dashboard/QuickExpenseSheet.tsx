@@ -89,6 +89,9 @@ export function QuickExpenseSheet({
   const [quickFlowStep, setQuickFlowStep] = useState<QuickFlowStep>("category")
   const [selectedItem, setSelectedItem] = useState<QuickItem | null>(null)
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null)
+  
+  // Swipe gesture states
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null)
 
   // Get categories based on transaction type
   const categories = transactionType === "expense" ? quickExpenseCategories : incomeCategories
@@ -207,6 +210,62 @@ export function QuickExpenseSheet({
     }
   }
 
+  // Handle forward navigation (swipe left)
+  const handleForward = () => {
+    if (quickFlowStep === "category" && selectedCategory && quickItems.length > 0) {
+      setQuickFlowStep("item")
+    } else if (quickFlowStep === "item" && selectedItem) {
+      setQuickFlowStep("price")
+    }
+  }
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!useQuickFlow || transactionType !== "expense") return
+    const touch = e.touches[0]
+    setTouchStart({ x: touch.clientX, y: touch.clientY })
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Prevent default to avoid scrolling conflicts with horizontal swipes
+    if (!touchStart) return
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - touchStart.x
+    const deltaY = touch.clientY - touchStart.y
+    
+    // If horizontal movement is greater than vertical, prevent scrolling
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.preventDefault()
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - touchStart.x
+    const deltaY = touch.clientY - touchStart.y
+    const absDeltaX = Math.abs(deltaX)
+    const absDeltaY = Math.abs(deltaY)
+
+    // Minimum swipe distance (50px) and must be more horizontal than vertical
+    const minSwipeDistance = 50
+    if (absDeltaX > minSwipeDistance && absDeltaX > absDeltaY) {
+      // Swipe right (positive deltaX) = go back
+      if (deltaX > 0 && (quickFlowStep === "item" || quickFlowStep === "price")) {
+        handleBack()
+      }
+      // Swipe left (negative deltaX) = go forward
+      else if (deltaX < 0) {
+        if (quickFlowStep === "category" && selectedCategory && quickItems.length > 0) {
+          handleForward()
+        } else if (quickFlowStep === "item" && selectedItem) {
+          handleForward()
+        }
+      }
+    }
+    setTouchStart(null)
+  }
+
   // Get quick items for selected category
   const quickItems = selectedCategory && transactionType === "expense" 
     ? getQuickItemsForCategory(selectedCategory)
@@ -282,10 +341,10 @@ export function QuickExpenseSheet({
               {useQuickFlow && quickFlowStep !== "category" && transactionType === "expense" && (
                 <button
                   onClick={handleBack}
-                  className="p-1.5 rounded-lg hover:bg-accent transition-colors -ml-1"
+                  className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg hover:bg-accent active:bg-accent/80 transition-colors -ml-1 flex items-center justify-center touch-manipulation"
                   aria-label="Back"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-7 w-7" />
                 </button>
               )}
               <div className="flex-1">
@@ -302,7 +361,12 @@ export function QuickExpenseSheet({
           </SheetHeader>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-2 min-h-0">
+        <div 
+          className="flex-1 overflow-y-auto px-4 pb-2 min-h-0 touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="flex flex-col gap-2.5">
             {/* Transaction Type Selector - Always visible */}
             <div className="space-y-1.5">

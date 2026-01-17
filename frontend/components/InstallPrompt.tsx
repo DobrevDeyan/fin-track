@@ -108,7 +108,7 @@ export function InstallPrompt() {
       <div className="bg-background border rounded-lg shadow-lg p-4 space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-semibold text-sm mb-1">Install FinTrack</h3>
+            <h3 className="font-semibold text-sm mb-1">Install Pocket</h3>
             <p className="text-xs text-muted-foreground">
               Install our app for a better experience. Quick access, offline support, and more!
             </p>

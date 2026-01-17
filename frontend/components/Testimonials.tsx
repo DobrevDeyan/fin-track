@@ -8,7 +8,7 @@ export const Testimonials = () => {
     {
       name: "John Doe",
       username: "@johndoe",
-      content: "FinTrack has completely changed how I manage my finances. The AI categorization is incredibly accurate!",
+      content: "Pocket has completely changed how I manage my finances. The AI categorization is incredibly accurate!",
       avatar: "https://github.com/shadcn.png",
     },
     {
@@ -20,7 +20,7 @@ export const Testimonials = () => {
     {
       name: "Mike Johnson",
       username: "@mikej",
-      content: "The budget alerts are a game-changer. I've saved so much money since using FinTrack!",
+      content: "The budget alerts are a game-changer. I've saved so much money since using Pocket!",
       avatar: "https://github.com/shadcn.png",
     },
   ];

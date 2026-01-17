@@ -15,13 +15,13 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "FinTrack - Smart Financial Management",
+  title: "Pocket - Smart Financial Management",
   description: "Track your expenses, manage your budget, and gain insights into your spending with manual entry tracking.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "FinTrack",
+    title: "Pocket",
   },
   icons: {
     icon: [
