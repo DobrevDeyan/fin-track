@@ -1,6 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
-const CACHE_NAME = 'fintrack-v6';
+// IMPORTANT: Update this version in both sw.js and app-version.ts when deploying a new version
+const CACHE_NAME = 'fintrack-v8'; // Increment this when deploying new version
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Install event - cache static assets only
@@ -8,13 +9,21 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker installed');
+        console.log('Service Worker installed with cache:', CACHE_NAME);
         // Don't cache HTML pages during install - let them be fetched fresh
         return Promise.resolve();
       })
   );
-  // Force the waiting service worker to become the active service worker
-  self.skipWaiting();
+  // Don't skip waiting automatically - let user decide when to update
+  // self.skipWaiting(); // Commented out to show update notification
+});
+
+// Listen for skip waiting message from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('Skipping waiting and activating new service worker');
+    self.skipWaiting();
+  }
 });
 
 // Fetch event - only cache static assets, not navigation requests

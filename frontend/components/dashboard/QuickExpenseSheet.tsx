@@ -27,6 +27,7 @@ import {
   Gift,
   BarChart3,
   ArrowLeft,
+  Calculator,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QUICK_EXPENSE_CATEGORIES } from "@/lib/categories"
@@ -61,6 +62,7 @@ const expenseCategoryIcons: Record<string, any> = {
   "Shopping": ShoppingCart,
   "Transportation": Car,
   "Bills & Utilities": Zap,
+  "Taxes & Insurance": Calculator,
   "Entertainment": Smile,
   "Other": CircleDot,
 }
@@ -483,7 +485,18 @@ export function QuickExpenseSheet({
                 <Label className="text-xs font-semibold">Category</Label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {quickExpenseCategories.map((category) => {
-                    const Icon = category.icon
+                    const Icon = category.icon || CircleDot
+                    // Fallback colors for each category if color is missing
+                    const colorMap: Record<string, string> = {
+                      "Food & Dining": "bg-red-500",
+                      "Shopping": "bg-blue-500",
+                      "Transportation": "bg-green-500",
+                      "Bills & Utilities": "bg-yellow-500",
+                      "Taxes & Insurance": "bg-orange-600",
+                      "Entertainment": "bg-purple-500",
+                      "Other": "bg-gray-500",
+                    }
+                    const bgColor = category.color || colorMap[category.id] || "bg-gray-500"
                     return (
                       <button
                         key={category.id}
@@ -497,8 +510,8 @@ export function QuickExpenseSheet({
                       >
                         <div
                           className={cn(
-                            "p-1.5 rounded-full text-white",
-                            category.color
+                            "p-1.5 rounded-full text-white flex items-center justify-center",
+                            bgColor
                           )}
                         >
                           <Icon className="h-4 w-4" />
@@ -574,8 +587,19 @@ export function QuickExpenseSheet({
                 <Label className="text-xs font-semibold">Category</Label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {categories.map((category) => {
-                    const Icon = category.icon
+                    const Icon = category.icon || CircleDot
                     const isSelected = selectedCategory === category.id
+                    // Fallback colors for each category if color is missing
+                    const colorMap: Record<string, string> = {
+                      "Food & Dining": "bg-red-500",
+                      "Shopping": "bg-blue-500",
+                      "Transportation": "bg-green-500",
+                      "Bills & Utilities": "bg-yellow-500",
+                      "Taxes & Insurance": "bg-orange-600",
+                      "Entertainment": "bg-purple-500",
+                      "Other": "bg-gray-500",
+                    }
+                    const bgColor = category.color || colorMap[category.id] || "bg-gray-500"
                     return (
                       <button
                         key={category.id}
@@ -591,9 +615,8 @@ export function QuickExpenseSheet({
                       >
                         <div
                           className={cn(
-                            "p-1.5 rounded-full text-white",
-                            category.color,
-                            isSelected && "ring-2 ring-primary ring-offset-1"
+                            "p-1.5 rounded-full text-white flex items-center justify-center",
+                            bgColor
                           )}
                         >
                           <Icon className="h-4 w-4" />

@@ -14,9 +14,7 @@ export const Footer = () => {
               href="/"
               className="inline-flex items-center gap-2 mb-4"
             >
-              <div className="w-10 h-10 rounded-md bg-black flex items-center justify-center">
-                <span className="text-white font-bold text-lg">P</span>
-              </div>
+              <LogoIcon />
               <span className="font-semibold text-xl text-foreground">
                 Pocket
               </span>

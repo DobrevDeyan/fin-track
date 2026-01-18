@@ -28,7 +28,7 @@ try {
     // Clear canvas
     ctx.clearRect(0, 0, size, size);
     
-    // Black square background with slightly rounded corners
+    // Teal-green square background with slightly rounded corners
     const radius = size * 0.1;
     ctx.beginPath();
     ctx.moveTo(radius, 0);
@@ -42,17 +42,17 @@ try {
     ctx.quadraticCurveTo(0, 0, radius, 0);
     ctx.closePath();
     
-    // Solid black background
-    ctx.fillStyle = '#000000';
+    // Solid teal-green background (#14B8A6 - Tailwind teal-500)
+    ctx.fillStyle = '#14B8A6';
     ctx.fill();
     
-    // Draw "FT" text in white, centered
-    ctx.fillStyle = '#FFFFFF';
-    const fontSize = size * 0.35;
+    // Draw "P" text in black, centered
+    ctx.fillStyle = '#000000';
+    const fontSize = size * 0.45; // Larger for single letter
     ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('FT', size / 2, size / 2);
+    ctx.fillText('P', size / 2, size / 2);
   }
   
   sizes.forEach(size => {

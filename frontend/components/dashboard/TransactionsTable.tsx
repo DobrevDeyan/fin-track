@@ -4,7 +4,13 @@ import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Edit, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Table,
   TableBody,
@@ -28,6 +34,8 @@ interface Entry {
   type: TransactionType
   currency?: string
   notes?: string
+  tags?: string[]
+  receiptUrl?: string
 }
 
 interface TransactionsTableProps {
@@ -48,6 +56,8 @@ export function TransactionsTable({
   filters,
 }: TransactionsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false)
+  const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null)
 
   // Calculate pagination
   const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE)
@@ -166,12 +176,39 @@ export function TransactionsTable({
                   {paginatedTransactions.map((transaction) => (
                     <TableRow key={transaction.id} className="hover:bg-muted/50">
                       <TableCell className="font-medium py-2 sm:py-4">
-                        <div>
-                          {transaction.description}
-                          {transaction.notes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {transaction.notes}
-                            </p>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            {transaction.description}
+                            {transaction.notes && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {transaction.notes}
+                              </p>
+                            )}
+                            {transaction.tags && transaction.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {transaction.tags.map((tag) => (
+                                  <Badge
+                                    key={tag}
+                                    variant="outline"
+                                    className="text-xs font-normal"
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {transaction.receiptUrl && (
+                            <button
+                              onClick={() => {
+                                setSelectedReceiptUrl(transaction.receiptUrl || null)
+                                setReceiptDialogOpen(true)
+                              }}
+                              className="flex-shrink-0 p-1 hover:bg-muted rounded"
+                              title="View receipt"
+                            >
+                              <FileImage className="h-4 w-4 text-primary" />
+                            </button>
                           )}
                         </div>
                       </TableCell>
@@ -285,6 +322,24 @@ export function TransactionsTable({
           </>
         )}
       </CardContent>
+      
+      {/* Receipt View Dialog */}
+      <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Receipt</DialogTitle>
+          </DialogHeader>
+          {selectedReceiptUrl && (
+            <div className="mt-4">
+              <img
+                src={selectedReceiptUrl}
+                alt="Receipt"
+                className="max-w-full h-auto rounded-md border"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

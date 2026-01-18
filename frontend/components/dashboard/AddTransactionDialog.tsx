@@ -24,6 +24,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
+import { Badge } from "@/components/ui/badge"
+import { X, Upload, FileImage, Trash2 } from "lucide-react"
+import { uploadReceipt, deleteReceipt, validateReceiptFile } from "@/lib/receipt-utils"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface TransactionData {
   description: string
@@ -32,6 +36,8 @@ interface TransactionData {
   type: "income" | "expense"
   date: string
   notes?: string
+  tags?: string[]
+  receiptUrl?: string
   allocateToSavings?: {
     accountId: string
     amount: number
@@ -57,6 +63,8 @@ interface AddTransactionDialogProps {
     type: "income" | "expense"
     date: string
     notes?: string
+    tags?: string[]
+    receiptUrl?: string
   } | null
   savingsAccounts?: SavingsAccount[]
 }
@@ -68,12 +76,19 @@ export function AddTransactionDialog({
   editingEntry,
   savingsAccounts = [],
 }: AddTransactionDialogProps) {
+  const { user } = useAuth()
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
   const [category, setCategory] = useState("")
   const [type, setType] = useState<"income" | "expense">("expense")
   const [date, setDate] = useState(formatDateForInput(new Date()))
   const [notes, setNotes] = useState("")
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState("")
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
+  const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null)
+  const [uploadingReceipt, setUploadingReceipt] = useState(false)
   const [allocateToSavings, setAllocateToSavings] = useState(false)
   const [savingsAccountId, setSavingsAccountId] = useState("")
   const [savingsAmount, setSavingsAmount] = useState("")
@@ -87,6 +102,10 @@ export function AddTransactionDialog({
       setType(editingEntry.type)
       setDate(formatDateForInput(editingEntry.date))
       setNotes(editingEntry.notes || "")
+      setTags(editingEntry.tags || [])
+      setExistingReceiptUrl(editingEntry.receiptUrl || null)
+      setReceiptFile(null)
+      setReceiptPreview(null)
     } else {
       // Reset form for new entry
       setDescription("")
@@ -95,6 +114,11 @@ export function AddTransactionDialog({
       setType("expense")
       setDate(formatDateForInput(new Date()))
       setNotes("")
+      setTags([])
+      setTagInput("")
+      setReceiptFile(null)
+      setReceiptPreview(null)
+      setExistingReceiptUrl(null)
       setAllocateToSavings(false)
       setSavingsAccountId("")
       setSavingsAmount("")
@@ -124,6 +148,22 @@ export function AddTransactionDialog({
     }
 
     try {
+      let receiptUrl = existingReceiptUrl || undefined
+
+      // Upload receipt if a new file was selected
+      if (receiptFile && user) {
+        setUploadingReceipt(true)
+        try {
+          receiptUrl = await uploadReceipt(user.uid, receiptFile, editingEntry?.id)
+        } catch (error: any) {
+          alert(error.message || "Failed to upload receipt. Please try again.")
+          setUploadingReceipt(false)
+          return
+        } finally {
+          setUploadingReceipt(false)
+        }
+      }
+
       await onSubmit({
         description,
         amount: parseFloat(amount),
@@ -131,6 +171,8 @@ export function AddTransactionDialog({
         type,
         date,
         notes: notes.trim() || undefined,
+        tags: tags.length > 0 ? tags : undefined,
+        receiptUrl,
         allocateToSavings: allocateToSavings && savingsAccountId
           ? {
               accountId: savingsAccountId,
@@ -146,6 +188,11 @@ export function AddTransactionDialog({
       setType("expense")
       setDate(formatDateForInput(new Date()))
       setNotes("")
+      setTags([])
+      setTagInput("")
+      setReceiptFile(null)
+      setReceiptPreview(null)
+      setExistingReceiptUrl(null)
       setAllocateToSavings(false)
       setSavingsAccountId("")
       setSavingsAmount("")
@@ -167,6 +214,58 @@ export function AddTransactionDialog({
       }
     }
   }, [amount, type, allocateToSavings])
+
+  // Tag management functions
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && tagInput.trim()) {
+      e.preventDefault()
+      const newTag = tagInput.trim().toLowerCase()
+      if (!tags.includes(newTag) && newTag.length > 0) {
+        setTags([...tags, newTag])
+        setTagInput("")
+      }
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove))
+  }
+
+  // Receipt management functions
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const error = validateReceiptFile(file)
+    if (error) {
+      alert(error)
+      return
+    }
+
+    setReceiptFile(file)
+    setExistingReceiptUrl(null) // Clear existing receipt when uploading new one
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setReceiptPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveReceipt = async () => {
+    if (existingReceiptUrl) {
+      try {
+        await deleteReceipt(existingReceiptUrl)
+      } catch (error) {
+        console.error("Error deleting receipt:", error)
+        // Continue anyway - the URL won't be included in the update
+      }
+    }
+    setReceiptFile(null)
+    setReceiptPreview(null)
+    setExistingReceiptUrl(null)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,6 +338,90 @@ export function AddTransactionDialog({
                 onChange={(e) => setDate(e.target.value)}
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="tags">Tags (Optional)</Label>
+              <Input
+                id="tags"
+                placeholder="Type a tag and press Enter"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTag}
+              />
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="flex items-center gap-1 pr-1"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                        aria-label={`Remove ${tag} tag`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="receipt">Receipt (Optional)</Label>
+              <div className="space-y-2">
+                {receiptPreview || existingReceiptUrl ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={receiptPreview || existingReceiptUrl || undefined}
+                      alt="Receipt preview"
+                      className="max-h-32 rounded-md border"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveReceipt}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                      aria-label="Remove receipt"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="receipt"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                      <p className="mb-2 text-sm text-muted-foreground">
+                        <span className="font-semibold">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, GIF (MAX. 5MB)</p>
+                    </div>
+                    <input
+                      id="receipt"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleReceiptChange}
+                      disabled={uploadingReceipt}
+                    />
+                  </label>
+                )}
+                {!receiptPreview && !existingReceiptUrl && (
+                  <input
+                    id="receipt-hidden"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleReceiptChange}
+                    disabled={uploadingReceipt}
+                  />
+                )}
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
@@ -331,7 +514,9 @@ export function AddTransactionDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{editingEntry ? "Update Entry" : "Add Entry"}</Button>
+            <Button type="submit" disabled={uploadingReceipt}>
+              {uploadingReceipt ? "Uploading..." : editingEntry ? "Update Entry" : "Add Entry"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

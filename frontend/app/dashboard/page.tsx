@@ -87,6 +87,8 @@ interface Entry {
   type: "income" | "expense"
   currency?: string // Currency of the entry
   notes?: string
+  tags?: string[]
+  receiptUrl?: string
 }
 
 interface Budget {
@@ -437,6 +439,8 @@ function DashboardContent() {
         type: entry.type,
         currency: entry.currency,
         notes: entry.notes,
+        tags: entry.tags,
+        receiptUrl: entry.receiptUrl,
       }))
       
       setEntries(convertedEntries)
@@ -467,6 +471,8 @@ function DashboardContent() {
     type: "income" | "expense"
     date: string
     notes?: string
+    tags?: string[]
+    receiptUrl?: string
     allocateToSavings?: {
       accountId: string
       amount: number
@@ -484,6 +490,8 @@ function DashboardContent() {
           category: data.category,
           date: data.date as any, // Will be converted to Timestamp in updateEntry
           notes: data.notes,
+          tags: data.tags,
+          receiptUrl: data.receiptUrl,
         })
 
         // Reload entries from Firestore
@@ -522,6 +530,8 @@ function DashboardContent() {
                 category: data.category,
                 date: data.date,
                 notes: data.notes,
+                tags: data.tags,
+                receiptUrl: data.receiptUrl,
               })
               await loadEntries()
               
@@ -548,6 +558,8 @@ function DashboardContent() {
                 category: data.category,
                 date: data.date,
                 notes: data.notes,
+                tags: data.tags,
+                receiptUrl: data.receiptUrl,
               })
               await loadEntries()
             }
@@ -566,6 +578,7 @@ function DashboardContent() {
             category: data.category,
             date: data.date,
             notes: data.notes,
+            tags: data.tags,
           })
           
           // Reload entries from Firestore to get the complete data
@@ -591,7 +604,17 @@ function DashboardContent() {
   const handleEditEntry = (id: string) => {
     const entry = entries.find((e) => e.id === id)
     if (entry) {
-      setEditingEntry(entry)
+      setEditingEntry({
+        id: entry.id,
+        description: entry.description,
+        amount: entry.amount,
+        category: entry.category,
+        type: entry.type,
+        date: entry.date,
+        notes: entry.notes,
+        tags: entry.tags,
+        receiptUrl: entry.receiptUrl,
+      })
       setDialogOpen(true)
     }
   }

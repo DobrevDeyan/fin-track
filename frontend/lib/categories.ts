@@ -30,7 +30,7 @@ export const QUICK_EXPENSE_CATEGORIES: QuickCategory[] = [
   { id: "Shopping", label: "Shopping", color: "bg-blue-500" },
   { id: "Transportation", label: "Fuel", color: "bg-green-500" },
   { id: "Bills & Utilities", label: "Bills", color: "bg-yellow-500" },
-  { id: "Taxes & Insurance", label: "Taxes", color: "bg-orange-500" },
+  { id: "Taxes & Insurance", label: "Taxes", color: "bg-orange-600" },
   { id: "Entertainment", label: "Fun", color: "bg-purple-500" },
   { id: "Other", label: "Other", color: "bg-gray-500" },
 ];
