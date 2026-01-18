@@ -27,11 +27,10 @@ console.log(`🔄 Syncing version ${version} (cache v${cacheVersion})...\n`);
 // Update manifest.json
 if (fs.existsSync(MANIFEST_FILE)) {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_FILE, 'utf8'));
-  // Use semantic version format (remove patch if present for manifest compatibility)
-  const manifestVersion = version.split('.').slice(0, 2).join('.');
-  manifest.version = manifestVersion;
+  // Use full semantic version in manifest
+  manifest.version = version;
   fs.writeFileSync(MANIFEST_FILE, JSON.stringify(manifest, null, 2) + '\n');
-  console.log(`✓ Updated manifest.json: version = ${manifestVersion}`);
+  console.log(`✓ Updated manifest.json: version = ${version}`);
 } else {
   console.warn(`⚠ manifest.json not found at ${MANIFEST_FILE}`);
 }
