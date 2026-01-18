@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v10'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v12'; // Increment this when deploying new version
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Install event - cache static assets only
@@ -137,21 +137,46 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      // Also delete all icon caches to force refresh
-      return caches.open(CACHE_NAME).then((cache) => {
-        return cache.keys().then((keys) => {
+      // Delete ALL icon and manifest caches from ALL cache stores to force refresh
+      // This ensures PWA installations get the latest icons
+      return Promise.all([
+        caches.open(CACHE_NAME).then((cache) => {
+          return cache.keys().then((keys) => {
+            return Promise.all(
+              keys.map((key) => {
+                const url = new URL(key.url);
+                // Delete all icon and manifest entries (with or without query params)
+                if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json') {
+                  console.log('Deleting cached icon/manifest:', url.pathname + url.search);
+                  return cache.delete(key);
+                }
+              })
+            );
+          });
+        }),
+        // Also check and delete from any old cache stores
+        caches.keys().then((cacheNames) => {
           return Promise.all(
-            keys.map((key) => {
-              const url = new URL(key.url);
-              // Delete all icon and manifest entries to force fresh fetch
-              if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json') {
-                console.log('Deleting cached icon/manifest:', url.pathname);
-                return cache.delete(key);
+            cacheNames.map((oldCacheName) => {
+              if (oldCacheName !== CACHE_NAME) {
+                return caches.open(oldCacheName).then((oldCache) => {
+                  return oldCache.keys().then((keys) => {
+                    return Promise.all(
+                      keys.map((key) => {
+                        const url = new URL(key.url);
+                        if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json') {
+                          console.log('Deleting old cached icon/manifest from', oldCacheName, ':', url.pathname);
+                          return oldCache.delete(key);
+                        }
+                      })
+                    );
+                  });
+                });
               }
             })
           );
-        });
-      });
+        })
+      ]);
     }).then(() => {
       // Claim all clients immediately to activate the new service worker
       return self.clients.claim();

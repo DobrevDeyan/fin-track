@@ -29,8 +29,37 @@ if (fs.existsSync(MANIFEST_FILE)) {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_FILE, 'utf8'));
   // Use full semantic version in manifest
   manifest.version = version;
+  
+  // Add cache-busting query parameter to all icon URLs
+  // This forces browsers to fetch new icons when version changes
+  const cacheBuster = `?v=${version}`;
+  
+  if (manifest.icons && Array.isArray(manifest.icons)) {
+    manifest.icons = manifest.icons.map(icon => {
+      if (icon.src && !icon.src.includes('?')) {
+        icon.src = icon.src + cacheBuster;
+      }
+      return icon;
+    });
+  }
+  
+  // Update shortcuts icons too
+  if (manifest.shortcuts && Array.isArray(manifest.shortcuts)) {
+    manifest.shortcuts = manifest.shortcuts.map(shortcut => {
+      if (shortcut.icons && Array.isArray(shortcut.icons)) {
+        shortcut.icons = shortcut.icons.map(icon => {
+          if (icon.src && !icon.src.includes('?')) {
+            icon.src = icon.src + cacheBuster;
+          }
+          return icon;
+        });
+      }
+      return shortcut;
+    });
+  }
+  
   fs.writeFileSync(MANIFEST_FILE, JSON.stringify(manifest, null, 2) + '\n');
-  console.log(`✓ Updated manifest.json: version = ${version}`);
+  console.log(`✓ Updated manifest.json: version = ${version} (icons with cache busting)`);
 } else {
   console.warn(`⚠ manifest.json not found at ${MANIFEST_FILE}`);
 }
