@@ -4,36 +4,55 @@ This guide explains how to force cache refresh when you push a new version of th
 
 ## How It Works
 
-The app uses a version-based cache invalidation system that:
-1. Tracks the app version in localStorage
-2. Detects when a new version is available
-3. Shows a notification to users to update
-4. Clears old caches and activates the new service worker
+The app uses a **centralized version management system** with a single source of truth:
+1. **One file to update**: `frontend/version.json`
+2. **Automatic sync**: Run `npm run sync-version` to update all files
+3. **Version tracking**: Tracks the app version in localStorage
+4. **Update detection**: Detects when a new version is available
+5. **User notification**: Shows a notification to users to update
+6. **Cache cleanup**: Clears old caches and activates the new service worker
 
 ## Steps to Force Cache Refresh on New Version
 
-When you deploy a new version, follow these steps:
+When you deploy a new version, follow these **simple steps**:
 
-### 1. Update App Version
+### 1. Update Version (Single Source of Truth)
 
-Update the version in **3 places**:
+Edit **only one file**: `frontend/version.json`
 
-#### A. `frontend/lib/app-version.ts`
-```typescript
-export const APP_VERSION = '2.2.1'; // Increment this
-```
-
-#### B. `frontend/public/manifest.json`
 ```json
 {
-  "version": "2.2.1"  // Update this
+  "version": "2.2.1",     // Update this (semantic version: major.minor.patch)
+  "cacheVersion": 9       // Increment this when deploying (1, 2, 3, 4, ...)
 }
 ```
 
-#### C. `frontend/public/sw.js`
-```javascript
-const CACHE_NAME = 'fintrack-v9'; // Increment the version number (e.g., v7 -> v8 -> v9)
+**Version format:**
+- `version`: Semantic version (e.g., "2.2.1", "2.3.0", "3.0.0")
+- `cacheVersion`: Incrementing number for service worker cache (must increase each deploy)
+
+### 2. Sync Versions Automatically
+
+Run the sync script to update all files:
+
+```bash
+npm run sync-version
 ```
+
+This automatically updates:
+- ✅ `frontend/public/manifest.json` (version field)
+- ✅ `frontend/public/sw.js` (CACHE_NAME version)
+- ✅ `frontend/lib/app-version.ts` (reads from version.json)
+
+### 3. Deploy Your Changes
+
+Deploy as usual. The app will automatically:
+- Detect the version change
+- Download the new service worker
+- Show an update notification to users
+- Clear old caches when users click "Update Now"
+
+**That's it!** Only 2 steps needed: edit `version.json` and run `npm run sync-version`.
 
 ### 2. Deploy Your Changes
 

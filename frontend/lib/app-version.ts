@@ -1,11 +1,22 @@
 /**
  * App version management
- * Update this version whenever you deploy a new version to force cache refresh
- * IMPORTANT: Also update version in:
- * - manifest.json (version field)
- * - sw.js (CACHE_NAME version number)
+ * 
+ * This file reads from the central version.json file.
+ * To update the version, only edit frontend/version.json
+ * Then run: npm run sync-version
  */
-export const APP_VERSION = '2.2.0';
+let versionData: { version: string; cacheVersion: number };
+
+try {
+  // Try to import the version file
+  versionData = require('../../version.json');
+} catch {
+  // Fallback if version.json doesn't exist yet
+  versionData = { version: '2.2.0', cacheVersion: 8 };
+}
+
+export const APP_VERSION = versionData.version;
+export const CACHE_VERSION = versionData.cacheVersion;
 
 /**
  * Get app version from localStorage or return default
