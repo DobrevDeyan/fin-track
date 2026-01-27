@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { Button } from "@/components/ui/button"
-import { LogOut, Plus } from "lucide-react"
+import { Plus, ScanLine } from "lucide-react"
 import { MetricsCards } from "@/components/dashboard/MetricsCards"
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable"
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog"
@@ -20,6 +20,7 @@ import { GoalList } from "@/components/dashboard/GoalList"
 import { GoalDialog } from "@/components/dashboard/GoalDialog"
 import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList"
 import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog"
+import { ReceiptScannerDialog } from "@/components/dashboard/ReceiptScannerDialog"
 import { Navbar } from "@/components/Navbar"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
 
@@ -152,6 +153,9 @@ function DashboardContent() {
   const [editingSavingsAccount, setEditingSavingsAccount] = useState<
     (import("@/lib/firestore-types").SavingsAccountDocument & { id: string }) | null
   >(null)
+
+  // Receipt scanner state
+  const [scannerDialogOpen, setScannerDialogOpen] = useState(false)
 
   // Load entries from Firestore - ensure it runs on mount and when auth state is ready
   useEffect(() => {
@@ -1157,13 +1161,13 @@ function DashboardContent() {
             </p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
+            <Button onClick={() => setScannerDialogOpen(true)} className="flex-1 md:flex-initial">
+              <ScanLine className="mr-2 h-4 w-4" />
+              Scan Receipt
+            </Button>
             <Button variant="outline" asChild className="flex-1 md:flex-initial">
               <a href="/reports">Reports</a>
             </Button>
-            {/* <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button> */}
           </div>
         </div>
 
@@ -1380,6 +1384,13 @@ function DashboardContent() {
           onSubmit={handleSubmitSavingsAccount}
           editingAccount={editingSavingsAccount}
           defaultCurrency={userCurrency}
+        />
+
+        {/* Receipt Scanner Dialog */}
+        <ReceiptScannerDialog
+          open={scannerDialogOpen}
+          onOpenChange={setScannerDialogOpen}
+          onSubmit={handleAddEntry}
         />
 
         {/* Quick Expense FAB */}

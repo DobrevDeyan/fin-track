@@ -1,0 +1,29 @@
+{
+  "name": "ml-service",
+  "version": "1.0.0",
+  "description": "ML service for receipt/bill scanning using Google Document AI",
+  "main": "dist/api-server.js",
+  "scripts": {
+    "dev": "ts-node src/api-server.ts",
+    "build": "tsc",
+    "start": "node dist/api-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/documentai": "^9.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^25.0.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
