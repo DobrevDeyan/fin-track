@@ -277,16 +277,9 @@ export function ReceiptScannerDialog({
                           type="button"
                           size="sm"
                           onClick={handleScan}
-                          disabled={scanState === "processing"}
+                          disabled={scanState !== "idle"}
                         >
-                          {scanState === "processing" ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Scanning...
-                            </>
-                          ) : (
-                            "Scan Receipt"
-                          )}
+                          Scan Receipt
                         </Button>
                         <Button
                           type="button"
