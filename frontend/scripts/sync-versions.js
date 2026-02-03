@@ -30,27 +30,31 @@ if (fs.existsSync(MANIFEST_FILE)) {
   // Use full semantic version in manifest
   manifest.version = version;
   
-  // Add cache-busting query parameter to all icon URLs
+  // Add/update cache-busting query parameter to all icon URLs
   // This forces browsers to fetch new icons when version changes
   const cacheBuster = `?v=${version}`;
-  
+
+  // Helper to update icon src with new version (replaces existing version param)
+  const updateIconSrc = (src) => {
+    if (!src) return src;
+    // Remove existing query params and add new cache buster
+    const basePath = src.split('?')[0];
+    return basePath + cacheBuster;
+  };
+
   if (manifest.icons && Array.isArray(manifest.icons)) {
     manifest.icons = manifest.icons.map(icon => {
-      if (icon.src && !icon.src.includes('?')) {
-        icon.src = icon.src + cacheBuster;
-      }
+      icon.src = updateIconSrc(icon.src);
       return icon;
     });
   }
-  
+
   // Update shortcuts icons too
   if (manifest.shortcuts && Array.isArray(manifest.shortcuts)) {
     manifest.shortcuts = manifest.shortcuts.map(shortcut => {
       if (shortcut.icons && Array.isArray(shortcut.icons)) {
         shortcut.icons = shortcut.icons.map(icon => {
-          if (icon.src && !icon.src.includes('?')) {
-            icon.src = icon.src + cacheBuster;
-          }
+          icon.src = updateIconSrc(icon.src);
           return icon;
         });
       }
@@ -98,19 +102,55 @@ if (fs.existsSync(SW_FILE)) {
 const APP_VERSION_FILE = path.join(__dirname, '../lib/app-version.ts');
 if (fs.existsSync(APP_VERSION_FILE)) {
   let appVersionContent = fs.readFileSync(APP_VERSION_FILE, 'utf8');
-  
+
   const commentPattern = /\/\*\*[\s\S]*?IMPORTANT:.*?\*\//;
   const newComment = `/**
  * App version management
- * 
+ *
  * This file reads from the central version.json file.
  * To update the version, only edit frontend/version.json
  */`;
-  
+
   if (commentPattern.test(appVersionContent)) {
     appVersionContent = appVersionContent.replace(commentPattern, newComment);
     fs.writeFileSync(APP_VERSION_FILE, appVersionContent);
     console.log(`✓ Updated app-version.ts comment`);
+  }
+}
+
+// Update layout.tsx icon cache busting (both href= and url: patterns)
+const LAYOUT_FILE = path.join(__dirname, '../app/layout.tsx');
+if (fs.existsSync(LAYOUT_FILE)) {
+  let layoutContent = fs.readFileSync(LAYOUT_FILE, 'utf8');
+  let updated = false;
+
+  // Update href="/icons/..." pattern (apple-touch-icons in head)
+  const hrefPattern = /href="(\/icons\/icon-[^"]+\.png)(\?v=[^"]*)?"/g;
+  const afterHref = layoutContent.replace(hrefPattern, `href="$1?v=${version}"`);
+  if (afterHref !== layoutContent) {
+    layoutContent = afterHref;
+    updated = true;
+  }
+
+  // Update url: "/icons/..." pattern (metadata icons object)
+  const urlPattern = /url: "(\/icons\/icon-[^"]+\.png)(\?v=[^"]*)?"/g;
+  const afterUrl = layoutContent.replace(urlPattern, `url: "$1?v=${version}"`);
+  if (afterUrl !== layoutContent) {
+    layoutContent = afterUrl;
+    updated = true;
+  }
+
+  // Update shortcut: "/icons/..." pattern
+  const shortcutPattern = /shortcut: "(\/icons\/icon-[^"]+\.png)(\?v=[^"]*)?"/g;
+  const afterShortcut = layoutContent.replace(shortcutPattern, `shortcut: "$1?v=${version}"`);
+  if (afterShortcut !== layoutContent) {
+    layoutContent = afterShortcut;
+    updated = true;
+  }
+
+  if (updated) {
+    fs.writeFileSync(LAYOUT_FILE, layoutContent);
+    console.log(`✓ Updated layout.tsx: all icon references with ?v=${version}`);
   }
 }
 
