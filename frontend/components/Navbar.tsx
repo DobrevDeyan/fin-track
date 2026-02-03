@@ -94,13 +94,15 @@ export const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
       setIsOpen(false);
+      await logout();
+      // logout() now handles redirect internally
     } catch (error) {
       console.error("Failed to logout:", error);
+      // Force redirect even on error
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/login";
+      }
     }
   };
 

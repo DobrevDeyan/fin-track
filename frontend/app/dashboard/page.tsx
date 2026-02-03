@@ -460,11 +460,13 @@ function DashboardContent() {
   const handleLogout = async () => {
     try {
       await logout()
-      if (typeof window !== "undefined") {
-        window.location.href = "/"
-      }
+      // logout() now handles redirect internally to /auth/login
     } catch (error) {
       console.error("Failed to logout:", error)
+      // Force redirect even on error
+      if (typeof window !== "undefined") {
+        window.location.href = "/auth/login"
+      }
     }
   }
 
