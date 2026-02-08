@@ -29,7 +29,7 @@ export function CollapsibleSection({
     : actionButton
 
   return (
-    <div className={cn("mb-4 md:mb-8", className)}>
+    <div className={cn("mb-2 md:mb-4", className)}>
       <div className="border rounded-lg px-4 md:px-6 bg-card">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4 py-3 md:py-4">
           <div className="flex-1 min-w-0 w-full md:pr-6 overflow-hidden relative">
@@ -57,7 +57,7 @@ export function CollapsibleSection({
             </Accordion>
           </div>
           {desktopButton && (
-            <div className="hidden md:flex items-start shrink-0 pt-1 relative z-50" style={{ pointerEvents: 'auto' }}>
+            <div className="hidden md:flex items-start shrink-0 pt-1 relative z-50 min-w-[280px] [&>*]:w-full" style={{ pointerEvents: 'auto' }}>
               {desktopButton}
             </div>
           )}

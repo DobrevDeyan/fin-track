@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,9 +21,11 @@ import {
 import { Label } from "@/components/ui/label"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
-import { Upload, FileImage, Loader2, AlertCircle, Check, X } from "lucide-react"
-import { scanReceipt, ExtractedReceiptData, mapToTransactionData } from "@/lib/receipt-scanner-api"
+import { Upload, FileImage, Loader2, AlertCircle, Check, X, Camera } from "lucide-react"
+import { scanReceipt, ExtractedReceiptData } from "@/lib/receipt-scanner-api"
 import { detectCategory } from "@/lib/category-detector"
+import { isMobileDevice, hasCameraSupport } from "@/lib/device-utils"
+import { CameraCapture } from "./CameraCapture"
 
 interface TransactionData {
   description: string
@@ -42,6 +44,7 @@ interface ReceiptScannerDialogProps {
 }
 
 type ScanState = "idle" | "uploading" | "processing" | "success" | "error"
+type InputMode = "select" | "upload" | "camera"
 
 export function ReceiptScannerDialog({
   open,
@@ -50,10 +53,15 @@ export function ReceiptScannerDialog({
 }: ReceiptScannerDialogProps) {
   // State
   const [scanState, setScanState] = useState<ScanState>("idle")
+  const [inputMode, setInputMode] = useState<InputMode>("select")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>("")
+
+  // Device capabilities
+  const [isMobile, setIsMobile] = useState(false)
+  const [canUseCamera, setCanUseCamera] = useState(false)
 
   // Editable form fields
   const [merchant, setMerchant] = useState("")
@@ -61,10 +69,17 @@ export function ReceiptScannerDialog({
   const [date, setDate] = useState(formatDateForInput(new Date()))
   const [category, setCategory] = useState("")
 
+  // Check device capabilities on mount
+  useEffect(() => {
+    setIsMobile(isMobileDevice())
+    setCanUseCamera(hasCameraSupport())
+  }, [])
+
   // Reset state when dialog closes
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setScanState("idle")
+      setInputMode("select")
       setSelectedFile(null)
       setFilePreview(null)
       setExtractedData(null)
@@ -77,7 +92,7 @@ export function ReceiptScannerDialog({
     onOpenChange(isOpen)
   }
 
-  // Handle file selection
+  // Handle file selection (from upload or camera)
   const handleFileSelect = useCallback((file: File) => {
     // Validate file type
     const allowedTypes = [
@@ -105,6 +120,7 @@ export function ReceiptScannerDialog({
     setSelectedFile(file)
     setErrorMessage("")
     setScanState("idle")
+    setInputMode("upload") // Switch to upload view to show preview
 
     // Create preview for images
     if (file.type.startsWith("image/")) {
@@ -118,6 +134,11 @@ export function ReceiptScannerDialog({
       setFilePreview(null)
     }
   }, [])
+
+  // Handle camera capture
+  const handleCameraCapture = useCallback((file: File) => {
+    handleFileSelect(file)
+  }, [handleFileSelect])
 
   // Handle drag and drop
   const handleDrop = useCallback(
@@ -140,6 +161,17 @@ export function ReceiptScannerDialog({
 
   // Handle file input change
   const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+        handleFileSelect(file)
+      }
+    },
+    [handleFileSelect]
+  )
+
+  // Handle mobile camera input (using capture attribute)
+  const handleMobileCameraInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
       if (file) {
@@ -211,7 +243,169 @@ export function ReceiptScannerDialog({
     setExtractedData(null)
     setScanState("idle")
     setErrorMessage("")
+    setInputMode("select")
   }
+
+  // Render input mode selection
+  const renderModeSelection = () => (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground text-center">
+        Choose how to add your receipt
+      </p>
+
+      <div className={`grid gap-4 ${isMobile && canUseCamera ? "grid-cols-1" : "grid-cols-1"}`}>
+        {/* Camera option - shown prominently on mobile */}
+        {canUseCamera && (
+          <>
+            {/* Full camera experience button */}
+            <Button
+              type="button"
+              variant="outline"
+              className="h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed hover:border-primary hover:bg-primary/5"
+              onClick={() => setInputMode("camera")}
+            >
+              <Camera className="h-10 w-10 text-primary" />
+              <div className="text-center">
+                <p className="font-medium">Take Photo</p>
+                <p className="text-xs text-muted-foreground">Use camera with live preview</p>
+              </div>
+            </Button>
+
+            {/* Quick capture option for mobile */}
+            {isMobile && (
+              <label className="h-20 flex items-center justify-center gap-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                <Camera className="h-6 w-6 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">Quick Capture</p>
+                  <p className="text-xs text-muted-foreground">Open native camera</p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleMobileCameraInput}
+                />
+              </label>
+            )}
+          </>
+        )}
+
+        {/* Upload option */}
+        <label
+          className="h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+        >
+          <Upload className="h-10 w-10 text-muted-foreground" />
+          <div className="text-center">
+            <p className="font-medium">Upload File</p>
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG, WebP, GIF or PDF (MAX. 10MB)
+            </p>
+          </div>
+          <input
+            type="file"
+            className="hidden"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            onChange={handleInputChange}
+          />
+        </label>
+      </div>
+    </div>
+  )
+
+  // Render camera view
+  const renderCameraView = () => (
+    <CameraCapture
+      onCapture={handleCameraCapture}
+      onCancel={() => setInputMode("select")}
+    />
+  )
+
+  // Render upload/preview view
+  const renderUploadView = () => (
+    <div
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      className="relative"
+    >
+      {!selectedFile ? (
+        <label
+          htmlFor="receipt-upload"
+          className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex flex-col items-center justify-center py-6">
+            <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
+            <p className="mb-2 text-sm text-muted-foreground">
+              <span className="font-semibold">Click to upload</span> or drag and drop
+            </p>
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG, WebP, GIF or PDF (MAX. 10MB)
+            </p>
+          </div>
+          <input
+            id="receipt-upload"
+            type="file"
+            className="hidden"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            onChange={handleInputChange}
+          />
+        </label>
+      ) : (
+        <div className="border rounded-lg p-4">
+          <div className="flex items-start gap-4">
+            {filePreview ? (
+              <img
+                src={filePreview}
+                alt="Receipt preview"
+                className="w-24 h-24 object-cover rounded-md border"
+              />
+            ) : (
+              <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
+                <FileImage className="w-8 h-8 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{selectedFile.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleScan}
+                  disabled={scanState !== "idle"}
+                >
+                  Scan Receipt
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleClearFile}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Back button when in upload mode without file */}
+      {!selectedFile && canUseCamera && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-2"
+          onClick={() => setInputMode("select")}
+        >
+          Back to options
+        </Button>
+      )}
+    </div>
+  )
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -219,82 +413,23 @@ export function ReceiptScannerDialog({
         <DialogHeader>
           <DialogTitle>Scan Receipt</DialogTitle>
           <DialogDescription>
-            Upload a receipt or bill image to automatically extract expense details.
+            {inputMode === "camera"
+              ? "Point your camera at the receipt and capture"
+              : inputMode === "select"
+              ? "Take a photo or upload a receipt to extract expense details"
+              : "Upload a receipt or bill image to automatically extract expense details"
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* File Upload Section */}
+          {/* Mode Selection / Camera / Upload Section */}
           {scanState === "idle" && !extractedData && (
-            <div
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              className="relative"
-            >
-              {!selectedFile ? (
-                <label
-                  htmlFor="receipt-upload"
-                  className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex flex-col items-center justify-center py-6">
-                    <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
-                    <p className="mb-2 text-sm text-muted-foreground">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      PNG, JPG, WebP, GIF or PDF (MAX. 10MB)
-                    </p>
-                  </div>
-                  <input
-                    id="receipt-upload"
-                    type="file"
-                    className="hidden"
-                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-                    onChange={handleInputChange}
-                  />
-                </label>
-              ) : (
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-start gap-4">
-                    {filePreview ? (
-                      <img
-                        src={filePreview}
-                        alt="Receipt preview"
-                        className="w-24 h-24 object-cover rounded-md border"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
-                        <FileImage className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{selectedFile.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleScan}
-                          disabled={scanState !== "idle"}
-                        >
-                          Scan Receipt
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={handleClearFile}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <>
+              {inputMode === "select" && renderModeSelection()}
+              {inputMode === "camera" && renderCameraView()}
+              {inputMode === "upload" && renderUploadView()}
+            </>
           )}
 
           {/* Processing State */}
@@ -431,13 +566,20 @@ export function ReceiptScannerDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          {scanState === "success" && (
-            <Button type="button" onClick={handleSave} disabled={!amount || !category}>
-              Save as Expense
-            </Button>
+          {inputMode === "camera" ? (
+            // No footer buttons in camera mode - controls are in the camera view
+            null
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              {scanState === "success" && (
+                <Button type="button" onClick={handleSave} disabled={!amount || !category}>
+                  Save as Expense
+                </Button>
+              )}
+            </>
           )}
         </DialogFooter>
       </DialogContent>
