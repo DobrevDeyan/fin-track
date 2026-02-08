@@ -1,137 +1,131 @@
 # Feature Implementation Roadmap
 
-**Based on Competitive Analysis - January 2025**
+**Based on Competitive Analysis - Updated February 8, 2025**
 
 ---
 
-## 🎯 **Quick Reference: What to Build Next**
+## Current App Status: **85% Complete**
 
-### **This Week** ⚡
-1. ✅ **Recurring Transactions Auto-Creation** (Cloud Function)
-2. ✅ **Receipt Upload UI** (basic)
-3. ✅ **Transaction Tags UI**
-
-### **This Month** 📅
-1. ✅ **Receipt Gallery & Management**
-2. ✅ **Net Worth Tracking** (manual assets)
-3. ✅ **Enhanced Analytics** (Year-over-Year)
-
-### **Next 3 Months** 🚀
-1. ✅ **Calendar View for Expenses**
-2. ✅ **Bill Tracking & Reminders**
-3. ✅ **Basic Investment Tracking**
-4. ✅ **Sankey Diagram** (money flow)
-
-### **Next 6 Months** 🌟
-1. ✅ **AI Smart Categorization**
-2. ✅ **Receipt OCR** (auto-entry)
-3. ✅ **Spending Insights & Recommendations**
-4. ✅ **Subscription Management Enhancements**
+| Category | Status | Completion |
+|----------|--------|------------|
+| Core Features | Fully Implemented | 100% |
+| Financial Features | Near Complete | 95% |
+| Technical Features | Strong | 90% |
+| UI/UX | Excellent | 95% |
+| Analytics/Reporting | Good | 85% |
+| AI/ML | In Progress | 60% |
+| Advanced Features | Started | 20% |
 
 ---
 
-## 📋 **Detailed Feature Specifications**
+## Completed Features
 
-### 🔥 **Priority 1: Recurring Transactions Auto-Creation**
+### Core Features
+- [x] **Authentication** - Email/Password + Google OAuth
+- [x] **Manual Expense/Income Entry** - Full CRUD with filtering
+- [x] **Categories** - Default + Custom categories, smart detection
+- [x] **Dashboard** - Metrics, charts, category breakdown
+- [x] **Transaction History** - Filtering, sorting, search, export
 
-**Status**: Schema & UI ready, needs Cloud Function  
-**Effort**: 1-2 days  
-**Impact**: High (completes existing feature)
+### Financial Features
+- [x] **Budgets** - Weekly/Monthly/Yearly with alerts
+- [x] **Financial Goals** - Target tracking with progress
+- [x] **Savings Accounts** - Multiple accounts with deposits/withdrawals
+- [x] **Recurring Transactions** - Full UI + Cloud Function auto-creation
+- [x] **Reports** - PDF/CSV export, custom date ranges
 
-#### Implementation Steps:
-1. Create Firebase Cloud Function
-2. Scheduled trigger (daily at 2 AM)
-3. Check for recurring transactions with `nextDate <= today`
-4. Create transaction from template
-5. Update `nextDate` based on frequency
-6. Handle edge cases (leap years, month boundaries)
+### Technical Features
+- [x] **PWA Support** - Installable, manifest configured
+- [x] **Offline Support** - Service worker, caching, IndexedDB ready
+- [x] **Cloud Functions** - Recurring transaction processor (daily 1 AM UTC)
+- [x] **Dark Mode** - Full theme support
+- [x] **Multi-Currency** - EUR/USD with extensible architecture
+- [x] **Push Notifications** - Salary reminders implemented
 
-#### Technical Details:
-```typescript
-// Cloud Function structure
-export const createRecurringTransactions = functions.pubsub
-  .schedule('0 2 * * *') // Daily at 2 AM
-  .onRun(async (context) => {
-    // 1. Get all active recurring transactions
-    // 2. Filter where nextDate <= today
-    // 3. Create transactions
-    // 4. Update nextDate
-  })
-```
+### AI/ML Features
+- [x] **Smart Category Detection** - 100+ merchant keywords
+- [x] **Receipt Scanner Backend** - Google Document AI integration
+- [x] **ML Service API** - Express server for OCR processing
 
 ---
 
-### 🔥 **Priority 2: Receipt Management**
+## In Progress
 
-**Status**: Schema ready, UI needed  
-**Effort**: 1-2 weeks  
-**Impact**: Very High (trending feature)
+### This Month (February 2025)
 
-#### Phase 1: Basic Upload (Week 1)
-- [ ] Add file upload to transaction dialog
-- [ ] Upload to Firebase Storage
-- [ ] Store receipt URL in transaction document
-- [ ] Display receipt thumbnail in transaction table
-- [ ] Click to view full receipt
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Receipt Scanner UI | 70% | Backend done, camera capture done, needs gallery UI |
+| Transaction Tags UI | Schema Ready | Need tag input component |
+| Year-over-Year Analytics | Schema Ready | Need comparison charts |
 
-#### Phase 2: Gallery & Management (Week 2)
+### Next Month (March 2025)
+
+| Feature | Priority | Effort |
+|---------|----------|--------|
+| Receipt Gallery & Management | High | 1 week |
+| Bill Tracking & Reminders | High | 1 week |
+| Net Worth Tracking | Medium | 3-5 days |
+| Calendar View | Medium | 1 week |
+
+---
+
+## Detailed Feature Specifications
+
+### Receipt Management (70% Complete)
+
+**Completed:**
+- [x] ML Service with Google Document AI
+- [x] Receipt OCR extraction (merchant, amount, date, items)
+- [x] Camera capture component with front/back switching
+- [x] File upload validation (images, PDFs up to 10MB)
+- [x] Confidence scoring for extracted data
+
+**Remaining:**
 - [ ] Receipt gallery page
 - [ ] Filter receipts by date/category
-- [ ] Delete receipts
-- [ ] Receipt count badge on transactions
+- [ ] Link receipts to transactions in UI
+- [ ] Receipt thumbnail in transaction list
 
-#### Phase 3: OCR (Future)
-- [ ] Integrate Google Cloud Vision API
-- [ ] Auto-extract amount, date, merchant
-- [ ] Auto-categorize based on merchant
-- [ ] Verify & edit extracted data
-
-#### Technical Details:
-```typescript
-// Storage path structure
-receipts/{userId}/{transactionId}/{filename}
-
-// Transaction schema update
-{
-  receiptUrl?: string
-  receiptThumbnailUrl?: string
-}
+**Technical Details:**
+```
+ML Service: /ml-service/src/api-server.ts (port 8000)
+Frontend: /frontend/components/receipt/ReceiptScanner.tsx
+Storage: Firebase Storage receipts/{userId}/{transactionId}/
 ```
 
 ---
 
-### 🔥 **Priority 3: Transaction Tags**
+### Transaction Tags
 
-**Status**: Schema ready, UI needed  
-**Effort**: 2-3 days  
-**Impact**: Medium (easy win)
+**Status**: Schema ready, UI needed
+**Effort**: 2-3 days
+**Impact**: Medium
 
-#### Implementation:
+**Implementation:**
 - [ ] Add tags field to transaction form (multi-select)
 - [ ] Tag autocomplete/input component
 - [ ] Display tags in transaction table (badges)
 - [ ] Filter transactions by tags
-- [ ] Tag management page (create, edit, delete tags)
 - [ ] Tag-based reports
 
 ---
 
-### 🔥 **Priority 4: Net Worth Tracking**
+### Net Worth Tracking
 
-**Status**: New feature  
-**Effort**: 3-5 days  
+**Status**: Not started
+**Effort**: 3-5 days
 **Impact**: High
 
-#### Implementation:
+**Implementation:**
 - [ ] New collection: `assets`
 - [ ] Asset types: Bank Account, Investment, Property, Vehicle, Other
 - [ ] Asset CRUD operations
 - [ ] Calculate net worth = Total Assets - Total Liabilities
 - [ ] Display on dashboard
 - [ ] Track net worth over time (chart)
-- [ ] Manual entry only (privacy-first)
 
-#### Schema:
+**Schema:**
 ```typescript
 {
   userId: string
@@ -139,7 +133,7 @@ receipts/{userId}/{transactionId}/{filename}
   type: "bank" | "investment" | "property" | "vehicle" | "other"
   value: number
   currency: string
-  isLiability: boolean // for loans, debts
+  isLiability: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -147,69 +141,37 @@ receipts/{userId}/{transactionId}/{filename}
 
 ---
 
-### ⭐ **Priority 5: Calendar View**
+### Calendar View
 
-**Status**: New feature  
-**Effort**: 1 week  
+**Status**: Not started
+**Effort**: 1 week
 **Impact**: High UX improvement
 
-#### Implementation:
+**Implementation:**
 - [ ] Install calendar library (react-big-calendar or fullcalendar)
-- [ ] Create calendar component
 - [ ] Display transactions on calendar
 - [ ] Show recurring transactions on future dates
 - [ ] Click date to add transaction
-- [ ] Click transaction to edit
 - [ ] Color-code by type (income/expense)
 - [ ] Month/Week/Day views
 
 ---
 
-### ⭐ **Priority 6: Enhanced Analytics**
+### Bill Tracking & Reminders
 
-**Status**: Enhance existing  
-**Effort**: 1-2 weeks  
-**Impact**: Medium-High
-
-#### Features to Add:
-1. **Year-over-Year Comparison**
-   - Compare same month across years
-   - Show percentage change
-   - Visual comparison chart
-
-2. **Spending Forecasting**
-   - Predict next month's spending based on history
-   - Show confidence intervals
-   - Alert if forecasted overspending
-
-3. **Sankey Diagram**
-   - Money flow visualization
-   - Income → Categories → Savings
-   - Use recharts-sankey or d3-sankey
-
-4. **Custom Report Builder**
-   - Drag-and-drop report creation
-   - Multiple chart types
-   - Save custom reports
-
----
-
-### ⭐ **Priority 7: Bill Tracking & Reminders**
-
-**Status**: New feature  
-**Effort**: 1 week  
+**Status**: Not started
+**Effort**: 1 week
 **Impact**: High
 
-#### Implementation:
+**Implementation:**
 - [ ] New collection: `bills`
 - [ ] Bill CRUD operations
 - [ ] Due date tracking
 - [ ] Upcoming bills widget on dashboard
 - [ ] Push notifications for due dates
 - [ ] Mark as paid (links to transaction)
-- [ ] Bill calendar view
 
-#### Schema:
+**Schema:**
 ```typescript
 {
   userId: string
@@ -221,32 +183,46 @@ receipts/{userId}/{transactionId}/{filename}
   isPaid: boolean
   paidDate?: Timestamp
   linkedTransactionId?: string
-  reminderDaysBefore: number // default 3
+  reminderDaysBefore: number
 }
 ```
 
 ---
 
-### ⭐ **Priority 8: Basic Investment Tracking**
+### Enhanced Analytics
 
-**Status**: New feature  
-**Effort**: 2-3 weeks  
+**Status**: Partially implemented
+**Effort**: 1-2 weeks
+**Impact**: Medium-High
+
+**Current:**
+- [x] Basic reports with date ranges
+- [x] Category breakdown charts
+- [x] Monthly trends
+- [x] PDF/CSV export
+
+**To Add:**
+- [ ] Year-over-Year comparison
+- [ ] Spending forecasting
+- [ ] Sankey diagram (money flow)
+- [ ] Custom report builder
+
+---
+
+### Basic Investment Tracking
+
+**Status**: Not started
+**Effort**: 2-3 weeks
 **Impact**: Very High
 
-#### Phase 1: Manual Tracking (Week 1-2)
+**Phase 1: Manual Tracking**
 - [ ] Investment account management
 - [ ] Manual portfolio value entry
 - [ ] Track performance over time
 - [ ] Asset allocation pie chart
 - [ ] Link to net worth
 
-#### Phase 2: Enhanced (Week 3)
-- [ ] Investment categories (stocks, bonds, crypto, etc.)
-- [ ] Manual price entry per asset
-- [ ] Portfolio allocation visualization
-- [ ] Performance metrics (% gain/loss)
-
-#### Schema:
+**Schema:**
 ```typescript
 {
   userId: string
@@ -265,138 +241,97 @@ receipts/{userId}/{transactionId}/{filename}
 }
 ```
 
-**Note**: Manual entry only (privacy-first). No API integrations.
+**Note**: Manual entry only (privacy-first approach)
 
 ---
 
-### 🌟 **Priority 9: AI-Powered Features**
+### AI-Powered Features
 
-**Status**: New feature  
-**Effort**: 2-4 weeks (depends on approach)  
+**Status**: Partially implemented
+**Effort**: 2-4 weeks
 **Impact**: Very High
 
-#### Phase 1: Smart Categorization (Week 1)
-- [ ] Analyze transaction description
-- [ ] Match to category using keywords
-- [ ] Learn from user's past categorizations
-- [ ] Suggest category when adding transaction
-- [ ] One-click accept suggestion
+**Completed:**
+- [x] Smart category detection from merchant names
+- [x] Receipt OCR with Google Document AI
+- [x] Confidence scoring
 
-#### Phase 2: Spending Insights (Week 2-3)
-- [ ] "You're spending 30% more on dining this month"
-- [ ] "Your savings rate improved by 5%"
-- [ ] "Consider reducing spending in [category]"
-- [ ] Weekly/monthly insights email
-
-#### Phase 3: AI Assistant (Week 4)
-- [ ] Chat interface
-- [ ] Ask questions about budget/transactions
-- [ ] Get recommendations
-- [ ] Use OpenAI API (GPT-4)
-
-#### Technical Approach:
-```typescript
-// Option 1: Simple keyword matching (free, fast)
-const categorizeTransaction = (description: string, categories: string[]) => {
-  // Use ML model or keyword matching
-}
-
-// Option 2: OpenAI API (paid, powerful)
-const getAIInsights = async (transactions: Transaction[]) => {
-  const prompt = `Analyze these transactions and provide insights...`
-  return await openai.chat.completions.create({...})
-}
-```
+**To Implement:**
+- [ ] Spending insights ("You're spending 30% more on dining")
+- [ ] Budget recommendations
+- [ ] Anomaly detection
+- [ ] AI assistant chat interface
 
 ---
 
-### 🌟 **Priority 10: Subscription Management**
+## Implementation Timeline
 
-**Status**: Enhance recurring transactions  
-**Effort**: 1 week  
-**Impact**: Medium
+### Q1 2025 (Jan-Mar)
+- [x] Recurring auto-creation (Cloud Function)
+- [x] Receipt scanner backend
+- [ ] Receipt management UI
+- [ ] Transaction tags
+- [ ] Net worth tracking
+- [ ] Calendar view
 
-#### Features:
-- [ ] Subscription-specific UI
-- [ ] Cost analysis (total monthly/yearly)
-- [ ] Cancellation helper (links, instructions)
-- [ ] "Unused subscriptions" detection (no activity for 3+ months)
-- [ ] Subscription optimization suggestions
-- [ ] Cost trends chart
+### Q2 2025 (Apr-Jun)
+- [ ] Bill tracking
+- [ ] Basic investment tracking
+- [ ] AI spending insights
+- [ ] Enhanced analytics (YoY, Sankey)
 
----
+### Q3 2025 (Jul-Sep)
+- [ ] Receipt OCR improvements
+- [ ] AI recommendations
+- [ ] Custom report builder
+- [ ] Subscription management
 
-## 📊 **Implementation Timeline**
-
-### **Q1 2025 (Jan-Mar)**
-- ✅ Recurring auto-creation
-- ✅ Receipt management (basic)
-- ✅ Transaction tags
-- ✅ Net worth tracking
-- ✅ Calendar view
-- ✅ Enhanced analytics (YoY, forecasting)
-
-### **Q2 2025 (Apr-Jun)**
-- ✅ Bill tracking
-- ✅ Basic investment tracking
-- ✅ AI smart categorization
-- ✅ Subscription management enhancements
-
-### **Q3 2025 (Jul-Sep)**
-- ✅ Receipt OCR
-- ✅ AI spending insights
-- ✅ Sankey diagrams
-- ✅ Custom report builder
-
-### **Q4 2025 (Oct-Dec)**
-- ✅ AI assistant
-- ✅ Multi-user support
-- ✅ Expense splitting
-- ✅ Advanced tax features
+### Q4 2025 (Oct-Dec)
+- [ ] AI assistant
+- [ ] Multi-user support
+- [ ] Expense splitting
+- [ ] Advanced tax features
 
 ---
 
-## 🎯 **Success Criteria**
+## Tech Stack
 
-### **Feature Completion**
-- ✅ 70% feature parity by Q1 end
-- ✅ 85% feature parity by Q2 end
-- ✅ 95% feature parity by Q4 end
+**Frontend:**
+- Next.js 14.2.5 (React 18, TypeScript)
+- Tailwind CSS + shadcn/ui
+- Recharts (visualization)
+- jsPDF (PDF export)
 
-### **User Engagement**
-- ✅ >70% 30-day retention
-- ✅ >60% use 5+ features
-- ✅ >50% use receipts (once implemented)
-- ✅ >40% use investment tracking (once implemented)
+**Backend:**
+- Firebase (Auth, Firestore, Storage, Hosting)
+- Cloud Functions (Node.js 20)
+- Google Document AI
 
-### **Competitive Positioning**
-- ✅ Match core features of Monarch/Simplifi (excluding bank sync)
-- ✅ Unique differentiators: Privacy, PWA, Multi-currency
-- ✅ Premium features: Receipt OCR, AI insights
+**Current Version:** 2.5
 
 ---
 
-## 📝 **Notes**
+## Notes
 
-### **Privacy-First Approach**
-- All features should support manual entry
+### Privacy-First Approach
+- All features support manual entry
 - No automatic bank syncing
 - User controls all data
 - Export capability for all features
 
-### **PWA Compatibility**
-- All new features must work offline
+### PWA Compatibility
+- All features work offline
 - Service worker caching
 - IndexedDB for offline storage
 - Sync when online
 
-### **International Support**
-- Multi-currency for all new features
-- Date/timezone handling
+### International Support
+- Multi-currency (EUR, USD, extensible)
+- Timezone handling
 - Locale-aware formatting
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: January 2025  
+**Document Version**: 2.0
+**Last Updated**: February 8, 2025
 **Next Review**: Monthly

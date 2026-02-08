@@ -18,7 +18,8 @@ import {
   serverTimestamp,
   getDoc,
 } from "firebase/firestore"
-import { db } from "./firebase"
+import { httpsCallable } from "firebase/functions"
+import { db, functions } from "./firebase"
 import { RecurringEntryDocument } from "./firestore-types"
 
 export type CreateRecurringInput = Omit<
@@ -255,7 +256,7 @@ export function calculateNextDate(
   frequency: "weekly" | "monthly" | "yearly"
 ): Date {
   const nextDate = new Date(currentDate)
-  
+
   switch (frequency) {
     case "weekly":
       nextDate.setDate(nextDate.getDate() + 7)
@@ -267,7 +268,35 @@ export function calculateNextDate(
       nextDate.setFullYear(nextDate.getFullYear() + 1)
       break
   }
-  
+
   return nextDate
+}
+
+/**
+ * Response from the processMyRecurringTransactions Cloud Function
+ */
+export interface ProcessRecurringResult {
+  success: boolean
+  processed: number
+  errors: number
+  message: string
+}
+
+/**
+ * Manually trigger processing of due recurring transactions
+ * Calls the Cloud Function to process all due subscriptions for the current user
+ */
+export async function processMyRecurringTransactions(): Promise<ProcessRecurringResult> {
+  try {
+    const processFunction = httpsCallable<void, ProcessRecurringResult>(
+      functions,
+      "processMyRecurringTransactions"
+    )
+    const result = await processFunction()
+    return result.data
+  } catch (error) {
+    console.error("Error processing recurring transactions:", error)
+    throw error
+  }
 }
 
