@@ -88,8 +88,9 @@ export default function RegisterPage() {
     try {
       await signUp(email, password);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "An error occurred during registration. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred during registration. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -106,8 +107,9 @@ export default function RegisterPage() {
       // signInWithRedirect will redirect the page, so we don't need to handle navigation here
       await signInWithGoogle();
       // The redirect will happen automatically - user will be redirected back after Google auth
-    } catch (err: any) {
-      setError(err.message || "An error occurred during Google sign in. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred during Google sign in. Please try again.";
+      setError(message);
       setLoading(false);
     }
   };

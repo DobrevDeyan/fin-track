@@ -17,10 +17,51 @@ import {
   Timestamp,
   serverTimestamp,
   getDoc,
+  FieldValue,
 } from "firebase/firestore"
 import { httpsCallable } from "firebase/functions"
 import { db, functions } from "./firebase"
 import { RecurringEntryDocument } from "./firestore-types"
+
+// Type for update data
+interface RecurringUpdateData {
+  [key: string]: FieldValue | string | number | boolean | Timestamp | undefined
+  updatedAt: FieldValue
+  name?: string
+  amount?: number
+  type?: "income" | "expense"
+  category?: string
+  frequency?: "weekly" | "monthly" | "yearly"
+  isActive?: boolean
+  nextDate?: Timestamp
+}
+
+// Helper to check if error is a Firestore index error
+function isFirestoreIndexError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const firestoreError = error as Error & { code?: string }
+    return (
+      firestoreError.code === "failed-precondition" ||
+      firestoreError.message?.includes("index") ||
+      false
+    )
+  }
+  return false
+}
+
+// Helper to convert date to timestamp
+function toTimestamp(date: Timestamp | Date | string): Timestamp {
+  if (date instanceof Timestamp) {
+    return date
+  }
+  if (date && typeof date === "object" && "toMillis" in date) {
+    return date as unknown as Timestamp
+  }
+  if (date instanceof Date) {
+    return Timestamp.fromDate(date)
+  }
+  return Timestamp.fromDate(new Date(date as string))
+}
 
 export type CreateRecurringInput = Omit<
   RecurringEntryDocument,
@@ -47,12 +88,12 @@ export async function createRecurringTransaction(
     
     const toTimestamp = (date: string | Date | Timestamp): Timestamp => {
       if (date && typeof date === "object" && "toMillis" in date) {
-        return date as Timestamp
+        return date as unknown as Timestamp
       }
       if (date instanceof Date) {
         return Timestamp.fromDate(date)
       }
-      return Timestamp.fromDate(new Date(date))
+      return Timestamp.fromDate(new Date(date as string))
     }
     
     nextDateTimestamp = toTimestamp(recurringData.nextDate)
@@ -94,29 +135,24 @@ export async function getUserRecurringTransactions(
       where("userId", "==", userId),
       orderBy("nextDate", "asc")
     )
-    
+
     const querySnapshot = await getDocs(q)
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    return querySnapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
     })) as (RecurringEntryDocument & { id: string })[]
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If index is not ready, fetch without orderBy and sort in memory
-    if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
-      // Index is still building - this is expected and will resolve automatically
-      // Using fallback: fetch without orderBy and sort in memory
+    if (isFirestoreIndexError(error)) {
       const recurringRef = collection(db, "recurringTransactions")
-      const q = query(
-        recurringRef,
-        where("userId", "==", userId)
-      )
-      
+      const q = query(recurringRef, where("userId", "==", userId))
+
       const querySnapshot = await getDocs(q)
-      const transactions = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const transactions = querySnapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
       })) as (RecurringEntryDocument & { id: string })[]
-      
+
       // Sort by nextDate ascending in memory
       return transactions.sort((a, b) => {
         const aTime = a.nextDate?.toMillis?.() || 0
@@ -166,11 +202,11 @@ export async function updateRecurringTransaction(
 ): Promise<void> {
   try {
     const recurringRef = doc(db, "recurringTransactions", recurringId)
-    
-    const cleanUpdateData: any = {
+
+    const cleanUpdateData: RecurringUpdateData = {
       updatedAt: serverTimestamp(),
     }
-    
+
     if (updateData.name !== undefined) {
       cleanUpdateData.name = updateData.name.trim()
     }
@@ -190,19 +226,10 @@ export async function updateRecurringTransaction(
       cleanUpdateData.isActive = updateData.isActive
     }
     if (updateData.nextDate !== undefined) {
-      const toTimestamp = (date: string | Date | Timestamp): Timestamp => {
-        if (date && typeof date === "object" && "toMillis" in date) {
-          return date as Timestamp
-        }
-        if (date instanceof Date) {
-          return Timestamp.fromDate(date)
-        }
-        return Timestamp.fromDate(new Date(date))
-      }
       cleanUpdateData.nextDate = toTimestamp(updateData.nextDate)
     }
-    
-    await updateDoc(recurringRef, cleanUpdateData)
+
+    await updateDoc(recurringRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
     console.error("Error updating recurring transaction:", error)
     throw error

@@ -10,8 +10,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Chrome, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("skine@abv.bg");
-  const [password, setPassword] = useState("apostola90");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -60,8 +60,9 @@ export default function LoginPage() {
     try {
       await signIn(email, password);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "An error occurred during sign in. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred during sign in. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -76,8 +77,9 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "An error occurred during Google sign in. Please try again.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An error occurred during Google sign in. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,7 @@ let versionData: { version: string; cacheVersion: number };
 
 try {
   // Try to import the version file
-  versionData = require('../../version.json');
+  versionData = require('../version.json');
 } catch {
   // Fallback if version.json doesn't exist yet
   versionData = { version: '2.2.0', cacheVersion: 8 };

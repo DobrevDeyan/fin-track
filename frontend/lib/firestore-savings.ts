@@ -188,7 +188,7 @@ export async function updateSavingsAccount(
       cleanUpdateData.isActive = updateData.isActive
     }
     
-    await updateDoc(accountRef, cleanUpdateData)
+    await updateDoc(accountRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
     console.error("Error updating savings account:", error)
     throw error
@@ -283,9 +283,10 @@ export async function getSavingsAccount(
 
 /**
  * Calculate total savings across all accounts
+ * Accepts any object with balance and isActive properties
  */
 export function calculateTotalSavings(
-  accounts: (SavingsAccountDocument & { id: string })[]
+  accounts: { balance: number; isActive: boolean }[]
 ): number {
   return accounts
     .filter((acc) => acc.isActive)

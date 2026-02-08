@@ -35,7 +35,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') {
     return;
   }
-  
+
+  // Skip non-http(s) requests (chrome-extension://, etc.)
+  // These cannot be cached and will throw errors
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   // Skip navigation requests (HTML pages) - let them go to network
   // This prevents Safari redirect errors
   if (request.mode === 'navigate') {

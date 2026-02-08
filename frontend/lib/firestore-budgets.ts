@@ -1,6 +1,6 @@
 /**
  * Firestore Budgets Service
- * 
+ *
  * Functions for CRUD operations on budgets collection
  */
 
@@ -17,9 +17,80 @@ import {
   Timestamp,
   serverTimestamp,
   getDoc,
+  FieldValue,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { BudgetDocument, CreateBudgetInput } from "./firestore-types"
+
+// Type for creating a new budget document
+interface NewBudgetDocument {
+  userId: string
+  name: string
+  amount: number
+  currency: string
+  period: "weekly" | "monthly" | "yearly"
+  startDate: Timestamp
+  endDate: Timestamp
+  isActive: boolean
+  createdAt: FieldValue
+  updatedAt: FieldValue
+  category?: string
+  alertThreshold?: number
+}
+
+// Type for update data
+interface BudgetUpdateData {
+  [key: string]: FieldValue | string | number | boolean | Timestamp | undefined
+  updatedAt: FieldValue
+  name?: string
+  category?: string
+  amount?: number
+  currency?: string
+  period?: "weekly" | "monthly" | "yearly"
+  startDate?: Timestamp
+  endDate?: Timestamp
+  isActive?: boolean
+  alertThreshold?: number
+}
+
+// Helper to check if error is a Firestore index error
+function isFirestoreIndexError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const firestoreError = error as Error & { code?: string }
+    return (
+      firestoreError.code === "failed-precondition" ||
+      firestoreError.message?.includes("index") ||
+      false
+    )
+  }
+  return false
+}
+
+// Helper to convert date to timestamp
+function toTimestamp(date: Timestamp | Date | string): Timestamp {
+  if (date instanceof Timestamp) {
+    return date
+  }
+  if (date instanceof Date) {
+    return Timestamp.fromDate(date)
+  }
+  // Check if it's a Timestamp-like object (has toMillis method)
+  if (date && typeof date === "object" && "toMillis" in date) {
+    return date as unknown as Timestamp
+  }
+  return Timestamp.fromDate(new Date(date as string))
+}
+
+// Helper to get milliseconds from a date value
+function getDateMillis(date: Timestamp | Date | string): number {
+  if (date instanceof Timestamp) {
+    return date.toMillis()
+  }
+  if (date instanceof Date) {
+    return date.getTime()
+  }
+  return new Date(date).getTime()
+}
 
 /**
  * Create a new budget in Firestore
@@ -33,33 +104,15 @@ export async function createBudget(
 ): Promise<string> {
   try {
     const budgetRef = collection(db, "budgets")
-    
-    // Convert dates to Timestamps
-    let startDateTimestamp: Timestamp
-    let endDateTimestamp: Timestamp
-    
-    // Helper function to convert to Timestamp
-    const toTimestamp = (date: string | Date | Timestamp): Timestamp => {
-      if (date && typeof date === "object" && "toMillis" in date) {
-        return date as Timestamp
-      }
-      if (date instanceof Date) {
-        return Timestamp.fromDate(date)
-      }
-      return Timestamp.fromDate(new Date(date))
-    }
-    
-    startDateTimestamp = toTimestamp(budgetData.startDate)
-    endDateTimestamp = toTimestamp(budgetData.endDate)
-    
-    const newBudget: any = {
+
+    const newBudget: NewBudgetDocument = {
       userId,
       name: budgetData.name,
       amount: budgetData.amount,
       currency: budgetData.currency || "EUR",
       period: budgetData.period,
-      startDate: startDateTimestamp,
-      endDate: endDateTimestamp,
+      startDate: toTimestamp(budgetData.startDate),
+      endDate: toTimestamp(budgetData.endDate),
       isActive: budgetData.isActive !== undefined ? budgetData.isActive : true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -87,7 +140,7 @@ export async function createBudget(
 export async function getUserBudgets(userId: string): Promise<(BudgetDocument & { id: string })[]> {
   try {
     const budgetsRef = collection(db, "budgets")
-    
+
     // Try with orderBy first (requires index)
     let q = query(
       budgetsRef,
@@ -98,14 +151,9 @@ export async function getUserBudgets(userId: string): Promise<(BudgetDocument & 
     let querySnapshot
     try {
       querySnapshot = await getDocs(q)
-    } catch (indexError: any) {
-      // If index error, try without orderBy and sort in memory
-      if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
-        // Index is still building - using fallback (this is expected and will resolve automatically)
-        q = query(
-          budgetsRef,
-          where("userId", "==", userId)
-        )
+    } catch (indexError: unknown) {
+      if (isFirestoreIndexError(indexError)) {
+        q = query(budgetsRef, where("userId", "==", userId))
         querySnapshot = await getDocs(q)
       } else {
         throw indexError
@@ -122,12 +170,12 @@ export async function getUserBudgets(userId: string): Promise<(BudgetDocument & 
       })
     })
 
-    // Sort by startDate if we didn't use orderBy
-    if (budgets.length > 0 && budgets[0].startDate instanceof Timestamp) {
+    // Sort by startDate descending
+    if (budgets.length > 0) {
       budgets.sort((a, b) => {
-        const dateA = a.startDate instanceof Timestamp ? a.startDate.toMillis() : new Date(a.startDate as any).getTime()
-        const dateB = b.startDate instanceof Timestamp ? b.startDate.toMillis() : new Date(b.startDate as any).getTime()
-        return dateB - dateA // Descending order
+        const dateA = getDateMillis(a.startDate)
+        const dateB = getDateMillis(b.startDate)
+        return dateB - dateA
       })
     }
 
@@ -144,7 +192,7 @@ export async function getUserBudgets(userId: string): Promise<(BudgetDocument & 
 export async function getActiveBudgets(userId: string): Promise<(BudgetDocument & { id: string })[]> {
   try {
     const budgetsRef = collection(db, "budgets")
-    
+
     let q = query(
       budgetsRef,
       where("userId", "==", userId),
@@ -155,9 +203,8 @@ export async function getActiveBudgets(userId: string): Promise<(BudgetDocument 
     let querySnapshot
     try {
       querySnapshot = await getDocs(q)
-    } catch (indexError: any) {
-      if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
-        // Index is still building - using fallback (this is expected and will resolve automatically)
+    } catch (indexError: unknown) {
+      if (isFirestoreIndexError(indexError)) {
         q = query(
           budgetsRef,
           where("userId", "==", userId),
@@ -195,7 +242,7 @@ export async function getBudgetsByCategory(
 ): Promise<(BudgetDocument & { id: string })[]> {
   try {
     const budgetsRef = collection(db, "budgets")
-    
+
     let q = query(
       budgetsRef,
       where("userId", "==", userId),
@@ -207,8 +254,8 @@ export async function getBudgetsByCategory(
     let querySnapshot
     try {
       querySnapshot = await getDocs(q)
-    } catch (indexError: any) {
-      if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
+    } catch (indexError: unknown) {
+      if (isFirestoreIndexError(indexError)) {
         q = query(
           budgetsRef,
           where("userId", "==", userId),
@@ -247,52 +294,42 @@ export async function updateBudget(
 ): Promise<void> {
   try {
     const budgetRef = doc(db, "budgets", budgetId)
-    
-    // Convert date strings to Timestamps if provided
-    const updateData: any = { ...updates }
-    if (updates.startDate && typeof updates.startDate === "string") {
-      updateData.startDate = Timestamp.fromDate(new Date(updates.startDate))
-    }
-    if (updates.endDate && typeof updates.endDate === "string") {
-      updateData.endDate = Timestamp.fromDate(new Date(updates.endDate))
-    }
-    
-    // Build update object, filtering out undefined values
-    // Firestore doesn't allow undefined values in updateDoc()
-    const cleanUpdateData: any = {
+
+    // Build update object with required updatedAt field
+    const cleanUpdateData: BudgetUpdateData = {
       updatedAt: serverTimestamp(),
     }
-    
+
     // Only include defined fields
-    if (updateData.name !== undefined) {
-      cleanUpdateData.name = updateData.name
+    if (updates.name !== undefined) {
+      cleanUpdateData.name = updates.name
     }
-    if (updateData.category !== undefined) {
-      cleanUpdateData.category = updateData.category
+    if (updates.category !== undefined) {
+      cleanUpdateData.category = updates.category
     }
-    if (updateData.amount !== undefined) {
-      cleanUpdateData.amount = updateData.amount
+    if (updates.amount !== undefined) {
+      cleanUpdateData.amount = updates.amount
     }
-    if (updateData.currency !== undefined) {
-      cleanUpdateData.currency = updateData.currency
+    if (updates.currency !== undefined) {
+      cleanUpdateData.currency = updates.currency
     }
-    if (updateData.period !== undefined) {
-      cleanUpdateData.period = updateData.period
+    if (updates.period !== undefined) {
+      cleanUpdateData.period = updates.period
     }
-    if (updateData.startDate !== undefined) {
-      cleanUpdateData.startDate = updateData.startDate
+    if (updates.startDate !== undefined) {
+      cleanUpdateData.startDate = toTimestamp(updates.startDate)
     }
-    if (updateData.endDate !== undefined) {
-      cleanUpdateData.endDate = updateData.endDate
+    if (updates.endDate !== undefined) {
+      cleanUpdateData.endDate = toTimestamp(updates.endDate)
     }
-    if (updateData.isActive !== undefined) {
-      cleanUpdateData.isActive = updateData.isActive
+    if (updates.isActive !== undefined) {
+      cleanUpdateData.isActive = updates.isActive
     }
-    if (updateData.alertThreshold !== undefined) {
-      cleanUpdateData.alertThreshold = updateData.alertThreshold
+    if (updates.alertThreshold !== undefined) {
+      cleanUpdateData.alertThreshold = updates.alertThreshold
     }
-    
-    await updateDoc(budgetRef, cleanUpdateData)
+
+    await updateDoc(budgetRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
     console.error("Error updating budget:", error)
     throw error
@@ -333,4 +370,3 @@ export async function getBudget(budgetId: string): Promise<(BudgetDocument & { i
     throw error
   }
 }
-

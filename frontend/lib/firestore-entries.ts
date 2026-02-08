@@ -1,6 +1,6 @@
 /**
  * Firestore Entries Service
- * 
+ *
  * Functions for CRUD operations on entries collection
  */
 
@@ -18,9 +18,84 @@ import {
   Timestamp,
   serverTimestamp,
   getDoc,
+  FieldValue,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { EntryDocument, CreateEntryInput } from "./firestore-types"
+
+// Type for creating a new entry document
+interface NewEntryDocument {
+  userId: string
+  type: "income" | "expense"
+  amount: number
+  currency: string
+  description: string
+  category: string
+  date: Timestamp
+  createdAt: FieldValue
+  updatedAt: FieldValue
+  categoryId?: string
+  tags?: string[]
+  notes?: string
+  location?: { lat: number; lng: number; name?: string }
+  receiptUrl?: string
+  recurring?: boolean
+  recurringId?: string
+}
+
+// Type for update data
+interface EntryUpdateData {
+  [key: string]: FieldValue | string | number | boolean | Timestamp | string[] | { lat: number; lng: number; name?: string } | undefined
+  updatedAt: FieldValue
+  type?: "income" | "expense"
+  amount?: number
+  currency?: string
+  description?: string
+  category?: string
+  date?: Timestamp
+  categoryId?: string
+  tags?: string[]
+  notes?: string | FieldValue
+  location?: { lat: number; lng: number; name?: string }
+  receiptUrl?: string
+  recurring?: boolean
+  recurringId?: string
+}
+
+// Helper to check if error is a Firestore index error
+function isFirestoreIndexError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const firestoreError = error as Error & { code?: string }
+    return (
+      firestoreError.code === "failed-precondition" ||
+      firestoreError.message?.includes("index") ||
+      false
+    )
+  }
+  return false
+}
+
+// Helper to convert date to timestamp
+function toTimestamp(date: Timestamp | Date | string): Timestamp {
+  if (date instanceof Timestamp) {
+    return date
+  }
+  if (date instanceof Date) {
+    return Timestamp.fromDate(date)
+  }
+  return Timestamp.fromDate(new Date(date))
+}
+
+// Helper to get milliseconds from a date value
+function getDateMillis(date: Timestamp | Date | string): number {
+  if (date instanceof Timestamp) {
+    return date.toMillis()
+  }
+  if (date instanceof Date) {
+    return date.getTime()
+  }
+  return new Date(date).getTime()
+}
 
 /**
  * Create a new entry in Firestore
@@ -31,31 +106,21 @@ export async function createEntry(
 ): Promise<string> {
   try {
     const entryRef = collection(db, "entries")
-    
-    // Convert date to Timestamp
-    let dateTimestamp: Timestamp
-    if (entryData.date instanceof Timestamp) {
-      dateTimestamp = entryData.date
-    } else if (entryData.date instanceof Date) {
-      dateTimestamp = Timestamp.fromDate(entryData.date)
-    } else {
-      dateTimestamp = Timestamp.fromDate(new Date(entryData.date))
-    }
-    
-    // Build entry object, only including defined fields
-    const newEntry: any = {
+
+    // Build entry object with required fields
+    const newEntry: NewEntryDocument = {
       userId,
       type: entryData.type,
       amount: entryData.amount,
       currency: entryData.currency || "EUR",
       description: entryData.description,
       category: entryData.category,
-      date: dateTimestamp,
+      date: toTimestamp(entryData.date),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
 
-    // Only add optional fields if they are defined
+    // Add optional fields if they are defined
     if (entryData.categoryId !== undefined) {
       newEntry.categoryId = entryData.categoryId
     }
@@ -93,7 +158,7 @@ export async function createEntry(
 export async function getUserEntries(userId: string): Promise<(EntryDocument & { id: string })[]> {
   try {
     const entriesRef = collection(db, "entries")
-    
+
     // Try with orderBy first (requires index)
     let q = query(
       entriesRef,
@@ -104,14 +169,10 @@ export async function getUserEntries(userId: string): Promise<(EntryDocument & {
     let querySnapshot
     try {
       querySnapshot = await getDocs(q)
-    } catch (indexError: any) {
+    } catch (indexError: unknown) {
       // If index error, try without orderBy and sort in memory
-      if (indexError.code === "failed-precondition" || indexError.message?.includes("index")) {
-        // Index is still building - using fallback (this is expected and will resolve automatically)
-        q = query(
-          entriesRef,
-          where("userId", "==", userId)
-        )
+      if (isFirestoreIndexError(indexError)) {
+        q = query(entriesRef, where("userId", "==", userId))
         querySnapshot = await getDocs(q)
       } else {
         throw indexError
@@ -128,12 +189,12 @@ export async function getUserEntries(userId: string): Promise<(EntryDocument & {
       })
     })
 
-    // Sort by date if we didn't use orderBy
-    if (entries.length > 0 && entries[0].date instanceof Timestamp) {
+    // Sort by date descending (in case we didn't use orderBy)
+    if (entries.length > 0) {
       entries.sort((a, b) => {
-        const dateA = a.date instanceof Timestamp ? a.date.toMillis() : new Date(a.date as any).getTime()
-        const dateB = b.date instanceof Timestamp ? b.date.toMillis() : new Date(b.date as any).getTime()
-        return dateB - dateA // Descending order
+        const dateA = getDateMillis(a.date)
+        const dateB = getDateMillis(b.date)
+        return dateB - dateA
       })
     }
 
@@ -153,67 +214,60 @@ export async function updateEntry(
 ): Promise<void> {
   try {
     const entryRef = doc(db, "entries", entryId)
-    
-    // Convert date string to Timestamp if provided
-    const updateData: any = { ...updates }
-    if (updates.date && typeof updates.date === "string") {
-      updateData.date = Timestamp.fromDate(new Date(updates.date))
-    }
-    
-    // Build update object, filtering out undefined values
-    // Firestore doesn't allow undefined values in updateDoc()
-    const cleanUpdateData: any = {
+
+    // Build update object with required updatedAt field
+    const cleanUpdateData: EntryUpdateData = {
       updatedAt: serverTimestamp(),
     }
-    
+
     // Only include defined fields
-    if (updateData.type !== undefined) {
-      cleanUpdateData.type = updateData.type
+    if (updates.type !== undefined) {
+      cleanUpdateData.type = updates.type
     }
-    if (updateData.amount !== undefined) {
-      cleanUpdateData.amount = updateData.amount
+    if (updates.amount !== undefined) {
+      cleanUpdateData.amount = updates.amount
     }
-    if (updateData.currency !== undefined) {
-      cleanUpdateData.currency = updateData.currency
+    if (updates.currency !== undefined) {
+      cleanUpdateData.currency = updates.currency
     }
-    if (updateData.description !== undefined) {
-      cleanUpdateData.description = updateData.description
+    if (updates.description !== undefined) {
+      cleanUpdateData.description = updates.description
     }
-    if (updateData.category !== undefined) {
-      cleanUpdateData.category = updateData.category
+    if (updates.category !== undefined) {
+      cleanUpdateData.category = updates.category
     }
-    if (updateData.date !== undefined) {
-      cleanUpdateData.date = updateData.date
+    if (updates.date !== undefined) {
+      // Convert date to Timestamp if it's a string or Date
+      cleanUpdateData.date = toTimestamp(updates.date)
     }
-    if (updateData.categoryId !== undefined) {
-      cleanUpdateData.categoryId = updateData.categoryId
+    if (updates.categoryId !== undefined) {
+      cleanUpdateData.categoryId = updates.categoryId
     }
-    if (updateData.tags !== undefined) {
-      cleanUpdateData.tags = updateData.tags
+    if (updates.tags !== undefined) {
+      cleanUpdateData.tags = updates.tags
     }
-    // Handle notes: only include if defined and not empty string
-    if (updateData.notes !== undefined) {
-      if (updateData.notes === "" || updateData.notes === null) {
-        // Use deleteField() to remove the field if it's empty
+    // Handle notes: use deleteField() to remove if empty
+    if (updates.notes !== undefined) {
+      if (updates.notes === "" || updates.notes === null) {
         cleanUpdateData.notes = deleteField()
       } else {
-        cleanUpdateData.notes = updateData.notes
+        cleanUpdateData.notes = updates.notes
       }
     }
-    if (updateData.location !== undefined) {
-      cleanUpdateData.location = updateData.location
+    if (updates.location !== undefined) {
+      cleanUpdateData.location = updates.location
     }
-    if (updateData.receiptUrl !== undefined) {
-      cleanUpdateData.receiptUrl = updateData.receiptUrl
+    if (updates.receiptUrl !== undefined) {
+      cleanUpdateData.receiptUrl = updates.receiptUrl
     }
-    if (updateData.recurring !== undefined) {
-      cleanUpdateData.recurring = updateData.recurring
+    if (updates.recurring !== undefined) {
+      cleanUpdateData.recurring = updates.recurring
     }
-    if (updateData.recurringId !== undefined) {
-      cleanUpdateData.recurringId = updateData.recurringId
+    if (updates.recurringId !== undefined) {
+      cleanUpdateData.recurringId = updates.recurringId
     }
-    
-    await updateDoc(entryRef, cleanUpdateData)
+
+    await updateDoc(entryRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
     console.error("Error updating entry:", error)
     throw error

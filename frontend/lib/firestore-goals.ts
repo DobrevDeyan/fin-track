@@ -17,9 +17,24 @@ import {
   Timestamp,
   serverTimestamp,
   getDoc,
+  FieldValue,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { GoalDocument } from "./firestore-types"
+
+// Type for update data
+interface GoalUpdateData {
+  [key: string]: FieldValue | string | number | boolean | Timestamp | undefined
+  updatedAt: FieldValue
+  name?: string
+  targetAmount?: number
+  currentAmount?: number
+  currency?: string
+  category?: string
+  description?: string
+  isActive?: boolean
+  deadline?: Timestamp
+}
 
 export type CreateGoalInput = Omit<
   GoalDocument,
@@ -44,12 +59,12 @@ export async function createGoal(
     const toTimestamp = (date: string | Date | Timestamp | undefined): Timestamp | undefined => {
       if (!date) return undefined
       if (date && typeof date === "object" && "toMillis" in date) {
-        return date as Timestamp
+        return date as unknown as Timestamp
       }
       if (date instanceof Date) {
         return Timestamp.fromDate(date)
       }
-      return Timestamp.fromDate(new Date(date))
+      return Timestamp.fromDate(new Date(date as string))
     }
     
     const deadlineTimestamp = goalData.deadline ? toTimestamp(goalData.deadline) : undefined
@@ -161,11 +176,24 @@ export async function updateGoal(
 ): Promise<void> {
   try {
     const goalRef = doc(db, "goals", goalId)
-    
-    const cleanUpdateData: any = {
+
+    // Helper to convert to Timestamp
+    const toTimestamp = (date: string | Date | Timestamp | undefined): Timestamp | undefined => {
+      if (!date) return undefined
+      if (date instanceof Timestamp) return date
+      if (date && typeof date === "object" && "toMillis" in date) {
+        return date as unknown as Timestamp
+      }
+      if (date instanceof Date) {
+        return Timestamp.fromDate(date)
+      }
+      return Timestamp.fromDate(new Date(date as string))
+    }
+
+    const cleanUpdateData: GoalUpdateData = {
       updatedAt: serverTimestamp(),
     }
-    
+
     if (updateData.name !== undefined) {
       cleanUpdateData.name = updateData.name.trim()
     }
@@ -188,20 +216,10 @@ export async function updateGoal(
       cleanUpdateData.isActive = updateData.isActive
     }
     if (updateData.deadline !== undefined) {
-      const toTimestamp = (date: string | Date | Timestamp | undefined): Timestamp | undefined => {
-        if (!date) return undefined
-        if (date && typeof date === "object" && "toMillis" in date) {
-          return date as Timestamp
-        }
-        if (date instanceof Date) {
-          return Timestamp.fromDate(date)
-        }
-        return Timestamp.fromDate(new Date(date))
-      }
       cleanUpdateData.deadline = toTimestamp(updateData.deadline)
     }
-    
-    await updateDoc(goalRef, cleanUpdateData)
+
+    await updateDoc(goalRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
     console.error("Error updating goal:", error)
     throw error
