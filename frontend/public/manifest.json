@@ -2,7 +2,7 @@
   "name": "Pocket - Smart Financial Management",
   "short_name": "Pocket",
   "description": "Track your expenses, manage your budget, and gain insights into your spending",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#34DB96",
@@ -70,6 +70,30 @@
       "short_name": "Dashboard",
       "description": "View your financial dashboard",
       "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/icon-96x96.png?v=2.5",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Calendar",
+      "short_name": "Calendar",
+      "description": "View your financial calendar",
+      "url": "/calendar",
+      "icons": [
+        {
+          "src": "/icons/icon-96x96.png?v=2.5",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "short_name": "Reports",
+      "description": "View financial reports",
+      "url": "/reports",
       "icons": [
         {
           "src": "/icons/icon-96x96.png?v=2.5",
