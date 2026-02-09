@@ -152,3 +152,85 @@ export function getPreviousMonth(month: number, year: number): { month: number; 
   return { month: month - 1, year };
 }
 
+// ── Calendar Helpers ────────────────────────────────────────────────
+
+/**
+ * Get number of days in a given month (0-indexed month)
+ */
+export function getDaysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * Get the weekday of the first day of the month (0=Sun, 6=Sat)
+ */
+export function getFirstDayOfWeek(year: number, month: number): number {
+  return new Date(year, month, 1).getDay();
+}
+
+/**
+ * Compare two dates ignoring time portion
+ */
+export function isSameDay(a: Date | string, b: Date | string): boolean {
+  const da = typeof a === "string" ? new Date(a) : a;
+  const db = typeof b === "string" ? new Date(b) : b;
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
+export interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+}
+
+/**
+ * Generate a full calendar grid for a given month.
+ * Returns 35 or 42 CalendarDay objects (5 or 6 rows of 7).
+ */
+export function generateCalendarDays(year: number, month: number): CalendarDay[] {
+  const today = new Date();
+  const firstDay = getFirstDayOfWeek(year, month);
+  const daysInMonth = getDaysInMonth(year, month);
+  const daysInPrevMonth = getDaysInMonth(
+    month === 0 ? year - 1 : year,
+    month === 0 ? 11 : month - 1
+  );
+
+  const days: CalendarDay[] = [];
+
+  // Previous month padding
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const day = daysInPrevMonth - i;
+    const date = new Date(
+      month === 0 ? year - 1 : year,
+      month === 0 ? 11 : month - 1,
+      day
+    );
+    days.push({ date, isCurrentMonth: false, isToday: isSameDay(date, today) });
+  }
+
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    days.push({ date, isCurrentMonth: true, isToday: isSameDay(date, today) });
+  }
+
+  // Next month padding (fill to 35 or 42)
+  const totalCells = days.length <= 35 ? 35 : 42;
+  let nextDay = 1;
+  while (days.length < totalCells) {
+    const date = new Date(
+      month === 11 ? year + 1 : year,
+      month === 11 ? 0 : month + 1,
+      nextDay++
+    );
+    days.push({ date, isCurrentMonth: false, isToday: isSameDay(date, today) });
+  }
+
+  return days;
+}
+

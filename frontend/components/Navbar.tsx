@@ -19,7 +19,7 @@ import {
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { buttonVariants } from "./ui/button";
 import { Button } from "./ui/button";
-import { Menu, LogOut, User, ChevronRight, X } from "lucide-react";
+import { Menu, LogOut, User, ChevronRight, X, Calendar as CalendarIcon } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -252,6 +252,13 @@ export const Navbar = () => {
                           >
                             Dashboard
                           </Link>
+                          <Link
+                            href="/calendar"
+                            onClick={() => setIsOpen(false)}
+                            className="w-full h-12 px-6 py-3 rounded-lg border-2 font-semibold text-base hover:bg-accent/50 transition-all duration-200 flex items-center justify-center"
+                          >
+                            Calendar
+                          </Link>
                           <Button
                             variant="outline"
                             onClick={handleLogout}
@@ -341,6 +348,12 @@ export const Navbar = () => {
                           <Link href="/dashboard" className="cursor-pointer">
                             <User className="mr-2 h-4 w-4" />
                             <span>Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/calendar" className="cursor-pointer">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            <span>Calendar</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />

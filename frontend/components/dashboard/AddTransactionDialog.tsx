@@ -67,6 +67,7 @@ interface AddTransactionDialogProps {
     receiptUrl?: string
   } | null
   savingsAccounts?: SavingsAccount[]
+  defaultDate?: string
 }
 
 export function AddTransactionDialog({
@@ -75,6 +76,7 @@ export function AddTransactionDialog({
   onSubmit,
   editingEntry,
   savingsAccounts = [],
+  defaultDate,
 }: AddTransactionDialogProps) {
   const { user } = useAuth()
   const [description, setDescription] = useState("")
@@ -112,7 +114,7 @@ export function AddTransactionDialog({
       setAmount("")
       setCategory("")
       setType("expense")
-      setDate(formatDateForInput(new Date()))
+      setDate(defaultDate || formatDateForInput(new Date()))
       setNotes("")
       setTags([])
       setTagInput("")
@@ -123,7 +125,7 @@ export function AddTransactionDialog({
       setSavingsAccountId("")
       setSavingsAmount("")
     }
-  }, [editingEntry, open])
+  }, [editingEntry, open, defaultDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

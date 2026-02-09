@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { Button } from "@/components/ui/button"
-import { ScanLine } from "lucide-react"
+import { ScanLine, Calendar } from "lucide-react"
 import { Navbar } from "@/components/Navbar"
 import { MetricsCards } from "@/components/dashboard/MetricsCards"
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable"
@@ -174,6 +174,12 @@ function DashboardInnerContent() {
             >
               <ScanLine className="mr-2 h-4 w-4" />
               Scan Receipt
+            </Button>
+            <Button variant="outline" asChild className="flex-1 md:flex-initial">
+              <a href="/calendar">
+                <Calendar className="mr-2 h-4 w-4" />
+                Calendar
+              </a>
             </Button>
             <Button variant="outline" asChild className="flex-1 md:flex-initial">
               <a href="/reports">Reports</a>
