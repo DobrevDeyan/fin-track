@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -19,7 +20,7 @@ import {
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { buttonVariants } from "./ui/button";
 import { Button } from "./ui/button";
-import { Menu, LogOut, User, ChevronRight, X, Calendar as CalendarIcon, Info } from "lucide-react";
+import { Menu, LogOut, User, ChevronRight, X, Calendar as CalendarIcon, Info, Globe } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -38,49 +39,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { getUserDocument, updateUserCurrency } from "@/lib/firestore-users";
+import { getUserDocument, updateUserCurrency, updateUserLanguage } from "@/lib/firestore-users";
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { locales, localeNames, type Locale } from "@/i18n/config";
 import { ERROR_MESSAGES } from "@/lib/constants/validation.constants";
 
-interface RouteProps {
-  href: string;
-  label: string;
-}
-
-const routeList: RouteProps[] = [
-  {
-    href: "#features",
-    label: "Features",
-  },
-  {
-    href: "#testimonials",
-    label: "Testimonials",
-  },
-  {
-    href: "#pricing",
-    label: "Pricing",
-  },
-  {
-    href: "#faq",
-    label: "FAQ",
-  },
-];
-
 export const Navbar = () => {
+  const t = useTranslations("nav");
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currencyLoading, setCurrencyLoading] = useState(false);
   const { user, loading, logout } = useAuth();
   const { userCurrency, refreshCurrency } = useCurrency();
+  const { locale, setLocale } = useLanguage();
 
   const handleCurrencyChange = async (currency: SupportedCurrency) => {
     if (!user || currencyLoading) return;
     try {
       setCurrencyLoading(true);
       await updateUserCurrency(user.uid, currency);
-      // Refresh currency context instead of reloading page
       await refreshCurrency();
-      // Small delay to ensure context updates, then reload for full app refresh
       setTimeout(() => {
         window.location.reload();
       }, 100);
@@ -92,14 +71,24 @@ export const Navbar = () => {
     }
   };
 
+  const handleLanguageChange = async (newLocale: string) => {
+    const loc = newLocale as Locale;
+    setLocale(loc);
+    if (user) {
+      try {
+        await updateUserLanguage(user.uid, loc);
+      } catch (error) {
+        console.error("Error saving language:", error);
+      }
+    }
+  };
+
   const handleLogout = async () => {
     try {
       setIsOpen(false);
       await logout();
-      // logout() now handles redirect internally
     } catch (error) {
       console.error("Failed to logout:", error);
-      // Force redirect even on error
       if (typeof window !== "undefined") {
         window.location.href = "/auth/login";
       }
@@ -123,32 +112,28 @@ export const Navbar = () => {
   const handleNavClick = (href: string, e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (typeof window === "undefined") return;
-    
+
     const hash = href.replace("#", "");
     const currentPath = window.location.pathname;
-    
+
     if (currentPath === "/") {
-      // Already on home page, just scroll to section
       const element = document.getElementById(hash);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
       }
     } else {
-      // Navigate to home page first, then scroll to section
       window.location.href = `/${href}`;
     }
     setIsOpen(false);
   };
 
-  // Handle hash navigation after page load
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     const currentPath = window.location.pathname;
     if (currentPath === "/") {
       const hash = window.location.hash.replace("#", "");
       if (hash) {
-        // Wait for page to render, then scroll
         setTimeout(() => {
           const element = document.getElementById(hash);
           if (element) {
@@ -158,6 +143,13 @@ export const Navbar = () => {
       }
     }
   }, []);
+
+  const routeList = [
+    { href: "#features", label: t("features") },
+    { href: "#testimonials", label: t("testimonials") },
+    { href: "#pricing", label: t("pricing") },
+    { href: "#faq", label: t("faq") },
+  ];
 
   return (
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white border-gray-200">
@@ -193,7 +185,7 @@ export const Navbar = () => {
                   className="flex md:hidden h-5 w-5"
                   onClick={() => setIsOpen(true)}
                 >
-                  <span className="sr-only">Menu Icon</span>
+                  <span className="sr-only">{t("menu")}</span>
                 </Menu>
               </SheetTrigger>
 
@@ -216,7 +208,7 @@ export const Navbar = () => {
                   </div>
                 </SheetHeader>
                 <nav className="flex flex-col gap-2">
-                  {routeList.map(({ href, label }: RouteProps) => (
+                  {routeList.map(({ href, label }) => (
                     <a
                       rel="noreferrer noopener"
                       key={label}
@@ -231,9 +223,10 @@ export const Navbar = () => {
                     <>
                       {user ? (
                         <>
-                          <div className="w-full mt-4 mb-2">
+                          {/* Currency & Language selectors */}
+                          <div className="flex gap-2 w-full mt-4 mb-2">
                             <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
-                              <SelectTrigger className="w-full h-11 text-base font-medium border-2">
+                              <SelectTrigger className="flex-1 h-11 text-base font-medium border-2">
                                 <SelectValue placeholder="EUR" />
                               </SelectTrigger>
                               <SelectContent>
@@ -244,20 +237,33 @@ export const Navbar = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <Select value={locale} onValueChange={handleLanguageChange}>
+                              <SelectTrigger className="flex-1 h-11 text-base font-medium border-2">
+                                <Globe className="h-4 w-4 mr-1.5" />
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {locales.map((loc) => (
+                                  <SelectItem key={loc} value={loc}>
+                                    {localeNames[loc]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <Link
                             href="/dashboard"
                             onClick={() => setIsOpen(false)}
                             className="w-full h-12 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-base shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
                           >
-                            Dashboard
+                            {t("dashboard")}
                           </Link>
                           <Link
                             href="/calendar"
                             onClick={() => setIsOpen(false)}
                             className="w-full h-12 px-6 py-3 rounded-lg border-2 font-semibold text-base hover:bg-accent/50 transition-all duration-200 flex items-center justify-center"
                           >
-                            Calendar
+                            {t("calendar")}
                           </Link>
                           <Button
                             variant="outline"
@@ -265,17 +271,35 @@ export const Navbar = () => {
                             className="w-full h-12 px-6 py-3 rounded-lg border-2 font-semibold text-base hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive transition-all duration-200 flex items-center justify-center"
                           >
                             <LogOut className="mr-2 h-4 w-4" />
-                            Logout
+                            {t("logout")}
                           </Button>
                         </>
                       ) : (
-                        <Link
-                          href="/auth/login"
-                          onClick={() => setIsOpen(false)}
-                          className="w-full h-12 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-base shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200 flex items-center justify-center mt-4"
-                        >
-                          Login
-                        </Link>
+                        <>
+                          {/* Language selector for unauthenticated users */}
+                          <div className="w-full mt-4 mb-2">
+                            <Select value={locale} onValueChange={handleLanguageChange}>
+                              <SelectTrigger className="w-full h-11 text-base font-medium border-2">
+                                <Globe className="h-4 w-4 mr-1.5" />
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {locales.map((loc) => (
+                                  <SelectItem key={loc} value={loc}>
+                                    {localeNames[loc]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Link
+                            href="/auth/login"
+                            onClick={() => setIsOpen(false)}
+                            className="w-full h-12 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-base shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+                          >
+                            {t("login")}
+                          </Link>
+                        </>
                       )}
                     </>
                   )}
@@ -286,7 +310,7 @@ export const Navbar = () => {
 
           {/* desktop */}
           <nav className="hidden md:flex gap-2">
-            {routeList.map((route: RouteProps, i) => (
+            {routeList.map((route, i) => (
               <a
                 rel="noreferrer noopener"
                 href={route.href}
@@ -306,6 +330,21 @@ export const Navbar = () => {
               <>
                 {user ? (
                   <>
+                    {/* Language selector */}
+                    <Select value={locale} onValueChange={handleLanguageChange}>
+                      <SelectTrigger className="w-[100px]">
+                        <Globe className="h-3.5 w-3.5 mr-1" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locales.map((loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {localeNames[loc]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {/* Currency selector */}
                     <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
                       <SelectTrigger className="w-[100px]">
                         <SelectValue placeholder="EUR" />
@@ -319,7 +358,7 @@ export const Navbar = () => {
                       </SelectContent>
                     </Select>
                     <Link href="/dashboard">
-                      <Button>Dashboard</Button>
+                      <Button>{t("dashboard")}</Button>
                     </Link>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -347,34 +386,50 @@ export const Navbar = () => {
                         <DropdownMenuItem asChild>
                           <Link href="/dashboard" className="cursor-pointer">
                             <User className="mr-2 h-4 w-4" />
-                            <span>Dashboard</span>
+                            <span>{t("dashboard")}</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/calendar" className="cursor-pointer">
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            <span>Calendar</span>
+                            <span>{t("calendar")}</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link href="/?landing" className="cursor-pointer">
                             <Info className="mr-2 h-4 w-4" />
-                            <span>About Pocket</span>
+                            <span>{t("aboutPocket")}</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
-                          <span>Log out</span>
+                          <span>{t("logout")}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </>
                 ) : (
-                  <Link href="/auth/login">
-                    <Button>Login</Button>
-                  </Link>
+                  <>
+                    {/* Language selector for unauthenticated users */}
+                    <Select value={locale} onValueChange={handleLanguageChange}>
+                      <SelectTrigger className="w-[100px]">
+                        <Globe className="h-3.5 w-3.5 mr-1" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locales.map((loc) => (
+                          <SelectItem key={loc} value={loc}>
+                            {localeNames[loc]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Link href="/auth/login">
+                      <Button>{t("login")}</Button>
+                    </Link>
+                  </>
                 )}
               </>
             )}
@@ -384,4 +439,3 @@ export const Navbar = () => {
     </header>
   );
 };
-

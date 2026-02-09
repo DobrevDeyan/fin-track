@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { generateCalendarDays, isSameDay, formatDateForInput } from "@/lib/date-utils"
@@ -12,11 +13,7 @@ import type { RecurringTransaction } from "@/contexts/dashboard/RecurringContext
 import type { CalendarDay } from "@/lib/date-utils"
 import { Timestamp } from "firebase/firestore"
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-]
+const WEEKDAY_KEYS = [0, 1, 2, 3, 4, 5, 6] as const
 
 interface CalendarViewProps {
   entries: Entry[]
@@ -38,6 +35,9 @@ export function CalendarView({
   userCurrency,
   onAddTransaction,
 }: CalendarViewProps) {
+  const t = useTranslations("calendar")
+  const tCommon = useTranslations("common")
+
   const today = new Date()
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
@@ -148,6 +148,23 @@ export function CalendarView({
     setPopoverOpen(true)
   }, [])
 
+  // Format month name using Intl (locale-aware)
+  const monthLabel = useMemo(() => {
+    const d = new Date(currentYear, currentMonth, 1)
+    return new Intl.DateTimeFormat(undefined, { month: "long" }).format(d)
+  }, [currentYear, currentMonth])
+
+  // Format weekday names using Intl (locale-aware)
+  const weekdayLabels = useMemo(() => {
+    return WEEKDAY_KEYS.map((dayIdx) => {
+      // Jan 4 2026 is a Sunday (day 0)
+      const d = new Date(2026, 0, 4 + dayIdx)
+      const short = new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(d)
+      const narrow = new Intl.DateTimeFormat(undefined, { weekday: "narrow" }).format(d)
+      return { short, narrow }
+    })
+  }, [])
+
   // Selected day data
   const selectedDateStr = selectedDay ? formatDateForInput(selectedDay.date) : ""
   const selectedEntries = selectedDateStr ? (entriesByDate.get(selectedDateStr) || []) : []
@@ -157,12 +174,12 @@ export function CalendarView({
     <div className="space-y-4">
       {/* Header: Month/Year + Navigation */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl sm:text-2xl font-bold">
-          {MONTH_NAMES[currentMonth]} {currentYear}
+        <h2 className="text-xl sm:text-2xl font-bold capitalize">
+          {monthLabel} {currentYear}
         </h2>
         <div className="flex items-center gap-1 sm:gap-2">
           <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
+            {tCommon("today")}
           </Button>
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
@@ -175,13 +192,13 @@ export function CalendarView({
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 border-b">
-        {WEEKDAYS.map((day) => (
+        {weekdayLabels.map((day, idx) => (
           <div
-            key={day}
+            key={idx}
             className="text-center text-xs sm:text-sm font-medium text-muted-foreground py-2"
           >
-            <span className="hidden sm:inline">{day}</span>
-            <span className="sm:hidden">{day.charAt(0)}</span>
+            <span className="hidden sm:inline">{day.short}</span>
+            <span className="sm:hidden">{day.narrow}</span>
           </div>
         ))}
       </div>
@@ -206,15 +223,15 @@ export function CalendarView({
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-2">
         <div className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-          Income
+          {t("legend.income")}
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-          Expense
+          {t("legend.expense")}
         </div>
         <div className="flex items-center gap-1">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-          Recurring
+          {t("legend.recurring")}
         </div>
       </div>
 

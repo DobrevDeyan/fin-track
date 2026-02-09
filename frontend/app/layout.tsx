@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { CurrencyProvider } from "@/contexts/CurrencyContext"
+import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
 
@@ -89,9 +90,11 @@ export default function RootLayout({
         >
           <AuthProvider>
             <CurrencyProvider>
-              {children}
-              <RegisterSW />
-              <InstallPrompt />
+              <LanguageProvider>
+                {children}
+                <RegisterSW />
+                <InstallPrompt />
+              </LanguageProvider>
             </CurrencyProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { Button } from "@/components/ui/button"
@@ -70,6 +71,8 @@ const CategoryChart = dynamic(
  * Inner dashboard content that uses the feature contexts
  */
 function DashboardInnerContent() {
+  const t = useTranslations("dashboard")
+  const tNav = useTranslations("nav")
   const { user } = useAuth()
   const { userCurrency } = useCurrency()
 
@@ -162,9 +165,9 @@ function DashboardInnerContent() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
             <p className="text-muted-foreground mt-2">
-              Welcome back, {user?.email?.split("@")[0]}
+              {t("welcome", { name: user?.email?.split("@")[0] || "" })}
             </p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
@@ -173,16 +176,16 @@ function DashboardInnerContent() {
               className="flex-1 md:flex-initial"
             >
               <ScanLine className="mr-2 h-4 w-4" />
-              Scan Receipt
+              {t("scanReceipt")}
             </Button>
             <Button variant="outline" asChild className="flex-1 md:flex-initial">
               <a href="/calendar">
                 <Calendar className="mr-2 h-4 w-4" />
-                Calendar
+                {tNav("calendar")}
               </a>
             </Button>
             <Button variant="outline" asChild className="flex-1 md:flex-initial">
-              <a href="/reports">Reports</a>
+              <a href="/reports">{tNav("reports")}</a>
             </Button>
           </div>
         </div>

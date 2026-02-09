@@ -42,13 +42,30 @@ export async function getUserDocument(userId: string): Promise<(UserDocument & {
 export async function updateUserCurrency(userId: string, currency: SupportedCurrency): Promise<void> {
   try {
     const userRef = doc(db, "users", userId)
-    
+
     await updateDoc(userRef, {
       currency,
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
     console.error("Error updating user currency:", error)
+    throw error
+  }
+}
+
+/**
+ * Update user language preference
+ */
+export async function updateUserLanguage(userId: string, language: string): Promise<void> {
+  try {
+    const userRef = doc(db, "users", userId)
+
+    await updateDoc(userRef, {
+      language,
+      updatedAt: serverTimestamp(),
+    })
+  } catch (error) {
+    console.error("Error updating user language:", error)
     throw error
   }
 }

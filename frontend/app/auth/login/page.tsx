@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,15 +19,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const t = useTranslations("auth");
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-      setEmailError("Email is required");
+      setEmailError(t("emailRequired"));
       return false;
     }
     if (!emailRegex.test(email)) {
-      setEmailError("Please enter a valid email address");
+      setEmailError(t("emailInvalid"));
       return false;
     }
     setEmailError("");
@@ -35,7 +37,7 @@ export default function LoginPage() {
 
   const validatePassword = (password: string): boolean => {
     if (!password) {
-      setPasswordError("Password is required");
+      setPasswordError(t("passwordRequired"));
       return false;
     }
     setPasswordError("");
@@ -61,7 +63,7 @@ export default function LoginPage() {
       await signIn(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An error occurred during sign in. Please try again.";
+      const message = err instanceof Error ? err.message : t("signInError");
       setError(message);
     } finally {
       setLoading(false);
@@ -78,7 +80,7 @@ export default function LoginPage() {
       await signInWithGoogle();
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An error occurred during Google sign in. Please try again.";
+      const message = err instanceof Error ? err.message : t("googleSignInError");
       setError(message);
     } finally {
       setLoading(false);
@@ -89,9 +91,9 @@ export default function LoginPage() {
     <div className="container flex items-center justify-center min-h-screen py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">{t("login")}</CardTitle>
           <CardDescription>
-            Enter your credentials to access your account
+            {t("enterCredentials")}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -104,7 +106,7 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("email")}
               </label>
               <Input
                 id="email"
@@ -126,7 +128,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("password")}
               </label>
               <Input
                 id="password"
@@ -147,7 +149,7 @@ export default function LoginPage() {
               )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("signingIn") : t("signIn")}
             </Button>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -155,7 +157,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  {t("orContinueWith")}
                 </span>
               </div>
             </div>
@@ -173,9 +175,9 @@ export default function LoginPage() {
         </form>
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-center text-muted-foreground">
-            Don't have an account?{" "}
+            {t("noAccount")}{" "}
             <Link href="/auth/register" className="text-primary hover:underline">
-              Sign up
+              {t("signUp")}
             </Link>
           </div>
         </CardFooter>

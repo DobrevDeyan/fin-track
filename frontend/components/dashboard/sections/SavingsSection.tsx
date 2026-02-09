@@ -7,6 +7,7 @@
  * Uses SavingsContext to get state and actions - no prop drilling needed.
  */
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
@@ -35,22 +36,22 @@ export function SavingsSection({ userCurrency }: SavingsSectionProps) {
     openDialog,
   } = useSavingsContext()
 
+  const t = useTranslations("savings")
+
   const totalSavings = calculateTotalSavings(savingsAccounts)
-  const description = `Track your savings separately from your spending balance${
-    savingsAccounts.length > 0
-      ? ` • Total: ${formatCurrency(totalSavings, { currency: userCurrency })}`
-      : ""
-  }`
+  const description = savingsAccounts.length > 0
+    ? t("descriptionWithTotal", { total: formatCurrency(totalSavings, { currency: userCurrency }) })
+    : t("description")
 
   return (
     <>
       <CollapsibleSection
-        title="Savings Accounts"
+        title={t("title")}
         description={description}
         actionButton={
           <Button onClick={openDialog} className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Create Savings Account
+            {t("createAccount")}
           </Button>
         }
       >
@@ -59,7 +60,7 @@ export function SavingsSection({ userCurrency }: SavingsSectionProps) {
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Loading savings accounts...
+                {t("loading")}
               </p>
             </div>
           </div>

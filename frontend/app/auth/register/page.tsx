@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const t = useTranslations("auth");
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -31,11 +33,11 @@ export default function RegisterPage() {
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-      setEmailError("Email is required");
+      setEmailError(t("emailRequired"));
       return false;
     }
     if (!emailRegex.test(email)) {
-      setEmailError("Please enter a valid email address");
+      setEmailError(t("emailInvalid"));
       return false;
     }
     setEmailError("");
@@ -44,11 +46,11 @@ export default function RegisterPage() {
 
   const validatePassword = (password: string): boolean => {
     if (!password) {
-      setPasswordError("Password is required");
+      setPasswordError(t("passwordRequired"));
       return false;
     }
     if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters long");
+      setPasswordError(t("passwordMinLength"));
       return false;
     }
     setPasswordError("");
@@ -57,11 +59,11 @@ export default function RegisterPage() {
 
   const validateConfirmPassword = (confirmPassword: string, password: string): boolean => {
     if (!confirmPassword) {
-      setConfirmPasswordError("Please confirm your password");
+      setConfirmPasswordError(t("confirmPasswordRequired"));
       return false;
     }
     if (confirmPassword !== password) {
-      setConfirmPasswordError("Passwords do not match");
+      setConfirmPasswordError(t("passwordsNoMatch"));
       return false;
     }
     setConfirmPasswordError("");
@@ -89,7 +91,7 @@ export default function RegisterPage() {
       await signUp(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An error occurred during registration. Please try again.";
+      const message = err instanceof Error ? err.message : t("signUpError");
       setError(message);
     } finally {
       setLoading(false);
@@ -108,7 +110,7 @@ export default function RegisterPage() {
       await signInWithGoogle();
       // The redirect will happen automatically - user will be redirected back after Google auth
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An error occurred during Google sign in. Please try again.";
+      const message = err instanceof Error ? err.message : t("googleSignInError");
       setError(message);
       setLoading(false);
     }
@@ -118,9 +120,9 @@ export default function RegisterPage() {
     <div className="container flex items-center justify-center min-h-screen py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="text-2xl">{t("createAccount")}</CardTitle>
           <CardDescription>
-            Enter your information to create an account
+            {t("enterInfo")}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -133,7 +135,7 @@ export default function RegisterPage() {
             )}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("email")}
               </label>
               <Input
                 id="email"
@@ -155,7 +157,7 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("password")}
               </label>
               <Input
                 id="password"
@@ -183,7 +185,7 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium">
-                Confirm Password
+                {t("confirmPassword")}
               </label>
               <Input
                 id="confirmPassword"
@@ -211,7 +213,7 @@ export default function RegisterPage() {
               )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Sign Up"}
+              {loading ? t("creatingAccount") : t("signUp")}
             </Button>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -219,7 +221,7 @@ export default function RegisterPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  {t("orContinueWith")}
                 </span>
               </div>
             </div>
@@ -237,9 +239,9 @@ export default function RegisterPage() {
         </form>
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-center text-muted-foreground">
-            Already have an account?{" "}
+            {t("haveAccount")}{" "}
             <Link href="/auth/login" className="text-primary hover:underline">
-              Sign in
+              {t("signIn")}
             </Link>
           </div>
         </CardFooter>

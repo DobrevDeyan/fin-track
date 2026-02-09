@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,8 @@ export function CalendarEventPopover({
   userCurrency,
   onAddTransaction,
 }: CalendarEventPopoverProps) {
+  const t = useTranslations("calendar")
+
   if (!date) return null
 
   const incomeTotal = entries
@@ -79,7 +82,7 @@ export function CalendarEventPopover({
         {/* Transactions */}
         {entries.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Transactions</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">{t("transactions")}</h4>
             {entries.map((entry) => (
               <div
                 key={entry.id}
@@ -105,7 +108,7 @@ export function CalendarEventPopover({
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1">
               <Repeat className="w-3.5 h-3.5" />
-              Recurring
+              {t("legend.recurring")}
             </h4>
             {recurringItems.map((item, idx) => (
               <div
@@ -131,7 +134,7 @@ export function CalendarEventPopover({
         {/* Empty state */}
         {entries.length === 0 && recurringItems.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">
-            No transactions on this day
+            {t("noTransactionsOnDay")}
           </p>
         )}
 
@@ -144,7 +147,7 @@ export function CalendarEventPopover({
           className="w-full mt-2"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Transaction
+          {t("addTransaction")}
         </Button>
       </DialogContent>
     </Dialog>

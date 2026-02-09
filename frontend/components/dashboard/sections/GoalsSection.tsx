@@ -7,6 +7,7 @@
  * Uses GoalsContext to get state and actions - minimal props needed.
  */
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
@@ -32,15 +33,17 @@ export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
     openDialog,
   } = useGoalsContext()
 
+  const t = useTranslations("goals")
+
   return (
     <>
       <CollapsibleSection
-        title="Financial Goals"
-        description="Set and track your savings goals and milestones"
+        title={t("title")}
+        description={t("description")}
         actionButton={
           <Button onClick={openDialog} className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Create Goal
+            {t("createGoal")}
           </Button>
         }
       >
@@ -49,7 +52,7 @@ export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Loading goals...
+                {t("loading")}
               </p>
             </div>
           </div>

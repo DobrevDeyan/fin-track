@@ -7,6 +7,7 @@
  * Uses RecurringContext to get state and actions - minimal props needed.
  */
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { CollapsibleSection } from "@/components/ui/collapsible-section"
@@ -31,15 +32,17 @@ export function RecurringSection({ categories }: RecurringSectionProps) {
     openDialog,
   } = useRecurringContext()
 
+  const t = useTranslations("recurring")
+
   return (
     <>
       <CollapsibleSection
-        title="Recurring Transactions"
-        description="Manage your recurring bills, subscriptions, and income"
+        title={t("title")}
+        description={t("description")}
         actionButton={
           <Button onClick={openDialog} className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Create Recurring Transaction
+            {t("createRecurring")}
           </Button>
         }
       >
@@ -48,7 +51,7 @@ export function RecurringSection({ categories }: RecurringSectionProps) {
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Loading recurring transactions...
+                {t("loading")}
               </p>
             </div>
           </div>

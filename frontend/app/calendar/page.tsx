@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { Navbar } from "@/components/Navbar"
@@ -21,6 +22,8 @@ import { useEntries, type ToastState } from "@/lib/hooks/dashboard"
  * Inner content that uses the dashboard contexts
  */
 function CalendarInnerContent() {
+  const t = useTranslations("calendar")
+  const tNav = useTranslations("nav")
   const { user } = useAuth()
   const { userCurrency } = useCurrency()
   const { recurringTransactions, loadRecurringTransactions } = useRecurringContext()
@@ -68,16 +71,16 @@ function CalendarInnerContent() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground">Calendar</h1>
+            <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
             <p className="text-muted-foreground mt-2">
-              View your transactions and upcoming bills
+              {t("description")}
             </p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" asChild className="flex-1 md:flex-initial">
               <a href="/dashboard">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Dashboard
+                {tNav("dashboard")}
               </a>
             </Button>
           </div>
@@ -88,7 +91,7 @@ function CalendarInnerContent() {
           <div className="flex items-center justify-center py-24">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading calendar...</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
             </div>
           </div>
         ) : (
