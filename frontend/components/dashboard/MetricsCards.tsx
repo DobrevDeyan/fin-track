@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getTrendColor } from "@/lib/constants/ui.constants"
+import { useTranslations } from "next-intl"
 
 interface MetricsCardsProps {
   totalBalance: number
@@ -28,38 +29,44 @@ export function MetricsCards({
   savingsChange,
   userCurrency = "EUR",
 }: MetricsCardsProps) {
+  const t = useTranslations("dashboard")
+
   const metrics = [
     {
-      title: "Total Balance",
+      titleKey: "totalBalance",
       value: formatCurrency(totalBalance, { currency: userCurrency }),
       icon: Wallet,
       gradient: "from-black to-gray-800",
       change: balanceChange.change,
       trend: balanceChange.trend,
+      isSavings: false,
     },
     {
-      title: "Total Income",
+      titleKey: "totalIncome",
       value: formatCurrency(totalIncome, { currency: userCurrency }),
       icon: TrendingUp,
       gradient: "from-black to-gray-800",
       change: incomeChange.change,
       trend: incomeChange.trend,
+      isSavings: false,
     },
     {
-      title: "Total Expenses",
+      titleKey: "totalExpenses",
       value: formatCurrency(totalExpenses, { currency: userCurrency }),
       icon: TrendingDown,
       gradient: "from-black to-gray-800",
       change: expensesChange.change,
       trend: expensesChange.trend,
+      isSavings: false,
     },
     {
-      title: "Savings",
+      titleKey: "savings",
       value: formatCurrency(savings, { currency: userCurrency }),
       icon: PiggyBank,
       gradient: "from-black to-gray-800",
       change: savingsChange.change,
       trend: savingsChange.trend,
+      isSavings: true,
     },
   ]
 
@@ -69,7 +76,7 @@ export function MetricsCards({
         const Icon = metric.icon
         return (
           <Card
-            key={metric.title}
+            key={metric.titleKey}
             className="relative overflow-hidden drop-shadow-xl shadow-black/10"
           >
             <div
@@ -77,16 +84,16 @@ export function MetricsCards({
             />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {metric.title}
+                {t(metric.titleKey)}
               </CardTitle>
               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
               <p className={`text-xs mt-1 ${getTrendColor(metric.trend)}`}>
-                {metric.title === "Savings" 
-                  ? metric.change 
-                  : `${metric.change} from last month`}
+                {metric.isSavings
+                  ? metric.change
+                  : `${metric.change} ${t("fromLastMonth")}`}
               </p>
             </CardContent>
           </Card>

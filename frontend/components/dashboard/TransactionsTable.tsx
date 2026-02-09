@@ -24,6 +24,7 @@ import { formatDate, formatDateCompact } from "@/lib/date-utils"
 import { getCategoryColor } from "@/lib/constants/category.constants"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
 import type { TransactionType } from "@/lib/constants/transaction.constants"
+import { useTranslations } from "next-intl"
 
 interface Entry {
   id: string
@@ -55,6 +56,8 @@ export function TransactionsTable({
   onDelete,
   filters,
 }: TransactionsTableProps) {
+  const t = useTranslations("dashboard")
+  const tCommon = useTranslations("common")
   const [currentPage, setCurrentPage] = useState(1)
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false)
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null)
@@ -132,19 +135,19 @@ export function TransactionsTable({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-xl font-bold">Recent Entries</CardTitle>
+              <CardTitle className="text-xl font-bold">{t("recentEntries")}</CardTitle>
               <CardDescription className="mt-1">
-                Your latest financial activity
+                {t("latestActivity")}
                 {transactions.length > 0 && (
                   <span className="ml-2">
-                    ({transactions.length} {transactions.length === 1 ? "entry" : "entries"})
+                    ({transactions.length} {transactions.length === 1 ? t("entry") : t("entries")})
                   </span>
                 )}
               </CardDescription>
             </div>
             <Button onClick={onAdd} className="gap-2 w-full sm:w-auto">
               <Plus className="h-4 w-4" />
-              Add Entry
+              {t("addEntry")}
             </Button>
           </div>
           {filters && (
@@ -157,7 +160,7 @@ export function TransactionsTable({
       <CardContent className="px-2 sm:px-4 md:px-6">
         {transactions.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            No entries yet. Add your first entry to get started!
+            {t("noEntriesYet")}
           </div>
         ) : (
           <>
@@ -165,11 +168,11 @@ export function TransactionsTable({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="py-2 sm:py-4">Description</TableHead>
-                    <TableHead className="py-2 sm:py-4">Category</TableHead>
-                    <TableHead className="py-2 sm:py-4">Date</TableHead>
-                    <TableHead className="text-right py-2 sm:py-4 min-w-[120px] sm:min-w-[140px]">Amount</TableHead>
-                    <TableHead className="text-right py-2 sm:py-4">Actions</TableHead>
+                    <TableHead className="py-2 sm:py-4">{tCommon("description")}</TableHead>
+                    <TableHead className="py-2 sm:py-4">{tCommon("category")}</TableHead>
+                    <TableHead className="py-2 sm:py-4">{tCommon("date")}</TableHead>
+                    <TableHead className="text-right py-2 sm:py-4 min-w-[120px] sm:min-w-[140px]">{tCommon("amount")}</TableHead>
+                    <TableHead className="text-right py-2 sm:py-4">{tCommon("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -205,7 +208,7 @@ export function TransactionsTable({
                                 setReceiptDialogOpen(true)
                               }}
                               className="flex-shrink-0 p-1 hover:bg-muted rounded"
-                              title="View receipt"
+                              title={t("viewReceipt")}
                             >
                               <FileImage className="h-4 w-4 text-primary" />
                             </button>
@@ -239,7 +242,7 @@ export function TransactionsTable({
                             size="icon"
                             onClick={() => onEdit(transaction.id)}
                             className="hover:bg-primary/10"
-                            title="Edit entry"
+                            title={t("editEntryTitle")}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -248,12 +251,12 @@ export function TransactionsTable({
                             size="icon"
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (window.confirm(`Are you sure you want to delete "${transaction.description}"? This action cannot be undone.`)) {
+                              if (window.confirm(t("confirmDelete", { name: transaction.description }))) {
                                 onDelete(transaction.id)
                               }
                             }}
                             className="hover:bg-destructive/10 hover:text-destructive"
-                            title="Delete entry"
+                            title={t("deleteEntryTitle")}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -269,7 +272,7 @@ export function TransactionsTable({
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
                 <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(endIndex, transactions.length)} of {transactions.length} entries
+                  {t("showingEntries", { from: startIndex + 1, to: Math.min(endIndex, transactions.length), total: transactions.length })}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -280,7 +283,7 @@ export function TransactionsTable({
                     className="gap-1"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Previous</span>
+                    <span className="hidden sm:inline">{tCommon("previous")}</span>
                   </Button>
                   
                   <div className="flex items-center gap-1">
@@ -313,7 +316,7 @@ export function TransactionsTable({
                     disabled={currentPage === totalPages}
                     className="gap-1"
                   >
-                    <span className="hidden sm:inline">Next</span>
+                    <span className="hidden sm:inline">{tCommon("next")}</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -322,18 +325,18 @@ export function TransactionsTable({
           </>
         )}
       </CardContent>
-      
+
       {/* Receipt View Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Receipt</DialogTitle>
+            <DialogTitle>{t("receipt")}</DialogTitle>
           </DialogHeader>
           {selectedReceiptUrl && (
             <div className="mt-4">
               <img
                 src={selectedReceiptUrl}
-                alt="Receipt"
+                alt={t("receiptPreview")}
                 className="max-w-full h-auto rounded-md border"
               />
             </div>

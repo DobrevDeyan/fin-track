@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { LogoIcon } from "./Icons";
+import { useTranslations } from "next-intl";
 
 export const Footer = () => {
+  const t = useTranslations("landing.footer");
+  const tNav = useTranslations("nav");
+
   return (
     <footer id="footer" className="border-t border-border bg-background">
       <div className="container py-12 md:py-16">
@@ -21,11 +25,9 @@ export const Footer = () => {
             </Link>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p className="font-medium text-foreground">Pocket</p>
-              <p>Smart financial management made easy.</p>
+              <p>{t("tagline")}</p>
               <p className="mt-4">
-                The interactive layer for your
-                <br />
-                financial tracking and budgeting.
+                {t("interactiveLayer")}
               </p>
               <p className="mt-6 text-xs">
                 &copy; {new Date().getFullYear()} Pocket
@@ -35,118 +37,118 @@ export const Footer = () => {
 
           {/* Product Column */}
           <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-sm text-foreground">Product</h3>
+            <h3 className="font-semibold text-sm text-foreground">{t("product")}</h3>
             <div className="flex flex-col gap-2">
               <Link
                 href="#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Features
+                {tNav("features")}
               </Link>
               <Link
                 href="#pricing"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Pricing
+                {tNav("pricing")}
               </Link>
               <Link
                 href="#faq"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                FAQ
+                {tNav("faq")}
               </Link>
               <Link
                 href="/dashboard"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Dashboard
+                {tNav("dashboard")}
               </Link>
             </div>
           </div>
 
           {/* Solutions Column */}
           <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-sm text-foreground">Solutions</h3>
+            <h3 className="font-semibold text-sm text-foreground">{t("solutions")}</h3>
             <div className="flex flex-col gap-2">
               <Link
                 href="#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Personal Finance
+                {t("personalFinance")}
               </Link>
               <Link
                 href="#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Budget Tracking
+                {t("budgetTracking")}
               </Link>
               <Link
                 href="#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Expense Management
+                {t("expenseManagement")}
               </Link>
             </div>
           </div>
 
           {/* Resources Column */}
           <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-sm text-foreground">Resources</h3>
+            <h3 className="font-semibold text-sm text-foreground">{t("resources")}</h3>
             <div className="flex flex-col gap-2">
               <Link
                 href="#"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Blog
+                {t("blog")}
               </Link>
               <Link
                 href="#"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Documentation
+                {t("documentation")}
               </Link>
               <Link
                 href="#"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Support
+                {t("support")}
               </Link>
             </div>
           </div>
 
           {/* Company Column */}
           <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-sm text-foreground">Company</h3>
+            <h3 className="font-semibold text-sm text-foreground">{t("company")}</h3>
             <div className="flex flex-col gap-2">
               <Link
                 href="#about"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                About
+                {t("about")}
               </Link>
               <Link
                 href="#contact"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Contact
+                {t("contact")}
               </Link>
               <Link
                 href="#"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Privacy Policy
+                {t("privacyPolicy")}
               </Link>
               <Link
                 href="#"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Terms of Service
+                {t("termsOfService")}
               </Link>
               <Link
                 href="#"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Security & Compliance
+                {t("securityCompliance")}
               </Link>
             </div>
           </div>

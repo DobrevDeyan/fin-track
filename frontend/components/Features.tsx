@@ -9,54 +9,42 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 interface FeatureProps {
-  title: string;
-  description: string;
+  titleKey: string;
+  descKey: string;
   icon: string;
 }
 
-const features: FeatureProps[] = [
-  {
-    title: "Manual Expense Categorization",
-    description:
-      "Manually track and categorize your expenses. Save time and get accurate insights into your spending patterns.",
-    icon: "🤖",
-  },
-  {
-    title: "Real-Time Analytics",
-    description:
-      "Track your spending patterns in real-time with beautiful charts and visualizations.",
-    icon: "📊",
-  },
-  {
-    title: "Budget Management",
-    description:
-      "Set budgets for different categories and get alerts when you're approaching your limits.",
-    icon: "💰",
-  },
+const featureKeys: FeatureProps[] = [
+  { titleKey: "feature1Title", descKey: "feature1Desc", icon: "🤖" },
+  { titleKey: "feature2Title", descKey: "feature2Desc", icon: "📊" },
+  { titleKey: "feature3Title", descKey: "feature3Desc", icon: "💰" },
 ];
 
 export const Features = () => {
+  const t = useTranslations("landing.features");
+
   return (
     <section id="features" className="container py-24 sm:py-32">
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
-        Powerful{" "}
+        {t("title")}{" "}
         <span className="text-foreground">
-          Features
+          {t("features")}
         </span>
       </h2>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {features.map(({ title, description, icon }: FeatureProps) => (
-          <Card key={title}>
+        {featureKeys.map(({ titleKey, descKey, icon }) => (
+          <Card key={titleKey}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span className="text-4xl">{icon}</span>
-                {title}
+                {t(titleKey)}
               </CardTitle>
               <CardDescription className="text-lg mt-4">
-                {description}
+                {t(descKey)}
               </CardDescription>
             </CardHeader>
           </Card>
