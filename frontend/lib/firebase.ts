@@ -3,7 +3,7 @@ import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
-import { getAnalytics, Analytics } from "firebase/analytics";
+import type { Analytics } from "firebase/analytics";
 import { getFunctions, Functions } from "firebase/functions";
 
 // Your web app's Firebase configuration
@@ -38,13 +38,15 @@ if (typeof window !== "undefined") {
   storage = getStorage(app);
   functions = getFunctions(app);
   
-  // Initialize Analytics only in browser
-  try {
-    analytics = getAnalytics(app);
-  } catch (error) {
-    // Analytics might fail if already initialized
-    console.warn("Analytics initialization failed:", error);
-  }
+  // Defer Analytics initialization - load after page becomes interactive
+  setTimeout(async () => {
+    try {
+      const { getAnalytics } = await import("firebase/analytics");
+      analytics = getAnalytics(app);
+    } catch (error) {
+      console.warn("Analytics initialization failed:", error);
+    }
+  }, 3000);
 } else {
   // Server-side: create dummy objects
   app = {} as FirebaseApp;

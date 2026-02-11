@@ -7,8 +7,6 @@ const nextConfig = {
   },
   trailingSlash: true,
   
-  // Performance optimizations
-  swcMinify: true, // Use SWC for faster minification
   compiler: {
     // Remove console.log in production for smaller bundle
     removeConsole: process.env.NODE_ENV === 'production' ? {
@@ -52,7 +50,7 @@ const nextConfig = {
   
   // Experimental features for better performance
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'recharts', 'firebase/firestore', 'firebase/auth'],
   },
 }
 

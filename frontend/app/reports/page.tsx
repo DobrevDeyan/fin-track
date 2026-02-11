@@ -10,7 +10,6 @@ import { Navbar } from "@/components/Navbar"
 import { getUserEntries } from "@/lib/firestore-entries"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getDateRange, getCustomDateRange } from "@/lib/date-utils"
-import { exportReportToPDF } from "@/lib/pdf-export"
 import { exportEntriesToCSV } from "@/lib/export-utils"
 import { Download, Calendar, FileText, FileSpreadsheet, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -160,6 +159,7 @@ export default function ReportsPage() {
         return
       }
 
+      const { exportReportToPDF } = await import("@/lib/pdf-export")
       await exportReportToPDF({
         entries: filteredEntries,
         metrics,

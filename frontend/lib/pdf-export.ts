@@ -2,8 +2,6 @@
  * PDF Export utilities for reports
  */
 
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { formatCurrency } from './currency-utils'
 
 interface Entry {
@@ -59,6 +57,12 @@ function formatDateRange(startDate: string, endDate: string): string {
  */
 export async function exportReportToPDF(options: PDFExportOptions): Promise<void> {
   const { entries, metrics, startDate, endDate, reportType, userEmail } = options
+
+  // Dynamically import heavy PDF libraries only when needed
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
 
   // Create new PDF document
   const doc = new jsPDF({

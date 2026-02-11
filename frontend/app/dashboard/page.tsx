@@ -14,16 +14,7 @@ import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialo
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters"
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification"
-import { ReceiptScannerDialog } from "@/components/dashboard/ReceiptScannerDialog"
 import { Toast } from "@/components/ui/toast"
-
-// Section components
-import {
-  SavingsSection,
-  BudgetsSection,
-  RecurringSection,
-  GoalsSection,
-} from "@/components/dashboard/sections"
 
 // Dashboard contexts
 import {
@@ -65,6 +56,33 @@ const CategoryChart = dynamic(
     ),
     ssr: false,
   }
+)
+
+// Lazy load below-the-fold sections
+const SavingsSection = dynamic(
+  () => import("@/components/dashboard/sections/SavingsSection").then((mod) => ({ default: mod.SavingsSection })),
+  { ssr: false }
+)
+
+const BudgetsSection = dynamic(
+  () => import("@/components/dashboard/sections/BudgetsSection").then((mod) => ({ default: mod.BudgetsSection })),
+  { ssr: false }
+)
+
+const RecurringSection = dynamic(
+  () => import("@/components/dashboard/sections/RecurringSection").then((mod) => ({ default: mod.RecurringSection })),
+  { ssr: false }
+)
+
+const GoalsSection = dynamic(
+  () => import("@/components/dashboard/sections/GoalsSection").then((mod) => ({ default: mod.GoalsSection })),
+  { ssr: false }
+)
+
+// Lazy load receipt scanner (only needed when user clicks scan button)
+const ReceiptScannerDialog = dynamic(
+  () => import("@/components/dashboard/ReceiptScannerDialog").then((mod) => ({ default: mod.ReceiptScannerDialog })),
+  { ssr: false }
 )
 
 /**
