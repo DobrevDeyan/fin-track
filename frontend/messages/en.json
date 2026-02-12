@@ -36,7 +36,9 @@
     "yearly": "Yearly",
     "noData": "No data available",
     "actions": "Actions",
-    "optional": "Optional"
+    "optional": "Optional",
+    "later": "Later",
+    "currency": "Currency"
   },
   "nav": {
     "pocket": "Pocket",
@@ -116,6 +118,7 @@
     "selectSavingsAccount": "Select savings account",
     "amountToAllocate": "Amount to Allocate",
     "remaining": "Remaining",
+    "incomeLabel": "Income",
     "createSavingsFirst": "Create a savings account first to allocate income directly to savings.",
     "tagsPlaceholder": "Type a tag and press Enter",
     "tagsOptional": "Tags (Optional)",
@@ -126,7 +129,30 @@
     "selectCategory": "Select category",
     "confirmDelete": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
     "editEntryTitle": "Edit entry",
-    "deleteEntryTitle": "Delete entry"
+    "deleteEntryTitle": "Delete entry",
+    "quickTransaction": "Quick Transaction",
+    "quickExpense": "Quick Expense",
+    "quickIncome": "Quick Income",
+    "saveType": "Save {type}",
+    "selectAmount": "Select Amount",
+    "enterAmount": "Enter Amount",
+    "chooseCategory": "Choose a category",
+    "customAmount": "Custom",
+    "quickAddMode": "Quick Add Mode",
+    "useQuickAdd": "Use Quick Add",
+    "selectCategoryStart": "Select a category to get started",
+    "chooseItemDesc": "Choose an item",
+    "selectApproxPrice": "Select approximate price",
+    "manualExpenseDesc": "Select category, enter amount, and save",
+    "manualIncomeDesc": "Select type, category, enter amount, and save",
+    "selectItem": "Select Item",
+    "selectPrice": "Select Price",
+    "suggested": "Suggested",
+    "descriptionOptional": "Description (Optional)",
+    "saving": "Saving...",
+    "saveIncome": "Save Income",
+    "saveExpense": "Save Expense",
+    "selected": "Selected"
   },
   "budgets": {
     "title": "Budget Management",
@@ -180,30 +206,52 @@
     "createRecurring": "Create Recurring Transaction",
     "editRecurring": "Edit Recurring Transaction",
     "updateRecurring": "Update Recurring",
+    "createRecurringDesc": "Set up a recurring bill or subscription.",
+    "editRecurringDesc": "Update your recurring transaction details.",
     "loading": "Loading recurring transactions...",
+    "transactionName": "Transaction Name",
+    "transactionNamePlaceholder": "e.g., Netflix Subscription",
+    "nextDate": "Next Date",
     "nextDue": "Next due",
     "lastProcessed": "Last processed",
     "neverProcessed": "Never",
     "autoProcess": "Auto-process",
+    "isActive": "Is Active",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "nextOccurrence": "Next Occurrence Date",
+    "nextOccurrenceHint": "When should the next transaction be created?",
+    "activeAutoCreate": "Active (will create transactions automatically)"
   },
   "goals": {
     "title": "Financial Goals",
     "description": "Set and track your savings goals and milestones",
     "createGoal": "Create Goal",
+    "createGoalTitle": "Create Financial Goal",
     "editGoal": "Edit Goal",
     "updateGoal": "Update Goal",
+    "createGoalDesc": "Set a savings goal and track your progress toward it.",
+    "editGoalDesc": "Update your financial goal details.",
     "loading": "Loading goals...",
     "progress": "Progress",
     "current": "Current",
     "target": "Target",
     "remainingAmount": "Remaining",
     "deadline": "Deadline",
+    "deadlineOptional": "Deadline (Optional)",
+    "deadlineHint": "When do you want to reach this goal?",
     "complete": "Complete!",
     "goalName": "Goal Name",
+    "goalNamePlaceholder": "e.g., Emergency Fund, Vacation",
+    "descriptionOptional": "Description (Optional)",
+    "descriptionPlaceholder": "Add more details about your goal...",
     "targetAmount": "Target Amount",
-    "currentAmount": "Current Amount"
+    "currentAmount": "Current Amount",
+    "currentAmountHint": "How much have you saved so far?",
+    "categoryOptional": "Category (Optional)",
+    "selectCategoryOptional": "Select category (optional)",
+    "noCategory": "No Category",
+    "activeGoal": "Active Goal"
   },
   "calendar": {
     "title": "Calendar",
@@ -219,8 +267,43 @@
     }
   },
   "reports": {
-    "title": "Reports",
-    "description": "Financial reports and analytics"
+    "title": "Reports & Analytics",
+    "description": "Analyze your spending patterns and financial trends",
+    "exportPDF": "Export PDF",
+    "exportCSV": "Export CSV",
+    "reportPeriod": "Report Period",
+    "reportPeriodDesc": "Select the time period for your report",
+    "reportType": "Report Type",
+    "thisYear": "This Year",
+    "thisMonth": "This Month",
+    "customRange": "Custom Range",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "reset": "Reset",
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "netBalance": "Net Balance",
+    "savingsRate": "Savings Rate",
+    "categoryBreakdown": "Category Breakdown",
+    "categoryBreakdownDesc": "Spending by category for the selected period",
+    "noExpenseData": "No expense data for this period",
+    "monthlyTrends": "Monthly Trends",
+    "monthlyTrendsDesc": "Income vs expenses by month",
+    "noDataPeriod": "No data for this period",
+    "loadingReports": "Loading reports...",
+    "backToDashboard": "Back to Dashboard",
+    "selectDateRange": "Please select a date range before exporting.",
+    "exportPDFFailed": "Failed to export PDF. Please try again.",
+    "exportCSVFailed": "Failed to export CSV. Please try again."
+  },
+  "notifications": {
+    "enableSalaryReminders": "Enable Salary Reminders",
+    "salaryReminderDesc": "Get notified on the 1st of each month to enter your salary. Never miss tracking your income!",
+    "enableNotifications": "Enable Notifications",
+    "installPocket": "Install Pocket",
+    "installDescription": "Install our app for a better experience. Quick access, offline support, and more!",
+    "installApp": "Install App",
+    "dismiss": "Dismiss"
   },
   "landing": {
     "hero": {
@@ -229,6 +312,18 @@
       "goToDashboard": "Go to Dashboard",
       "getStarted": "Get Started",
       "learnMore": "Learn More"
+    },
+    "heroCards": {
+      "testimonial": "Pocket has completely transformed how I manage my finances!",
+      "productManager": "Product Manager",
+      "buildingFuture": "Building the future of personal finance management",
+      "startFreeTrial": "Start Free Trial",
+      "smartInsights": "Smart Insights",
+      "smartInsightsDesc": "Manually track and categorize your expenses with ease.",
+      "benefit1": "Unlimited entries",
+      "benefit2": "Manual expense tracking",
+      "benefit3": "Real-time analytics",
+      "pricingDescription": "Perfect for getting started with financial tracking."
     },
     "about": {
       "title": "About",
@@ -352,6 +447,44 @@
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
       "securityCompliance": "Security & Compliance"
+    }
+  },
+  "error": {
+    "unexpected": "An unexpected error occurred. Please try again.",
+    "network": "Network error. Please check your connection and try again.",
+    "saveFailed": "Failed to save. Please try again.",
+    "deleteFailed": "Failed to delete. Please try again.",
+    "loadFailed": "Failed to load data. Please try again.",
+    "authFailed": "Authentication failed. Please try again.",
+    "loginFailed": "Failed to sign in. Please check your credentials.",
+    "registerFailed": "Failed to create account. Please try again.",
+    "logoutFailed": "Failed to sign out. Please try again.",
+    "transactionSaveFailed": "Failed to save transaction. Please try again.",
+    "transactionDeleteFailed": "Failed to delete transaction. Please try again.",
+    "budgetSaveFailed": "Failed to save budget. Please try again.",
+    "budgetDeleteFailed": "Failed to delete budget. Please try again.",
+    "goalSaveFailed": "Failed to save goal. Please try again.",
+    "goalDeleteFailed": "Failed to delete goal. Please try again.",
+    "savingsSaveFailed": "Failed to save savings account. Please try again.",
+    "savingsDeleteFailed": "Failed to delete savings account. Please try again.",
+    "insufficientBalance": "Insufficient balance in savings account.",
+    "depositFailed": "Failed to deposit money. Please try again.",
+    "withdrawFailed": "Failed to withdraw money. Please try again.",
+    "recurringSaveFailed": "Failed to save recurring transaction. Please try again.",
+    "recurringDeleteFailed": "Failed to delete recurring transaction. Please try again."
+  },
+  "toast": {
+    "savings": {
+      "createSuccess": "Savings account created successfully",
+      "updateSuccess": "Savings account updated successfully",
+      "deleteSuccess": "Savings account deleted successfully",
+      "depositSuccess": "Money added to savings account",
+      "withdrawSuccess": "Money withdrawn from savings account"
+    },
+    "goals": {
+      "createSuccess": "Goal created successfully",
+      "updateSuccess": "Goal updated successfully",
+      "deleteSuccess": "Goal deleted successfully"
     }
   }
 }

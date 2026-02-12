@@ -152,40 +152,40 @@ export function isInsufficientBalanceError(error: unknown): boolean {
  */
 export const ERROR_MESSAGES = {
   // General
-  UNEXPECTED: "An unexpected error occurred. Please try again.",
-  NETWORK: "Network error. Please check your connection and try again.",
-  SAVE_FAILED: "Failed to save. Please try again.",
-  DELETE_FAILED: "Failed to delete. Please try again.",
-  LOAD_FAILED: "Failed to load data. Please try again.",
+  UNEXPECTED: "error.unexpected",
+  NETWORK: "error.network",
+  SAVE_FAILED: "error.saveFailed",
+  DELETE_FAILED: "error.deleteFailed",
+  LOAD_FAILED: "error.loadFailed",
 
   // Auth
-  AUTH_FAILED: "Authentication failed. Please try again.",
-  LOGIN_FAILED: "Failed to sign in. Please check your credentials.",
-  REGISTER_FAILED: "Failed to create account. Please try again.",
-  LOGOUT_FAILED: "Failed to sign out. Please try again.",
+  AUTH_FAILED: "error.authFailed",
+  LOGIN_FAILED: "error.loginFailed",
+  REGISTER_FAILED: "error.registerFailed",
+  LOGOUT_FAILED: "error.logoutFailed",
 
   // Transactions
-  TRANSACTION_SAVE_FAILED: "Failed to save transaction. Please try again.",
-  TRANSACTION_DELETE_FAILED: "Failed to delete transaction. Please try again.",
+  TRANSACTION_SAVE_FAILED: "error.transactionSaveFailed",
+  TRANSACTION_DELETE_FAILED: "error.transactionDeleteFailed",
 
   // Budgets
-  BUDGET_SAVE_FAILED: "Failed to save budget. Please try again.",
-  BUDGET_DELETE_FAILED: "Failed to delete budget. Please try again.",
+  BUDGET_SAVE_FAILED: "error.budgetSaveFailed",
+  BUDGET_DELETE_FAILED: "error.budgetDeleteFailed",
 
   // Goals
-  GOAL_SAVE_FAILED: "Failed to save goal. Please try again.",
-  GOAL_DELETE_FAILED: "Failed to delete goal. Please try again.",
+  GOAL_SAVE_FAILED: "error.goalSaveFailed",
+  GOAL_DELETE_FAILED: "error.goalDeleteFailed",
 
   // Savings
-  SAVINGS_SAVE_FAILED: "Failed to save savings account. Please try again.",
-  SAVINGS_DELETE_FAILED: "Failed to delete savings account. Please try again.",
-  INSUFFICIENT_BALANCE: "Insufficient balance in savings account.",
-  DEPOSIT_FAILED: "Failed to deposit money. Please try again.",
-  WITHDRAW_FAILED: "Failed to withdraw money. Please try again.",
+  SAVINGS_SAVE_FAILED: "error.savingsSaveFailed",
+  SAVINGS_DELETE_FAILED: "error.savingsDeleteFailed",
+  INSUFFICIENT_BALANCE: "error.insufficientBalance",
+  DEPOSIT_FAILED: "error.depositFailed",
+  WITHDRAW_FAILED: "error.withdrawFailed",
 
   // Recurring
-  RECURRING_SAVE_FAILED: "Failed to save recurring transaction. Please try again.",
-  RECURRING_DELETE_FAILED: "Failed to delete recurring transaction. Please try again.",
+  RECURRING_SAVE_FAILED: "error.recurringSaveFailed",
+  RECURRING_DELETE_FAILED: "error.recurringDeleteFailed",
 } as const
 
 /**

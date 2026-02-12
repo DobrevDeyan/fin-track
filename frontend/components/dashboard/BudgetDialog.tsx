@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -56,7 +57,7 @@ interface BudgetDialogProps {
 }
 
 import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
-import { BUDGET_PERIODS, getBudgetPeriodLabel } from "@/lib/constants/budget.constants"
+import { BUDGET_PERIODS } from "@/lib/constants/budget.constants"
 
 const currencies = SUPPORTED_CURRENCIES
 
@@ -68,6 +69,8 @@ export function BudgetDialog({
   categories,
   defaultCurrency = "EUR",
 }: BudgetDialogProps) {
+  const t = useTranslations("budgets")
+  const tCommon = useTranslations("common")
   const [name, setName] = useState("")
   const [category, setCategory] = useState<string>("")
   const [amount, setAmount] = useState("")
@@ -156,20 +159,20 @@ export function BudgetDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingBudget ? "Edit Budget" : "Create Budget"}</DialogTitle>
+          <DialogTitle>{editingBudget ? t("editBudget") : t("createBudget")}</DialogTitle>
           <DialogDescription>
             {editingBudget
-              ? "Update your budget details."
-              : "Set a budget limit for tracking your spending."}
+              ? t("editBudgetDesc")
+              : t("createBudgetDesc")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Budget Name</Label>
+              <Label htmlFor="name">{t("budgetName")}</Label>
               <Input
                 id="name"
-                placeholder="e.g., Monthly Groceries"
+                placeholder={t("budgetNamePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -177,13 +180,13 @@ export function BudgetDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="category">Category (Optional)</Label>
+              <Label htmlFor="category">{t("categoryOptional")}</Label>
               <Select value={category || "none"} onValueChange={(value) => setCategory(value === "none" ? "" : value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category (optional)" />
+                  <SelectValue placeholder={t("selectCategoryOptional")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Category (All Expenses)</SelectItem>
+                  <SelectItem value="none">{t("noCategoryAll")}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
@@ -195,7 +198,7 @@ export function BudgetDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="amount">Budget Amount</Label>
+                <Label htmlFor="amount">{t("budgetAmount")}</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -207,7 +210,7 @@ export function BudgetDialog({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">{tCommon("currency")}</Label>
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger>
                     <SelectValue />
@@ -224,7 +227,7 @@ export function BudgetDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="period">Period</Label>
+              <Label htmlFor="period">{t("period")}</Label>
               <Select
                 value={period}
                 onValueChange={(value: BudgetPeriod) => setPeriod(value)}
@@ -235,7 +238,7 @@ export function BudgetDialog({
                 <SelectContent>
                   {BUDGET_PERIODS.map((periodOption) => (
                     <SelectItem key={periodOption} value={periodOption}>
-                      {getBudgetPeriodLabel(periodOption)}
+                      {tCommon(periodOption)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -244,7 +247,7 @@ export function BudgetDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate">{t("startDate")}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -254,7 +257,7 @@ export function BudgetDialog({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="endDate">End Date</Label>
+                <Label htmlFor="endDate">{t("endDate")}</Label>
                 <Input
                   id="endDate"
                   type="date"
@@ -267,7 +270,7 @@ export function BudgetDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="alertThreshold">Alert Threshold % (Optional)</Label>
+              <Label htmlFor="alertThreshold">{t("alertThreshold")}</Label>
               <Input
                 id="alertThreshold"
                 type="number"
@@ -279,7 +282,7 @@ export function BudgetDialog({
                 onChange={(e) => setAlertThreshold(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Get alerted when spending reaches this percentage of budget
+                {t("alertThresholdDesc")}
               </p>
             </div>
 
@@ -292,15 +295,15 @@ export function BudgetDialog({
                 className="h-4 w-4 rounded border-gray-300"
               />
               <Label htmlFor="isActive" className="cursor-pointer">
-                Active Budget
+                {t("activeBudget")}
               </Label>
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
-            <Button type="submit">{editingBudget ? "Update Budget" : "Create Budget"}</Button>
+            <Button type="submit">{editingBudget ? t("updateBudget") : t("createBudget")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -36,7 +36,9 @@
     "yearly": "Годишно",
     "noData": "Няма налични данни",
     "actions": "Действия",
-    "optional": "По избор"
+    "optional": "По избор",
+    "later": "По-късно",
+    "currency": "Валута"
   },
   "nav": {
     "pocket": "Pocket",
@@ -116,6 +118,7 @@
     "selectSavingsAccount": "Изберете спестовна сметка",
     "amountToAllocate": "Сума за разпределяне",
     "remaining": "Оставащо",
+    "incomeLabel": "Приход",
     "createSavingsFirst": "Първо създайте спестовна сметка, за да разпределите приходи директно.",
     "tagsPlaceholder": "Въведете таг и натиснете Enter",
     "tagsOptional": "Тагове (По избор)",
@@ -126,7 +129,30 @@
     "selectCategory": "Изберете категория",
     "confirmDelete": "Сигурни ли сте, че искате да изтриете \"{name}\"? Това действие не може да бъде отменено.",
     "editEntryTitle": "Редактирай запис",
-    "deleteEntryTitle": "Изтрий запис"
+    "deleteEntryTitle": "Изтрий запис",
+    "quickTransaction": "Бърза транзакция",
+    "quickExpense": "Бърз разход",
+    "quickIncome": "Бърз приход",
+    "saveType": "Запази {type}",
+    "selectAmount": "Изберете сума",
+    "enterAmount": "Въведете сума",
+    "chooseCategory": "Изберете категория",
+    "customAmount": "Друга",
+    "quickAddMode": "Бърз режим",
+    "useQuickAdd": "Бързо добавяне",
+    "selectCategoryStart": "Изберете категория, за да започнете",
+    "chooseItemDesc": "Изберете артикул",
+    "selectApproxPrice": "Изберете приблизителна цена",
+    "manualExpenseDesc": "Изберете категория, въведете сума и запазете",
+    "manualIncomeDesc": "Изберете тип, категория, въведете сума и запазете",
+    "selectItem": "Изберете артикул",
+    "selectPrice": "Изберете цена",
+    "suggested": "Препоръчано",
+    "descriptionOptional": "Описание (По избор)",
+    "saving": "Запазване...",
+    "saveIncome": "Запази приход",
+    "saveExpense": "Запази разход",
+    "selected": "Избрано"
   },
   "budgets": {
     "title": "Управление на бюджети",
@@ -180,30 +206,52 @@
     "createRecurring": "Създай повтаряща се транзакция",
     "editRecurring": "Редактирай повтаряща се транзакция",
     "updateRecurring": "Обнови повтаряща се",
+    "createRecurringDesc": "Настройте повтарящо се плащане или абонамент.",
+    "editRecurringDesc": "Обновете детайлите на повтарящата се транзакция.",
     "loading": "Зареждане на повтарящи се транзакции...",
+    "transactionName": "Име на транзакция",
+    "transactionNamePlaceholder": "напр., Абонамент за Netflix",
+    "nextDate": "Следваща дата",
     "nextDue": "Следващо плащане",
     "lastProcessed": "Последно обработено",
     "neverProcessed": "Никога",
     "autoProcess": "Автоматична обработка",
+    "isActive": "Активна",
     "enabled": "Включено",
-    "disabled": "Изключено"
+    "disabled": "Изключено",
+    "nextOccurrence": "Дата на следващо плащане",
+    "nextOccurrenceHint": "Кога да бъде създадена следващата транзакция?",
+    "activeAutoCreate": "Активна (ще създава транзакции автоматично)"
   },
   "goals": {
     "title": "Финансови цели",
     "description": "Задайте и проследявайте целите и етапите за спестяване",
     "createGoal": "Създай цел",
+    "createGoalTitle": "Създай финансова цел",
     "editGoal": "Редактирай цел",
     "updateGoal": "Обнови цел",
+    "createGoalDesc": "Задайте цел за спестяване и проследявайте напредъка си.",
+    "editGoalDesc": "Обновете детайлите на финансовата цел.",
     "loading": "Зареждане на цели...",
     "progress": "Прогрес",
     "current": "Текущо",
     "target": "Цел",
     "remainingAmount": "Оставащо",
     "deadline": "Краен срок",
+    "deadlineOptional": "Краен срок (По избор)",
+    "deadlineHint": "Кога искате да постигнете тази цел?",
     "complete": "Завършено!",
     "goalName": "Име на цел",
+    "goalNamePlaceholder": "напр., Авариен фонд, Ваканция",
+    "descriptionOptional": "Описание (По избор)",
+    "descriptionPlaceholder": "Добавете повече детайли за целта...",
     "targetAmount": "Целева сума",
-    "currentAmount": "Текуща сума"
+    "currentAmount": "Текуща сума",
+    "currentAmountHint": "Колко сте спестили досега?",
+    "categoryOptional": "Категория (По избор)",
+    "selectCategoryOptional": "Изберете категория (по избор)",
+    "noCategory": "Без категория",
+    "activeGoal": "Активна цел"
   },
   "calendar": {
     "title": "Календар",
@@ -219,8 +267,43 @@
     }
   },
   "reports": {
-    "title": "Отчети",
-    "description": "Финансови отчети и анализи"
+    "title": "Отчети и анализи",
+    "description": "Анализирайте моделите на харчене и финансовите тенденции",
+    "exportPDF": "Експорт PDF",
+    "exportCSV": "Експорт CSV",
+    "reportPeriod": "Период на отчета",
+    "reportPeriodDesc": "Изберете времеви период за отчета",
+    "reportType": "Тип отчет",
+    "thisYear": "Тази година",
+    "thisMonth": "Този месец",
+    "customRange": "Персонализиран период",
+    "startDate": "Начална дата",
+    "endDate": "Крайна дата",
+    "reset": "Нулиране",
+    "totalIncome": "Общ приход",
+    "totalExpenses": "Общи разходи",
+    "netBalance": "Нетен баланс",
+    "savingsRate": "Процент спестявания",
+    "categoryBreakdown": "Разбивка по категории",
+    "categoryBreakdownDesc": "Разходи по категории за избрания период",
+    "noExpenseData": "Няма данни за разходи за този период",
+    "monthlyTrends": "Месечни тенденции",
+    "monthlyTrendsDesc": "Приходи срещу разходи по месеци",
+    "noDataPeriod": "Няма данни за този период",
+    "loadingReports": "Зареждане на отчети...",
+    "backToDashboard": "Назад към таблото",
+    "selectDateRange": "Моля, изберете период преди експортиране.",
+    "exportPDFFailed": "Неуспешен експорт на PDF. Моля, опитайте отново.",
+    "exportCSVFailed": "Неуспешен експорт на CSV. Моля, опитайте отново."
+  },
+  "notifications": {
+    "enableSalaryReminders": "Включи напомняне за заплата",
+    "salaryReminderDesc": "Получавайте известие на 1-во число всеки месец да въведете заплатата си. Никога не пропускайте проследяването на приходите!",
+    "enableNotifications": "Включи известия",
+    "installPocket": "Инсталирай Pocket",
+    "installDescription": "Инсталирайте приложението за по-добро изживяване. Бърз достъп, офлайн поддръжка и още!",
+    "installApp": "Инсталирай",
+    "dismiss": "Затвори"
   },
   "landing": {
     "hero": {
@@ -229,6 +312,18 @@
       "goToDashboard": "Към таблото",
       "getStarted": "Започнете",
       "learnMore": "Научете повече"
+    },
+    "heroCards": {
+      "testimonial": "Pocket напълно промени начина, по който управлявам финансите си!",
+      "productManager": "Продуктов мениджър",
+      "buildingFuture": "Изграждаме бъдещето на управлението на лични финанси",
+      "startFreeTrial": "Започнете безплатно",
+      "smartInsights": "Умни анализи",
+      "smartInsightsDesc": "Ръчно проследявайте и категоризирайте разходите си с лекота.",
+      "benefit1": "Неограничени записи",
+      "benefit2": "Ръчно проследяване на разходи",
+      "benefit3": "Анализи в реално време",
+      "pricingDescription": "Перфектно за начало на финансовото проследяване."
     },
     "about": {
       "title": "За",
@@ -352,6 +447,44 @@
       "privacyPolicy": "Политика за поверителност",
       "termsOfService": "Условия за ползване",
       "securityCompliance": "Сигурност и съответствие"
+    }
+  },
+  "error": {
+    "unexpected": "Възникна неочаквана грешка. Моля, опитайте отново.",
+    "network": "Мрежова грешка. Моля, проверете връзката си и опитайте отново.",
+    "saveFailed": "Неуспешно запазване. Моля, опитайте отново.",
+    "deleteFailed": "Неуспешно изтриване. Моля, опитайте отново.",
+    "loadFailed": "Неуспешно зареждане на данни. Моля, опитайте отново.",
+    "authFailed": "Неуспешна автентикация. Моля, опитайте отново.",
+    "loginFailed": "Неуспешно влизане. Моля, проверете данните си.",
+    "registerFailed": "Неуспешно създаване на акаунт. Моля, опитайте отново.",
+    "logoutFailed": "Неуспешно излизане. Моля, опитайте отново.",
+    "transactionSaveFailed": "Неуспешно запазване на транзакция. Моля, опитайте отново.",
+    "transactionDeleteFailed": "Неуспешно изтриване на транзакция. Моля, опитайте отново.",
+    "budgetSaveFailed": "Неуспешно запазване на бюджет. Моля, опитайте отново.",
+    "budgetDeleteFailed": "Неуспешно изтриване на бюджет. Моля, опитайте отново.",
+    "goalSaveFailed": "Неуспешно запазване на цел. Моля, опитайте отново.",
+    "goalDeleteFailed": "Неуспешно изтриване на цел. Моля, опитайте отново.",
+    "savingsSaveFailed": "Неуспешно запазване на спестовна сметка. Моля, опитайте отново.",
+    "savingsDeleteFailed": "Неуспешно изтриване на спестовна сметка. Моля, опитайте отново.",
+    "insufficientBalance": "Недостатъчен баланс в спестовна сметка.",
+    "depositFailed": "Неуспешен депозит. Моля, опитайте отново.",
+    "withdrawFailed": "Неуспешно теглене. Моля, опитайте отново.",
+    "recurringSaveFailed": "Неуспешно запазване на повтаряща се транзакция. Моля, опитайте отново.",
+    "recurringDeleteFailed": "Неуспешно изтриване на повтаряща се транзакция. Моля, опитайте отново."
+  },
+  "toast": {
+    "savings": {
+      "createSuccess": "Спестовна сметка създадена успешно",
+      "updateSuccess": "Спестовна сметка обновена успешно",
+      "deleteSuccess": "Спестовна сметка изтрита успешно",
+      "depositSuccess": "Пари добавени към спестовна сметка",
+      "withdrawSuccess": "Пари изтеглени от спестовна сметка"
+    },
+    "goals": {
+      "createSuccess": "Цел създадена успешно",
+      "updateSuccess": "Цел обновена успешно",
+      "deleteSuccess": "Цел изтрита успешно"
     }
   }
 }

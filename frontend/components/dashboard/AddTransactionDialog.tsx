@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { X, Upload, FileImage, Trash2 } from "lucide-react"
 import { uploadReceipt, deleteReceipt, validateReceiptFile } from "@/lib/receipt-utils"
 import { useAuth } from "@/contexts/AuthContext"
+import { useTranslations } from "next-intl"
 
 interface TransactionData {
   description: string
@@ -79,6 +80,8 @@ export function AddTransactionDialog({
   defaultDate,
 }: AddTransactionDialogProps) {
   const { user } = useAuth()
+  const t = useTranslations("dashboard")
+  const tCommon = useTranslations("common")
   const [description, setDescription] = useState("")
   const [amount, setAmount] = useState("")
   const [category, setCategory] = useState("")
@@ -273,39 +276,39 @@ export function AddTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingEntry ? "Edit Entry" : "Add Entry"}</DialogTitle>
+          <DialogTitle>{editingEntry ? t("editEntry") : t("addEntry")}</DialogTitle>
           <DialogDescription>
             {editingEntry
-              ? "Update your transaction details."
-              : "Add a new income or expense entry to track your finances."}
+              ? t("editEntryDescription")
+              : t("addEntryDescription")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type">{tCommon("type")}</Label>
               <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t("selectType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="income">{tCommon("income")}</SelectItem>
+                  <SelectItem value="expense">{tCommon("expense")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{tCommon("description")}</Label>
               <Input
                 id="description"
-                placeholder="e.g., Grocery shopping"
+                placeholder={t("descriptionPlaceholder")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{tCommon("amount")}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -317,10 +320,10 @@ export function AddTransactionDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{tCommon("category")}</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t("selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {TRANSACTION_CATEGORIES.map((cat) => (
@@ -332,7 +335,7 @@ export function AddTransactionDialog({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">{tCommon("date")}</Label>
               <Input
                 id="date"
                 type="date"
@@ -342,10 +345,10 @@ export function AddTransactionDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="tags">Tags (Optional)</Label>
+              <Label htmlFor="tags">{t("tagsOptional")}</Label>
               <Input
                 id="tags"
-                placeholder="Type a tag and press Enter"
+                placeholder={t("tagsPlaceholder")}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}
@@ -373,20 +376,20 @@ export function AddTransactionDialog({
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="receipt">Receipt (Optional)</Label>
+              <Label htmlFor="receipt">{t("receiptOptional")}</Label>
               <div className="space-y-2">
                 {receiptPreview || existingReceiptUrl ? (
                   <div className="relative inline-block">
                     <img
                       src={receiptPreview || existingReceiptUrl || undefined}
-                      alt="Receipt preview"
+                      alt={t("receiptPreview")}
                       className="max-h-32 rounded-md border"
                     />
                     <button
                       type="button"
                       onClick={handleRemoveReceipt}
                       className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
-                      aria-label="Remove receipt"
+                      aria-label={t("removeReceipt")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -399,9 +402,9 @@ export function AddTransactionDialog({
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
                       <p className="mb-2 text-sm text-muted-foreground">
-                        <span className="font-semibold">Click to upload</span> or drag and drop
+                        <span className="font-semibold">{t("uploadReceipt")}</span> {t("dragDrop")}
                       </p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, GIF (MAX. 5MB)</p>
+                      <p className="text-xs text-muted-foreground">{t("fileTypes")}</p>
                     </div>
                     <input
                       id="receipt"
@@ -426,10 +429,10 @@ export function AddTransactionDialog({
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Label htmlFor="notes">{t("notesOptional")}</Label>
               <Textarea
                 id="notes"
-                placeholder="Add any additional notes..."
+                placeholder={t("notesPlaceholder")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -457,20 +460,20 @@ export function AddTransactionDialog({
                         htmlFor="allocateToSavings"
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                       >
-                        Allocate to Savings Account
+                        {t("allocateToSavings")}
                       </Label>
                     </div>
                     {allocateToSavings && (
                       <>
                         <div className="grid gap-2">
-                          <Label htmlFor="savingsAccount">Savings Account</Label>
+                          <Label htmlFor="savingsAccount">{t("savingsAccount")}</Label>
                           <Select
                             value={savingsAccountId}
                             onValueChange={setSavingsAccountId}
                             required={allocateToSavings}
                           >
                             <SelectTrigger id="savingsAccount">
-                              <SelectValue placeholder="Select savings account" />
+                              <SelectValue placeholder={t("selectSavingsAccount")} />
                             </SelectTrigger>
                             <SelectContent>
                               {savingsAccounts.map((account) => (
@@ -482,7 +485,7 @@ export function AddTransactionDialog({
                           </Select>
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="savingsAmount">Amount to Allocate</Label>
+                          <Label htmlFor="savingsAmount">{t("amountToAllocate")}</Label>
                           <Input
                             id="savingsAmount"
                             type="number"
@@ -496,8 +499,8 @@ export function AddTransactionDialog({
                           />
                           {amount && (
                             <p className="text-xs text-muted-foreground">
-                              Income: {parseFloat(amount).toFixed(2)} | 
-                              Remaining: {(parseFloat(amount) - (parseFloat(savingsAmount) || 0)).toFixed(2)}
+                              {t("incomeLabel")}: {parseFloat(amount).toFixed(2)} |
+                              {t("remaining")}: {(parseFloat(amount) - (parseFloat(savingsAmount) || 0)).toFixed(2)}
                             </p>
                           )}
                         </div>
@@ -506,7 +509,7 @@ export function AddTransactionDialog({
                   </>
                 ) : (
                   <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md">
-                    💡 Create a savings account first to allocate income directly to savings.
+                    {t("createSavingsFirst")}
                   </div>
                 )}
               </div>
@@ -514,10 +517,10 @@ export function AddTransactionDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={uploadingReceipt}>
-              {uploadingReceipt ? "Uploading..." : editingEntry ? "Update Entry" : "Add Entry"}
+              {uploadingReceipt ? t("uploading") : editingEntry ? t("updateEntry") : t("addEntry")}
             </Button>
           </DialogFooter>
         </form>

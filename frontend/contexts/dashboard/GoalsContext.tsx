@@ -9,6 +9,7 @@
 
 import { createContext, useContext, ReactNode, useCallback, useState } from "react"
 import { Timestamp } from "firebase/firestore"
+import { useTranslations } from "next-intl"
 import {
   createGoal,
   getUserGoals,
@@ -62,6 +63,7 @@ interface GoalsProviderProps {
 }
 
 export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps) {
+  const t = useTranslations()
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -75,12 +77,12 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
       const firestoreGoals = await getUserGoals(userId)
       setGoals(firestoreGoals)
     } catch (error) {
-      console.error("Error loading goals:", error)
+      console.error(t(ERROR_MESSAGES.LOAD_FAILED) + ":", error)
       setGoals([])
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }, [userId, t])
 
   const handleSubmit = useCallback(
     async (data: GoalFormData) => {
@@ -100,7 +102,7 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
           })
 
           await loadGoals()
-          onToast({ message: "Goal updated successfully", type: "success" })
+          onToast({ message: t("toast.goals.updateSuccess"), type: "success" })
           setEditingGoal(null)
         } else {
           await createGoal(userId, {
@@ -115,15 +117,15 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
           })
 
           await loadGoals()
-          onToast({ message: "Goal created successfully", type: "success" })
+          onToast({ message: t("toast.goals.createSuccess"), type: "success" })
         }
       } catch (error: unknown) {
-        console.error("Error saving goal:", error)
-        onToast({ message: getErrorMessage(error, ERROR_MESSAGES.GOAL_SAVE_FAILED), type: "error" })
+        console.error(t(ERROR_MESSAGES.GOAL_SAVE_FAILED) + ":", error)
+        onToast({ message: t(getErrorMessage(error, ERROR_MESSAGES.GOAL_SAVE_FAILED)), type: "error" })
         throw error
       }
     },
-    [userId, editingGoal, loadGoals, onToast]
+    [userId, editingGoal, loadGoals, onToast, t]
   )
 
   const handleEdit = useCallback((goal: Goal) => {
@@ -138,13 +140,13 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
       try {
         await deleteGoal(goalId)
         await loadGoals()
-        onToast({ message: "Goal deleted successfully", type: "success" })
+        onToast({ message: t("toast.goals.deleteSuccess"), type: "success" })
       } catch (error) {
-        console.error("Error deleting goal:", error)
-        onToast({ message: ERROR_MESSAGES.GOAL_DELETE_FAILED, type: "error" })
+        console.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED) + ":", error)
+        onToast({ message: t(ERROR_MESSAGES.GOAL_DELETE_FAILED), type: "error" })
       }
     },
-    [userId, loadGoals, onToast]
+    [userId, loadGoals, onToast, t]
   )
 
   const handleDialogClose = useCallback((open: boolean) => {

@@ -14,9 +14,9 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
+export function LanguageProvider({ children, initialLocale }: { children: React.ReactNode, initialLocale: Locale }) {
   const { user } = useAuth()
-  const [locale, setLocaleState] = useState<Locale>(defaultLocale)
+  const [locale, setLocaleState] = useState<Locale>(initialLocale)
   const [messages, setMessages] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -25,18 +25,19 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       const msgs = (await import(`../messages/${loc}.json`)).default
       setMessages(msgs)
     } catch {
-      // Fallback to English
+      // Fallback to English if the requested locale messages are not found
       const msgs = (await import(`../messages/en.json`)).default
       setMessages(msgs)
     }
   }, [])
 
-  // Load user's saved language preference
+  // Load user's saved language preference or use initialLocale
   useEffect(() => {
     const loadUserLanguage = async () => {
       if (!user) {
-        setLocaleState(defaultLocale)
-        await loadMessages(defaultLocale)
+        // If no user, use the initialLocale (from server) and load messages
+        setLocaleState(initialLocale)
+        await loadMessages(initialLocale)
         setLoading(false)
         return
       }
@@ -48,17 +49,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           setLocaleState(savedLang)
           await loadMessages(savedLang)
         } else {
-          await loadMessages(defaultLocale)
+          // If user but no saved lang, use initialLocale
+          setLocaleState(initialLocale)
+          await loadMessages(initialLocale)
         }
       } catch {
-        await loadMessages(defaultLocale)
+        // On error, use initialLocale
+        setLocaleState(initialLocale)
+        await loadMessages(initialLocale)
       } finally {
         setLoading(false)
       }
     }
 
     loadUserLanguage()
-  }, [user, loadMessages])
+  }, [user, loadMessages, initialLocale]) // Add initialLocale to dependencies
 
   const setLocale = useCallback(async (newLocale: Locale) => {
     setLocaleState(newLocale)

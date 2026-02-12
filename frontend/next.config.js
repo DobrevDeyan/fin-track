@@ -1,3 +1,7 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -6,20 +10,20 @@ const nextConfig = {
     unoptimized: true,
   },
   trailingSlash: true,
-  
+
   compiler: {
     // Remove console.log in production for smaller bundle
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'], // Keep console.error and console.warn
     } : false,
   },
-  
+
   // Compression
   compress: true,
-  
+
   // Optimize production builds
   productionBrowserSourceMaps: false, // Disable source maps in production for smaller bundles
-  
+
   // Optimize webpack for faster builds
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
@@ -29,14 +33,14 @@ const nextConfig = {
         aggregateTimeout: 300,
         ignored: ['**/node_modules', '**/.next', '**/out'],
       }
-      
+
       // Fix for hard refresh issues - ensure consistent file serving
       config.resolve = {
         ...config.resolve,
         symlinks: false, // Don't follow symlinks (faster)
       }
     }
-    
+
     // Optimize bundle size
     if (!dev) {
       config.optimization = {
@@ -44,15 +48,14 @@ const nextConfig = {
         moduleIds: 'deterministic',
       }
     }
-    
+
     return config
   },
-  
+
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'recharts', 'firebase/firestore', 'firebase/auth'],
   },
 }
 
-module.exports = nextConfig
-
+module.exports = withNextIntl(nextConfig);

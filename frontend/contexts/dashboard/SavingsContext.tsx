@@ -8,6 +8,7 @@
  */
 
 import { createContext, useContext, ReactNode, useCallback, useState } from "react"
+import { useTranslations } from "next-intl" // Import useTranslations
 import {
   createSavingsAccount,
   getUserSavingsAccounts,
@@ -64,6 +65,7 @@ interface SavingsProviderProps {
 }
 
 export function SavingsProvider({ children, userId, onToast }: SavingsProviderProps) {
+  const t = useTranslations() // Initialize useTranslations
   const [savingsAccounts, setSavingsAccounts] = useState<SavingsAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -77,12 +79,12 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       const accounts = await getUserSavingsAccounts(userId)
       setSavingsAccounts(accounts)
     } catch (error) {
-      console.error("Error loading savings accounts:", error)
+      console.error(t(ERROR_MESSAGES.LOAD_FAILED) + ":", error) // Use translated error
       setSavingsAccounts([])
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }, [userId, t]) // Add t to dependencies
 
   const handleCreate = useCallback(
     async (data: SavingsAccountFormData) => {
@@ -91,13 +93,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await createSavingsAccount(userId, data)
         await loadSavingsAccounts()
-        onToast({ message: "Savings account created successfully", type: "success" })
+        onToast({ message: t("toast.savings.createSuccess"), type: "success" }) // Use translated message
       } catch (error) {
-        console.error("Error creating savings account:", error)
-        onToast({ message: ERROR_MESSAGES.SAVINGS_SAVE_FAILED, type: "error" })
+        console.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED) + ":", error) // Use translated error
+        onToast({ message: t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED), type: "error" }) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast]
+    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
   )
 
   const handleUpdate = useCallback(
@@ -107,13 +109,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await updateSavingsAccount(editingAccount.id, data)
         await loadSavingsAccounts()
-        onToast({ message: "Savings account updated successfully", type: "success" })
+        onToast({ message: t("toast.savings.updateSuccess"), type: "success" }) // Use translated message
       } catch (error) {
-        console.error("Error updating savings account:", error)
-        onToast({ message: ERROR_MESSAGES.SAVINGS_SAVE_FAILED, type: "error" })
+        console.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED) + ":", error) // Use translated error
+        onToast({ message: t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED), type: "error" }) // Use translated error
       }
     },
-    [userId, editingAccount, loadSavingsAccounts, onToast]
+    [userId, editingAccount, loadSavingsAccounts, onToast, t] // Add t to dependencies
   )
 
   const handleSubmit = useCallback(
@@ -139,13 +141,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await deleteSavingsAccount(accountId)
         await loadSavingsAccounts()
-        onToast({ message: "Savings account deleted successfully", type: "success" })
+        onToast({ message: t("toast.savings.deleteSuccess"), type: "success" }) // Use translated message
       } catch (error) {
-        console.error("Error deleting savings account:", error)
-        onToast({ message: ERROR_MESSAGES.SAVINGS_DELETE_FAILED, type: "error" })
+        console.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED) + ":", error) // Use translated error
+        onToast({ message: t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED), type: "error" }) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast]
+    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
   )
 
   const handleAddMoney = useCallback(
@@ -155,13 +157,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await addToSavingsAccount(accountId, amount)
         await loadSavingsAccounts()
-        onToast({ message: "Money added to savings account", type: "success" })
+        onToast({ message: t("toast.savings.depositSuccess"), type: "success" }) // Use translated message
       } catch (error) {
-        console.error("Error adding money to savings account:", error)
-        onToast({ message: ERROR_MESSAGES.DEPOSIT_FAILED, type: "error" })
+        console.error(t(ERROR_MESSAGES.DEPOSIT_FAILED) + ":", error) // Use translated error
+        onToast({ message: t(ERROR_MESSAGES.DEPOSIT_FAILED), type: "error" }) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast]
+    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
   )
 
   const handleWithdrawMoney = useCallback(
@@ -171,16 +173,16 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await withdrawFromSavingsAccount(accountId, amount)
         await loadSavingsAccounts()
-        onToast({ message: "Money withdrawn from savings account", type: "success" })
+        onToast({ message: t("toast.savings.withdrawSuccess"), type: "success" }) // Use translated message
       } catch (error: unknown) {
-        console.error("Error withdrawing money from savings account:", error)
+        console.error(t(ERROR_MESSAGES.WITHDRAW_FAILED) + ":", error) // Use translated error
         const errorMessage = isInsufficientBalanceError(error)
           ? ERROR_MESSAGES.INSUFFICIENT_BALANCE
           : ERROR_MESSAGES.WITHDRAW_FAILED
-        onToast({ message: errorMessage, type: "error" })
+        onToast({ message: t(errorMessage), type: "error" }) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast]
+    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
   )
 
   const handleDialogClose = useCallback((open: boolean) => {
@@ -220,3 +222,4 @@ export function useSavingsContext() {
   }
   return context
 }
+

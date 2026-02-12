@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
+import { useLanguage } from "@/contexts/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -36,6 +38,9 @@ interface Entry {
 }
 
 export default function ReportsPage() {
+  const t = useTranslations("reports")
+  const tCommon = useTranslations("common")
+  const { locale } = useLanguage()
   const { user, loading } = useAuth()
   const [entries, setEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(true)
@@ -56,19 +61,19 @@ export default function ReportsPage() {
     try {
       setEntriesLoading(true)
       const firestoreEntries = await getUserEntries(user.uid)
-      
+
       const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
         id: entry.id,
         description: entry.description,
         amount: entry.amount,
         category: entry.category,
-        date: entry.date instanceof Date 
+        date: entry.date instanceof Date
           ? entry.date.toISOString()
           : entry.date.toDate().toISOString(),
         type: entry.type,
         notes: entry.notes,
       }))
-      
+
       setEntries(convertedEntries)
     } catch (error) {
       console.error("Error loading entries:", error)
@@ -95,10 +100,10 @@ export default function ReportsPage() {
   // Filter entries by date range
   const filteredEntries = useMemo(() => {
     if (!startDate || !endDate) return entries
-    
+
     const range = getCustomDateRange(startDate, endDate)
     if (!range) return entries
-    
+
     return entries.filter((entry) => {
       const entryDate = new Date(entry.date)
       return entryDate >= range.start && entryDate <= range.end
@@ -110,11 +115,11 @@ export default function ReportsPage() {
     const income = filteredEntries
       .filter((e) => e.type === "income")
       .reduce((sum, e) => sum + e.amount, 0)
-    
+
     const expenses = filteredEntries
       .filter((e) => e.type === "expense")
       .reduce((sum, e) => sum + e.amount, 0)
-    
+
     const balance = income - expenses
     const savingsRate = income > 0 ? (balance / income) * 100 : 0
 
@@ -155,7 +160,7 @@ export default function ReportsPage() {
   const handleExportPDF = async () => {
     try {
       if (!startDate || !endDate) {
-        alert("Please select a date range before exporting.")
+        alert(t("selectDateRange"))
         return
       }
 
@@ -170,14 +175,14 @@ export default function ReportsPage() {
       })
     } catch (error) {
       console.error("Error exporting PDF:", error)
-      alert("Failed to export PDF. Please try again.")
+      alert(t("exportPDFFailed"))
     }
   }
 
   const handleExportCSV = () => {
     try {
       if (!startDate || !endDate) {
-        alert("Please select a date range before exporting.")
+        alert(t("selectDateRange"))
         return
       }
 
@@ -185,7 +190,7 @@ export default function ReportsPage() {
       exportEntriesToCSV(filteredEntries, filename)
     } catch (error) {
       console.error("Error exporting CSV:", error)
-      alert("Failed to export CSV. Please try again.")
+      alert(t("exportCSVFailed"))
     }
   }
 
@@ -197,7 +202,7 @@ export default function ReportsPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Loading reports...</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t("loadingReports")}</p>
             </div>
           </div>
         </div>
@@ -214,24 +219,24 @@ export default function ReportsPage() {
             <Link href="/dashboard">
               <Button variant="outline" size="icon" className="flex-shrink-0">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Back to Dashboard</span>
+                <span className="sr-only">{t("backToDashboard")}</span>
               </Button>
             </Link>
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reports & Analytics</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Analyze your spending patterns and financial trends
+                {t("description")}
               </p>
             </div>
           </div>
           <div className="flex gap-2 w-full">
             <Button variant="outline" onClick={handleExportPDF} className="flex-1">
               <FileText className="mr-2 h-4 w-4" />
-              Export PDF
+              {t("exportPDF")}
             </Button>
             <Button variant="outline" onClick={handleExportCSV} className="flex-1">
               <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Export CSV
+              {t("exportCSV")}
             </Button>
           </div>
         </div>
@@ -239,25 +244,25 @@ export default function ReportsPage() {
         {/* Date Range Selector */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Report Period</CardTitle>
-            <CardDescription>Select the time period for your report</CardDescription>
+            <CardTitle>{t("reportPeriod")}</CardTitle>
+            <CardDescription>{t("reportPeriodDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
-                <Label>Report Type</Label>
+                <Label>{t("reportType")}</Label>
                 <select
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value as "yearly" | "monthly" | "custom")}
                 >
-                  <option value="yearly">This Year</option>
-                  <option value="monthly">This Month</option>
-                  <option value="custom">Custom Range</option>
+                  <option value="yearly">{t("thisYear")}</option>
+                  <option value="monthly">{t("thisMonth")}</option>
+                  <option value="custom">{t("customRange")}</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate">{t("startDate")}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -266,7 +271,7 @@ export default function ReportsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
+                <Label htmlFor="endDate">{t("endDate")}</Label>
                 <Input
                   id="endDate"
                   type="date"
@@ -287,7 +292,7 @@ export default function ReportsPage() {
                   }}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  Reset
+                  {t("reset")}
                 </Button>
               </div>
             </div>
@@ -298,7 +303,7 @@ export default function ReportsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("totalIncome")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
@@ -308,7 +313,7 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("totalExpenses")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
@@ -318,7 +323,7 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("netBalance")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -328,7 +333,7 @@ export default function ReportsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("savingsRate")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -347,12 +352,12 @@ export default function ReportsPage() {
         {/* Category Breakdown Table */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Category Breakdown</CardTitle>
-            <CardDescription>Spending by category for the selected period</CardDescription>
+            <CardTitle>{t("categoryBreakdown")}</CardTitle>
+            <CardDescription>{t("categoryBreakdownDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {Object.keys(metrics.categoryBreakdown).length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No expense data for this period</p>
+              <p className="text-muted-foreground text-center py-8">{t("noExpenseData")}</p>
             ) : (
               <div className="space-y-4">
                 {Object.entries(metrics.categoryBreakdown)
@@ -384,19 +389,19 @@ export default function ReportsPage() {
         {/* Monthly Comparison */}
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Trends</CardTitle>
-            <CardDescription>Income vs expenses by month</CardDescription>
+            <CardTitle>{t("monthlyTrends")}</CardTitle>
+            <CardDescription>{t("monthlyTrendsDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {Object.keys(metrics.monthlyBreakdown).length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No data for this period</p>
+              <p className="text-muted-foreground text-center py-8">{t("noDataPeriod")}</p>
             ) : (
               <div className="space-y-4">
                 {Object.entries(metrics.monthlyBreakdown)
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([monthKey, data]) => {
                     const [year, month] = monthKey.split("-")
-                    const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+                    const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(locale === "bg" ? "bg-BG" : "en-US", { month: "long", year: "numeric" })
                     const net = data.income - data.expenses
                     return (
                       <div key={monthKey} className="border-b pb-4 last:border-0">
@@ -408,13 +413,13 @@ export default function ReportsPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className="text-muted-foreground">Income: </span>
+                            <span className="text-muted-foreground">{tCommon("income")}: </span>
                             <span className="text-green-600 font-medium">
                               {formatCurrency(data.income, { currency: "EUR" })}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Expenses: </span>
+                            <span className="text-muted-foreground">{tCommon("expense")}: </span>
                             <span className="text-red-600 font-medium">
                               {formatCurrency(data.expenses, { currency: "EUR" })}
                             </span>
@@ -431,4 +436,3 @@ export default function ReportsPage() {
     </div>
   )
 }
-

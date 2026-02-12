@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -53,6 +54,8 @@ export function GoalDialog({
   categories,
   defaultCurrency = "EUR",
 }: GoalDialogProps) {
+  const t = useTranslations("goals")
+  const tCommon = useTranslations("common")
   const [name, setName] = useState("")
   const [targetAmount, setTargetAmount] = useState("")
   const [currentAmount, setCurrentAmount] = useState("")
@@ -126,20 +129,20 @@ export function GoalDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingGoal ? "Edit Goal" : "Create Financial Goal"}</DialogTitle>
+          <DialogTitle>{editingGoal ? t("editGoal") : t("createGoalTitle")}</DialogTitle>
           <DialogDescription>
             {editingGoal
-              ? "Update your financial goal details."
-              : "Set a savings goal and track your progress toward it."}
+              ? t("editGoalDesc")
+              : t("createGoalDesc")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Goal Name</Label>
+              <Label htmlFor="name">{t("goalName")}</Label>
               <Input
                 id="name"
-                placeholder="e.g., Emergency Fund, Vacation"
+                placeholder={t("goalNamePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -147,10 +150,10 @@ export function GoalDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">{t("descriptionOptional")}</Label>
               <Textarea
                 id="description"
-                placeholder="Add more details about your goal..."
+                placeholder={t("descriptionPlaceholder")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -159,7 +162,7 @@ export function GoalDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="targetAmount">Target Amount</Label>
+                <Label htmlFor="targetAmount">{t("targetAmount")}</Label>
                 <Input
                   id="targetAmount"
                   type="number"
@@ -171,7 +174,7 @@ export function GoalDialog({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">{tCommon("currency")}</Label>
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger>
                     <SelectValue />
@@ -188,7 +191,7 @@ export function GoalDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="currentAmount">Current Amount</Label>
+              <Label htmlFor="currentAmount">{t("currentAmount")}</Label>
               <Input
                 id="currentAmount"
                 type="number"
@@ -199,18 +202,18 @@ export function GoalDialog({
                 required
               />
               <p className="text-xs text-muted-foreground">
-                How much have you saved so far?
+                {t("currentAmountHint")}
               </p>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="category">Category (Optional)</Label>
+              <Label htmlFor="category">{t("categoryOptional")}</Label>
               <Select value={category || "none"} onValueChange={(value) => setCategory(value === "none" ? "" : value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category (optional)" />
+                  <SelectValue placeholder={t("selectCategoryOptional")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Category</SelectItem>
+                  <SelectItem value="none">{t("noCategory")}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
