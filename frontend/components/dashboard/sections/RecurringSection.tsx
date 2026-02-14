@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * Recurring Transactions Section Component
@@ -7,71 +7,48 @@
  * Uses RecurringContext to get state and actions - minimal props needed.
  */
 
-import { useTranslations } from "next-intl"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
-import { CollapsibleSection } from "@/components/ui/collapsible-section"
-import { RecurringTransactionList } from "@/components/dashboard/RecurringTransactionList"
-import { RecurringTransactionDialog } from "@/components/dashboard/RecurringTransactionDialog"
-import { useRecurringContext } from "@/contexts/dashboard"
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { RecurringTransactionList } from "@/components/dashboard/RecurringTransactionList";
+import { RecurringTransactionDialog } from "@/components/dashboard/RecurringTransactionDialog";
+import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
 
 interface RecurringSectionProps {
-  categories: string[]
+    categories: string[];
 }
 
 export function RecurringSection({ categories }: RecurringSectionProps) {
-  const {
-    recurringTransactions,
-    loading,
-    dialogOpen,
-    editingRecurring,
-    handleDialogClose,
-    handleSubmit,
-    handleEdit,
-    handleDelete,
-    openDialog,
-  } = useRecurringContext()
+    const { recurringTransactions, loading, dialogOpen, editingRecurring, handleDialogClose, handleSubmit, handleEdit, handleDelete, openDialog } = useRecurringContext();
 
-  const t = useTranslations("recurring")
+    const t = useTranslations("recurring");
 
-  return (
-    <>
-      <CollapsibleSection
-        title={t("title")}
-        description={t("description")}
-        actionButton={
-          <Button onClick={openDialog} className="w-full md:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            {t("createRecurring")}
-          </Button>
-        }
-      >
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t("loading")}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <RecurringTransactionList
-            recurringTransactions={recurringTransactions}
-            onAdd={openDialog}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        )}
-      </CollapsibleSection>
+    return (
+        <>
+            <CollapsibleSection
+                title={t("title")}
+                description={t("description")}
+                actionButton={
+                    <Button onClick={openDialog} className="w-full md:w-auto">
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t("createRecurring")}
+                    </Button>
+                }
+            >
+                {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                            <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <RecurringTransactionList recurringTransactions={recurringTransactions} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />
+                )}
+            </CollapsibleSection>
 
-      <RecurringTransactionDialog
-        open={dialogOpen}
-        onOpenChange={handleDialogClose}
-        onSubmit={handleSubmit}
-        editingRecurring={editingRecurring}
-        categories={categories}
-      />
-    </>
-  )
+            <RecurringTransactionDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingRecurring={editingRecurring} categories={categories} />
+        </>
+    );
 }
