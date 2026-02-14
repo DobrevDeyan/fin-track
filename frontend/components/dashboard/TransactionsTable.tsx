@@ -45,6 +45,9 @@ interface TransactionsTableProps {
   onEdit: (id: string) => void
   onDelete: (id: string) => void
   filters?: React.ReactNode
+  onLoadMore?: () => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
 }
 
 const ITEMS_PER_PAGE = 10
@@ -55,6 +58,9 @@ export function TransactionsTable({
   onEdit,
   onDelete,
   filters,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
 }: TransactionsTableProps) {
   const t = useTranslations("dashboard")
   const tCommon = useTranslations("common")
@@ -67,8 +73,10 @@ export function TransactionsTable({
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
   const paginatedTransactions = useMemo(() => {
+    // If we have server-side pagination (onLoadMore), show all transactions (they are already 'paginated' by append)
+    if (onLoadMore) return transactions;
     return transactions.slice(startIndex, endIndex)
-  }, [transactions, startIndex, endIndex])
+  }, [transactions, startIndex, endIndex, onLoadMore])
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -269,7 +277,32 @@ export function TransactionsTable({
             </div>
 
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {/* If server-side pagination props are provided, show Load More button */}
+            {/* Otherwise fall back to client-side pagination */}
+            {(onLoadMore) ? (
+               <div className="flex flex-col items-center justify-center gap-4 mt-6 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    {t("showingEntries", { from: 1, to: transactions.length, total: hasMore ? `${transactions.length}+` : transactions.length })}
+                  </div>
+                  {hasMore && (
+                    <Button 
+                      variant="outline" 
+                      onClick={onLoadMore} 
+                      disabled={isLoadingMore}
+                      className="min-w-[120px]"
+                    >
+                      {isLoadingMore ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                          Loading...
+                        </>
+                      ) : (
+                        tCommon("loadMore") || "Load More"
+                      )}
+                    </Button>
+                  )}
+               </div>
+            ) : (totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
                 <div className="text-sm text-muted-foreground">
                   {t("showingEntries", { from: startIndex + 1, to: Math.min(endIndex, transactions.length), total: transactions.length })}
@@ -321,7 +354,7 @@ export function TransactionsTable({
                   </Button>
                 </div>
               </div>
-            )}
+            ))}
           </>
         )}
       </CardContent>

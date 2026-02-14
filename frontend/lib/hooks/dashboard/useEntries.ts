@@ -35,12 +35,20 @@ export function useEntries({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null)
 
-  const loadEntries = useCallback(async () => {
+  const [lastVisible, setLastVisible] = useState<unknown>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  const loadEntries = useCallback(async (refresh = false) => {
     if (!userId) return
 
     try {
-      setLoading(true)
-      const firestoreEntries = await getUserEntries(userId)
+      if (refresh) {
+        setLoading(true)
+        setLastVisible(null)
+      }
+      
+      const { entries: firestoreEntries, lastVisible: newLastVisible } = await getUserEntries(userId, null, 20)
 
       const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
         id: entry.id,
@@ -61,12 +69,54 @@ export function useEntries({
 
       setEntries(convertedEntries)
       setFilteredEntries(convertedEntries)
+      setLastVisible(newLastVisible)
+      setHasMore(firestoreEntries.length === 20)
     } catch (error) {
       console.error("Error loading entries:", error)
     } finally {
       setLoading(false)
     }
   }, [userId])
+
+  const loadMore = useCallback(async () => {
+    if (!userId || !lastVisible || isLoadingMore) return
+
+    try {
+      setIsLoadingMore(true)
+      const { entries: firestoreEntries, lastVisible: newLastVisible } = await getUserEntries(userId, lastVisible, 20)
+
+      const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
+        id: entry.id,
+        description: entry.description,
+        amount: entry.amount,
+        category: entry.category,
+        date: entry.date instanceof Timestamp
+          ? entry.date.toDate().toISOString()
+          : typeof entry.date === "string"
+          ? entry.date
+          : new Date(entry.date as unknown as string | number | Date).toISOString(),
+        type: entry.type,
+        currency: entry.currency,
+        notes: entry.notes,
+        tags: entry.tags,
+        receiptUrl: entry.receiptUrl,
+      }))
+
+      setEntries((prev) => [...prev, ...convertedEntries])
+      // Note: We might want to re-apply filters here if they exist, but for now we append to filtered as well 
+      // if the user hasn't actively filtered. If they have, complexity increases. 
+      // For simplicity/perf in this step, we append to filteredEntries too.
+      // Real app might need re-running filter logic on new items.
+      setFilteredEntries((prev) => [...prev, ...convertedEntries])
+      
+      setLastVisible(newLastVisible)
+      setHasMore(firestoreEntries.length === 20)
+    } catch (error) {
+      console.error("Error loading more entries:", error)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [userId, lastVisible, isLoadingMore])
 
   const handleAdd = useCallback(async (data: EntryFormData) => {
     if (!userId) return
@@ -209,6 +259,9 @@ export function useEntries({
     setDialogOpen,
     editingEntry,
     loadEntries,
+    loadMore,
+    hasMore,
+    isLoadingMore,
     handleAdd,
     handleEdit,
     handleDelete,

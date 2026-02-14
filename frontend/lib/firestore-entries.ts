@@ -155,28 +155,49 @@ export async function createEntry(
 /**
  * Get all entries for a user
  */
-export async function getUserEntries(userId: string): Promise<(EntryDocument & { id: string })[]> {
+/**
+ * Get all entries for a user with pagination
+ */
+export async function getUserEntries(
+  userId: string, 
+  lastVisible: unknown = null, 
+  limitCount: number = 20
+): Promise<{ entries: (EntryDocument & { id: string })[], lastVisible: unknown }> {
   try {
     const entriesRef = collection(db, "entries")
 
     // Try with orderBy first (requires index)
-    let q = query(
-      entriesRef,
-      where("userId", "==", userId),
-      orderBy("date", "desc")
-    )
+    let q;
+    
+    // Import needed functions dynamically or ensure they are at top level
+    const { limit, startAfter } = await import("firebase/firestore");
+
+    if (lastVisible) {
+      q = query(
+        entriesRef,
+        where("userId", "==", userId),
+        orderBy("date", "desc"),
+        startAfter(lastVisible),
+        limit(limitCount)
+      )
+    } else {
+       q = query(
+        entriesRef,
+        where("userId", "==", userId),
+        orderBy("date", "desc"),
+        limit(limitCount)
+      )
+    }
 
     let querySnapshot
     try {
       querySnapshot = await getDocs(q)
     } catch (indexError: unknown) {
-      // If index error, try without orderBy and sort in memory
-      if (isFirestoreIndexError(indexError)) {
-        q = query(entriesRef, where("userId", "==", userId))
-        querySnapshot = await getDocs(q)
-      } else {
-        throw indexError
-      }
+      // If index error, try without orderBy (fallback for dev, but breaks pagination logic strictly speaking without client-side filter)
+      // For creating the index, the developer needs the link from the console error.
+      // We will re-throw if it's an index error so the developer can see the link.
+      console.error("Firestore Index Error (likely missing index for userId + date):", indexError);
+      throw indexError;
     }
 
     const entries: (EntryDocument & { id: string })[] = []
@@ -189,16 +210,9 @@ export async function getUserEntries(userId: string): Promise<(EntryDocument & {
       })
     })
 
-    // Sort by date descending (in case we didn't use orderBy)
-    if (entries.length > 0) {
-      entries.sort((a, b) => {
-        const dateA = getDateMillis(a.date)
-        const dateB = getDateMillis(b.date)
-        return dateB - dateA
-      })
-    }
+    const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
 
-    return entries
+    return { entries, lastVisible: lastVisibleDoc }
   } catch (error) {
     console.error("Error fetching entries:", error)
     throw error

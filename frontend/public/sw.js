@@ -27,6 +27,7 @@ self.addEventListener('message', (event) => {
 });
 
 // Fetch event - only cache static assets, not navigation requests
+// Fetch event - cache static assets and handle offline navigation
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -37,16 +38,28 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Skip non-http(s) requests (chrome-extension://, etc.)
-  // These cannot be cached and will throw errors
   if (!url.protocol.startsWith('http')) {
     return;
   }
 
-  // Skip navigation requests (HTML pages) - let them go to network
-  // This prevents Safari redirect errors
+  // Handle navigation requests (HTML pages)
+  // Network first, fallback to offline page or home page
   if (request.mode === 'navigate') {
-    // Always fetch navigation requests from network
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request)
+        .catch(() => {
+          return caches.match(request)
+            .then((cachedResponse) => {
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              // If not found in cache and network fails, return the cached home page (shell)
+              // This assumes '/' is cached during install/usage
+              return caches.match('/')
+                .then(response => response || caches.match('/dashboard')); 
+            });
+        })
+    );
     return;
   }
   
@@ -68,64 +81,50 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/icons/');
   
   if (!isStaticAsset) {
-    // For non-static assets, just fetch from network
+    // For non-static assets (like API calls), just fetch from network
     event.respondWith(fetch(request));
     return;
   }
   
   // For icons and manifest, always fetch from network first to get latest version
-  // Never use cache for these to ensure users get the latest icons
   if (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json') {
     event.respondWith(
       fetch(request, {
-        cache: 'no-store', // Force network fetch, never use cache
+        cache: 'no-store',
       }).then((response) => {
-        // Only cache if it's a successful response
         if (response && response.status === 200) {
           const responseToCache = response.clone();
-          // Delete old cached version first
           caches.open(CACHE_NAME).then((cache) => {
             cache.delete(request).then(() => {
-              // Then cache the new version
               cache.put(request, responseToCache);
             });
           });
         }
         return response;
       }).catch(() => {
-        // If network fails, try cache as last resort
         return caches.match(request);
       })
     );
     return;
   }
   
-  // For other static assets, try cache first, then network
+  // For other static assets, Stale-While-Revalidate strategy
+  // This is better for performance than Network-First for static assets
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        return fetch(request).then((response) => {
-          // Only cache successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone the response before caching
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
-          });
-          
-          return response;
+        const fetchPromise = fetch(request).then((networkResponse) => {
+           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+             const responseToCache = networkResponse.clone();
+             caches.open(CACHE_NAME).then((cache) => {
+                cache.put(request, responseToCache);
+             });
+           }
+           return networkResponse;
         });
-      })
-      .catch(() => {
-        // If both cache and network fail, return a basic response
-        return fetch(request);
+
+        // Return cached response immediately if available, otherwise wait for network
+        return cachedResponse || fetchPromise;
       })
   );
 });

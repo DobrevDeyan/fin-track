@@ -34,7 +34,41 @@ if (typeof window !== "undefined") {
   }
   
   auth = getAuth(app);
+  
+  // Initialize Firestore with offline persistence
+  import("firebase/firestore").then(({ initializeFirestore, persistentLocalCache, persistentMultipleTabManager }) => {
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (err) {
+      // If already initialized or other error, fallback to getFirestore
+      console.warn("Firestore persistence init failed or already initialized:", err);
+      if (!db) db = getFirestore(app);
+    }
+  });
+
+  // Fallback if async init hasn't finished when exported (though typically safe due to module loading)
+  // We initialize db synchronously with getFirestore for immediate use, 
+  // but the above async call will configure persistence if it's the first call.
+  // Actually, to be safe and synchronous for exports, we should use enableIndexedDbPersistence 
+  // but that is deprecated in favor of initializeFirestore with cache settings.
+  // Let's use the standard synchronous getFirestore first, then enable persistence.
+  
   db = getFirestore(app);
+  
+  import("firebase/firestore").then(({ enableIndexedDbPersistence }) => {
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code == 'failed-precondition') {
+        console.warn('Firestore persistence failed: Multiple tabs open');
+      } else if (err.code == 'unimplemented') {
+        console.warn('Firestore persistence not supported in this browser');
+      }
+    });
+  });
+
   storage = getStorage(app);
   functions = getFunctions(app);
   

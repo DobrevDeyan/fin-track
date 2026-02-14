@@ -10,7 +10,6 @@ import { ScanLine, Calendar } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { MetricsCards } from "@/components/dashboard/MetricsCards";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
-import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
@@ -29,6 +28,11 @@ import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
 import { getUniqueCategories } from "@/lib/categories";
 import { calculateMetricsWithComparison } from "@/lib/metrics-utils";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
+
+// Lazy load dialogs
+const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTransactionDialog").then((mod) => ({ default: mod.AddTransactionDialog })), { 
+    ssr: false 
+});
 
 // Lazy load charts (Recharts is ~200KB)
 const SpendingChart = dynamic(() => import("@/components/dashboard/SpendingChart").then((mod) => ({ default: mod.SpendingChart })), {
@@ -179,7 +183,16 @@ function DashboardInnerContent() {
                 </div>
 
                 {/* Transactions Table */}
-                <TransactionsTable transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries} onAdd={() => entriesHook.setDialogOpen(true)} onEdit={entriesHook.handleEdit} onDelete={entriesHook.handleDelete} filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />} />
+                <TransactionsTable 
+                    transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries} 
+                    onAdd={() => entriesHook.setDialogOpen(true)} 
+                    onEdit={entriesHook.handleEdit} 
+                    onDelete={entriesHook.handleDelete} 
+                    filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />} 
+                    onLoadMore={entriesHook.loadMore}
+                    hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore} // Only show load more if not filtering (simplified for now)
+                    isLoadingMore={entriesHook.isLoadingMore}
+                />
 
                 {/* Savings Accounts Section - now uses context, minimal props */}
                 <SavingsSection userCurrency={userCurrency} />
