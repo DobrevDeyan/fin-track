@@ -1,6 +1,7 @@
 import { DocumentProcessorServiceClient } from '@google-cloud/documentai';
 import * as fs from 'fs';
 import * as path from 'path';
+import { logProcessingAttempt, logProcessingSuccess, logProcessingError } from './logging';
 
 // Load environment variables
 const projectId = process.env.GCP_PROJECT_ID;
@@ -238,6 +239,9 @@ export async function processDocument(filePath: string, mimeType: string): Promi
         },
     };
 
+    const startTime = Date.now();
+    const logId = await logProcessingAttempt(filePath, mimeType);
+
     try {
         const [result] = await docClient.processDocument(request);
         const document = result.document;
@@ -290,9 +294,20 @@ export async function processDocument(filePath: string, mimeType: string): Promi
             rawEntities,
         };
 
+        const processingTime = Date.now() - startTime;
+        await logProcessingSuccess(logId, {
+            merchant: extractedData.merchant,
+            amount: extractedData.amount,
+            date: extractedData.date,
+            confidence: extractedData.confidence,
+        }, processingTime);
+
         return extractedData;
 
     } catch (error: any) {
+        const processingTime = Date.now() - startTime;
+        await logProcessingError(logId, error.message || 'Unknown error', processingTime);
+
         console.error('Error during Document AI processing:', error);
 
         // Log detailed error info

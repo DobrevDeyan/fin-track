@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
 import { getLocale } from "next-intl/server"
+import { locales, type Locale } from "@/i18n/config"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -60,7 +61,8 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const locale = await getLocale();
+  const localeStr = await getLocale();
+  const locale = (locales.includes(localeStr as Locale) ? localeStr : "en") as Locale;
 
   return (
     <html lang={locale} className="light" suppressHydrationWarning>

@@ -60,7 +60,8 @@ export default function ReportsPage() {
 
     try {
       setEntriesLoading(true)
-      const firestoreEntries = await getUserEntries(user.uid)
+      // Fetch more entries for reports (limit 1000)
+      const { entries: firestoreEntries } = await getUserEntries(user.uid, null, 1000)
 
       const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
         id: entry.id,
