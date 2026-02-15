@@ -7,8 +7,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext"
 import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
-import { getLocale } from "next-intl/server"
-import { locales, type Locale } from "@/i18n/config"
+import { defaultLocale } from "@/i18n/config"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -56,16 +55,13 @@ export const viewport: Viewport = {
   initialScale: 1.0,
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const localeStr = await getLocale();
-  const locale = (locales.includes(localeStr as Locale) ? localeStr : "en") as Locale;
-
   return (
-    <html lang={locale} className="light" suppressHydrationWarning>
+    <html lang={defaultLocale} className="light" suppressHydrationWarning>
       <head>
         {/* Resource hints for Firebase - improve connection speed */}
         <link rel="preconnect" href="https://fin-track-adc2c.firebaseapp.com" />
@@ -97,7 +93,7 @@ export default async function RootLayout({
         >
           <AuthProvider>
             <CurrencyProvider>
-              <LanguageProvider initialLocale={locale}>
+              <LanguageProvider initialLocale={defaultLocale}>
                 {children}
                 <RegisterSW />
                 <InstallPrompt />

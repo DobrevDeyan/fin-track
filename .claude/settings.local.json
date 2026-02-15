@@ -1,5 +1,15 @@
 {
-    "permissions": {
-        "allow": ["Bash(npx tsc:*)", "Bash(npx next build:*)", "Bash(npm install:*)", "Bash(npm run build:*)", "Bash(npm view:*)", "Bash(npm run dev:*)", "Bash(lsof:*)", "Bash(xargs:*)"]
-    }
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx next build:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm view:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs:*)",
+      "Bash(npx next dev:*)"
+    ]
+  }
 }
