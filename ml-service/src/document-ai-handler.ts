@@ -24,34 +24,32 @@ let client: DocumentProcessorServiceClient;
 
 function getClient(): DocumentProcessorServiceClient {
     if (!client) {
-        const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
         // Set the API endpoint based on location
         const apiEndpoint = location === 'eu'
             ? 'eu-documentai.googleapis.com'
             : 'us-documentai.googleapis.com';
 
+        const clientOptions: { apiEndpoint: string; keyFilename?: string } = { apiEndpoint };
+
+        // Use key file for local development if provided, otherwise use ADC
+        // On Cloud Run, ADC automatically uses the service account attached to the service
+        const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
         if (credentialsPath) {
-            // Resolve relative path to absolute path
             const absolutePath = path.isAbsolute(credentialsPath)
                 ? credentialsPath
                 : path.resolve(process.cwd(), credentialsPath);
 
-            if (!fs.existsSync(absolutePath)) {
-                throw new Error(`Credentials file not found at: ${absolutePath}`);
+            if (fs.existsSync(absolutePath)) {
+                clientOptions.keyFilename = absolutePath;
+                console.log('Using service account key file for authentication');
+            } else {
+                console.warn(`Key file not found at ${absolutePath}, falling back to ADC`);
             }
-
-            client = new DocumentProcessorServiceClient({
-                keyFilename: absolutePath,
-                apiEndpoint: apiEndpoint,
-            });
         } else {
-            // Fall back to default credentials (e.g., from environment)
-            client = new DocumentProcessorServiceClient({
-                apiEndpoint: apiEndpoint,
-            });
+            console.log('Using Application Default Credentials (ADC)');
         }
 
+        client = new DocumentProcessorServiceClient(clientOptions);
         console.log('Document AI client configured with endpoint:', apiEndpoint);
     }
     return client;
@@ -212,9 +210,16 @@ function extractItems(entities: Record<string, string>): string[] {
  * Processes a local file using the Document AI API.
  * @param filePath The path to the local file.
  * @param mimeType The MIME type of the file.
+ * @param requestId Optional unique ID for tracing the request.
+ * @param userId Optional user ID for context.
  * @returns Extracted receipt data structured for the frontend
  */
-export async function processDocument(filePath: string, mimeType: string): Promise<ExtractedReceiptData> {
+export async function processDocument(
+    filePath: string, 
+    mimeType: string,
+    requestId?: string,
+    userId?: string
+): Promise<ExtractedReceiptData> {
     if (!projectId || !processorId) {
         throw new Error('Missing GCP_PROJECT_ID or GCP_PROCESSOR_ID environment variables');
     }
@@ -222,7 +227,7 @@ export async function processDocument(filePath: string, mimeType: string): Promi
     const docClient = getClient();
     const name = `projects/${projectId}/locations/${location}/processors/${processorId}`;
 
-    console.log('Processing document with:');
+    console.log(`Processing document [${requestId || 'no-id'}]:`);
     console.log('  - Processor path:', name);
     console.log('  - File path:', filePath);
     console.log('  - MIME type:', mimeType);
@@ -240,7 +245,7 @@ export async function processDocument(filePath: string, mimeType: string): Promi
     };
 
     const startTime = Date.now();
-    const logId = await logProcessingAttempt(filePath, mimeType);
+    const logId = await logProcessingAttempt(filePath, mimeType, requestId, userId);
 
     try {
         const [result] = await docClient.processDocument(request);
@@ -299,6 +304,8 @@ export async function processDocument(filePath: string, mimeType: string): Promi
             merchant: extractedData.merchant,
             amount: extractedData.amount,
             date: extractedData.date,
+            items: extractedData.items,
+            rawText: extractedData.rawText,
             confidence: extractedData.confidence,
         }, processingTime);
 

@@ -7,9 +7,21 @@ import * as fs from 'fs';
 
 const app = express();
 
-// Configure CORS
+// Configure CORS - supports comma-separated origins for multiple environments
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001')
+    .split(',')
+    .map(url => url.trim());
+
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // Allow requests with no origin (health checks, server-to-server)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.warn(`CORS blocked request from origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -52,7 +64,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
         environment: {
             hasProjectId: !!process.env.GCP_PROJECT_ID,
             hasProcessorId: !!process.env.GCP_PROCESSOR_ID,
-            hasCredentials: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+            authMode: process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'key-file' : 'adc',
         },
     });
 });
@@ -69,8 +81,15 @@ app.post('/api/upload-bill', upload.single('billFile'), async (req: Request, res
     }
 
     try {
+        const { requestId, userId } = req.body;
+        
         // Process the document with Document AI
-        const extractedData = await processDocument(req.file.path, req.file.mimetype);
+        const extractedData = await processDocument(
+            req.file.path, 
+            req.file.mimetype,
+            requestId ? String(requestId) : undefined,
+            userId ? String(userId) : undefined
+        );
 
         // Clean up the temporary file
         fs.unlinkSync(req.file.path);

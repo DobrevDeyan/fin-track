@@ -27,6 +27,8 @@ import { detectCategory } from "@/lib/category-detector"
 import { isMobileDevice, hasCameraSupport } from "@/lib/device-utils"
 import { CameraCapture } from "./CameraCapture"
 
+import { useAuth } from "@/contexts/AuthContext"
+
 interface TransactionData {
   description: string
   amount: number
@@ -58,6 +60,9 @@ export function ReceiptScannerDialog({
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>("")
+
+  // Auth context for logging user ID
+  const { user } = useAuth()
 
   // Device capabilities
   const [isMobile, setIsMobile] = useState(false)
@@ -189,7 +194,7 @@ export function ReceiptScannerDialog({
     setErrorMessage("")
 
     try {
-      const data = await scanReceipt(selectedFile)
+      const data = await scanReceipt(selectedFile, user?.uid)
       setExtractedData(data)
 
       // Populate form fields with extracted data

@@ -33,10 +33,11 @@ interface ScanReceiptResponse {
 /**
  * Scan a receipt file using the ML service
  * @param file - The receipt image or PDF file to scan
+ * @param userId - Optional user ID for tracking
  * @returns Extracted receipt data
  * @throws Error if the scan fails
  */
-export async function scanReceipt(file: File): Promise<ExtractedReceiptData> {
+export async function scanReceipt(file: File, userId?: string): Promise<ExtractedReceiptData> {
   // Validate file type
   const allowedTypes = [
     'image/jpeg',
@@ -56,9 +57,21 @@ export async function scanReceipt(file: File): Promise<ExtractedReceiptData> {
     throw new Error('File size must be less than 10MB.');
   }
 
+  // Generate a request ID for tracing
+  const requestId = typeof crypto !== 'undefined' && crypto.randomUUID 
+    ? crypto.randomUUID() 
+    : `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
   // Create form data
   const formData = new FormData();
   formData.append('billFile', file);
+  formData.append('requestId', requestId);
+  
+  if (userId) {
+    formData.append('userId', userId);
+  }
+
+  console.log(`[ML-Service] Starting scan request ${requestId} for file ${file.name} (${file.type})`);
 
   try {
     const response = await fetch(`${ML_SERVICE_URL}/api/upload-bill`, {
