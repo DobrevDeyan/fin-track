@@ -9,7 +9,8 @@
       "Bash(npm run dev:*)",
       "Bash(lsof:*)",
       "Bash(xargs:*)",
-      "Bash(npx next dev:*)"
+      "Bash(npx next dev:*)",
+      "Bash(powershell:*)"
     ]
   }
 }

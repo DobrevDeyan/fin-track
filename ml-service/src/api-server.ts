@@ -31,6 +31,17 @@ app.use(cors(corsOptions));
 // Parse JSON bodies
 app.use(express.json());
 
+// Request logging middleware
+app.use((req: Request, _res: Response, next: NextFunction) => {
+    const start = Date.now();
+    const { method, url, headers } = req;
+    console.log(`[REQ] ${method} ${url} origin=${headers.origin || 'none'}`);
+    _res.on('finish', () => {
+        console.log(`[RES] ${method} ${url} status=${_res.statusCode} duration=${Date.now() - start}ms`);
+    });
+    next();
+});
+
 // Configure multer for file uploads
 const upload = multer({
     dest: 'uploads/',

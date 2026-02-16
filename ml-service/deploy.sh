@@ -7,7 +7,7 @@ REGION="europe-west1"
 PROCESSOR_ID="47581562c79b2653"
 
 # Your Firebase Hosting URLs (Cloud Run needs to allow CORS from these)
-FRONTEND_URL="https://fin-track-adc2c.web.app"
+FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com"
 
 echo "Deploying $SERVICE_NAME to Google Cloud Run..."
 
