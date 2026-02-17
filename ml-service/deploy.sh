@@ -4,7 +4,7 @@
 PROJECT_ID="fin-track-adc2c"
 SERVICE_NAME="ml-service"
 REGION="europe-west1"
-PROCESSOR_ID="47581562c79b2653"
+PROCESSOR_ID="566b35e21d475435"
 
 # Your Firebase Hosting URLs (Cloud Run needs to allow CORS from these)
 FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com"
@@ -54,7 +54,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --cpu 1 \
   --min-instances 0 \
   --max-instances 3 \
-  --set-env-vars "GCP_PROJECT_ID=$PROJECT_ID,GCP_LOCATION=eu,GCP_PROCESSOR_ID=$PROCESSOR_ID,FRONTEND_URL=$FRONTEND_URL"
+  --set-env-vars "^@^GCP_PROJECT_ID=$PROJECT_ID@GCP_LOCATION=eu@GCP_PROCESSOR_ID=$PROCESSOR_ID@FRONTEND_URL=$FRONTEND_URL"
 
 # 5. Get the service URL
 SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \

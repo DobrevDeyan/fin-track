@@ -42,7 +42,9 @@ node --version  # should be v20.x
 npm install -g firebase-tools
 
 # Google Cloud CLI
-# https://cloud.google.com/sdk/docs/install
+# Download from: https://cloud.google.com/sdk/docs/install
+# On Windows: run the installer, then use "Google Cloud SDK Shell" from the Start menu
+# IMPORTANT: After install, restart your terminal/IDE so gcloud is in PATH
 gcloud --version
 ```
 
@@ -52,7 +54,8 @@ gcloud --version
 # Firebase
 firebase login
 
-# Google Cloud
+# Google Cloud (use Google Cloud SDK Shell on Windows if gcloud is not in PATH)
+gcloud init
 gcloud auth login
 gcloud config set project fin-track-adc2c
 ```
@@ -196,7 +199,7 @@ firebase deploy
 
 Or deploy only what changed:
 ```bash
-firebase deploy --only hosting          # Frontend only
+firebase deploy --only hosting           # Frontend only
 firebase deploy --only functions         # Functions only
 firebase deploy --only firestore         # Rules & indexes only
 firebase deploy --only hosting,functions # Frontend + functions
@@ -220,7 +223,7 @@ Firebase config (API key, project ID, etc.) is hardcoded in `frontend/lib/fireba
 |----------|-----------------|---------|
 | `GCP_PROJECT_ID` | `fin-track-adc2c` | GCP project ID |
 | `GCP_LOCATION` | `eu` | Document AI region |
-| `GCP_PROCESSOR_ID` | `47581562c79b2653` | Document AI processor |
+| `GCP_PROCESSOR_ID` | `566b35e21d475435` | Document AI processor |
 | `FRONTEND_URL` | `https://fin-track-adc2c.web.app` | CORS allowed origin |
 | `PORT` | `8080` (set by Cloud Run) | Express server port |
 
@@ -235,7 +238,7 @@ cp .env.example .env
 Required for local dev:
 ```
 GCP_PROJECT_ID=fin-track-adc2c
-GCP_PROCESSOR_ID=47581562c79b2653
+GCP_PROCESSOR_ID=566b35e21d475435
 GCP_LOCATION=eu
 GOOGLE_APPLICATION_CREDENTIALS=./keys/<your-service-account-key>.json
 PORT=8000

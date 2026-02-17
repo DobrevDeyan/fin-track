@@ -1,6 +1,6 @@
 # Feature Implementation Roadmap
 
-**Based on Competitive Analysis - Updated February 8, 2025**
+**Based on Competitive Analysis - Updated February 17, 2026**
 
 ---
 
@@ -41,11 +41,13 @@
 - [x] **Dark Mode** - Full theme support
 - [x] **Multi-Currency** - EUR/USD with extensible architecture
 - [x] **Push Notifications** - Salary reminders implemented
+- [x] **GCP Infrastructure** - Cloud Run, Document AI, IAM reviewed and cleaned up (Feb 2026)
+- [x] **Documentation** - Deployment guide and Google Services inventory updated
 
 ### AI/ML Features
 - [x] **Smart Category Detection** - 100+ merchant keywords
-- [x] **Receipt Scanner Backend** - Google Document AI integration
-- [x] **ML Service API** - Express server for OCR processing
+- [x] **Receipt Scanner Backend** - Google Document AI integration (Expense Parser `566b35e21d475435`, `eu` region)
+- [x] **ML Service API** - Express server on Cloud Run (`europe-west1`), deployed and healthy
 
 ---
 
@@ -89,7 +91,9 @@
 
 **Technical Details:**
 ```
-ML Service: /ml-service/src/api-server.ts (port 8000)
+ML Service: /ml-service/src/api-server.ts (port 8000 local, 8080 on Cloud Run)
+Cloud Run URL: https://ml-service-185936461123.europe-west1.run.app
+Document AI Processor: expense_parser (566b35e21d475435, eu region)
 Frontend: /frontend/components/receipt/ReceiptScanner.tsx
 Storage: Firebase Storage receipts/{userId}/{transactionId}/
 ```
@@ -332,6 +336,6 @@ Storage: Firebase Storage receipts/{userId}/{transactionId}/
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: February 8, 2025
+**Document Version**: 2.1
+**Last Updated**: February 17, 2026
 **Next Review**: Monthly
