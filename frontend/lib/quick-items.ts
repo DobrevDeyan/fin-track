@@ -48,7 +48,6 @@ export const QUICK_ITEMS_BY_CATEGORY: CategoryQuickItems[] = [
   {
     categoryId: "Shopping",
     items: [
-      { id: "pharmacy", label: "Pharmacy", amount: 15.00, emoji: "💊" },
       { id: "clothing", label: "Clothing", amount: 35.00, emoji: "👕" },
       { id: "electronics", label: "Electronics", amount: 50.00, emoji: "📱" },
       { id: "household", label: "Household Items", amount: 20.00, emoji: "🏠" },
@@ -88,11 +87,48 @@ export const QUICK_ITEMS_BY_CATEGORY: CategoryQuickItems[] = [
     ],
   },
   {
+    categoryId: "Health & Pharmacy",
+    items: [
+      { id: "pharmacy", label: "Pharmacy", amount: 15.00, emoji: "💊" },
+      { id: "doctor", label: "Doctor Visit", amount: 40.00, emoji: "🩺" },
+      { id: "dentist", label: "Dentist", amount: 60.00, emoji: "🦷" },
+      { id: "vitamins", label: "Vitamins", amount: 12.00, emoji: "💊" },
+      { id: "gym_membership", label: "Gym", amount: 30.00, emoji: "🏋️" },
+    ],
+  },
+  {
+    categoryId: "Education",
+    items: [
+      { id: "books", label: "Books", amount: 20.00, emoji: "📚" },
+      { id: "course", label: "Online Course", amount: 30.00, emoji: "🎓" },
+      { id: "tuition", label: "Tuition", amount: 200.00, emoji: "🏫" },
+      { id: "supplies", label: "Supplies", amount: 15.00, emoji: "✏️" },
+    ],
+  },
+  {
+    categoryId: "Travel & Vacation",
+    items: [
+      { id: "flight", label: "Flight", amount: 150.00, emoji: "✈️" },
+      { id: "hotel", label: "Hotel", amount: 80.00, emoji: "🏨" },
+      { id: "airbnb", label: "Airbnb", amount: 60.00, emoji: "🏡" },
+      { id: "car_rental", label: "Car Rental", amount: 40.00, emoji: "🚗" },
+      { id: "sightseeing", label: "Sightseeing", amount: 20.00, emoji: "🗺️" },
+    ],
+  },
+  {
+    categoryId: "Gifts & Donations",
+    items: [
+      { id: "birthday_gift", label: "Birthday Gift", amount: 30.00, emoji: "🎁" },
+      { id: "charity", label: "Charity", amount: 20.00, emoji: "❤️" },
+      { id: "flowers", label: "Flowers", amount: 25.00, emoji: "💐" },
+      { id: "donation", label: "Donation", amount: 10.00, emoji: "🤝" },
+    ],
+  },
+  {
     categoryId: "Other",
     items: [
       { id: "cash", label: "Cash Withdrawal", amount: 50.00, emoji: "💵" },
       { id: "tip", label: "Tip", amount: 5.00, emoji: "💸" },
-      { id: "donation", label: "Donation", amount: 10.00, emoji: "❤️" },
       { id: "repair", label: "Repair", amount: 30.00, emoji: "🔧" },
     ],
   },

@@ -6,8 +6,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
-import { ScanLine, Calendar } from "lucide-react";
-import { Navbar } from "@/components/Navbar";
+import { ScanLine } from "lucide-react";
 import { MetricsCards } from "@/components/dashboard/MetricsCards";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
@@ -29,9 +28,12 @@ import { getUniqueCategories } from "@/lib/categories";
 import { calculateMetricsWithComparison } from "@/lib/metrics-utils";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
 
+// Tabs
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 // Lazy load dialogs
-const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTransactionDialog").then((mod) => ({ default: mod.AddTransactionDialog })), { 
-    ssr: false 
+const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTransactionDialog").then((mod) => ({ default: mod.AddTransactionDialog })), {
+    ssr: false
 });
 
 // Lazy load charts (Recharts is ~200KB)
@@ -70,15 +72,18 @@ const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/Receip
  */
 function DashboardInnerContent() {
     const t = useTranslations("dashboard");
-    const tNav = useTranslations("nav");
+    const tSavings = useTranslations("savings");
+    const tBudgets = useTranslations("budgets");
+    const tRecurring = useTranslations("recurring");
+    const tGoals = useTranslations("goals");
     const { user } = useAuth();
     const { userCurrency } = useCurrency();
 
     // Get data from contexts for metrics calculations
     const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
-    const { loadBudgets } = useBudgetsContext();
-    const { loadGoals } = useGoalsContext();
-    const { loadRecurringTransactions } = useRecurringContext();
+    const { budgets, loadBudgets } = useBudgetsContext();
+    const { goals, loadGoals } = useGoalsContext();
+    const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
 
     // Toast state (shared across all features)
     const [toast, setToast] = useState<ToastState | null>(null);
@@ -146,7 +151,6 @@ function DashboardInnerContent() {
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
-            <Navbar />
             <div className="container py-8 px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -154,21 +158,10 @@ function DashboardInnerContent() {
                         <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
                         <p className="text-muted-foreground mt-2">{t("welcome", { name: user?.email?.split("@")[0] || "" })}</p>
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                        <Button onClick={() => setScannerDialogOpen(true)} className="flex-1 md:flex-initial">
-                            <ScanLine className="mr-2 h-4 w-4" />
-                            {t("scanReceipt")}
-                        </Button>
-                        <Button variant="outline" asChild className="flex-1 md:flex-initial">
-                            <a href="/calendar">
-                                <Calendar className="mr-2 h-4 w-4" />
-                                {tNav("calendar")}
-                            </a>
-                        </Button>
-                        <Button variant="outline" asChild className="flex-1 md:flex-initial">
-                            <a href="/reports">{tNav("reports")}</a>
-                        </Button>
-                    </div>
+                    <Button onClick={() => setScannerDialogOpen(true)}>
+                        <ScanLine className="mr-2 h-4 w-4" />
+                        {t("scanReceipt")}
+                    </Button>
                 </div>
 
                 {/* Metrics Cards */}
@@ -179,32 +172,54 @@ function DashboardInnerContent() {
                 {/* Charts Row */}
                 <div className="grid gap-6 md:grid-cols-2 mb-8">
                     <SpendingChart entries={entriesHook.entries} />
-                    <CategoryChart entries={entriesHook.entries} />
+                    <CategoryChart entries={entriesHook.entries} userCurrency={userCurrency} />
                 </div>
 
                 {/* Transactions Table */}
-                <TransactionsTable 
-                    transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries} 
-                    onAdd={() => entriesHook.setDialogOpen(true)} 
-                    onEdit={entriesHook.handleEdit} 
-                    onDelete={entriesHook.handleDelete} 
-                    filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />} 
+                <TransactionsTable
+                    transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries}
+                    onAdd={() => entriesHook.setDialogOpen(true)}
+                    onEdit={entriesHook.handleEdit}
+                    onDelete={entriesHook.handleDelete}
+                    filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />}
                     onLoadMore={entriesHook.loadMore}
-                    hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore} // Only show load more if not filtering (simplified for now)
+                    hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore}
                     isLoadingMore={entriesHook.isLoadingMore}
                 />
 
-                {/* Savings Accounts Section - now uses context, minimal props */}
-                <SavingsSection userCurrency={userCurrency} />
-
-                {/* Budget Management Section - uses context, only needs entries & categories */}
-                <BudgetsSection entries={entriesHook.entries} categories={categories} userCurrency={userCurrency} />
-
-                {/* Recurring Transactions Section - uses context, only needs categories */}
-                <RecurringSection categories={categories} />
-
-                {/* Financial Goals Section - uses context, only needs categories */}
-                <GoalsSection categories={categories} userCurrency={userCurrency} />
+                {/* Feature Sections - Tabbed Interface */}
+                <Tabs defaultValue="savings" className="mt-8">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
+                            <span className="md:hidden">Savings ({savingsAccounts.length})</span>
+                            <span className="hidden md:inline">{tSavings("title")} ({savingsAccounts.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
+                            <span className="md:hidden">Budgets ({budgets.length})</span>
+                            <span className="hidden md:inline">{tBudgets("title")} ({budgets.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="recurring" className="text-xs md:text-sm px-1 md:px-3">
+                            <span className="md:hidden">Recurring ({recurringTransactions.length})</span>
+                            <span className="hidden md:inline">{tRecurring("title")} ({recurringTransactions.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="goals" className="text-xs md:text-sm px-1 md:px-3">
+                            <span className="md:hidden">Goals ({goals.length})</span>
+                            <span className="hidden md:inline">{tGoals("title")} ({goals.length})</span>
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="savings">
+                        <SavingsSection userCurrency={userCurrency} />
+                    </TabsContent>
+                    <TabsContent value="budgets">
+                        <BudgetsSection entries={entriesHook.entries} categories={categories} userCurrency={userCurrency} />
+                    </TabsContent>
+                    <TabsContent value="recurring">
+                        <RecurringSection categories={categories} />
+                    </TabsContent>
+                    <TabsContent value="goals">
+                        <GoalsSection categories={categories} userCurrency={userCurrency} />
+                    </TabsContent>
+                </Tabs>
 
                 {/* Add/Edit Entry Dialog */}
                 <AddTransactionDialog open={entriesHook.dialogOpen} onOpenChange={entriesHook.handleDialogClose} onSubmit={entriesHook.handleAdd} editingEntry={entriesHook.editingEntry} savingsAccounts={activeSavingsAccounts} />
@@ -225,42 +240,13 @@ function DashboardInnerContent() {
     );
 }
 
-/**
- * Dashboard content wrapper with auth check
- */
-function DashboardContent() {
-    const { user, loading: authLoading } = useAuth();
+export default function DashboardPage() {
+    const { user } = useAuth();
 
     // Toast state for DashboardProvider
     const [toast, setToast] = useState<ToastState | null>(null);
     const showToast = useCallback((newToast: ToastState) => setToast(newToast), []);
     const clearToast = useCallback(() => setToast(null), []);
-
-    // Client-side mount check
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Redirect to login if not authenticated
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        if (!authLoading && !user) {
-            window.location.href = "/auth/login";
-        }
-    }, [user, authLoading]);
-
-    // Loading state
-    if (!mounted || authLoading) {
-        return (
-            <div className="container flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-4 text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        );
-    }
 
     if (!user) {
         return null;
@@ -269,12 +255,7 @@ function DashboardContent() {
     return (
         <DashboardProvider userId={user.uid} onToast={showToast}>
             <DashboardInnerContent />
-            {/* Toast at provider level */}
             {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
         </DashboardProvider>
     );
-}
-
-export default function DashboardPage() {
-    return <DashboardContent />;
 }

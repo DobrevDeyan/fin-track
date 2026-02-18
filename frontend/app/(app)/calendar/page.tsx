@@ -4,9 +4,6 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { Navbar } from "@/components/Navbar";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 import { Toast } from "@/components/ui/toast";
@@ -21,7 +18,6 @@ import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
  */
 function CalendarInnerContent() {
     const t = useTranslations("calendar");
-    const tNav = useTranslations("nav");
     const { user } = useAuth();
     const { userCurrency } = useCurrency();
     const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
@@ -64,21 +60,12 @@ function CalendarInnerContent() {
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
-            <Navbar />
             <div className="container py-8 px-4 sm:px-6">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
                         <p className="text-muted-foreground mt-2">{t("description")}</p>
-                    </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                        <Button variant="outline" asChild className="flex-1 md:flex-initial">
-                            <a href="/dashboard">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                {tNav("dashboard")}
-                            </a>
-                        </Button>
                     </div>
                 </div>
 
@@ -114,38 +101,12 @@ function CalendarInnerContent() {
     );
 }
 
-/**
- * Calendar page with auth guard
- */
-function CalendarContent() {
-    const { user, loading: authLoading } = useAuth();
+export default function CalendarPage() {
+    const { user } = useAuth();
 
     const [toast, setToast] = useState<ToastState | null>(null);
     const showToast = useCallback((t: ToastState) => setToast(t), []);
     const clearToast = useCallback(() => setToast(null), []);
-
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        if (!authLoading && !user) {
-            window.location.href = "/auth/login";
-        }
-    }, [user, authLoading]);
-
-    if (!mounted || authLoading) {
-        return (
-            <div className="container flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-4 text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        );
-    }
 
     if (!user) {
         return null;
@@ -157,8 +118,4 @@ function CalendarContent() {
             {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
         </DashboardProvider>
     );
-}
-
-export default function CalendarPage() {
-    return <CalendarContent />;
 }

@@ -1,16 +1,8 @@
 "use client";
 
-/**
- * Budgets Section Component
- *
- * Displays budgets with full CRUD functionality.
- * Uses BudgetsContext to get state and actions - minimal props needed.
- */
-
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { BudgetList } from "@/components/dashboard/BudgetList";
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
@@ -29,16 +21,14 @@ export function BudgetsSection({ entries, categories, userCurrency }: BudgetsSec
 
     return (
         <>
-            <CollapsibleSection
-                title={t("title")}
-                description={t("description")}
-                actionButton={
+            <div className="py-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                    <p className="text-sm text-muted-foreground">{t("description")}</p>
                     <Button onClick={openDialog} className="w-full md:w-auto">
                         <Plus className="h-4 w-4 mr-2" />
                         {t("createBudget")}
                     </Button>
-                }
-            >
+                </div>
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="text-center">
@@ -49,7 +39,7 @@ export function BudgetsSection({ entries, categories, userCurrency }: BudgetsSec
                 ) : (
                     <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />
                 )}
-            </CollapsibleSection>
+            </div>
 
             <BudgetDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingBudget={editingBudget} categories={categories} defaultCurrency={userCurrency} />
         </>

@@ -8,6 +8,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Pie, PieChart, Cell } from "recharts"
+import { formatCurrency } from "@/lib/currency-utils"
 
 interface Entry {
   id: string
@@ -20,6 +21,7 @@ interface Entry {
 
 interface CategoryChartProps {
   entries: Entry[]
+  userCurrency?: string
 }
 
 const categoryColors: Record<string, string> = {
@@ -28,6 +30,11 @@ const categoryColors: Record<string, string> = {
   "Transportation": "hsl(var(--chart-3))",
   "Bills & Utilities": "hsl(var(--chart-4))",
   "Entertainment": "hsl(var(--chart-5))",
+  "Health & Pharmacy": "hsl(330, 70%, 55%)",
+  "Education": "hsl(240, 60%, 55%)",
+  "Travel & Vacation": "hsl(175, 60%, 45%)",
+  "Gifts & Donations": "hsl(350, 75%, 60%)",
+  "Taxes & Insurance": "hsl(25, 75%, 50%)",
   "Salary": "hsl(var(--chart-1))",
   "Other": "hsl(var(--muted))",
 }
@@ -38,7 +45,7 @@ const chartConfig = {
   },
 } satisfies Record<string, { label: string }>
 
-export function CategoryChart({ entries }: CategoryChartProps) {
+export function CategoryChart({ entries, userCurrency = "EUR" }: CategoryChartProps) {
   // Calculate spending by category for current month
   const categoryData = useMemo(() => {
     const now = new Date()
@@ -125,7 +132,7 @@ export function CategoryChart({ entries }: CategoryChartProps) {
                     </div>
                     <div className="text-right">
                     <div className="text-sm font-semibold">
-                      €{item.value.toLocaleString()}
+                      {formatCurrency(item.value, { currency: userCurrency })}
                     </div>
                       <div className="text-xs text-muted-foreground">
                         {percentage}%

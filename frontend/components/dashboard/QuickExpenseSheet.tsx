@@ -28,6 +28,9 @@ import {
   BarChart3,
   ArrowLeft,
   Calculator,
+  Heart,
+  GraduationCap,
+  Plane,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QUICK_EXPENSE_CATEGORIES } from "@/lib/categories"
@@ -64,6 +67,10 @@ const expenseCategoryIcons: Record<string, any> = {
   "Bills & Utilities": Zap,
   "Taxes & Insurance": Calculator,
   "Entertainment": Smile,
+  "Health & Pharmacy": Heart,
+  "Education": GraduationCap,
+  "Travel & Vacation": Plane,
+  "Gifts & Donations": Gift,
   "Other": CircleDot,
 }
 
@@ -494,6 +501,10 @@ export function QuickExpenseSheet({
                       "Bills & Utilities": "bg-yellow-500",
                       "Taxes & Insurance": "bg-orange-600",
                       "Entertainment": "bg-purple-500",
+                      "Health & Pharmacy": "bg-pink-500",
+                      "Education": "bg-indigo-500",
+                      "Travel & Vacation": "bg-teal-500",
+                      "Gifts & Donations": "bg-rose-500",
                       "Other": "bg-gray-500",
                     }
                     const bgColor = category.color || colorMap[category.id] || "bg-gray-500"
@@ -597,6 +608,10 @@ export function QuickExpenseSheet({
                       "Bills & Utilities": "bg-yellow-500",
                       "Taxes & Insurance": "bg-orange-600",
                       "Entertainment": "bg-purple-500",
+                      "Health & Pharmacy": "bg-pink-500",
+                      "Education": "bg-indigo-500",
+                      "Travel & Vacation": "bg-teal-500",
+                      "Gifts & Donations": "bg-rose-500",
                       "Other": "bg-gray-500",
                     }
                     const bgColor = category.color || colorMap[category.id] || "bg-gray-500"

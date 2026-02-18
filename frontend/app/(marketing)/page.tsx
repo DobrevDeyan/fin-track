@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { Navbar } from "@/components/Navbar"
 import { Hero } from "@/components/Hero"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -76,7 +75,6 @@ export default function Home() {
   // Show the marketing landing page
   return (
     <>
-      <Navbar />
       <Hero />
       {/* <Sponsors /> */}
       <About />

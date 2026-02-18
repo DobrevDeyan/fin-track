@@ -3,18 +3,17 @@
 import { useEffect, useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCurrency } from "@/contexts/CurrencyContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Navbar } from "@/components/Navbar"
 import { getUserEntries } from "@/lib/firestore-entries"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getDateRange, getCustomDateRange } from "@/lib/date-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
-import { Download, Calendar, FileText, FileSpreadsheet, ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { Download, Calendar, FileText, FileSpreadsheet } from "lucide-react"
 import dynamic from "next/dynamic"
 
 // Lazy load charts
@@ -42,6 +41,7 @@ export default function ReportsPage() {
   const tCommon = useTranslations("common")
   const { locale } = useLanguage()
   const { user, loading } = useAuth()
+  const { userCurrency } = useCurrency()
   const [entries, setEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(true)
   const [startDate, setStartDate] = useState("")
@@ -198,7 +198,6 @@ export default function ReportsPage() {
   if (loading || entriesLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="container py-8 px-4 sm:px-6">
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -213,16 +212,9 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <Navbar />
       <div className="container py-8 px-4 sm:px-6">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <Link href="/dashboard">
-              <Button variant="outline" size="icon" className="flex-shrink-0">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">{t("backToDashboard")}</span>
-              </Button>
-            </Link>
             <div className="flex-1">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -308,7 +300,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(metrics.income, { currency: "EUR" })}
+                {formatCurrency(metrics.income, { currency: userCurrency })}
               </div>
             </CardContent>
           </Card>
@@ -318,7 +310,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(metrics.expenses, { currency: "EUR" })}
+                {formatCurrency(metrics.expenses, { currency: userCurrency })}
               </div>
             </CardContent>
           </Card>
@@ -328,7 +320,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {formatCurrency(metrics.balance, { currency: "EUR" })}
+                {formatCurrency(metrics.balance, { currency: userCurrency })}
               </div>
             </CardContent>
           </Card>
@@ -347,7 +339,7 @@ export default function ReportsPage() {
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
           <SpendingChart entries={filteredEntries} />
-          <CategoryChart entries={filteredEntries} />
+          <CategoryChart entries={filteredEntries} userCurrency={userCurrency} />
         </div>
 
         {/* Category Breakdown Table */}
@@ -370,7 +362,7 @@ export default function ReportsPage() {
                         <div className="flex justify-between items-center">
                           <span className="font-medium">{category}</span>
                           <span className="font-semibold">
-                            {formatCurrency(amount, { currency: "EUR" })} ({percentage.toFixed(1)}%)
+                            {formatCurrency(amount, { currency: userCurrency })} ({percentage.toFixed(1)}%)
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -409,20 +401,20 @@ export default function ReportsPage() {
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-semibold">{monthName}</span>
                           <span className={`font-semibold ${net >= 0 ? "text-green-600" : "text-red-600"}`}>
-                            {formatCurrency(net, { currency: "EUR" })}
+                            {formatCurrency(net, { currency: userCurrency })}
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground">{tCommon("income")}: </span>
                             <span className="text-green-600 font-medium">
-                              {formatCurrency(data.income, { currency: "EUR" })}
+                              {formatCurrency(data.income, { currency: userCurrency })}
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">{tCommon("expense")}: </span>
                             <span className="text-red-600 font-medium">
-                              {formatCurrency(data.expenses, { currency: "EUR" })}
+                              {formatCurrency(data.expenses, { currency: userCurrency })}
                             </span>
                           </div>
                         </div>

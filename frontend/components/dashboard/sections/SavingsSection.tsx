@@ -1,16 +1,8 @@
 "use client";
 
-/**
- * Savings Section Component
- *
- * Displays savings accounts with full CRUD functionality.
- * Uses SavingsContext to get state and actions - no prop drilling needed.
- */
-
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList";
 import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog";
 import { formatCurrency } from "@/lib/currency-utils";
@@ -31,16 +23,14 @@ export function SavingsSection({ userCurrency }: SavingsSectionProps) {
 
     return (
         <>
-            <CollapsibleSection
-                title={t("title")}
-                description={description}
-                actionButton={
+            <div className="py-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                    <p className="text-sm text-muted-foreground">{description}</p>
                     <Button onClick={openDialog} className="w-full md:w-auto">
                         <Plus className="h-4 w-4 mr-2" />
                         {t("createAccount")}
                     </Button>
-                }
-            >
+                </div>
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="text-center">
@@ -51,7 +41,7 @@ export function SavingsSection({ userCurrency }: SavingsSectionProps) {
                 ) : (
                     <SavingsAccountList accounts={savingsAccounts} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddMoney={handleAddMoney} onWithdrawMoney={handleWithdrawMoney} defaultCurrency={userCurrency} hideHeader={true} />
                 )}
-            </CollapsibleSection>
+            </div>
 
             <SavingsAccountDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingAccount={editingAccount} defaultCurrency={userCurrency} />
         </>

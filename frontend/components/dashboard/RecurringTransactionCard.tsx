@@ -13,12 +13,14 @@ interface RecurringTransactionCardProps {
   recurring: RecurringEntryDocument & { id: string }
   onEdit: (recurring: RecurringEntryDocument & { id: string }) => void
   onDelete: (recurringId: string) => Promise<void>
+  userCurrency?: string
 }
 
 export function RecurringTransactionCard({
   recurring,
   onEdit,
   onDelete,
+  userCurrency = "EUR",
 }: RecurringTransactionCardProps) {
   const nextDate = recurring.nextDate.toDate()
   const formattedDate = nextDate.toLocaleDateString("en-US", {
@@ -50,7 +52,7 @@ export function RecurringTransactionCard({
             <span className="text-sm text-muted-foreground">Amount</span>
             <span className={`font-semibold ${getTransactionTypeColor(recurring.type)}`}>
               {recurring.type === "expense" ? "-" : "+"}
-              {formatCurrency(recurring.amount, { currency: "EUR" })}
+              {formatCurrency(recurring.amount, { currency: userCurrency })}
             </span>
           </div>
 

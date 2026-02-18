@@ -36,7 +36,8 @@ export function MetricsCards({
       titleKey: "totalBalance",
       value: formatCurrency(totalBalance, { currency: userCurrency }),
       icon: Wallet,
-      gradient: "from-black to-gray-800",
+      gradient: "from-blue-600 to-blue-800",
+      iconColor: "text-blue-600",
       change: balanceChange.change,
       trend: balanceChange.trend,
       isSavings: false,
@@ -45,7 +46,8 @@ export function MetricsCards({
       titleKey: "totalIncome",
       value: formatCurrency(totalIncome, { currency: userCurrency }),
       icon: TrendingUp,
-      gradient: "from-black to-gray-800",
+      gradient: "from-emerald-600 to-emerald-800",
+      iconColor: "text-emerald-600",
       change: incomeChange.change,
       trend: incomeChange.trend,
       isSavings: false,
@@ -54,7 +56,8 @@ export function MetricsCards({
       titleKey: "totalExpenses",
       value: formatCurrency(totalExpenses, { currency: userCurrency }),
       icon: TrendingDown,
-      gradient: "from-black to-gray-800",
+      gradient: "from-red-600 to-red-800",
+      iconColor: "text-red-600",
       change: expensesChange.change,
       trend: expensesChange.trend,
       isSavings: false,
@@ -63,7 +66,8 @@ export function MetricsCards({
       titleKey: "savings",
       value: formatCurrency(savings, { currency: userCurrency }),
       icon: PiggyBank,
-      gradient: "from-black to-gray-800",
+      gradient: "from-amber-600 to-amber-800",
+      iconColor: "text-amber-600",
       change: savingsChange.change,
       trend: savingsChange.trend,
       isSavings: true,
@@ -80,13 +84,13 @@ export function MetricsCards({
             className="relative overflow-hidden drop-shadow-xl shadow-black/10"
           >
             <div
-              className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-5`}
+              className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-10`}
             />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {t(metric.titleKey)}
               </CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
+              <Icon className={`h-4 w-4 ${metric.iconColor}`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
@@ -102,4 +106,3 @@ export function MetricsCards({
     </div>
   )
 }
-
