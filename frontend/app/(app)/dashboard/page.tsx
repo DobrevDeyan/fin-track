@@ -8,11 +8,14 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { ScanLine } from "lucide-react";
 import { MetricsCards } from "@/components/dashboard/MetricsCards";
+import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
+import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
 import { Toast } from "@/components/ui/toast";
+import { completeOnboarding } from "@/lib/firestore-users";
 // Dashboard contexts
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
 import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
@@ -33,25 +36,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Lazy load dialogs
 const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTransactionDialog").then((mod) => ({ default: mod.AddTransactionDialog })), {
-    ssr: false
-});
-
-// Lazy load charts (Recharts is ~200KB)
-const SpendingChart = dynamic(() => import("@/components/dashboard/SpendingChart").then((mod) => ({ default: mod.SpendingChart })), {
-    loading: () => (
-        <div className="flex items-center justify-center h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-    ),
-    ssr: false
-});
-
-const CategoryChart = dynamic(() => import("@/components/dashboard/CategoryChart").then((mod) => ({ default: mod.CategoryChart })), {
-    loading: () => (
-        <div className="flex items-center justify-center h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-    ),
     ssr: false
 });
 
@@ -77,7 +61,7 @@ function DashboardInnerContent() {
     const tRecurring = useTranslations("recurring");
     const tGoals = useTranslations("goals");
     const { user } = useAuth();
-    const { userCurrency } = useCurrency();
+    const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency } = useCurrency();
 
     // Get data from contexts for metrics calculations
     const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
@@ -156,7 +140,7 @@ function DashboardInnerContent() {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
-                        <p className="text-muted-foreground mt-2">{t("welcome", { name: user?.email?.split("@")[0] || "" })}</p>
+                        <p className="text-muted-foreground mt-2">{t("welcome", { name: displayName || user?.email?.split("@")[0] || "" })}</p>
                     </div>
                     <Button onClick={() => setScannerDialogOpen(true)}>
                         <ScanLine className="mr-2 h-4 w-4" />
@@ -169,11 +153,12 @@ function DashboardInnerContent() {
                     <MetricsCards totalBalance={totalBalance} totalIncome={totalIncome} totalExpenses={totalExpenses} savings={totalSavingsAccounts} balanceChange={balanceChange} incomeChange={incomeChange} expensesChange={expensesChange} savingsChange={savingsChange} userCurrency={userCurrency} />
                 </div>
 
-                {/* Charts Row */}
-                <div className="grid gap-6 md:grid-cols-2 mb-8">
-                    <SpendingChart entries={entriesHook.entries} />
-                    <CategoryChart entries={entriesHook.entries} userCurrency={userCurrency} />
-                </div>
+                {/* Budget Progress */}
+                {monthlyBudget && monthlyBudget > 0 && (
+                    <div className="mb-8">
+                        <BudgetProgressBar monthlyBudget={monthlyBudget} entries={entriesHook.entries} userCurrency={userCurrency} />
+                    </div>
+                )}
 
                 {/* Transactions Table */}
                 <TransactionsTable
@@ -235,6 +220,17 @@ function DashboardInnerContent() {
 
                 {/* Toast Notification */}
                 {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
+
+                {/* Onboarding Dialog */}
+                {user && !onboardingCompleted && (
+                    <OnboardingDialog
+                        open={true}
+                        onComplete={async (data) => {
+                            await completeOnboarding(user.uid, data);
+                            await refreshCurrency();
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

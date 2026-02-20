@@ -152,7 +152,24 @@
     "saving": "Saving...",
     "saveIncome": "Save Income",
     "saveExpense": "Save Expense",
-    "selected": "Selected"
+    "selected": "Selected",
+    "budgetThisMonth": "Budget this month",
+    "remainingBudget": "{amount} remaining",
+    "overBudgetBy": "Over budget by {amount}",
+    "showMore": "Show more ({count})",
+    "showLess": "Show less"
+  },
+  "onboarding": {
+    "title": "Welcome to Pocket!",
+    "subtitle": "Let's set up your account in a few quick steps",
+    "nameQuestion": "What should we call you?",
+    "namePlaceholder": "Your name",
+    "currencyQuestion": "Choose your currency",
+    "budgetQuestion": "What's your monthly budget?",
+    "budgetHint": "This helps track how much you have left each month",
+    "next": "Next",
+    "finish": "Get Started",
+    "saving": "Saving..."
   },
   "budgets": {
     "title": "Budget Management",

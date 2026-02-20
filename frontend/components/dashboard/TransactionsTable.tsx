@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage } from "lucide-react"
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,9 @@ interface TransactionsTableProps {
   isLoadingMore?: boolean
 }
 
-const ITEMS_PER_PAGE = 10
+const INITIAL_VISIBLE = 5
+const EXPANDED_VISIBLE = 20
+const ITEMS_PER_PAGE = 20
 
 export function TransactionsTable({
   transactions,
@@ -64,19 +66,22 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
   const t = useTranslations("dashboard")
   const tCommon = useTranslations("common")
+  const [expanded, setExpanded] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false)
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null)
 
-  // Calculate pagination
-  const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE)
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const endIndex = startIndex + ITEMS_PER_PAGE
+  // Calculate visible count based on expanded state
+  const visibleCount = expanded ? EXPANDED_VISIBLE : INITIAL_VISIBLE
+
+  // Calculate pagination (only when expanded and more than EXPANDED_VISIBLE)
+  const totalPages = expanded ? Math.ceil(transactions.length / ITEMS_PER_PAGE) : 1
+  const startIndex = expanded ? (currentPage - 1) * ITEMS_PER_PAGE : 0
+  const endIndex = expanded ? startIndex + ITEMS_PER_PAGE : INITIAL_VISIBLE
   const paginatedTransactions = useMemo(() => {
-    // If we have server-side pagination (onLoadMore), show all transactions (they are already 'paginated' by append)
-    if (onLoadMore) return transactions;
-    return transactions.slice(startIndex, endIndex)
-  }, [transactions, startIndex, endIndex, onLoadMore])
+    if (onLoadMore) return transactions.slice(0, visibleCount);
+    return transactions.slice(startIndex, Math.min(endIndex, transactions.length))
+  }, [transactions, startIndex, endIndex, onLoadMore, visibleCount])
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -276,85 +281,107 @@ export function TransactionsTable({
               </Table>
             </div>
 
-            {/* Pagination Controls */}
-            {/* If server-side pagination props are provided, show Load More button */}
-            {/* Otherwise fall back to client-side pagination */}
-            {(onLoadMore) ? (
-               <div className="flex flex-col items-center justify-center gap-4 mt-6 pt-4 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    {t("showingEntries", { from: 1, to: transactions.length, total: hasMore ? `${transactions.length}+` : transactions.length })}
-                  </div>
-                  {hasMore && (
-                    <Button 
-                      variant="outline" 
-                      onClick={onLoadMore} 
-                      disabled={isLoadingMore}
-                      className="min-w-[120px]"
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                          Loading...
-                        </>
-                      ) : (
-                        tCommon("loadMore") || "Load More"
-                      )}
-                    </Button>
+            {/* Expand/Collapse & Pagination Controls */}
+            <div className="flex flex-col items-center gap-4 mt-4 pt-4 border-t">
+              {/* Show more / Show less toggle */}
+              {transactions.length > INITIAL_VISIBLE && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setExpanded(!expanded)
+                    setCurrentPage(1)
+                  }}
+                  className="gap-1 text-muted-foreground"
+                >
+                  {expanded ? (
+                    <>
+                      {t("showLess")}
+                      <ChevronUp className="h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      {t("showMore", { count: Math.min(transactions.length, EXPANDED_VISIBLE) })}
+                      <ChevronDown className="h-4 w-4" />
+                    </>
                   )}
-               </div>
-            ) : (totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  {t("showingEntries", { from: startIndex + 1, to: Math.min(endIndex, transactions.length), total: transactions.length })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePrevious}
-                    disabled={currentPage === 1}
-                    className="gap-1"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">{tCommon("previous")}</span>
-                  </Button>
-                  
-                  <div className="flex items-center gap-1">
-                    {getPageNumbers().map((page, index) => {
-                      if (page === "ellipsis") {
-                        return (
-                          <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground">
-                            ...
-                          </span>
-                        )
-                      }
-                      return (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageClick(page as number)}
-                          className="min-w-[2.5rem]"
-                        >
-                          {page}
-                        </Button>
-                      )
-                    })}
-                  </div>
+                </Button>
+              )}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNext}
-                    disabled={currentPage === totalPages}
-                    className="gap-1"
-                  >
-                    <span className="hidden sm:inline">{tCommon("next")}</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+              {/* Pagination - only when expanded and there are more than EXPANDED_VISIBLE */}
+              {expanded && totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+                  <div className="text-sm text-muted-foreground">
+                    {t("showingEntries", { from: startIndex + 1, to: Math.min(endIndex, transactions.length), total: transactions.length })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePrevious}
+                      disabled={currentPage === 1}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">{tCommon("previous")}</span>
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {getPageNumbers().map((page, index) => {
+                        if (page === "ellipsis") {
+                          return (
+                            <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground">
+                              ...
+                            </span>
+                          )
+                        }
+                        return (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageClick(page as number)}
+                            className="min-w-[2.5rem]"
+                          >
+                            {page}
+                          </Button>
+                        )
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNext}
+                      disabled={currentPage === totalPages}
+                      className="gap-1"
+                    >
+                      <span className="hidden sm:inline">{tCommon("next")}</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )}
+
+              {/* Server-side load more (for fetching additional data from Firestore) */}
+              {expanded && onLoadMore && hasMore && (
+                <Button
+                  variant="outline"
+                  onClick={onLoadMore}
+                  disabled={isLoadingMore}
+                  className="min-w-[120px]"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    tCommon("loadMore") || "Load More"
+                  )}
+                </Button>
+              )}
+            </div>
           </>
         )}
       </CardContent>

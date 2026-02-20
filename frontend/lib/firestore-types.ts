@@ -12,11 +12,14 @@ export interface UserDocument {
   username: string
   firstName?: string
   lastName?: string
+  displayName?: string
   avatarUrl?: string
   currency: string // ISO 4217 code: USD, EUR, BGN, etc.
   language: string // ISO 639-1 code: en, bg, etc.
   timezone: string // IANA timezone: Europe/Sofia, America/New_York, etc.
   providerId: string // password, google.com, etc.
+  monthlyBudget?: number
+  onboardingCompleted?: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
 }

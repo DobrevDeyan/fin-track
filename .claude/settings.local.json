@@ -10,7 +10,8 @@
       "Bash(lsof:*)",
       "Bash(xargs:*)",
       "Bash(npx next dev:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(ls:*)"
     ]
   }
 }

@@ -70,3 +70,26 @@ export async function updateUserLanguage(userId: string, language: string): Prom
   }
 }
 
+/**
+ * Complete user onboarding (set display name, currency, monthly budget)
+ */
+export async function completeOnboarding(
+  userId: string,
+  data: { displayName: string; currency: string; monthlyBudget: number }
+): Promise<void> {
+  try {
+    const userRef = doc(db, "users", userId)
+
+    await updateDoc(userRef, {
+      displayName: data.displayName,
+      currency: data.currency,
+      monthlyBudget: data.monthlyBudget,
+      onboardingCompleted: true,
+      updatedAt: serverTimestamp(),
+    })
+  } catch (error) {
+    console.error("Error completing onboarding:", error)
+    throw error
+  }
+}
+

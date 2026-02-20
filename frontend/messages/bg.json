@@ -152,7 +152,24 @@
     "saving": "Запазване...",
     "saveIncome": "Запази приход",
     "saveExpense": "Запази разход",
-    "selected": "Избрано"
+    "selected": "Избрано",
+    "budgetThisMonth": "Бюджет за месеца",
+    "remainingBudget": "{amount} оставащо",
+    "overBudgetBy": "Над бюджета с {amount}",
+    "showMore": "Покажи повече ({count})",
+    "showLess": "Покажи по-малко"
+  },
+  "onboarding": {
+    "title": "Добре дошли в Pocket!",
+    "subtitle": "Нека настроим акаунта ви с няколко бързи стъпки",
+    "nameQuestion": "Как да ви казваме?",
+    "namePlaceholder": "Вашето име",
+    "currencyQuestion": "Изберете валута",
+    "budgetQuestion": "Какъв е месечният ви бюджет?",
+    "budgetHint": "Това помага да следите колко ви остава всеки месец",
+    "next": "Напред",
+    "finish": "Започни",
+    "saving": "Запазване..."
   },
   "budgets": {
     "title": "Управление на бюджети",

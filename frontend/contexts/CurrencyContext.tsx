@@ -15,6 +15,9 @@ interface CurrencyContextType {
   userCurrency: SupportedCurrency
   loading: boolean
   refreshCurrency: () => Promise<void>
+  displayName?: string
+  monthlyBudget?: number
+  onboardingCompleted?: boolean
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
@@ -23,10 +26,16 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [userCurrency, setUserCurrency] = useState<SupportedCurrency>(DEFAULT_CURRENCY)
   const [loading, setLoading] = useState(true)
+  const [displayName, setDisplayName] = useState<string | undefined>()
+  const [monthlyBudget, setMonthlyBudget] = useState<number | undefined>()
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | undefined>()
 
   const loadUserCurrency = async () => {
     if (!user) {
       setUserCurrency(DEFAULT_CURRENCY)
+      setDisplayName(undefined)
+      setMonthlyBudget(undefined)
+      setOnboardingCompleted(undefined)
       setLoading(false)
       return
     }
@@ -44,6 +53,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUserCurrency(DEFAULT_CURRENCY)
       }
+      setDisplayName(userDoc?.displayName)
+      setMonthlyBudget(userDoc?.monthlyBudget)
+      setOnboardingCompleted(userDoc?.onboardingCompleted)
     } catch (error) {
       console.error("Error loading user currency:", error)
       setUserCurrency(DEFAULT_CURRENCY)
@@ -61,7 +73,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <CurrencyContext.Provider value={{ userCurrency, loading, refreshCurrency }}>
+    <CurrencyContext.Provider value={{ userCurrency, loading, refreshCurrency, displayName, monthlyBudget, onboardingCompleted }}>
       {children}
     </CurrencyContext.Provider>
   )

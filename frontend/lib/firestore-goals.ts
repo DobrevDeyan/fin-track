@@ -69,18 +69,19 @@ export async function createGoal(
     
     const deadlineTimestamp = goalData.deadline ? toTimestamp(goalData.deadline) : undefined
     
-    const newGoal: Omit<GoalDocument, "userId"> = {
+    const newGoal: Record<string, unknown> = {
       name: goalData.name.trim(),
       targetAmount: goalData.targetAmount,
       currentAmount: goalData.currentAmount ?? 0,
       currency: goalData.currency,
-      deadline: deadlineTimestamp,
-      category: goalData.category,
-      description: goalData.description?.trim(),
       isActive: goalData.isActive ?? true,
-      createdAt: serverTimestamp() as Timestamp,
-      updatedAt: serverTimestamp() as Timestamp,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     }
+
+    if (deadlineTimestamp) newGoal.deadline = deadlineTimestamp
+    if (goalData.category) newGoal.category = goalData.category
+    if (goalData.description?.trim()) newGoal.description = goalData.description.trim()
     
     const docRef = await addDoc(goalsRef, {
       userId,
