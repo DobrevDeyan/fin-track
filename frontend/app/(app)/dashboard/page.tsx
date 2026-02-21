@@ -17,8 +17,11 @@ import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
 import { Toast } from "@/components/ui/toast";
 import { completeOnboarding } from "@/lib/firestore-users";
 // Dashboard contexts
+import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
+import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
+import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContext";
 
 // Custom hooks (still need entries for transactions table)
 import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
@@ -38,6 +41,8 @@ const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTra
 // Lazy load below-the-fold sections
 const SavingsSection = dynamic(() => import("@/components/dashboard/sections/SavingsSection").then((mod) => ({ default: mod.SavingsSection })), { ssr: false });
 
+const BudgetsSection = dynamic(() => import("@/components/dashboard/sections/BudgetsSection").then((mod) => ({ default: mod.BudgetsSection })), { ssr: false });
+
 const RecurringSection = dynamic(() => import("@/components/dashboard/sections/RecurringSection").then((mod) => ({ default: mod.RecurringSection })), { ssr: false });
 
 // Lazy load receipt scanner (only needed when user clicks scan button)
@@ -47,6 +52,7 @@ const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/Receip
  * Inner dashboard content that uses the feature contexts
  */
 function DashboardInnerContent() {
+    const t = useTranslations("dashboard");
     const tSavings = useTranslations("savings");
     const tBudgets = useTranslations("budgets");
     const tRecurring = useTranslations("recurring");
@@ -155,7 +161,7 @@ function DashboardInnerContent() {
 
         const safeMonthlyBudget = monthlyBudget ?? 0;
         const discretionaryIncome = currentMonthIncome - currentMonthSalary - excludedIncome;
-        const adjustedBase = safeMonthlyBudget + Math.max(0, discretionaryIncome);
+        const adjustedBase = currentMonthSalary + Math.max(0, discretionaryIncome);
         const adjustedSpt = currentMonthExpenses - excludedExpenses;
 
         return {
@@ -227,6 +233,10 @@ function DashboardInnerContent() {
                         <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
                             <span className="md:hidden">Budgets ({budgets.length})</span>
                             <span className="hidden md:inline">{tBudgets("title")} ({budgets.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="recurring" className="text-xs md:text-sm px-1 md:px-3">
+                            <span className="md:hidden">Recurring ({recurringTransactions.length})</span>
+                            <span className="hidden md:inline">{tRecurring("title")} ({recurringTransactions.length})</span>
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="savings">

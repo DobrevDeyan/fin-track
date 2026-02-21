@@ -14,7 +14,6 @@ import {
   updateEntry
 } from "@/lib/firestore-entries"
 import { addToSavingsAccount } from "@/lib/firestore-savings"
-import { getGoal, updateGoal } from "@/lib/firestore-goals"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import type { Entry, EntryFormData, ToastState } from "./types"
 
@@ -155,15 +154,6 @@ export function useEntries({
               // Adding to saving (moving money into the account)
               await addToSavingsAccount(accountId, data.amount);
               if (onSavingsReload) await onSavingsReload();
-            } else if (data.categoryId.startsWith("goal_")) {
-              const goalId = data.categoryId.replace("goal_", "");
-              const goal = await getGoal(goalId);
-              if (goal) {
-                await updateGoal(goalId, {
-                  currentAmount: (goal.currentAmount || 0) + data.amount
-                });
-                // We'd ideally have an onGoalsReload, but they use a context that polls or listens
-              }
             }
           } catch (transferError) {
              console.error("Error processing auto-transfer:", transferError);

@@ -15,7 +15,9 @@ import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -50,15 +52,6 @@ interface SavingsAccount {
   currency: string
 }
 
-interface Goal {
-  id: string
-  name: string
-  targetAmount: number
-  currentAmount: number
-  currency: string
-  isActive: boolean
-}
-
 interface AddTransactionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -75,7 +68,6 @@ interface AddTransactionDialogProps {
     receiptUrl?: string
   } | null
   savingsAccounts?: SavingsAccount[]
-  goals?: Goal[]
   defaultDate?: string
 }
 
@@ -85,7 +77,6 @@ export function AddTransactionDialog({
   onSubmit,
   editingEntry,
   savingsAccounts = [],
-  goals = [],
   defaultDate,
 }: AddTransactionDialogProps) {
   const { user } = useAuth()
@@ -165,13 +156,6 @@ export function AddTransactionDialog({
         if (account) {
           finalCategory = account.name
           finalCategoryId = `savings_${accountId}`
-        }
-      } else if (category.startsWith("goal_")) {
-        const goalId = category.replace("goal_", "")
-        const goal = goals.find(g => g.id === goalId)
-        if (goal) {
-          finalCategory = goal.name
-          finalCategoryId = `goal_${goalId}`
         }
       }
 
@@ -322,25 +306,15 @@ export function AddTransactionDialog({
                         </SelectItem>
                       ))}
                       {savingsAccounts.length > 0 && (
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-y mt-1 mb-1 bg-muted/50">
-                          Savings Accounts
-                        </div>
+                        <SelectGroup>
+                          <SelectLabel>{t("savingsAccounts")}</SelectLabel>
+                          {savingsAccounts.map((account) => (
+                            <SelectItem key={`savings_${account.id}`} value={`savings_${account.id}`}>
+                              {account.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       )}
-                      {savingsAccounts.map((account) => (
-                        <SelectItem key={`savings_${account.id}`} value={`savings_${account.id}`}>
-                          {account.name} (Savings)
-                        </SelectItem>
-                      ))}
-                      {goals.length > 0 && (
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-y mt-1 mb-1 bg-muted/50">
-                          Active Goals
-                        </div>
-                      )}
-                      {goals.map((goal) => (
-                        <SelectItem key={`goal_${goal.id}`} value={`goal_${goal.id}`}>
-                          {goal.name} (Goal)
-                        </SelectItem>
-                      ))}
                     </>
                   ) : (
                     DEFAULT_INCOME_CATEGORIES.map((cat) => (
