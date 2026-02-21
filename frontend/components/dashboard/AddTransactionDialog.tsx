@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
+import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
 import { formatDateForInput } from "@/lib/date-utils"
 import { Badge } from "@/components/ui/badge"
 import { X, Upload, FileImage, Trash2 } from "lucide-react"
@@ -39,11 +40,7 @@ interface TransactionData {
   notes?: string
   tags?: string[]
   receiptUrl?: string
-  allocateToSavings?: {
-    accountId: string
-    amount: number
-    accountName: string
-  }
+  categoryId?: string
 }
 
 interface SavingsAccount {
@@ -51,6 +48,15 @@ interface SavingsAccount {
   name: string
   balance: number
   currency: string
+}
+
+interface Goal {
+  id: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  currency: string
+  isActive: boolean
 }
 
 interface AddTransactionDialogProps {
@@ -69,6 +75,7 @@ interface AddTransactionDialogProps {
     receiptUrl?: string
   } | null
   savingsAccounts?: SavingsAccount[]
+  goals?: Goal[]
   defaultDate?: string
 }
 
@@ -78,6 +85,7 @@ export function AddTransactionDialog({
   onSubmit,
   editingEntry,
   savingsAccounts = [],
+  goals = [],
   defaultDate,
 }: AddTransactionDialogProps) {
   const { user } = useAuth()
@@ -95,9 +103,6 @@ export function AddTransactionDialog({
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null)
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
-  const [allocateToSavings, setAllocateToSavings] = useState(false)
-  const [savingsAccountId, setSavingsAccountId] = useState("")
-  const [savingsAmount, setSavingsAmount] = useState("")
 
   // Populate form when editing
   useEffect(() => {
@@ -125,33 +130,12 @@ export function AddTransactionDialog({
       setReceiptFile(null)
       setReceiptPreview(null)
       setExistingReceiptUrl(null)
-      setAllocateToSavings(false)
-      setSavingsAccountId("")
-      setSavingsAmount("")
     }
   }, [editingEntry, open, defaultDate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!description || !amount || !category) return
-
-    // Validate savings allocation if enabled
-    if (allocateToSavings) {
-      if (!savingsAccountId) {
-        alert("Please select a savings account")
-        return
-      }
-      const savingsAmountNum = parseFloat(savingsAmount) || 0
-      const incomeAmount = parseFloat(amount) || 0
-      if (savingsAmountNum <= 0) {
-        alert("Savings amount must be greater than 0")
-        return
-      }
-      if (savingsAmountNum > incomeAmount) {
-        alert("Savings amount cannot exceed income amount")
-        return
-      }
-    }
 
     try {
       let receiptUrl = existingReceiptUrl || undefined
@@ -170,22 +154,37 @@ export function AddTransactionDialog({
         }
       }
 
+      
+      // Determine if a special category was selected (e.g. savings)
+      let finalCategory = category
+      let finalCategoryId: string | undefined = undefined
+
+      if (category.startsWith("savings_")) {
+        const accountId = category.replace("savings_", "")
+        const account = savingsAccounts.find(a => a.id === accountId)
+        if (account) {
+          finalCategory = account.name
+          finalCategoryId = `savings_${accountId}`
+        }
+      } else if (category.startsWith("goal_")) {
+        const goalId = category.replace("goal_", "")
+        const goal = goals.find(g => g.id === goalId)
+        if (goal) {
+          finalCategory = goal.name
+          finalCategoryId = `goal_${goalId}`
+        }
+      }
+
       await onSubmit({
         description,
         amount: parseFloat(amount),
-        category,
+        category: finalCategory,
         type,
         date,
         notes: notes.trim() || undefined,
         tags: tags.length > 0 ? tags : undefined,
         receiptUrl,
-        allocateToSavings: allocateToSavings && savingsAccountId
-          ? {
-              accountId: savingsAccountId,
-              amount: parseFloat(savingsAmount) || 0,
-              accountName: savingsAccounts.find(a => a.id === savingsAccountId)?.name || "",
-            }
-          : undefined,
+        categoryId: finalCategoryId,
       })
 
       // Reset form
@@ -200,9 +199,6 @@ export function AddTransactionDialog({
       setReceiptFile(null)
       setReceiptPreview(null)
       setExistingReceiptUrl(null)
-      setAllocateToSavings(false)
-      setSavingsAccountId("")
-      setSavingsAmount("")
       onOpenChange(false)
     } catch (error) {
       // Error is handled by parent component
@@ -210,17 +206,7 @@ export function AddTransactionDialog({
     }
   }
 
-  // Update savings amount when income amount changes (if allocating)
-  useEffect(() => {
-    if (allocateToSavings && type === "income" && amount) {
-      const incomeAmount = parseFloat(amount) || 0
-      const currentSavingsAmount = parseFloat(savingsAmount) || 0
-      // Auto-set savings amount to income amount if not set, or adjust if it exceeds
-      if (currentSavingsAmount === 0 || currentSavingsAmount > incomeAmount) {
-        setSavingsAmount(incomeAmount.toString())
-      }
-    }
-  }, [amount, type, allocateToSavings])
+
 
   // Tag management functions
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -328,11 +314,41 @@ export function AddTransactionDialog({
                   <SelectValue placeholder={t("selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {TRANSACTION_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
+                  {type === "expense" ? (
+                    <>
+                      {TRANSACTION_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                      {savingsAccounts.length > 0 && (
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-y mt-1 mb-1 bg-muted/50">
+                          Savings Accounts
+                        </div>
+                      )}
+                      {savingsAccounts.map((account) => (
+                        <SelectItem key={`savings_${account.id}`} value={`savings_${account.id}`}>
+                          {account.name} (Savings)
+                        </SelectItem>
+                      ))}
+                      {goals.length > 0 && (
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-y mt-1 mb-1 bg-muted/50">
+                          Active Goals
+                        </div>
+                      )}
+                      {goals.map((goal) => (
+                        <SelectItem key={`goal_${goal.id}`} value={`goal_${goal.id}`}>
+                          {goal.name} (Goal)
+                        </SelectItem>
+                      ))}
+                    </>
+                  ) : (
+                    DEFAULT_INCOME_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -441,81 +457,7 @@ export function AddTransactionDialog({
               />
             </div>
 
-            {/* Savings Allocation - Only show for income */}
-            {type === "income" && (
-              <div className="grid gap-3 pt-2 border-t">
-                {savingsAccounts.length > 0 ? (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="allocateToSavings"
-                        checked={allocateToSavings}
-                        onCheckedChange={(checked: any) => {
-                          setAllocateToSavings(checked === true)
-                          if (!checked) {
-                            setSavingsAccountId("")
-                            setSavingsAmount("")
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor="allocateToSavings"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {t("allocateToSavings")}
-                      </Label>
-                    </div>
-                    {allocateToSavings && (
-                      <>
-                        <div className="grid gap-2">
-                          <Label htmlFor="savingsAccount">{t("savingsAccount")}</Label>
-                          <Select
-                            value={savingsAccountId}
-                            onValueChange={setSavingsAccountId}
-                            required={allocateToSavings}
-                          >
-                            <SelectTrigger id="savingsAccount">
-                              <SelectValue placeholder={t("selectSavingsAccount")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {savingsAccounts.map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="savingsAmount">{t("amountToAllocate")}</Label>
-                          <Input
-                            id="savingsAmount"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max={amount || undefined}
-                            placeholder="0.00"
-                            value={savingsAmount}
-                            onChange={(e) => setSavingsAmount(e.target.value)}
-                            required={allocateToSavings}
-                          />
-                          {amount && (
-                            <p className="text-xs text-muted-foreground">
-                              {t("incomeLabel")}: {parseFloat(amount).toFixed(2)} |
-                              {t("remaining")}: {(parseFloat(amount) - (parseFloat(savingsAmount) || 0)).toFixed(2)}
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md">
-                    {t("createSavingsFirst")}
-                  </div>
-                )}
-              </div>
-            )}
+
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

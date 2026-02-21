@@ -66,6 +66,7 @@ export function getPreviousMonthKey(): string {
 const EMPTY_MONTH: MonthlyData = {
   income: 0,
   expenses: 0,
+  salary: 0,
   expensesByCategory: {},
   incomeByCategory: {},
 }
@@ -130,6 +131,7 @@ function computeSummaryFromEntries(
 ): FinancialSummaryDocument {
   let totalIncome = 0
   let totalExpenses = 0
+  let totalSalary = 0
   const months: Record<string, MonthlyData> = {}
 
   for (const entry of entries) {
@@ -139,6 +141,7 @@ function computeSummaryFromEntries(
       months[monthKey] = {
         income: 0,
         expenses: 0,
+        salary: 0,
         expensesByCategory: {},
         incomeByCategory: {},
       }
@@ -149,6 +152,13 @@ function computeSummaryFromEntries(
     if (entry.type === "income") {
       totalIncome += entry.amount
       month.income += entry.amount
+      
+      // Explicitly track salary
+      if (entry.category === "Salary" || entry.categoryId === "salary") {
+        totalSalary += entry.amount
+        month.salary = (month.salary || 0) + entry.amount
+      }
+      
       month.incomeByCategory[entry.category] =
         (month.incomeByCategory[entry.category] || 0) + entry.amount
     } else {
@@ -163,6 +173,7 @@ function computeSummaryFromEntries(
     userId,
     totalIncome,
     totalExpenses,
+    totalSalary,
     entryCount: entries.length,
     months,
     updatedAt: Timestamp.now(),
@@ -212,7 +223,30 @@ async function isSummaryStale(
     const snapshot = await getCountFromServer(q)
     const actualCount = snapshot.data().count
 
-    return actualCount !== summary.entryCount
+    if (actualCount !== summary.entryCount) {
+      return true
+    }
+
+    // Heuristic: check if there are corrupted dot-notation fields
+    // Due to a previous bug, some documents have "months.2026-02.income" at the root or within months instead of nested
+    if (summary.months && typeof summary.months === "object") {
+      for (const key of Object.keys(summary.months)) {
+        if (key.includes(".")) {
+          console.log(`[firestore-summary] Corrupted dot-notation field '${key}' detected, forcing rebuild.`)
+          return true
+        }
+      }
+    }
+    
+    // Also check root levels just in case
+    for (const key of Object.keys(summary)) {
+      if (key.startsWith("months.")) {
+         console.log(`[firestore-summary] Corrupted root dot-notation field '${key}' detected, forcing rebuild.`)
+         return true
+      }
+    }
+
+    return false
   } catch (error) {
     console.error("Error validating summary:", error)
     // If we can't validate, assume it's fine to avoid blocking
@@ -252,5 +286,14 @@ export function getMonthData(
   summary: FinancialSummaryDocument,
   monthKey: string
 ): MonthlyData {
-  return summary.months[monthKey] || { ...EMPTY_MONTH }
+  const month = (summary.months || {})[monthKey]
+  if (!month) return { ...EMPTY_MONTH }
+  
+  return {
+    income: month.income || 0,
+    expenses: month.expenses || 0,
+    salary: month.salary || 0,
+    expensesByCategory: month.expensesByCategory || {},
+    incomeByCategory: month.incomeByCategory || {},
+  }
 }

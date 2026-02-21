@@ -14,6 +14,7 @@ import {
   updateEntry
 } from "@/lib/firestore-entries"
 import { addToSavingsAccount } from "@/lib/firestore-savings"
+import { getGoal, updateGoal } from "@/lib/firestore-goals"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import type { Entry, EntryFormData, ToastState } from "./types"
 
@@ -145,82 +146,51 @@ export function useEntries({
         onToast({ message: SUCCESS_MESSAGES.ENTRY_UPDATED, type: "success" })
         setEditingEntry(null)
       } else {
-        // For income with savings allocation: record FULL income amount
-        // The savings allocation is tracked as metadata on the entry
-        if (data.type === "income" && data.allocateToSavings && data.allocateToSavings.amount > 0) {
+        // Handle automated savings/goals transfers for "expense" types
+        // where the category is actually a savings account or a goal
+        if (data.type === "expense" && data.categoryId) {
           try {
-            // 1. Add to savings account
-            await addToSavingsAccount(
-              data.allocateToSavings.accountId,
-              data.allocateToSavings.amount
-            )
-            if (onSavingsReload) await onSavingsReload()
-
-            // 2. Create entry with FULL income amount + savings allocation metadata
-            await createEntry(userId, {
-              type: data.type,
-              amount: data.amount, // Full income amount
-              currency: userCurrency,
-              description: data.description,
-              category: data.category,
-              date: data.date,
-              notes: data.notes,
-              tags: data.tags,
-              receiptUrl: data.receiptUrl,
-              savingsAllocation: {
-                accountId: data.allocateToSavings.accountId,
-                amount: data.allocateToSavings.amount,
-                accountName: data.allocateToSavings.accountName,
-              },
-            })
-
-            await loadEntries()
-            if (onSummaryRefresh) await onSummaryRefresh()
-
-            onToast({
-              message: `Income of ${data.amount.toFixed(2)} ${userCurrency} recorded. ${data.allocateToSavings.amount.toFixed(2)} ${userCurrency} allocated to savings.`,
-              type: "success",
-            })
-          } catch (savingsError: unknown) {
-            console.error("Error allocating to savings:", savingsError)
-            // Fallback: still create the entry with full amount but without allocation metadata
-            await createEntry(userId, {
-              type: data.type,
-              amount: data.amount,
-              currency: userCurrency,
-              description: data.description,
-              category: data.category,
-              date: data.date,
-              notes: data.notes,
-              tags: data.tags,
-              receiptUrl: data.receiptUrl,
-            })
-            await loadEntries()
-            if (onSummaryRefresh) await onSummaryRefresh()
-
-            const errorMessage = savingsError instanceof Error ? savingsError.message : "Unknown error"
-            onToast({
-              message: `Entry added but savings allocation failed: ${errorMessage}`,
-              type: "error",
-            })
+            if (data.categoryId.startsWith("savings_")) {
+              const accountId = data.categoryId.replace("savings_", "");
+              // Adding to saving (moving money into the account)
+              await addToSavingsAccount(accountId, data.amount);
+              if (onSavingsReload) await onSavingsReload();
+            } else if (data.categoryId.startsWith("goal_")) {
+              const goalId = data.categoryId.replace("goal_", "");
+              const goal = await getGoal(goalId);
+              if (goal) {
+                await updateGoal(goalId, {
+                  currentAmount: (goal.currentAmount || 0) + data.amount
+                });
+                // We'd ideally have an onGoalsReload, but they use a context that polls or listens
+              }
+            }
+          } catch (transferError) {
+             console.error("Error processing auto-transfer:", transferError);
+             onToast({
+               message: "Transaction added but auto-transfer to Savings/Goal failed.",
+               type: "error"
+             });
           }
-        } else {
-          // Standard entry creation (no savings allocation)
-          await createEntry(userId, {
-            type: data.type,
-            amount: data.amount,
-            currency: userCurrency,
-            description: data.description,
-            category: data.category,
-            date: data.date,
-            notes: data.notes,
-            tags: data.tags,
-          })
-
-          await loadEntries()
-          if (onSummaryRefresh) await onSummaryRefresh()
-          onToast({ message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type), type: "success" })
         }
+
+        // Standard entry creation
+        await createEntry(userId, {
+          type: data.type,
+          amount: data.amount,
+          currency: userCurrency,
+          description: data.description,
+          category: data.category,
+          date: data.date,
+          notes: data.notes,
+          tags: data.tags,
+          receiptUrl: data.receiptUrl,
+          categoryId: data.categoryId,
+        })
+        
+        await loadEntries()
+        if (onSummaryRefresh) await onSummaryRefresh()
+        onToast({ message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type), type: "success" })
       }
     } catch (error: unknown) {
       console.error("Error saving entry:", error)

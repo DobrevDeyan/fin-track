@@ -9,7 +9,7 @@ import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
 import { User, DollarSign, Euro, ArrowRight, Check } from "lucide-react"
 
 interface OnboardingScreenProps {
-  onComplete: (data: { displayName: string; currency: string; monthlyBudget: number }) => Promise<void>
+  onComplete: (data: { displayName: string; currency: string; monthlyBudget: number; salaryDate?: number }) => Promise<void>
 }
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
@@ -21,6 +21,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [displayName, setDisplayName] = useState("")
   const [currency, setCurrency] = useState("")
   const [monthlyBudget, setMonthlyBudget] = useState("")
+  const [salaryDate, setSalaryDate] = useState("")
   const [loading, setLoading] = useState(false)
 
   // Typing effect
@@ -56,6 +57,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         displayName: displayName.trim(),
         currency,
         monthlyBudget: parseFloat(monthlyBudget) || 0,
+        salaryDate: parseInt(salaryDate) || undefined,
       })
     } finally {
       setLoading(false)
@@ -65,7 +67,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const canProceed = () => {
     if (step === 1) return displayName.trim().length > 0
     if (step === 2) return currency !== ""
-    if (step === 3) return true // Allow skip
+    if (step === 3) {
+      if (monthlyBudget === "") return true // Allow skip
+      const day = parseInt(salaryDate)
+      return !isNaN(day) && day >= 1 && day <= 28
+    }
     return false
   }
 
@@ -152,28 +158,49 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               </div>
             )}
 
-            {/* Step 3: Monthly Budget */}
+            {/* Step 3: Expected Salary & Date */}
             {step === 3 && (
               <div className="space-y-6 py-4 animate-in slide-in-from-right duration-300">
                 <div className="text-center space-y-2">
-                  <h3 className="text-xl font-semibold text-slate-800">{t("budgetQuestion")}</h3>
-                  <p className="text-slate-500">{t("budgetHint")}</p>
+                  <h3 className="text-xl font-semibold text-slate-800">What's your expected monthly salary?</h3>
+                  <p className="text-slate-500">This helps track your budget and automate your income.</p>
                 </div>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl transition-colors group-focus-within:text-primary">
-                    {currency === "USD" ? "$" : "€"}
-                  </span>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="100"
-                    placeholder="2000"
-                    value={monthlyBudget}
-                    onChange={(e) => setMonthlyBudget(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && canProceed() && handleFinish()}
-                    className="pl-10 h-14 text-2xl font-semibold bg-slate-50 border-slate-200 focus:bg-white transition-colors"
-                    autoFocus
-                  />
+                
+                <div className="space-y-4">
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl transition-colors group-focus-within:text-primary">
+                      {currency === "USD" ? "$" : "€"}
+                    </span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="100"
+                      placeholder="2000"
+                      value={monthlyBudget}
+                      onChange={(e) => setMonthlyBudget(e.target.value)}
+                      className="pl-10 h-14 text-2xl font-semibold bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                      autoFocus
+                    />
+                  </div>
+
+                  {monthlyBudget && parseFloat(monthlyBudget) > 0 && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-300 space-y-2 pt-2">
+                       <h4 className="text-sm font-medium text-slate-700">What day of the month do you receive it? (1-28)</h4>
+                       <Input
+                         type="number"
+                         min="1"
+                         max="28"
+                         placeholder="15"
+                         value={salaryDate}
+                         onChange={(e) => setSalaryDate(e.target.value)}
+                         onKeyDown={(e) => e.key === "Enter" && canProceed() && handleFinish()}
+                         className="h-12 text-lg text-center bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                       />
+                       {salaryDate !== "" && (parseInt(salaryDate) < 1 || parseInt(salaryDate) > 28) && (
+                         <p className="text-xs text-red-500 text-center">Please enter a day between 1 and 28.</p>
+                       )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

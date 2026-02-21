@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Wallet, PiggyBank } from "lucide-react"
+import { TrendingUp, TrendingDown, Wallet, Briefcase, PiggyBank } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getTrendColor } from "@/lib/constants/ui.constants"
 import { useTranslations } from "next-intl"
@@ -59,12 +59,13 @@ export function MetricsCards({
       gradient: "from-red-600 to-red-800",
       iconColor: "text-red-600",
       change: expensesChange.change,
+      trend: expensesChange.trend,
       isSavings: false,
     },
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
       {metrics.map((metric) => {
         const Icon = metric.icon
         return (
@@ -77,7 +78,7 @@ export function MetricsCards({
             />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {t(metric.titleKey)}
+                {(metric as any).title ? (metric as any).title : t(metric.titleKey)}
               </CardTitle>
               <Icon className={`h-4 w-4 ${metric.iconColor}`} />
             </CardHeader>

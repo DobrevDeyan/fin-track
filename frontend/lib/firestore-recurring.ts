@@ -132,34 +132,22 @@ export async function getUserRecurringTransactions(
     const recurringRef = collection(db, "recurringTransactions")
     const q = query(
       recurringRef,
-      where("userId", "==", userId),
-      orderBy("nextDate", "asc")
+      where("userId", "==", userId)
     )
 
     const querySnapshot = await getDocs(q)
-    return querySnapshot.docs.map((docSnap) => ({
+    const transactions = querySnapshot.docs.map((docSnap) => ({
       id: docSnap.id,
       ...docSnap.data(),
     })) as (RecurringEntryDocument & { id: string })[]
+
+    // Always sort by nextDate ascending in memory to avoid needing a composite index
+    return transactions.sort((a, b) => {
+      const aTime = a.nextDate?.toMillis?.() || 0
+      const bTime = b.nextDate?.toMillis?.() || 0
+      return aTime - bTime
+    })
   } catch (error: unknown) {
-    // If index is not ready, fetch without orderBy and sort in memory
-    if (isFirestoreIndexError(error)) {
-      const recurringRef = collection(db, "recurringTransactions")
-      const q = query(recurringRef, where("userId", "==", userId))
-
-      const querySnapshot = await getDocs(q)
-      const transactions = querySnapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      })) as (RecurringEntryDocument & { id: string })[]
-
-      // Sort by nextDate ascending in memory
-      return transactions.sort((a, b) => {
-        const aTime = a.nextDate?.toMillis?.() || 0
-        const bTime = b.nextDate?.toMillis?.() || 0
-        return aTime - bTime
-      })
-    }
     console.error("Error fetching recurring transactions:", error)
     throw error
   }

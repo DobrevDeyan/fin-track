@@ -107,6 +107,11 @@ function buildSummaryIncrements(
     updates.totalIncome = increment(delta)
     updates[`months.${monthKey}.income`] = increment(delta)
     updates[`months.${monthKey}.incomeByCategory.${category}`] = increment(delta)
+    
+    if (category === "Salary") {
+      updates.totalSalary = increment(delta)
+      updates[`months.${monthKey}.salary`] = increment(delta)
+    }
   } else {
     updates.totalExpenses = increment(delta)
     updates[`months.${monthKey}.expenses`] = increment(delta)
@@ -190,15 +195,15 @@ export async function createEntry(
       // This is less common because dashboard loads first, but good for robustness
       const { initializeFinancialSummary } = await import("./firestore-summary")
       await initializeFinancialSummary(userId)
-    } else {
-      const summaryUpdates = buildSummaryIncrements(
-        entryData.type,
-        entryData.amount,
-        entryData.category,
-        entryDate
-      )
-      batch.update(summaryRef, summaryUpdates)
     }
+
+    const summaryUpdates = buildSummaryIncrements(
+      entryData.type,
+      entryData.amount,
+      entryData.category,
+      entryDate
+    )
+    batch.update(summaryRef, summaryUpdates)
 
     // 3. Commit both operations atomically
     await batch.commit()
@@ -443,6 +448,10 @@ export async function updateEntry(
         fieldDeltas[`totalIncome`] = (fieldDeltas[`totalIncome`] || 0) - oldEntry.amount
         fieldDeltas[`months.${oldMonthKey}.income`] = (fieldDeltas[`months.${oldMonthKey}.income`] || 0) - oldEntry.amount
         fieldDeltas[`months.${oldMonthKey}.incomeByCategory.${oldEntry.category}`] = (fieldDeltas[`months.${oldMonthKey}.incomeByCategory.${oldEntry.category}`] || 0) - oldEntry.amount
+        if (oldEntry.category === "Salary") {
+          fieldDeltas[`totalSalary`] = (fieldDeltas[`totalSalary`] || 0) - oldEntry.amount
+          fieldDeltas[`months.${oldMonthKey}.salary`] = (fieldDeltas[`months.${oldMonthKey}.salary`] || 0) - oldEntry.amount
+        }
       } else {
         fieldDeltas[`totalExpenses`] = (fieldDeltas[`totalExpenses`] || 0) - oldEntry.amount
         fieldDeltas[`months.${oldMonthKey}.expenses`] = (fieldDeltas[`months.${oldMonthKey}.expenses`] || 0) - oldEntry.amount
@@ -454,6 +463,10 @@ export async function updateEntry(
         fieldDeltas[`totalIncome`] = (fieldDeltas[`totalIncome`] || 0) + newAmount
         fieldDeltas[`months.${newMonthKey}.income`] = (fieldDeltas[`months.${newMonthKey}.income`] || 0) + newAmount
         fieldDeltas[`months.${newMonthKey}.incomeByCategory.${newCategory}`] = (fieldDeltas[`months.${newMonthKey}.incomeByCategory.${newCategory}`] || 0) + newAmount
+        if (newCategory === "Salary") {
+          fieldDeltas[`totalSalary`] = (fieldDeltas[`totalSalary`] || 0) + newAmount
+          fieldDeltas[`months.${newMonthKey}.salary`] = (fieldDeltas[`months.${newMonthKey}.salary`] || 0) + newAmount
+        }
       } else {
         fieldDeltas[`totalExpenses`] = (fieldDeltas[`totalExpenses`] || 0) + newAmount
         fieldDeltas[`months.${newMonthKey}.expenses`] = (fieldDeltas[`months.${newMonthKey}.expenses`] || 0) + newAmount
@@ -462,11 +475,12 @@ export async function updateEntry(
 
       for (const [field, delta] of Object.entries(fieldDeltas)) {
         if (delta !== 0) {
-          finalSummaryUpdate[field] = increment(delta)
+          // Add to combinedUpdates since that's what we eventually use
+          combinedUpdates[field] = increment(delta)
         }
       }
 
-      batch.update(summaryRef, finalSummaryUpdate)
+      batch.update(summaryRef, combinedUpdates)
       await batch.commit()
     } else {
       // No old entry data - just update the entry without summary

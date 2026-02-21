@@ -34,11 +34,7 @@ export interface EntryFormData {
   notes?: string
   tags?: string[]
   receiptUrl?: string
-  allocateToSavings?: {
-    accountId: string
-    amount: number
-    accountName: string
-  }
+  categoryId?: string
 }
 
 // Budget types

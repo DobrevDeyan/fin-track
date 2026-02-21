@@ -129,6 +129,7 @@ export interface SavingsAccountDocument {
 export interface MonthlyData {
   income: number
   expenses: number
+  salary?: number // Add explicit salary tracking
   expensesByCategory: Record<string, number>
   incomeByCategory: Record<string, number>
 }
@@ -137,6 +138,7 @@ export interface FinancialSummaryDocument {
   userId: string
   totalIncome: number
   totalExpenses: number
+  totalSalary?: number // Add explicit total salary tracking
   entryCount: number
   months: Record<string, MonthlyData> // Key format: "YYYY-MM"
   updatedAt: Timestamp

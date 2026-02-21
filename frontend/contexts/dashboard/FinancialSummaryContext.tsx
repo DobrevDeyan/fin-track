@@ -42,10 +42,16 @@ interface FinancialSummaryContextValue {
   currentMonthData: MonthlyData
   previousMonthData: MonthlyData
 
+  // Salary tracking
+  currentMonthSalary: number
+  previousMonthSalary: number
+  totalSalary: number
+
   // Changes (formatted)
   balanceChange: { change: string; trend: "up" | "down" | "neutral" }
   incomeChange: { change: string; trend: "up" | "down" | "neutral" }
   expensesChange: { change: string; trend: "up" | "down" | "neutral" }
+  salaryChange: { change: string; trend: "up" | "down" | "neutral" }
 
   // Actions
   refreshSummary: () => Promise<void>
@@ -62,6 +68,7 @@ interface FinancialSummaryProviderProps {
 const EMPTY_MONTH: MonthlyData = {
   income: 0,
   expenses: 0,
+  salary: 0,
   expensesByCategory: {},
   incomeByCategory: {},
 }
@@ -144,6 +151,10 @@ export function FinancialSummaryProvider({
   const previousMonthExpenses = previousMonthData.expenses
   const previousMonthBalance = previousMonthIncome - previousMonthExpenses
 
+  const currentMonthSalary = currentMonthData.salary || 0
+  const previousMonthSalary = previousMonthData.salary || 0
+  const totalSalary = summary?.totalSalary || 0
+
   const balanceChange = useMemo(
     () =>
       summary
@@ -168,6 +179,14 @@ export function FinancialSummaryProvider({
     [summary, currentMonthExpenses, previousMonthExpenses]
   )
 
+  const salaryChange = useMemo(
+    () =>
+      summary
+        ? calculateChange(currentMonthSalary, previousMonthSalary)
+        : NEUTRAL_CHANGE,
+    [summary, currentMonthSalary, previousMonthSalary]
+  )
+
   const value: FinancialSummaryContextValue = useMemo(
     () => ({
       summary,
@@ -181,9 +200,13 @@ export function FinancialSummaryProvider({
       previousMonthBalance,
       currentMonthData,
       previousMonthData,
+      currentMonthSalary,
+      previousMonthSalary,
+      totalSalary,
       balanceChange,
       incomeChange,
       expensesChange,
+      salaryChange,
       refreshSummary,
     }),
     [
@@ -198,9 +221,13 @@ export function FinancialSummaryProvider({
       previousMonthBalance,
       currentMonthData,
       previousMonthData,
+      currentMonthSalary,
+      previousMonthSalary,
+      totalSalary,
       balanceChange,
       incomeChange,
       expensesChange,
+      salaryChange,
       refreshSummary,
     ]
   )

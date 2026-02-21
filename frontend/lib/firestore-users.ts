@@ -8,11 +8,14 @@ import {
   doc,
   getDoc,
   updateDoc,
+  setDoc,
+  collection,
   serverTimestamp,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { UserDocument } from "./firestore-types"
 import { type SupportedCurrency } from "./constants/currency.constants"
+import { createEntry } from "./firestore-entries"
 
 /**
  * Get user document from Firestore
@@ -75,7 +78,7 @@ export async function updateUserLanguage(userId: string, language: string): Prom
  */
 export async function completeOnboarding(
   userId: string,
-  data: { displayName: string; currency: string; monthlyBudget: number }
+  data: { displayName: string; currency: string; monthlyBudget: number; salaryDate?: number }
 ): Promise<void> {
   try {
     const userRef = doc(db, "users", userId)
@@ -87,6 +90,51 @@ export async function completeOnboarding(
       onboardingCompleted: true,
       updatedAt: serverTimestamp(),
     })
+
+    // Auto-create Recurring Salary Transaction if they set a budget and a date
+    if (data.monthlyBudget > 0 && data.salaryDate) {
+      const now = new Date()
+      const currentMonthTemp = new Date(now.getFullYear(), now.getMonth(), data.salaryDate)
+      
+      let nextDate = currentMonthTemp
+      let shouldCreateImmediateEntry = false
+      
+      // If the date has already passed this month, schedule for next month
+      if (currentMonthTemp <= now) {
+        shouldCreateImmediateEntry = true
+        // Handle Dec -> Jan rollover automatically via Date
+        nextDate = new Date(now.getFullYear(), now.getMonth() + 1, data.salaryDate)
+      }
+
+      const { Timestamp } = await import("firebase/firestore")
+
+      const recurringRef = doc(collection(db, "recurringTransactions"))
+      await setDoc(recurringRef, {
+        userId,
+        name: "Monthly Salary",
+        amount: data.monthlyBudget,
+        type: "income",
+        category: "Salary",
+        frequency: "monthly",
+        nextDate: Timestamp.fromDate(nextDate),
+        isActive: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      
+      if (shouldCreateImmediateEntry) {
+         await createEntry(userId, {
+           type: "income",
+           amount: data.monthlyBudget,
+           currency: data.currency,
+           category: "Salary",
+           description: "Monthly Salary generated from onboarding",
+           date: currentMonthTemp,
+           recurringId: recurringRef.id,
+           recurring: true,
+         })
+      }
+    }
   } catch (error) {
     console.error("Error completing onboarding:", error)
     throw error

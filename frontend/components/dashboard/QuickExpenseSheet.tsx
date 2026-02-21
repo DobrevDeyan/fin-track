@@ -47,7 +47,10 @@ interface QuickExpenseSheetProps {
     category: string
     type: "income" | "expense"
     date: string
+    categoryId?: string
   }) => Promise<void>
+  savingsAccounts?: any[]
+  goals?: any[]
 }
 
 // Income categories with icons and colors
@@ -85,6 +88,8 @@ export function QuickExpenseSheet({
   open,
   onOpenChange,
   onSubmit,
+  savingsAccounts = [],
+  goals = [],
 }: QuickExpenseSheetProps) {
   const [amount, setAmount] = useState("")
   const [transactionType, setTransactionType] = useState<"expense" | "income">("expense")
@@ -108,12 +113,21 @@ export function QuickExpenseSheet({
   // Auto-generate description from category (only if not manually edited)
   useEffect(() => {
     if (selectedCategory && !description && !descriptionManuallyEdited) {
-      const category = categories.find((c) => c.id === selectedCategory)
-      if (category) {
-        setDescription(category.label)
+      // Find within default categories, savings, or goals
+      const defaultCategory = categories.find((c) => c.id === selectedCategory)
+      if (defaultCategory) {
+        setDescription(defaultCategory.label)
+      } else if (selectedCategory.startsWith("savings_")) {
+        const id = selectedCategory.replace("savings_", "")
+        const acc = savingsAccounts.find(a => a.id === id)
+        if (acc) setDescription(acc.name)
+      } else if (selectedCategory.startsWith("goal_")) {
+        const id = selectedCategory.replace("goal_", "")
+        const goal = goals.find(g => g.id === id)
+        if (goal) setDescription(goal.name)
       }
     }
-  }, [selectedCategory, description, descriptionManuallyEdited, categories])
+  }, [selectedCategory, description, descriptionManuallyEdited, categories, savingsAccounts, goals])
 
   // Reset form when sheet closes or transaction type changes
   useEffect(() => {
@@ -365,12 +379,32 @@ export function QuickExpenseSheet({
 
     setIsSubmitting(true)
     try {
+      let finalCategory = selectedCategory
+      let finalCategoryId: string | undefined = undefined
+
+      if (selectedCategory.startsWith("savings_")) {
+        const id = selectedCategory.replace("savings_", "")
+        const account = savingsAccounts.find(a => a.id === id)
+        if (account) {
+          finalCategory = account.name
+          finalCategoryId = `savings_${id}`
+        }
+      } else if (selectedCategory.startsWith("goal_")) {
+        const id = selectedCategory.replace("goal_", "")
+        const goal = goals.find(g => g.id === id)
+        if (goal) {
+          finalCategory = goal.name
+          finalCategoryId = `goal_${id}`
+        }
+      }
+
       await onSubmit({
-        description: description || categories.find((c) => c.id === selectedCategory)?.label || (transactionType === "expense" ? "Expense" : "Income"),
+        description: description || finalCategory || (transactionType === "expense" ? "Expense" : "Income"),
         amount: parseFloat(amount),
-        category: selectedCategory,
+        category: finalCategory,
         type: transactionType,
         date: formatDateForInput(new Date()),
+        categoryId: finalCategoryId,
       })
       // Close sheet on success
       onOpenChange(false)
@@ -637,6 +671,72 @@ export function QuickExpenseSheet({
                           <Icon className="h-4 w-4" />
                         </div>
                         <span className="text-[10px] font-medium leading-tight text-center">{category.label}</span>
+                        {isSelected && (
+                          <Check className="h-3 w-3 text-primary absolute top-1 right-1" />
+                        )}
+                      </button>
+                    )
+                  })}
+                  
+                  {/* Active Savings Accounts inside manual Expense */}
+                  {transactionType === "expense" && savingsAccounts.length > 0 && (
+                    <div className="col-span-3 pb-1 pt-2 my-2 border-t w-full text-xs font-semibold text-muted-foreground text-center bg-transparent">
+                      Savings Accounts
+                    </div>
+                  )}
+                  {transactionType === "expense" && savingsAccounts.map((account) => {
+                    const accountId = `savings_${account.id}`
+                    const isSelected = selectedCategory === accountId
+                    return (
+                      <button
+                        key={accountId}
+                        type="button"
+                        onClick={() => setSelectedCategory(accountId)}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg border-2 transition-all",
+                          "active:scale-95",
+                          isSelected
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                         <div className="p-1.5 rounded-full text-white flex items-center justify-center bg-gray-600">
+                          <Wallet className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-medium leading-tight text-center">{account.name}</span>
+                        {isSelected && (
+                          <Check className="h-3 w-3 text-primary absolute top-1 right-1" />
+                        )}
+                      </button>
+                    )
+                  })}
+
+                  {/* Active Goals inside manual Expense */}
+                  {transactionType === "expense" && goals.length > 0 && (
+                    <div className="col-span-3 pb-1 pt-2 my-2 border-t w-full text-xs font-semibold text-muted-foreground text-center bg-transparent">
+                      Active Goals
+                    </div>
+                  )}
+                  {transactionType === "expense" && goals.map((goal) => {
+                    const goalId = `goal_${goal.id}`
+                    const isSelected = selectedCategory === goalId
+                    return (
+                      <button
+                        key={goalId}
+                        type="button"
+                        onClick={() => setSelectedCategory(goalId)}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg border-2 transition-all",
+                          "active:scale-95",
+                          isSelected
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                         <div className="p-1.5 rounded-full text-white flex items-center justify-center bg-violet-600">
+                          <CircleDot className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-medium leading-tight text-center">{goal.name}</span>
                         {isSelected && (
                           <Check className="h-3 w-3 text-primary absolute top-1 right-1" />
                         )}

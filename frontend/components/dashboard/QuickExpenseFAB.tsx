@@ -13,10 +13,13 @@ interface QuickExpenseFABProps {
     category: string
     type: "income" | "expense"
     date: string
+    categoryId?: string
   }) => Promise<void>
+  savingsAccounts?: any[]
+  goals?: any[]
 }
 
-export function QuickExpenseFAB({ onSubmit }: QuickExpenseFABProps) {
+export function QuickExpenseFAB({ onSubmit, savingsAccounts = [], goals = [] }: QuickExpenseFABProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -48,6 +51,8 @@ export function QuickExpenseFAB({ onSubmit }: QuickExpenseFABProps) {
         open={isOpen}
         onOpenChange={setIsOpen}
         onSubmit={onSubmit}
+        savingsAccounts={savingsAccounts}
+        goals={goals}
       />
     </>
   )

@@ -17,12 +17,8 @@ import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
 import { Toast } from "@/components/ui/toast";
 import { completeOnboarding } from "@/lib/firestore-users";
 // Dashboard contexts
-import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
-import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
-import { useGoalsContext } from "@/contexts/dashboard/GoalsContext";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
-import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContext";
 
 // Custom hooks (still need entries for transactions table)
 import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
@@ -42,11 +38,7 @@ const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTra
 // Lazy load below-the-fold sections
 const SavingsSection = dynamic(() => import("@/components/dashboard/sections/SavingsSection").then((mod) => ({ default: mod.SavingsSection })), { ssr: false });
 
-const BudgetsSection = dynamic(() => import("@/components/dashboard/sections/BudgetsSection").then((mod) => ({ default: mod.BudgetsSection })), { ssr: false });
-
 const RecurringSection = dynamic(() => import("@/components/dashboard/sections/RecurringSection").then((mod) => ({ default: mod.RecurringSection })), { ssr: false });
-
-const GoalsSection = dynamic(() => import("@/components/dashboard/sections/GoalsSection").then((mod) => ({ default: mod.GoalsSection })), { ssr: false });
 
 // Lazy load receipt scanner (only needed when user clicks scan button)
 const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/ReceiptScannerDialog").then((mod) => ({ default: mod.ReceiptScannerDialog })), { ssr: false });
@@ -55,11 +47,9 @@ const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/Receip
  * Inner dashboard content that uses the feature contexts
  */
 function DashboardInnerContent() {
-    const t = useTranslations("dashboard");
     const tSavings = useTranslations("savings");
     const tBudgets = useTranslations("budgets");
     const tRecurring = useTranslations("recurring");
-    const tGoals = useTranslations("goals");
     const { user } = useAuth();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency } = useCurrency();
 
@@ -68,16 +58,17 @@ function DashboardInnerContent() {
         totalBalance: globalBalance,
         currentMonthIncome,
         currentMonthExpenses,
+        currentMonthSalary,
         balanceChange,
         incomeChange,
         expensesChange,
+        salaryChange,
         refreshSummary,
     } = useFinancialSummary();
 
     // Get data from contexts
     const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
     const { budgets, loadBudgets } = useBudgetsContext();
-    const { goals, loadGoals } = useGoalsContext();
     const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
 
     // Toast state (shared across all features)
@@ -103,15 +94,13 @@ function DashboardInnerContent() {
     // Load all data when auth is ready
     useEffect(() => {
         if (user && !hasLoadedRef.current) {
-            hasLoadedRef.current = true;
             entriesHook.loadEntries();
             loadBudgets();
             loadRecurringTransactions();
-            loadGoals();
             loadSavingsAccounts();
             refreshSummary();
         }
-    }, [user, entriesHook.loadEntries, loadBudgets, loadRecurringTransactions, loadGoals, loadSavingsAccounts, refreshSummary]);
+    }, [user, entriesHook.loadEntries, loadBudgets, loadRecurringTransactions, loadSavingsAccounts, refreshSummary]);
 
     // Memoized values
     const categories = useMemo(() => getUniqueCategories(entriesHook.entries), [entriesHook.entries]);
@@ -138,6 +127,42 @@ function DashboardInnerContent() {
                 })),
         [savingsAccounts]
     );
+
+    // Calculate adjusted budget taking into account ignored categories (active savings/goals)
+    const { adjustedBaseBudget, adjustedSpent } = useMemo(() => {
+        // Find categories to ignore (names of active savings)
+        const ignoredCategories = new Set([
+            ...activeSavingsAccounts.map(s => s.name),
+        ]);
+
+        let excludedExpenses = 0;
+        let excludedIncome = 0;
+
+        // Note: For a strictly month-accurate representation, we filter entries Hook's entries to the current month.
+        // Quick approximation using the summary amounts: we check current month entries directly.
+        const now = new Date();
+        const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        entriesHook.entries.forEach(entry => {
+            if (entry.date.startsWith(currentMonthPrefix) && ignoredCategories.has(entry.category)) {
+                if (entry.type === 'expense') {
+                    excludedExpenses += entry.amount;
+                } else if (entry.type === 'income') {
+                    excludedIncome += entry.amount;
+                }
+            }
+        });
+
+        const safeMonthlyBudget = monthlyBudget ?? 0;
+        const discretionaryIncome = currentMonthIncome - currentMonthSalary - excludedIncome;
+        const adjustedBase = safeMonthlyBudget + Math.max(0, discretionaryIncome);
+        const adjustedSpt = currentMonthExpenses - excludedExpenses;
+
+        return {
+            adjustedBaseBudget: adjustedBase,
+            adjustedSpent: adjustedSpt
+        };
+    }, [monthlyBudget, currentMonthIncome, currentMonthSalary, currentMonthExpenses, activeSavingsAccounts, entriesHook.entries]);
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
@@ -169,10 +194,14 @@ function DashboardInnerContent() {
                     />
                 </div>
 
-                {/* Budget Progress - Now uses summary's current month expenses */}
+                {/* Budget Progress - Now uses adjusted spent & budget */}
                 {((monthlyBudget ?? 0) > 0 || currentMonthIncome > 0) && (
                     <div className="mb-8">
-                        <BudgetProgressBar monthlyBudget={monthlyBudget ?? 0} currentMonthExpenses={currentMonthExpenses} userCurrency={userCurrency} />
+                        <BudgetProgressBar 
+                          monthlyBudget={adjustedBaseBudget} 
+                          currentMonthExpenses={Math.max(0, adjustedSpent)} 
+                          userCurrency={userCurrency} 
+                        />
                     </div>
                 )}
 
@@ -190,7 +219,7 @@ function DashboardInnerContent() {
 
                 {/* Feature Sections - Tabbed Interface */}
                 <Tabs defaultValue="savings" className="mt-8">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
                             <span className="md:hidden">Savings ({savingsAccounts.length})</span>
                             <span className="hidden md:inline">{tSavings("title")} ({savingsAccounts.length})</span>
@@ -198,14 +227,6 @@ function DashboardInnerContent() {
                         <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
                             <span className="md:hidden">Budgets ({budgets.length})</span>
                             <span className="hidden md:inline">{tBudgets("title")} ({budgets.length})</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="recurring" className="text-xs md:text-sm px-1 md:px-3">
-                            <span className="md:hidden">Recurring ({recurringTransactions.length})</span>
-                            <span className="hidden md:inline">{tRecurring("title")} ({recurringTransactions.length})</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="goals" className="text-xs md:text-sm px-1 md:px-3">
-                            <span className="md:hidden">Goals ({goals.length})</span>
-                            <span className="hidden md:inline">{tGoals("title")} ({goals.length})</span>
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="savings">
@@ -217,19 +238,25 @@ function DashboardInnerContent() {
                     <TabsContent value="recurring">
                         <RecurringSection categories={categories} />
                     </TabsContent>
-                    <TabsContent value="goals">
-                        <GoalsSection categories={categories} userCurrency={userCurrency} />
-                    </TabsContent>
                 </Tabs>
 
                 {/* Add/Edit Entry Dialog */}
-                <AddTransactionDialog open={entriesHook.dialogOpen} onOpenChange={entriesHook.handleDialogClose} onSubmit={entriesHook.handleAdd} editingEntry={entriesHook.editingEntry} savingsAccounts={activeSavingsAccounts} />
+                <AddTransactionDialog 
+                  open={entriesHook.dialogOpen} 
+                  onOpenChange={entriesHook.handleDialogClose} 
+                  onSubmit={entriesHook.handleAdd} 
+                  editingEntry={entriesHook.editingEntry} 
+                  savingsAccounts={activeSavingsAccounts}
+                />
 
                 {/* Receipt Scanner Dialog */}
                 <ReceiptScannerDialog open={scannerDialogOpen} onOpenChange={setScannerDialogOpen} onSubmit={entriesHook.handleAdd} />
 
                 {/* Quick Expense FAB */}
-                <QuickExpenseFAB onSubmit={entriesHook.handleAdd} />
+                <QuickExpenseFAB 
+                  onSubmit={entriesHook.handleAdd} 
+                  savingsAccounts={activeSavingsAccounts}
+                />
 
                 {/* Salary Reminder Notifications */}
                 <SalaryReminderNotification entries={entriesHook.entries} />
@@ -243,6 +270,11 @@ function DashboardInnerContent() {
                         onComplete={async (data) => {
                             await completeOnboarding(user.uid, data);
                             await refreshCurrency();
+                            // Refresh all dashboard data to pick up the new salary entry & recurring transaction
+                            await refreshSummary();
+                            await entriesHook.loadEntries();
+                            await loadRecurringTransactions();
+                            await loadBudgets();
                         }}
                     />
                 )}
