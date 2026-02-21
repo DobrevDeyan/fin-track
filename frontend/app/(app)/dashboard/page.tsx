@@ -13,7 +13,7 @@ import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
-import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
+import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
 import { Toast } from "@/components/ui/toast";
 import { completeOnboarding } from "@/lib/firestore-users";
 // Dashboard contexts
@@ -22,13 +22,13 @@ import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
 import { useGoalsContext } from "@/contexts/dashboard/GoalsContext";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
+import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContext";
 
-// Custom hooks (still need entries for transactions)
+// Custom hooks (still need entries for transactions table)
 import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
 
 // Utilities
 import { getUniqueCategories } from "@/lib/categories";
-import { calculateMetricsWithComparison } from "@/lib/metrics-utils";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
 
 // Tabs
@@ -63,7 +63,18 @@ function DashboardInnerContent() {
     const { user } = useAuth();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency } = useCurrency();
 
-    // Get data from contexts for metrics calculations
+    // Financial summary (single source of truth for metrics)
+    const {
+        currentMonthIncome: totalIncome,
+        currentMonthExpenses: totalExpenses,
+        currentMonthBalance: totalBalance,
+        balanceChange,
+        incomeChange,
+        expensesChange,
+        refreshSummary,
+    } = useFinancialSummary();
+
+    // Get data from contexts
     const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
     const { budgets, loadBudgets } = useBudgetsContext();
     const { goals, loadGoals } = useGoalsContext();
@@ -80,12 +91,13 @@ function DashboardInnerContent() {
     // Track if initial load has happened
     const hasLoadedRef = useRef(false);
 
-    // Entries hook (still manages its own state)
+    // Entries hook (manages transaction list for the table, NOT for metrics)
     const entriesHook = useEntries({
         userId: user?.uid,
         userCurrency,
         onToast: showToast,
-        onSavingsReload: loadSavingsAccounts
+        onSavingsReload: loadSavingsAccounts,
+        onSummaryRefresh: refreshSummary,
     });
 
     // Load all data when auth is ready
@@ -97,13 +109,12 @@ function DashboardInnerContent() {
             loadRecurringTransactions();
             loadGoals();
             loadSavingsAccounts();
+            refreshSummary();
         }
-    }, [user, entriesHook.loadEntries, loadBudgets, loadRecurringTransactions, loadGoals, loadSavingsAccounts]);
+    }, [user, entriesHook.loadEntries, loadBudgets, loadRecurringTransactions, loadGoals, loadSavingsAccounts, refreshSummary]);
 
     // Memoized values
     const categories = useMemo(() => getUniqueCategories(entriesHook.entries), [entriesHook.entries]);
-
-    const metrics = useMemo(() => calculateMetricsWithComparison(entriesHook.entries), [entriesHook.entries]);
 
     const totalSavingsAccounts = useMemo(() => calculateTotalSavings(savingsAccounts), [savingsAccounts]);
 
@@ -128,11 +139,6 @@ function DashboardInnerContent() {
         [savingsAccounts]
     );
 
-    const {
-        current: { totalIncome, totalExpenses, totalBalance },
-        changes: { balance: balanceChange, income: incomeChange, expenses: expensesChange }
-    } = metrics;
-
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
             <div className="container py-8 px-4 sm:px-6">
@@ -148,19 +154,19 @@ function DashboardInnerContent() {
                     </Button>
                 </div>
 
-                {/* Metrics Cards */}
+                {/* Metrics Cards - Now powered by financial summary (accurate across ALL entries) */}
                 <div className="mb-8">
                     <MetricsCards totalBalance={totalBalance} totalIncome={totalIncome} totalExpenses={totalExpenses} savings={totalSavingsAccounts} balanceChange={balanceChange} incomeChange={incomeChange} expensesChange={expensesChange} savingsChange={savingsChange} userCurrency={userCurrency} />
                 </div>
 
-                {/* Budget Progress */}
-                {monthlyBudget && monthlyBudget > 0 && (
+                {/* Budget Progress - Now uses summary's current month expenses */}
+                {((monthlyBudget ?? 0) > 0 || totalIncome > 0) && (
                     <div className="mb-8">
-                        <BudgetProgressBar monthlyBudget={monthlyBudget} entries={entriesHook.entries} userCurrency={userCurrency} />
+                        <BudgetProgressBar monthlyBudget={monthlyBudget ?? 0} currentMonthExpenses={totalExpenses} userCurrency={userCurrency} />
                     </div>
                 )}
 
-                {/* Transactions Table */}
+                {/* Transactions Table (still uses paginated entries for display) */}
                 <TransactionsTable
                     transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries}
                     onAdd={() => entriesHook.setDialogOpen(true)}
@@ -221,10 +227,9 @@ function DashboardInnerContent() {
                 {/* Toast Notification */}
                 {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
 
-                {/* Onboarding Dialog */}
+                {/* Onboarding Screen */}
                 {user && !onboardingCompleted && (
-                    <OnboardingDialog
-                        open={true}
+                    <OnboardingScreen
                         onComplete={async (data) => {
                             await completeOnboarding(user.uid, data);
                             await refreshCurrency();

@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GoalList } from "@/components/dashboard/GoalList";
 import { GoalDialog } from "@/components/dashboard/GoalDialog";
+import { AddFundsDialog } from "@/components/dashboard/AddFundsDialog";
 import { useGoalsContext } from "@/contexts/dashboard/GoalsContext";
+import { useState } from "react";
+import { GoalDocument } from "@/lib/firestore-types";
 
 interface GoalsSectionProps {
     categories: string[];
@@ -13,7 +16,14 @@ interface GoalsSectionProps {
 }
 
 export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
-    const { goals, loading, dialogOpen, editingGoal, handleDialogClose, handleSubmit, handleEdit, handleDelete, openDialog } = useGoalsContext();
+    const { goals, loading, dialogOpen, editingGoal, handleDialogClose, handleSubmit, handleEdit, handleDelete, openDialog, handleAddFunds } = useGoalsContext();
+    const [addFundsOpen, setAddFundsOpen] = useState(false);
+    const [selectedGoal, setSelectedGoal] = useState<(GoalDocument & { id: string }) | null>(null);
+
+    const onAddFundsClick = (goal: GoalDocument & { id: string }) => {
+        setSelectedGoal(goal);
+        setAddFundsOpen(true);
+    };
 
     const t = useTranslations("goals");
 
@@ -35,11 +45,12 @@ export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
                         </div>
                     </div>
                 ) : (
-                    <GoalList goals={goals} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />
+                    <GoalList goals={goals} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddFunds={onAddFundsClick} />
                 )}
             </div>
 
             <GoalDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingGoal={editingGoal} categories={categories} defaultCurrency={userCurrency} />
+            <AddFundsDialog open={addFundsOpen} onOpenChange={setAddFundsOpen} goal={selectedGoal} onAddFunds={handleAddFunds} />
         </>
     );
 }

@@ -37,6 +37,7 @@ export interface EntryFormData {
   allocateToSavings?: {
     accountId: string
     amount: number
+    accountName: string
   }
 }
 

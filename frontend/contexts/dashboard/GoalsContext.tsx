@@ -3,8 +3,8 @@
 /**
  * Goals Context
  *
- * Provides financial goals state and operations to all dashboard components
- * Eliminates prop drilling for goals-related data
+ * Provides financial goals state and operations to all dashboard components.
+ * Adding funds to a goal now creates an expense entry for proper accounting.
  */
 
 import { createContext, useContext, ReactNode, useCallback, useState } from "react"
@@ -16,8 +16,11 @@ import {
   deleteGoal,
   updateGoal,
 } from "@/lib/firestore-goals"
+import { createEntry } from "@/lib/firestore-entries"
 import { GoalDocument } from "@/lib/firestore-types"
 import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
+import { useCurrency } from "@/contexts/CurrencyContext"
+import { useFinancialSummary } from "./FinancialSummaryContext"
 
 // Use the full document type for compatibility with existing components
 export type Goal = GoalDocument & { id: string }
@@ -50,6 +53,7 @@ interface GoalsContextValue {
   handleSubmit: (data: GoalFormData) => Promise<void>
   handleEdit: (goal: Goal) => void
   handleDelete: (goalId: string) => Promise<void>
+  handleAddFunds: (goalId: string, amount: number) => Promise<void>
   handleDialogClose: (open: boolean) => void
   openDialog: () => void
 }
@@ -64,6 +68,8 @@ interface GoalsProviderProps {
 
 export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps) {
   const t = useTranslations()
+  const { userCurrency } = useCurrency()
+  const { refreshSummary } = useFinancialSummary()
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -149,6 +155,42 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
     [userId, loadGoals, onToast, t]
   )
 
+  const handleAddFunds = useCallback(
+    async (goalId: string, amount: number) => {
+      if (!userId) return
+
+      const goal = goals.find(g => g.id === goalId)
+      if (!goal) return
+
+      try {
+        // 1. Create an expense entry for proper accounting
+        //    This deducts from the user's balance and updates the financial summary
+        await createEntry(userId, {
+          type: "expense",
+          amount,
+          currency: userCurrency,
+          description: `Goal contribution: ${goal.name}`,
+          category: "Goal Contribution",
+          date: new Date().toISOString(),
+        })
+
+        // 2. Update the goal's currentAmount
+        const newAmount = goal.currentAmount + amount
+        await updateGoal(goalId, {
+          currentAmount: newAmount,
+        })
+
+        await loadGoals()
+        await refreshSummary()
+        onToast({ message: t("toast.goals.addFundsSuccess"), type: "success" })
+      } catch (error) {
+        console.error(t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED) + ":", error)
+        onToast({ message: t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED), type: "error" })
+      }
+    },
+    [userId, userCurrency, goals, loadGoals, onToast, refreshSummary, t]
+  )
+
   const handleDialogClose = useCallback((open: boolean) => {
     setDialogOpen(open)
     if (!open) {
@@ -170,6 +212,7 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
     handleSubmit,
     handleEdit,
     handleDelete,
+    handleAddFunds,
     handleDialogClose,
     openDialog,
   }

@@ -156,12 +156,15 @@
     "budgetThisMonth": "Бюджет за месеца",
     "remainingBudget": "{amount} оставащо",
     "overBudgetBy": "Над бюджета с {amount}",
+    "budgetNotSet": "Месечният бюджет не е зададен",
+    "setBudget": "Задай бюджет",
     "showMore": "Покажи повече ({count})",
     "showLess": "Покажи по-малко"
   },
   "onboarding": {
     "title": "Добре дошли в Pocket!",
     "subtitle": "Нека настроим акаунта ви с няколко бързи стъпки",
+    "greeting": "Поздрави от Pocket",
     "nameQuestion": "Как да ви казваме?",
     "namePlaceholder": "Вашето име",
     "currencyQuestion": "Изберете валута",
@@ -268,7 +271,11 @@
     "categoryOptional": "Категория (По избор)",
     "selectCategoryOptional": "Изберете категория (по избор)",
     "noCategory": "Без категория",
-    "activeGoal": "Активна цел"
+    "activeGoal": "Активна цел",
+    "addFunds": "Добави средства",
+    "addFundsTitle": "Добави средства към цел",
+    "addFundsDesc": "Тази сума ще бъде приспадната от баланса ви и добавена към целта.",
+    "addAmount": "Сума за добавяне"
   },
   "calendar": {
     "title": "Календар",
@@ -482,6 +489,7 @@
     "budgetDeleteFailed": "Неуспешно изтриване на бюджет. Моля, опитайте отново.",
     "goalSaveFailed": "Неуспешно запазване на цел. Моля, опитайте отново.",
     "goalDeleteFailed": "Неуспешно изтриване на цел. Моля, опитайте отново.",
+    "goalAddFundsFailed": "Неуспешно добавяне на средства към целта. Моля, опитайте отново.",
     "savingsSaveFailed": "Неуспешно запазване на спестовна сметка. Моля, опитайте отново.",
     "savingsDeleteFailed": "Неуспешно изтриване на спестовна сметка. Моля, опитайте отново.",
     "insufficientBalance": "Недостатъчен баланс в спестовна сметка.",
@@ -501,7 +509,8 @@
     "goals": {
       "createSuccess": "Цел създадена успешно",
       "updateSuccess": "Цел обновена успешно",
-      "deleteSuccess": "Цел изтрита успешно"
+      "deleteSuccess": "Цел изтрита успешно",
+      "addFundsSuccess": "Средствата са добавени успешно към вашата цел"
     }
   }
 }

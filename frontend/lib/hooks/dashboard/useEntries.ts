@@ -1,7 +1,8 @@
 /**
  * useEntries Hook
  *
- * Manages entry state and CRUD operations for the dashboard
+ * Manages entry state and CRUD operations for the dashboard.
+ * All mutations atomically update the financial summary.
  */
 
 import { useState, useCallback } from "react"
@@ -21,13 +22,15 @@ interface UseEntriesOptions {
   userCurrency: string
   onToast: (toast: ToastState) => void
   onSavingsReload?: () => Promise<void>
+  onSummaryRefresh?: () => Promise<void>
 }
 
 export function useEntries({
   userId,
   userCurrency,
   onToast,
-  onSavingsReload
+  onSavingsReload,
+  onSummaryRefresh
 }: UseEntriesOptions) {
   const [entries, setEntries] = useState<Entry[]>([])
   const [filteredEntries, setFilteredEntries] = useState<Entry[]>([])
@@ -47,7 +50,7 @@ export function useEntries({
         setLoading(true)
         setLastVisible(null)
       }
-      
+
       const { entries: firestoreEntries, lastVisible: newLastVisible } = await getUserEntries(userId, null, 20)
 
       const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
@@ -103,12 +106,8 @@ export function useEntries({
       }))
 
       setEntries((prev) => [...prev, ...convertedEntries])
-      // Note: We might want to re-apply filters here if they exist, but for now we append to filtered as well 
-      // if the user hasn't actively filtered. If they have, complexity increases. 
-      // For simplicity/perf in this step, we append to filteredEntries too.
-      // Real app might need re-running filter logic on new items.
       setFilteredEntries((prev) => [...prev, ...convertedEntries])
-      
+
       setLastVisible(newLastVisible)
       setHasMore(firestoreEntries.length === 20)
     } catch (error) {
@@ -123,6 +122,7 @@ export function useEntries({
 
     try {
       if (editingEntry) {
+        // Pass old entry data so the summary can be updated atomically
         await updateEntry(editingEntry.id, {
           type: data.type,
           amount: data.amount,
@@ -132,75 +132,83 @@ export function useEntries({
           notes: data.notes,
           tags: data.tags,
           receiptUrl: data.receiptUrl,
+        }, {
+          type: editingEntry.type,
+          amount: editingEntry.amount,
+          category: editingEntry.category,
+          date: editingEntry.date,
+          userId,
         })
 
         await loadEntries()
+        if (onSummaryRefresh) await onSummaryRefresh()
         onToast({ message: SUCCESS_MESSAGES.ENTRY_UPDATED, type: "success" })
         setEditingEntry(null)
       } else {
-        const allocatedToSavings = data.allocateToSavings?.amount || 0
-        const balanceAmount = data.type === "income"
-          ? Math.max(0, data.amount - allocatedToSavings)
-          : data.amount
-
-        if (data.type === "income" && data.allocateToSavings) {
+        // For income with savings allocation: record FULL income amount
+        // The savings allocation is tracked as metadata on the entry
+        if (data.type === "income" && data.allocateToSavings && data.allocateToSavings.amount > 0) {
           try {
+            // 1. Add to savings account
             await addToSavingsAccount(
               data.allocateToSavings.accountId,
               data.allocateToSavings.amount
             )
             if (onSavingsReload) await onSavingsReload()
 
-            if (balanceAmount > 0) {
-              await createEntry(userId, {
-                type: data.type,
-                amount: balanceAmount,
-                currency: userCurrency,
-                description: data.description,
-                category: data.category,
-                date: data.date,
-                notes: data.notes,
-                tags: data.tags,
-                receiptUrl: data.receiptUrl,
-              })
-              await loadEntries()
+            // 2. Create entry with FULL income amount + savings allocation metadata
+            await createEntry(userId, {
+              type: data.type,
+              amount: data.amount, // Full income amount
+              currency: userCurrency,
+              description: data.description,
+              category: data.category,
+              date: data.date,
+              notes: data.notes,
+              tags: data.tags,
+              receiptUrl: data.receiptUrl,
+              savingsAllocation: {
+                accountId: data.allocateToSavings.accountId,
+                amount: data.allocateToSavings.amount,
+                accountName: data.allocateToSavings.accountName,
+              },
+            })
 
-              onToast({
-                message: `Entry added (${balanceAmount.toFixed(2)} ${userCurrency} to balance) and ${data.allocateToSavings.amount.toFixed(2)} ${userCurrency} allocated to savings`,
-                type: "success",
-              })
-            } else {
-              onToast({
-                message: `${data.allocateToSavings.amount.toFixed(2)} ${userCurrency} allocated to savings`,
-                type: "success",
-              })
-            }
+            await loadEntries()
+            if (onSummaryRefresh) await onSummaryRefresh()
+
+            onToast({
+              message: `Income of ${data.amount.toFixed(2)} ${userCurrency} recorded. ${data.allocateToSavings.amount.toFixed(2)} ${userCurrency} allocated to savings.`,
+              type: "success",
+            })
           } catch (savingsError: unknown) {
             console.error("Error allocating to savings:", savingsError)
-            if (balanceAmount > 0) {
-              await createEntry(userId, {
-                type: data.type,
-                amount: balanceAmount,
-                currency: userCurrency,
-                description: data.description,
-                category: data.category,
-                date: data.date,
-                notes: data.notes,
-                tags: data.tags,
-                receiptUrl: data.receiptUrl,
-              })
-              await loadEntries()
-            }
+            // Fallback: still create the entry with full amount but without allocation metadata
+            await createEntry(userId, {
+              type: data.type,
+              amount: data.amount,
+              currency: userCurrency,
+              description: data.description,
+              category: data.category,
+              date: data.date,
+              notes: data.notes,
+              tags: data.tags,
+              receiptUrl: data.receiptUrl,
+            })
+            await loadEntries()
+            if (onSummaryRefresh) await onSummaryRefresh()
+
             const errorMessage = savingsError instanceof Error ? savingsError.message : "Unknown error"
             onToast({
-              message: `Failed to allocate to savings: ${errorMessage}`,
+              message: `Entry added but savings allocation failed: ${errorMessage}`,
               type: "error",
             })
           }
         } else {
+          // Standard entry creation (no savings allocation)
           await createEntry(userId, {
             type: data.type,
-            amount: balanceAmount,
+            amount: data.amount,
             currency: userCurrency,
             description: data.description,
             category: data.category,
@@ -210,6 +218,7 @@ export function useEntries({
           })
 
           await loadEntries()
+          if (onSummaryRefresh) await onSummaryRefresh()
           onToast({ message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type), type: "success" })
         }
       }
@@ -219,7 +228,7 @@ export function useEntries({
       onToast({ message: errorMessage, type: "error" })
       throw error
     }
-  }, [userId, userCurrency, editingEntry, loadEntries, onToast, onSavingsReload])
+  }, [userId, userCurrency, editingEntry, loadEntries, onToast, onSavingsReload, onSummaryRefresh])
 
   const handleEdit = useCallback((id: string) => {
     const entry = entries.find((e) => e.id === id)
@@ -233,15 +242,30 @@ export function useEntries({
     if (!userId) return
 
     try {
-      await deleteEntry(id)
+      // Find the entry to pass its data for summary reversal
+      const entry = entries.find((e) => e.id === id)
+      if (entry) {
+        await deleteEntry(id, {
+          type: entry.type,
+          amount: entry.amount,
+          category: entry.category,
+          date: entry.date,
+          userId,
+        })
+      } else {
+        // Fallback: delete without summary update (summary will self-heal)
+        await deleteEntry(id)
+      }
+
       setEntries((prev) => prev.filter((e) => e.id !== id))
       setFilteredEntries((prev) => prev.filter((e) => e.id !== id))
+      if (onSummaryRefresh) await onSummaryRefresh()
       onToast({ message: "Entry deleted successfully!", type: "success" })
     } catch (error) {
       console.error("Error deleting entry:", error)
       onToast({ message: ERROR_MESSAGES.DELETE_FAILED, type: "error" })
     }
-  }, [userId, onToast])
+  }, [userId, entries, onToast, onSummaryRefresh])
 
   const handleDialogClose = useCallback((open: boolean) => {
     setDialogOpen(open)

@@ -42,6 +42,7 @@ interface TransactionData {
   allocateToSavings?: {
     accountId: string
     amount: number
+    accountName: string
   }
 }
 
@@ -182,6 +183,7 @@ export function AddTransactionDialog({
           ? {
               accountId: savingsAccountId,
               amount: parseFloat(savingsAmount) || 0,
+              accountName: savingsAccounts.find(a => a.id === savingsAccountId)?.name || "",
             }
           : undefined,
       })

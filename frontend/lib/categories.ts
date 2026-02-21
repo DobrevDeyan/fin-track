@@ -13,6 +13,7 @@ export const TRANSACTION_CATEGORIES = [
   "Education",
   "Travel & Vacation",
   "Gifts & Donations",
+  "Goal Contribution",
   "Salary",
   "Other",
 ] as const;

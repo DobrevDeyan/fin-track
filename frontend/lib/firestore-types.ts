@@ -46,6 +46,11 @@ export interface EntryDocument {
   receiptUrl?: string
   recurring?: boolean
   recurringId?: string
+  savingsAllocation?: {
+    accountId: string
+    amount: number
+    accountName: string
+  }
 }
 
 // Category Document
@@ -117,6 +122,23 @@ export interface SavingsAccountDocument {
   icon?: string
   isActive: boolean
   createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// Financial Summary Document (per-user aggregated metrics)
+export interface MonthlyData {
+  income: number
+  expenses: number
+  expensesByCategory: Record<string, number>
+  incomeByCategory: Record<string, number>
+}
+
+export interface FinancialSummaryDocument {
+  userId: string
+  totalIncome: number
+  totalExpenses: number
+  entryCount: number
+  months: Record<string, MonthlyData> // Key format: "YYYY-MM"
   updatedAt: Timestamp
 }
 

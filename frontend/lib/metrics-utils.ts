@@ -1,11 +1,17 @@
 /**
  * Financial metrics calculation utilities
+ *
+ * NOTE: calculateMetrics, filterEntriesByMonth, getCurrentMonthEntries,
+ * getPreviousMonthEntries, and calculateMetricsWithComparison are deprecated.
+ * Dashboard metrics now come from the FinancialSummaryContext which reads
+ * from the per-user financialSummaries Firestore document.
+ * These functions are kept for backward compatibility with tests.
  */
 
 import { Entry, Metrics, ChangeMetrics } from "./types";
 
 /**
- * Calculate metrics for a given set of entries
+ * @deprecated Use FinancialSummaryContext instead
  */
 export function calculateMetrics(entries: Entry[]): Metrics {
   const totalIncome = entries

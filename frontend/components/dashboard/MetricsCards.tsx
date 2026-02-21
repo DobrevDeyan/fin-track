@@ -59,23 +59,12 @@ export function MetricsCards({
       gradient: "from-red-600 to-red-800",
       iconColor: "text-red-600",
       change: expensesChange.change,
-      trend: expensesChange.trend,
       isSavings: false,
-    },
-    {
-      titleKey: "savings",
-      value: formatCurrency(savings, { currency: userCurrency }),
-      icon: PiggyBank,
-      gradient: "from-amber-600 to-amber-800",
-      iconColor: "text-amber-600",
-      change: savingsChange.change,
-      trend: savingsChange.trend,
-      isSavings: true,
     },
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {metrics.map((metric) => {
         const Icon = metric.icon
         return (
@@ -94,7 +83,7 @@ export function MetricsCards({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
-              <p className={`text-xs mt-1 ${getTrendColor(metric.trend)}`}>
+              <p className={`text-xs mt-1 ${getTrendColor(metric.trend as "up" | "down" | "neutral")}`}>
                 {metric.isSavings
                   ? metric.change
                   : `${metric.change} ${t("fromLastMonth")}`}

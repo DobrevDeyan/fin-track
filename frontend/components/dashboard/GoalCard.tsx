@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Target, Calendar } from "lucide-react"
+import { Edit, Trash2, Target, Calendar, Plus } from "lucide-react"
 import { GoalDocument } from "@/lib/firestore-types"
 import { formatCurrency } from "@/lib/currency-utils"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
@@ -12,9 +12,10 @@ interface GoalCardProps {
   goal: GoalDocument & { id: string }
   onEdit: (goal: GoalDocument & { id: string }) => void
   onDelete: (goalId: string) => Promise<void>
+  onAddFunds: (goal: GoalDocument & { id: string }) => void
 }
 
-export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
+export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) {
   const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount)
   const remaining = goal.targetAmount - goal.currentAmount
   const isComplete = progress >= 100
@@ -101,25 +102,36 @@ export function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
             <p className="text-sm text-muted-foreground">{goal.description}</p>
           )}
 
-          <div className="flex gap-2 pt-2 border-t">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               className="flex-1"
-              onClick={() => onEdit(goal)}
+              onClick={() => onAddFunds(goal)}
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+              <Plus className="h-4 w-4 mr-2" />
+              Add Funds
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => onDelete(goal.id)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+            <div className="flex gap-2 flex-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => onEdit(goal)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => onDelete(goal.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>

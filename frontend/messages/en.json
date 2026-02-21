@@ -156,12 +156,15 @@
     "budgetThisMonth": "Budget this month",
     "remainingBudget": "{amount} remaining",
     "overBudgetBy": "Over budget by {amount}",
+    "budgetNotSet": "Monthly budget not set",
+    "setBudget": "Set Budget",
     "showMore": "Show more ({count})",
     "showLess": "Show less"
   },
   "onboarding": {
     "title": "Welcome to Pocket!",
     "subtitle": "Let's set up your account in a few quick steps",
+    "greeting": "Greetings from Pocket",
     "nameQuestion": "What should we call you?",
     "namePlaceholder": "Your name",
     "currencyQuestion": "Choose your currency",
@@ -268,7 +271,11 @@
     "categoryOptional": "Category (Optional)",
     "selectCategoryOptional": "Select category (optional)",
     "noCategory": "No Category",
-    "activeGoal": "Active Goal"
+    "activeGoal": "Active Goal",
+    "addFunds": "Add Funds",
+    "addFundsTitle": "Add Funds to Goal",
+    "addFundsDesc": "This amount will be deducted from your balance and added to the goal.",
+    "addAmount": "Amount to Add"
   },
   "calendar": {
     "title": "Calendar",
@@ -482,6 +489,7 @@
     "budgetDeleteFailed": "Failed to delete budget. Please try again.",
     "goalSaveFailed": "Failed to save goal. Please try again.",
     "goalDeleteFailed": "Failed to delete goal. Please try again.",
+    "goalAddFundsFailed": "Failed to add funds to goal. Please try again.",
     "savingsSaveFailed": "Failed to save savings account. Please try again.",
     "savingsDeleteFailed": "Failed to delete savings account. Please try again.",
     "insufficientBalance": "Insufficient balance in savings account.",
@@ -501,7 +509,8 @@
     "goals": {
       "createSuccess": "Goal created successfully",
       "updateSuccess": "Goal updated successfully",
-      "deleteSuccess": "Goal deleted successfully"
+      "deleteSuccess": "Goal deleted successfully",
+      "addFundsSuccess": "Funds added successfully to your goal"
     }
   }
 }

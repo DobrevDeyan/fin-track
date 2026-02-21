@@ -11,9 +11,10 @@ interface GoalListProps {
   onAdd: () => void
   onEdit: (goal: GoalDocument & { id: string }) => void
   onDelete: (goalId: string) => Promise<void>
+  onAddFunds: (goal: GoalDocument & { id: string }) => void
 }
 
-export function GoalList({ goals, onAdd, onEdit, onDelete }: GoalListProps) {
+export function GoalList({ goals, onAdd, onEdit, onDelete, onAddFunds }: GoalListProps) {
   // Sort: active first, then by deadline (earliest first), then by progress
   const sortedGoals = [...goals].sort((a, b) => {
     if (a.isActive && !b.isActive) return -1
@@ -52,7 +53,7 @@ export function GoalList({ goals, onAdd, onEdit, onDelete }: GoalListProps) {
     <div className="space-y-4 md:space-y-6">
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         {sortedGoals.map((goal) => (
-          <GoalCard key={goal.id} goal={goal} onEdit={onEdit} onDelete={onDelete} />
+          <GoalCard key={goal.id} goal={goal} onEdit={onEdit} onDelete={onDelete} onAddFunds={onAddFunds} />
         ))}
       </div>
     </div>

@@ -90,5 +90,8 @@ export const ERROR_MESSAGES = {
   LOAD_FAILED: "Failed to load data. Please try again.",
   EXPORT_FAILED: "Failed to export. Please try again.",
   CURRENCY_UPDATE_FAILED: "Failed to update currency. Please try again.",
+  GOAL_SAVE_FAILED: "Failed to save goal. Please try again.",
+  GOAL_DELETE_FAILED: "Failed to delete goal. Please try again.",
+  GOAL_ADD_FUNDS_FAILED: "Failed to add funds to goal. Please try again.",
 } as const;
 

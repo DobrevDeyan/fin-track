@@ -25,10 +25,12 @@ const mockGoal = {
 describe('GoalCard', () => {
   const mockOnEdit = jest.fn()
   const mockOnDelete = jest.fn()
+  const mockOnAddFunds = jest.fn()
 
   beforeEach(() => {
     mockOnEdit.mockClear()
     mockOnDelete.mockClear()
+    mockOnAddFunds.mockClear()
   })
 
   it('should render goal name', () => {
@@ -37,6 +39,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText('Emergency Fund')).toBeInTheDocument()
@@ -48,6 +51,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText(/€3,000/)).toBeInTheDocument()
@@ -60,6 +64,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     // 3000 / 10000 = 30%
@@ -72,6 +77,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText('Build emergency fund')).toBeInTheDocument()
@@ -83,6 +89,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText('Savings')).toBeInTheDocument()
@@ -94,6 +101,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText(/2024/)).toBeInTheDocument()
@@ -106,6 +114,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     
@@ -123,6 +132,7 @@ describe('GoalCard', () => {
         goal={mockGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     
@@ -140,6 +150,7 @@ describe('GoalCard', () => {
         goal={goalWithoutDeadline}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText('Emergency Fund')).toBeInTheDocument()
@@ -152,6 +163,7 @@ describe('GoalCard', () => {
         goal={goalWithoutDescription}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText('Emergency Fund')).toBeInTheDocument()
@@ -164,6 +176,7 @@ describe('GoalCard', () => {
         goal={completedGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText(/100%/)).toBeInTheDocument()
@@ -176,6 +189,7 @@ describe('GoalCard', () => {
         goal={newGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText(/0%/)).toBeInTheDocument()
@@ -188,6 +202,7 @@ describe('GoalCard', () => {
         goal={overGoal}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onAddFunds={mockOnAddFunds}
       />
     )
     expect(screen.getByText(/100%/)).toBeInTheDocument()

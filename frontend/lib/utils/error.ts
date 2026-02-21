@@ -175,6 +175,7 @@ export const ERROR_MESSAGES = {
   // Goals
   GOAL_SAVE_FAILED: "error.goalSaveFailed",
   GOAL_DELETE_FAILED: "error.goalDeleteFailed",
+  GOAL_ADD_FUNDS_FAILED: "error.goalAddFundsFailed",
 
   // Savings
   SAVINGS_SAVE_FAILED: "error.savingsSaveFailed",
