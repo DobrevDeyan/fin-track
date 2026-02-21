@@ -179,14 +179,26 @@ export async function createEntry(
     batch.set(entryRef, newEntry)
 
     // 2. Update financial summary atomically
+    // 2. Update financial summary atomically
+    //    We use update() because it correctly treats dots in keys as map paths.
+    //    If the document doesn't exist, we must initialize it first.
     const summaryRef = doc(db, "financialSummaries", userId)
-    const summaryUpdates = buildSummaryIncrements(
-      entryData.type,
-      entryData.amount,
-      entryData.category,
-      entryDate
-    )
-    batch.set(summaryRef, summaryUpdates, { merge: true })
+    const summarySnap = await getDoc(summaryRef)
+
+    if (!summarySnap.exists()) {
+      // Re-initialize from scratch if summary is missing
+      // This is less common because dashboard loads first, but good for robustness
+      const { initializeFinancialSummary } = await import("./firestore-summary")
+      await initializeFinancialSummary(userId)
+    } else {
+      const summaryUpdates = buildSummaryIncrements(
+        entryData.type,
+        entryData.amount,
+        entryData.category,
+        entryDate
+      )
+      batch.update(summaryRef, summaryUpdates)
+    }
 
     // 3. Commit both operations atomically
     await batch.commit()
@@ -448,17 +460,13 @@ export async function updateEntry(
         fieldDeltas[`months.${newMonthKey}.expensesByCategory.${newCategory}`] = (fieldDeltas[`months.${newMonthKey}.expensesByCategory.${newCategory}`] || 0) + newAmount
       }
 
-      // Build final summary update with non-zero deltas
-      const finalSummaryUpdate: Record<string, FieldValue> = {
-        updatedAt: serverTimestamp(),
-      }
       for (const [field, delta] of Object.entries(fieldDeltas)) {
         if (delta !== 0) {
           finalSummaryUpdate[field] = increment(delta)
         }
       }
 
-      batch.set(summaryRef, finalSummaryUpdate, { merge: true })
+      batch.update(summaryRef, finalSummaryUpdate)
       await batch.commit()
     } else {
       // No old entry data - just update the entry without summary
@@ -501,7 +509,7 @@ export async function deleteEntry(
         entryData.date,
         -1
       )
-      batch.set(summaryRef, reverseUpdates, { merge: true })
+      batch.update(summaryRef, reverseUpdates)
 
       await batch.commit()
     } else {

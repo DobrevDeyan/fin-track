@@ -65,9 +65,9 @@ function DashboardInnerContent() {
 
     // Financial summary (single source of truth for metrics)
     const {
-        currentMonthIncome: totalIncome,
-        currentMonthExpenses: totalExpenses,
-        currentMonthBalance: totalBalance,
+        totalBalance: globalBalance,
+        currentMonthIncome,
+        currentMonthExpenses,
         balanceChange,
         incomeChange,
         expensesChange,
@@ -156,13 +156,23 @@ function DashboardInnerContent() {
 
                 {/* Metrics Cards - Now powered by financial summary (accurate across ALL entries) */}
                 <div className="mb-8">
-                    <MetricsCards totalBalance={totalBalance} totalIncome={totalIncome} totalExpenses={totalExpenses} savings={totalSavingsAccounts} balanceChange={balanceChange} incomeChange={incomeChange} expensesChange={expensesChange} savingsChange={savingsChange} userCurrency={userCurrency} />
+                    <MetricsCards 
+                        totalBalance={globalBalance} 
+                        totalIncome={currentMonthIncome} 
+                        totalExpenses={currentMonthExpenses} 
+                        savings={totalSavingsAccounts} 
+                        balanceChange={balanceChange} 
+                        incomeChange={incomeChange} 
+                        expensesChange={expensesChange} 
+                        savingsChange={savingsChange} 
+                        userCurrency={userCurrency} 
+                    />
                 </div>
 
                 {/* Budget Progress - Now uses summary's current month expenses */}
-                {((monthlyBudget ?? 0) > 0 || totalIncome > 0) && (
+                {((monthlyBudget ?? 0) > 0 || currentMonthIncome > 0) && (
                     <div className="mb-8">
-                        <BudgetProgressBar monthlyBudget={monthlyBudget ?? 0} currentMonthExpenses={totalExpenses} userCurrency={userCurrency} />
+                        <BudgetProgressBar monthlyBudget={monthlyBudget ?? 0} currentMonthExpenses={currentMonthExpenses} userCurrency={userCurrency} />
                     </div>
                 )}
 

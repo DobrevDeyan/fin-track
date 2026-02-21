@@ -15,6 +15,8 @@ import {
   useCallback,
   useState,
   useMemo,
+  useEffect,
+  useRef,
 } from "react"
 import {
   getOrCreateSummary,
@@ -74,18 +76,49 @@ export function FinancialSummaryProvider({
   const [loading, setLoading] = useState(true)
 
   const refreshSummary = useCallback(async () => {
-    if (!userId) return
+    if (!userId) {
+      console.log("[FinancialSummaryContext] No userId provided to refreshSummary")
+      return
+    }
 
     try {
       setLoading(true)
+      console.log(`[FinancialSummaryContext] refreshSummary triggered for userId: ${userId}`)
+      
       const data = await getOrCreateSummary(userId)
+      
+      console.log("[FinancialSummaryContext] Summary fetch success:", {
+        id: userId,
+        totalIncome: data.totalIncome,
+        totalExpenses: data.totalExpenses,
+        entryCount: data.entryCount,
+        hasMonths: !!data.months,
+        monthsCount: data.months ? Object.keys(data.months).length : 0,
+        currentMonth: getCurrentMonthKey()
+      })
+      
       setSummary(data)
     } catch (error) {
-      console.error("Error loading financial summary:", error)
+      console.error("[FinancialSummaryContext] Failed to load summary:", error)
     } finally {
       setLoading(false)
     }
   }, [userId])
+
+  const initialLoadDone = useRef(false)
+
+  // Automatically load summary when userId changes
+  useEffect(() => {
+    if (userId) {
+      console.log(`[FinancialSummaryContext] userId active: ${userId}`)
+      refreshSummary()
+      initialLoadDone.current = true
+    } else if (initialLoadDone.current) {
+      console.log("[FinancialSummaryContext] userId disappeared, clearing summary")
+      setSummary(null)
+      setLoading(false)
+    }
+  }, [userId, refreshSummary])
 
   const currentMonthKey = getCurrentMonthKey()
   const previousMonthKey = getPreviousMonthKey()

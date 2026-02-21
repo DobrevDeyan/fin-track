@@ -88,12 +88,19 @@ export async function getFinancialSummary(
     const docSnap = await getDoc(summaryRef)
 
     if (!docSnap.exists()) {
+      console.log(`[firestore-summary] No summary document found for ${userId}`)
       return null
     }
 
-    return docSnap.data() as FinancialSummaryDocument
+    const data = docSnap.data() as FinancialSummaryDocument
+    console.log(`[firestore-summary] Summary document found for ${userId}`, {
+      totalIncome: data.totalIncome,
+      totalExpenses: data.totalExpenses,
+      entryCount: data.entryCount
+    })
+    return data
   } catch (error) {
-    console.error("Error fetching financial summary:", error)
+    console.error("[firestore-summary] Error fetching financial summary:", error)
     throw error
   }
 }
@@ -169,18 +176,24 @@ export async function initializeFinancialSummary(
   userId: string
 ): Promise<FinancialSummaryDocument> {
   try {
+    console.log(`[firestore-summary] Initializing/Rebuilding summary for ${userId}`)
     const allEntries = await getAllUserEntries(userId)
+    console.log(`[firestore-summary] Found ${allEntries.length} entries for ${userId}`)
+    
     const summary = computeSummaryFromEntries(userId, allEntries)
 
     const summaryRef = getSummaryRef(userId)
+    // IMPORTANT: We use setDoc WITHOUT merge: true here to forcefully
+    // clobber any broken data structure (like dot-fields at root level)
     await setDoc(summaryRef, {
       ...summary,
       updatedAt: serverTimestamp(),
     })
 
+    console.log(`[firestore-summary] Summary initialized successfully for ${userId}`)
     return summary
   } catch (error) {
-    console.error("Error initializing financial summary:", error)
+    console.error("[firestore-summary] Error initializing financial summary:", error)
     throw error
   }
 }
@@ -214,17 +227,21 @@ async function isSummaryStale(
 export async function getOrCreateSummary(
   userId: string
 ): Promise<FinancialSummaryDocument> {
+  console.log(`[firestore-summary] getOrCreateSummary for ${userId}`)
   const existing = await getFinancialSummary(userId)
 
   if (!existing) {
+    console.log("[firestore-summary] No existing summary, initializing...")
     return initializeFinancialSummary(userId)
   }
 
   const stale = await isSummaryStale(userId, existing)
   if (stale) {
+    console.log(`[firestore-summary] Summary is stale (count mismatch), rebuilding...`)
     return initializeFinancialSummary(userId)
   }
 
+  console.log("[firestore-summary] Returning existing summary")
   return existing
 }
 
