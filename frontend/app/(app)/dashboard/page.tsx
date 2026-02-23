@@ -27,7 +27,7 @@ import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContex
 import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
 
 // Utilities
-import { getUniqueCategories } from "@/lib/categories";
+import { getUniqueCategories, getExpenseCategories } from "@/lib/categories";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
 
 // Tabs
@@ -110,6 +110,7 @@ function DashboardInnerContent() {
 
     // Memoized values
     const categories = useMemo(() => getUniqueCategories(entriesHook.entries), [entriesHook.entries]);
+    const expenseCategories = useMemo(() => getExpenseCategories(), []);
 
     const totalSavingsAccounts = useMemo(() => calculateTotalSavings(savingsAccounts), [savingsAccounts]);
 
@@ -243,7 +244,7 @@ function DashboardInnerContent() {
                         <SavingsSection userCurrency={userCurrency} />
                     </TabsContent>
                     <TabsContent value="budgets">
-                        <BudgetsSection entries={entriesHook.entries} categories={categories} userCurrency={userCurrency} />
+                        <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} userCurrency={userCurrency} />
                     </TabsContent>
                     <TabsContent value="recurring">
                         <RecurringSection categories={categories} />

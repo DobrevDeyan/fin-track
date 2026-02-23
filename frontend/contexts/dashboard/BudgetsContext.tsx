@@ -21,7 +21,7 @@ import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
 export interface Budget {
   id: string
   name: string
-  category?: string
+  category: string
   amount: number
   currency: string
   period: "weekly" | "monthly" | "yearly"
@@ -33,7 +33,7 @@ export interface Budget {
 
 export interface BudgetFormData {
   name: string
-  category?: string
+  category: string
   amount: number
   currency: string
   period: "weekly" | "monthly" | "yearly"

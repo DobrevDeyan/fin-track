@@ -151,21 +151,7 @@ describe('BudgetCard', () => {
     expect(screen.getByText(/Monthly/)).toBeInTheDocument()
   })
 
-  it('should handle budget without category', () => {
-    const budgetWithoutCategory = { ...mockBudget, category: undefined }
-    render(
-      <BudgetCard
-        budget={budgetWithoutCategory}
-        spent={300}
-        onEdit={mockOnEdit}
-        onDelete={mockOnDelete}
-      />
-    )
-    expect(screen.getByText('Groceries')).toBeInTheDocument()
-    expect(screen.queryByText('Food & Dining')).not.toBeInTheDocument()
-  })
-
-    it('should handle zero spending', () => {
+  it('should handle zero spending', () => {
       render(
         <BudgetCard
           budget={mockBudget}

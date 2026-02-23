@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 interface Budget {
   id: string
   name: string
-  category?: string
+  category: string
   amount: number
   currency: string
   period: "weekly" | "monthly" | "yearly"
@@ -47,13 +47,9 @@ function calculateBudgetSpending(budget: Budget, entries: Entry[]): number {
 
   return entries
     .filter((entry) => {
-      // Only count expenses
+      // Only count expenses matching the budget's category
       if (entry.type !== "expense") return false
-
-      // Filter by category if budget has one
-      if (budget.category && entry.category !== budget.category) {
-        return false
-      }
+      if (entry.category !== budget.category) return false
 
       // Filter by date range
       const entryDate = new Date(entry.date)

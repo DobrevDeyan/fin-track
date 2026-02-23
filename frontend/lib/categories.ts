@@ -51,3 +51,10 @@ export function getUniqueCategories(entries: Array<{ category: string }>): strin
   return Array.from(new Set(entries.map((e) => e.category))).sort();
 }
 
+/**
+ * Get all expense category names from the predefined quick expense categories
+ */
+export function getExpenseCategories(): string[] {
+  return QUICK_EXPENSE_CATEGORIES.map((cat) => cat.id);
+}
+

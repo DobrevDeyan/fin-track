@@ -26,7 +26,7 @@ import type { BudgetPeriod } from "@/lib/constants/budget.constants"
 
 interface BudgetData {
   name: string
-  category?: string
+  category: string
   amount: number
   currency: string
   period: "weekly" | "monthly" | "yearly"
@@ -43,7 +43,7 @@ interface BudgetDialogProps {
   editingBudget?: {
     id: string
     name: string
-    category?: string
+    category: string
     amount: number
     currency: string
     period: "weekly" | "monthly" | "yearly"
@@ -121,12 +121,12 @@ export function BudgetDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !amount) return
+    if (!name || !amount || !category) return
 
     try {
       await onSubmit({
         name,
-        category: category || undefined,
+        category,
         amount: parseFloat(amount),
         currency,
         period,
@@ -180,13 +180,12 @@ export function BudgetDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="category">{t("categoryOptional")}</Label>
-              <Select value={category || "none"} onValueChange={(value) => setCategory(value === "none" ? "" : value)}>
+              <Label htmlFor="category">{t("category")}</Label>
+              <Select value={category} onValueChange={setCategory} required>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("selectCategoryOptional")} />
+                  <SelectValue placeholder={t("selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{t("noCategoryAll")}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}

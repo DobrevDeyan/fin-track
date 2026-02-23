@@ -13,7 +13,7 @@ import { getTrendColor } from "@/lib/constants/ui.constants"
 interface Budget {
   id: string
   name: string
-  category?: string
+  category: string
   amount: number
   currency: string
   period: "weekly" | "monthly" | "yearly"
@@ -52,11 +52,9 @@ export function BudgetCard({ budget, spent, onEdit, onDelete }: BudgetCardProps)
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-lg">{budget.name}</CardTitle>
-            {budget.category && (
-              <Badge variant="secondary" className="mt-1">
-                {budget.category}
-              </Badge>
-            )}
+            <Badge variant="secondary" className="mt-1">
+              {budget.category}
+            </Badge>
             <p className="text-sm text-muted-foreground mt-1">
               {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)} •{" "}
               {formatDate(startDate)} - {formatDate(endDate)}

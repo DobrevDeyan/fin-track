@@ -70,7 +70,7 @@ export interface CategoryDocument {
 export interface BudgetDocument {
   userId: string
   name: string
-  category?: string
+  category: string
   amount: number
   currency: string
   period: "weekly" | "monthly" | "yearly"
