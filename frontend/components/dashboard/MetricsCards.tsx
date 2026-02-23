@@ -1,32 +1,28 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Wallet, Briefcase, PiggyBank } from "lucide-react"
+import { TrendingDown, Wallet, PiggyBank } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getTrendColor } from "@/lib/constants/ui.constants"
 import { useTranslations } from "next-intl"
 
 interface MetricsCardsProps {
   totalBalance: number
-  totalIncome: number
+  netSavings: number
   totalExpenses: number
-  savings: number
   balanceChange: { change: string; trend: "up" | "down" | "neutral" }
-  incomeChange: { change: string; trend: "up" | "down" | "neutral" }
-  expensesChange: { change: string; trend: "up" | "down" | "neutral" }
   savingsChange: { change: string; trend: "up" | "down" | "neutral" }
+  expensesChange: { change: string; trend: "up" | "down" | "neutral" }
   userCurrency?: string
 }
 
 export function MetricsCards({
   totalBalance,
-  totalIncome,
+  netSavings,
   totalExpenses,
-  savings,
   balanceChange,
-  incomeChange,
-  expensesChange,
   savingsChange,
+  expensesChange,
   userCurrency = "EUR",
 }: MetricsCardsProps) {
   const t = useTranslations("dashboard")
@@ -43,13 +39,13 @@ export function MetricsCards({
       isSavings: false,
     },
     {
-      titleKey: "totalIncome",
-      value: formatCurrency(totalIncome, { currency: userCurrency }),
-      icon: TrendingUp,
-      gradient: "from-emerald-600 to-emerald-800",
-      iconColor: "text-emerald-600",
-      change: incomeChange.change,
-      trend: incomeChange.trend,
+      titleKey: "netSavings",
+      value: formatCurrency(netSavings, { currency: userCurrency }),
+      icon: PiggyBank,
+      gradient: netSavings >= 0 ? "from-emerald-600 to-emerald-800" : "from-orange-600 to-orange-800",
+      iconColor: netSavings >= 0 ? "text-emerald-600" : "text-orange-600",
+      change: savingsChange.change,
+      trend: savingsChange.trend,
       isSavings: false,
     },
     {
@@ -84,11 +80,13 @@ export function MetricsCards({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
-              <p className={`text-xs mt-1 ${getTrendColor(metric.trend as "up" | "down" | "neutral")}`}>
-                {metric.isSavings
-                  ? metric.change
-                  : `${metric.change} ${t("fromLastMonth")}`}
-              </p>
+              {metric.change !== "+100%" && metric.change !== "-100%" && metric.change !== "No change" ? (
+                <p className={`text-xs mt-1 ${getTrendColor(metric.trend as "up" | "down" | "neutral")}`}>
+                  {metric.isSavings
+                    ? metric.change
+                    : `${metric.change} ${t("fromLastMonth")}`}
+                </p>
+              ) : null}
             </CardContent>
           </Card>
         )

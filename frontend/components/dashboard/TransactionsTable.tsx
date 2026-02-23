@@ -50,7 +50,7 @@ interface TransactionsTableProps {
   isLoadingMore?: boolean
 }
 
-const INITIAL_VISIBLE = 5
+const INITIAL_VISIBLE = 2
 const EXPANDED_VISIBLE = 20
 const ITEMS_PER_PAGE = 20
 

@@ -51,6 +51,7 @@ interface FinancialSummaryContextValue {
   balanceChange: { change: string; trend: "up" | "down" | "neutral" }
   incomeChange: { change: string; trend: "up" | "down" | "neutral" }
   expensesChange: { change: string; trend: "up" | "down" | "neutral" }
+  savingsChange: { change: string; trend: "up" | "down" | "neutral" }
   salaryChange: { change: string; trend: "up" | "down" | "neutral" }
 
   // Actions
@@ -179,6 +180,14 @@ export function FinancialSummaryProvider({
     [summary, currentMonthExpenses, previousMonthExpenses]
   )
 
+  const savingsChange = useMemo(
+    () =>
+      summary
+        ? calculateChange(currentMonthBalance, previousMonthBalance)
+        : NEUTRAL_CHANGE,
+    [summary, currentMonthBalance, previousMonthBalance]
+  )
+
   const salaryChange = useMemo(
     () =>
       summary
@@ -206,6 +215,7 @@ export function FinancialSummaryProvider({
       balanceChange,
       incomeChange,
       expensesChange,
+      savingsChange,
       salaryChange,
       refreshSummary,
     }),
@@ -227,6 +237,7 @@ export function FinancialSummaryProvider({
       balanceChange,
       incomeChange,
       expensesChange,
+      savingsChange,
       salaryChange,
       refreshSummary,
     ]

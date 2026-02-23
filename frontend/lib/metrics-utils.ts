@@ -77,10 +77,13 @@ export function calculateChange(current: number, previous: number): ChangeMetric
     if (current === 0) {
       return { change: "No change", trend: "neutral" };
     }
-    return { change: "+100%", trend: "up" };
+    return {
+      change: current > 0 ? "+100%" : "-100%",
+      trend: current > 0 ? "up" : "down",
+    };
   }
 
-  const percentChange = ((current - previous) / previous) * 100;
+  const percentChange = ((current - previous) / Math.abs(previous)) * 100;
   const rounded = Math.abs(percentChange).toFixed(1);
 
   if (percentChange > 0) {

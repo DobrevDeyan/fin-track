@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -14,7 +14,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -51,7 +50,7 @@ export const AppNavbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [currencyLoading, setCurrencyLoading] = useState(false)
   const { user, logout } = useAuth()
-  const { userCurrency, refreshCurrency } = useCurrency()
+  const { userCurrency, refreshCurrency, displayName } = useCurrency()
   const { locale, setLocale } = useLanguage()
 
   const appRoutes = [
@@ -115,7 +114,175 @@ export const AppNavbar = () => {
     return "U"
   }
 
+  const [showFloatingMenu, setShowFloatingMenu] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowFloatingMenu(window.scrollY > 100)
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
   return (
+    <>
+      {/* Floating menu button - mobile only, visible when scrolled */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className={cn(
+          "fixed bottom-24 right-6 h-16 w-16 rounded-full shadow-2xl",
+          "bg-[#4CAF50] overflow-hidden",
+          "z-50",
+          "transition-all duration-300",
+          "hover:scale-110 active:scale-95",
+          "flex items-center justify-center",
+          "md:hidden",
+          showFloatingMenu ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+        aria-label="Open menu"
+      >
+        <Image
+          src="/icons/icon-192x192.png"
+          alt="Menu"
+          width={64}
+          height={64}
+          className="w-full h-full object-cover"
+        />
+      </button>
+
+      {/* Mobile Sheet menu - controlled, no trigger */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side="right"
+          className="w-[320px] sm:w-[380px] [&>button]:hidden p-0 flex flex-col"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          {/* Profile header with animated gradient */}
+          <div
+            className="px-6 pt-6 pb-5 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, #35DB96, #2E7D32, #1a1a1a, #35DB96)",
+              backgroundSize: "300% 300%",
+              animation: "navGradientShift 8s ease infinite",
+            }}
+          >
+            <SheetHeader className="mb-0">
+              <div className="flex items-center justify-between mb-4">
+                <SheetTitle className="font-bold text-xl text-left text-white">
+                  Pocket
+                </SheetTitle>
+                <SheetClose asChild>
+                  <button
+                    className="rounded-full p-1.5 hover:bg-white/20 transition-colors duration-200 focus:outline-none"
+                    aria-label="Close menu"
+                  >
+                    <X className="h-5 w-5 text-white/80" strokeWidth={2.5} />
+                  </button>
+                </SheetClose>
+              </div>
+            </SheetHeader>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 ring-2 ring-white/30">
+                <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
+                <AvatarFallback className="bg-white/20 text-white font-semibold text-lg">
+                  {getUserInitials(user)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-white font-semibold text-sm truncate">
+                  {displayName || user?.displayName || "User"}
+                </span>
+                <span className="text-white/70 text-xs truncate">
+                  {user?.email}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation links */}
+          <nav className="flex flex-col flex-1 px-4 pt-4 pb-6">
+            <div className="flex flex-col gap-1">
+              {appRoutes.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200 relative group",
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold shadow-sm"
+                        : "text-foreground/70 hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <div className={cn(
+                      "flex items-center justify-center h-9 w-9 rounded-lg transition-colors duration-200",
+                      isActive
+                        ? "bg-primary/15"
+                        : "bg-muted group-hover:bg-accent"
+                    )}>
+                      <Icon className="h-[18px] w-[18px]" />
+                    </div>
+                    {label}
+                    {isActive && (
+                      <div className="ml-auto h-2 w-2 rounded-full bg-primary" />
+                    )}
+                  </Link>
+                )
+              })}
+            </div>
+
+            {/* Settings section */}
+            <div className="mt-6 pt-5 border-t border-border/60">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-4 mb-2 block">
+                {t("settings")}
+              </span>
+              <div className="flex gap-2 w-full mt-2">
+                <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
+                  <SelectTrigger className="flex-1 h-10 text-sm font-medium rounded-xl bg-muted/50 border-0 hover:bg-muted transition-colors">
+                    <SelectValue placeholder="EUR" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={locale} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="flex-1 h-10 text-sm font-medium rounded-xl bg-muted/50 border-0 hover:bg-muted transition-colors">
+                    <Globe className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locales.map((loc) => (
+                      <SelectItem key={loc} value={loc}>
+                        {localeNames[loc]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Logout at bottom */}
+            <div className="mt-auto pt-6">
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="w-full h-11 rounded-xl font-medium text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                {t("logout")}
+              </Button>
+            </div>
+          </nav>
+        </SheetContent>
+      </Sheet>
+
     <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white border-gray-200">
       <NavigationMenu className="mx-auto">
         <NavigationMenuList className="container h-14 px-4 flex justify-between w-full">
@@ -136,93 +303,14 @@ export const AppNavbar = () => {
             </Link>
           </NavigationMenuItem>
 
-          {/* mobile */}
-          <span className="flex md:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger className="px-2">
-                <Menu
-                  className="flex md:hidden h-5 w-5"
-                  onClick={() => setIsOpen(true)}
-                >
-                  <span className="sr-only">{t("menu")}</span>
-                </Menu>
-              </SheetTrigger>
-
-              <SheetContent side="right" className="w-[320px] sm:w-[380px] [&>button]:hidden">
-                <SheetHeader className="mb-6 relative">
-                  <div className="flex items-center justify-between">
-                    <SheetTitle className="font-bold text-2xl text-left">
-                      <span className="text-foreground">Pocket</span>
-                    </SheetTitle>
-                    <SheetClose asChild>
-                      <button
-                        className="rounded-full p-2 hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 -mr-2"
-                        aria-label="Close menu"
-                      >
-                        <X className="h-6 w-6 text-foreground/70 hover:text-foreground transition-colors" strokeWidth={2.5} />
-                      </button>
-                    </SheetClose>
-                  </div>
-                </SheetHeader>
-                <nav className="flex flex-col gap-2">
-                  {appRoutes.map(({ href, label, icon: Icon }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors duration-200",
-                        pathname === href
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {label}
-                    </Link>
-                  ))}
-
-                  {/* Currency & Language selectors */}
-                  <div className="flex gap-2 w-full mt-4 mb-2">
-                    <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
-                      <SelectTrigger className="flex-1 h-11 text-base font-medium border-2">
-                        <SelectValue placeholder="EUR" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SUPPORTED_CURRENCIES.map((currency) => (
-                          <SelectItem key={currency} value={currency}>
-                            {currency}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={locale} onValueChange={handleLanguageChange}>
-                      <SelectTrigger className="flex-1 h-11 text-base font-medium border-2">
-                        <Globe className="h-4 w-4 mr-1.5" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locales.map((loc) => (
-                          <SelectItem key={loc} value={loc}>
-                            {localeNames[loc]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    onClick={handleLogout}
-                    className="w-full h-12 px-6 py-3 rounded-lg border-2 font-semibold text-base hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive transition-all duration-200 flex items-center justify-center mt-2"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t("logout")}
-                  </Button>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </span>
+          {/* mobile hamburger */}
+          <button
+            className="flex md:hidden px-2"
+            onClick={() => setIsOpen(true)}
+            aria-label={t("menu")}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
           {/* desktop */}
           <nav className="hidden md:flex gap-1">
@@ -312,5 +400,6 @@ export const AppNavbar = () => {
         </NavigationMenuList>
       </NavigationMenu>
     </header>
+    </>
   )
 }

@@ -52,7 +52,8 @@
     "aboutPocket": "About Pocket",
     "login": "Login",
     "logout": "Log out",
-    "menu": "Menu"
+    "menu": "Menu",
+    "settings": "Settings"
   },
   "auth": {
     "login": "Login",
@@ -89,6 +90,7 @@
     "totalBalance": "Total Balance",
     "totalIncome": "Total Income",
     "totalExpenses": "Total Expenses",
+    "netSavings": "Net Savings",
     "savings": "Savings",
     "fromLastMonth": "from last month",
     "addEntry": "Add Entry",

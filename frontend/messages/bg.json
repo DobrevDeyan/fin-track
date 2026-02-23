@@ -52,7 +52,8 @@
     "aboutPocket": "За Pocket",
     "login": "Вход",
     "logout": "Изход",
-    "menu": "Меню"
+    "menu": "Меню",
+    "settings": "Настройки"
   },
   "auth": {
     "login": "Вход",
@@ -89,6 +90,7 @@
     "totalBalance": "Общ баланс",
     "totalIncome": "Общ приход",
     "totalExpenses": "Общи разходи",
+    "netSavings": "Нетни спестявания",
     "savings": "Спестявания",
     "fromLastMonth": "от миналия месец",
     "addEntry": "Добави запис",

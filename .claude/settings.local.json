@@ -12,7 +12,9 @@
       "Bash(npx next dev:*)",
       "Bash(powershell:*)",
       "Bash(ls:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(npx jest:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

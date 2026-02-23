@@ -28,7 +28,6 @@ import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
 
 // Utilities
 import { getUniqueCategories, getExpenseCategories } from "@/lib/categories";
-import { calculateTotalSavings } from "@/lib/firestore-savings";
 
 // Tabs
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -64,10 +63,11 @@ function DashboardInnerContent() {
         totalBalance: globalBalance,
         currentMonthIncome,
         currentMonthExpenses,
+        currentMonthBalance,
         currentMonthSalary,
         balanceChange,
-        incomeChange,
         expensesChange,
+        savingsChange: netSavingsChange,
         salaryChange,
         refreshSummary,
     } = useFinancialSummary();
@@ -87,6 +87,7 @@ function DashboardInnerContent() {
 
     // Track if initial load has happened
     const hasLoadedRef = useRef(false);
+    const tabsRef = useRef<HTMLDivElement>(null);
 
     // Entries hook (manages transaction list for the table, NOT for metrics)
     const entriesHook = useEntries({
@@ -111,16 +112,6 @@ function DashboardInnerContent() {
     // Memoized values
     const categories = useMemo(() => getUniqueCategories(entriesHook.entries), [entriesHook.entries]);
     const expenseCategories = useMemo(() => getExpenseCategories(), []);
-
-    const totalSavingsAccounts = useMemo(() => calculateTotalSavings(savingsAccounts), [savingsAccounts]);
-
-    const savingsChange = useMemo(() => {
-        const activeSavingsCount = savingsAccounts.filter((acc) => acc.isActive).length;
-        return {
-            change: activeSavingsCount > 0 ? `Total across ${activeSavingsCount} account${activeSavingsCount !== 1 ? "s" : ""}` : "No savings accounts yet",
-            trend: "neutral" as const
-        };
-    }, [savingsAccounts]);
 
     const activeSavingsAccounts = useMemo(
         () =>
@@ -188,16 +179,14 @@ function DashboardInnerContent() {
 
                 {/* Metrics Cards - Now powered by financial summary (accurate across ALL entries) */}
                 <div className="mb-8">
-                    <MetricsCards 
-                        totalBalance={globalBalance} 
-                        totalIncome={currentMonthIncome} 
-                        totalExpenses={currentMonthExpenses} 
-                        savings={totalSavingsAccounts} 
-                        balanceChange={balanceChange} 
-                        incomeChange={incomeChange} 
-                        expensesChange={expensesChange} 
-                        savingsChange={savingsChange} 
-                        userCurrency={userCurrency} 
+                    <MetricsCards
+                        totalBalance={globalBalance}
+                        netSavings={currentMonthBalance}
+                        totalExpenses={currentMonthExpenses}
+                        balanceChange={balanceChange}
+                        savingsChange={netSavingsChange}
+                        expensesChange={expensesChange}
+                        userCurrency={userCurrency}
                     />
                 </div>
 
@@ -225,7 +214,9 @@ function DashboardInnerContent() {
                 />
 
                 {/* Feature Sections - Tabbed Interface */}
-                <Tabs defaultValue="savings" className="mt-8">
+                <Tabs defaultValue="savings" className="mt-8" ref={tabsRef} onValueChange={() => {
+                    setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0)
+                }}>
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
                             <span className="md:hidden">Savings ({savingsAccounts.length})</span>
