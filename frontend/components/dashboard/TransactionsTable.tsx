@@ -70,6 +70,8 @@ export function TransactionsTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false)
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [deleteConfirmName, setDeleteConfirmName] = useState<string>("")
 
   // Calculate visible count based on expanded state
   const visibleCount = expanded ? EXPANDED_VISIBLE : INITIAL_VISIBLE
@@ -264,9 +266,8 @@ export function TransactionsTable({
                             size="icon"
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (window.confirm(t("confirmDelete", { name: transaction.description }))) {
-                                onDelete(transaction.id)
-                              }
+                              setDeleteConfirmId(transaction.id)
+                              setDeleteConfirmName(transaction.description)
                             }}
                             className="hover:bg-destructive/10 hover:text-destructive"
                             title={t("deleteEntryTitle")}
@@ -385,6 +386,32 @@ export function TransactionsTable({
           </>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>{t("deleteEntryTitle")}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            {t("confirmDelete", { name: deleteConfirmName })}
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+              {tCommon("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteConfirmId) onDelete(deleteConfirmId)
+                setDeleteConfirmId(null)
+              }}
+            >
+              {tCommon("delete")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Receipt View Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>

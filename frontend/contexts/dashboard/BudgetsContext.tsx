@@ -14,6 +14,7 @@ import {
   getUserBudgets,
   deleteBudget,
   updateBudget,
+  renewBudget,
 } from "@/lib/firestore-budgets"
 import { toISOString } from "@/lib/utils/timestamp"
 import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
@@ -60,6 +61,7 @@ interface BudgetsContextValue {
   handleSubmit: (data: BudgetFormData) => Promise<void>
   handleEdit: (budget: Budget) => void
   handleDelete: (budgetId: string) => Promise<void>
+  handleRenew: (budgetId: string, period: "weekly" | "monthly" | "yearly") => Promise<void>
   handleDialogClose: (open: boolean) => void
   openDialog: () => void
 }
@@ -174,6 +176,20 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
     [userId, loadBudgets, onToast]
   )
 
+  const handleRenew = useCallback(
+    async (budgetId: string, period: "weekly" | "monthly" | "yearly") => {
+      try {
+        await renewBudget(budgetId, period)
+        await loadBudgets()
+        onToast({ message: "Budget renewed for the current period", type: "success" })
+      } catch (error) {
+        console.error("Error renewing budget:", error)
+        onToast({ message: "Failed to renew budget", type: "error" })
+      }
+    },
+    [loadBudgets, onToast]
+  )
+
   const handleDialogClose = useCallback((open: boolean) => {
     setDialogOpen(open)
     if (!open) {
@@ -195,6 +211,7 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
     handleSubmit,
     handleEdit,
     handleDelete,
+    handleRenew,
     handleDialogClose,
     openDialog,
   }

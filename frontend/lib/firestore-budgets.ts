@@ -350,6 +350,41 @@ export async function deleteBudget(budgetId: string): Promise<void> {
 }
 
 /**
+ * Renew an expired budget by advancing its dates to the current period
+ */
+export async function renewBudget(
+  budgetId: string,
+  period: "weekly" | "monthly" | "yearly"
+): Promise<void> {
+  const now = new Date()
+  let startDate: Date
+  let endDate: Date
+
+  if (period === "monthly") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  } else if (period === "weekly") {
+    const day = now.getDay()
+    const diff = day === 0 ? -6 : 1 - day // Monday as week start
+    startDate = new Date(now)
+    startDate.setDate(now.getDate() + diff)
+    startDate.setHours(0, 0, 0, 0)
+    endDate = new Date(startDate)
+    endDate.setDate(startDate.getDate() + 6)
+    endDate.setHours(23, 59, 59, 999)
+  } else {
+    startDate = new Date(now.getFullYear(), 0, 1)
+    endDate = new Date(now.getFullYear(), 11, 31)
+  }
+
+  await updateBudget(budgetId, {
+    startDate: Timestamp.fromDate(startDate),
+    endDate: Timestamp.fromDate(endDate),
+    isActive: true,
+  })
+}
+
+/**
  * Get a single budget by ID
  */
 export async function getBudget(budgetId: string): Promise<(BudgetDocument & { id: string }) | null> {

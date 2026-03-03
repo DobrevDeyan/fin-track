@@ -101,6 +101,7 @@ function DashboardInnerContent() {
     // Load all data when auth is ready
     useEffect(() => {
         if (user && !hasLoadedRef.current) {
+            hasLoadedRef.current = true;
             entriesHook.loadEntries();
             loadBudgets();
             loadRecurringTransactions();

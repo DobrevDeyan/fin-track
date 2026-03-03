@@ -36,6 +36,7 @@ interface BudgetListProps {
   onAdd: () => void
   onEdit: (budget: Budget) => void
   onDelete: (budgetId: string) => Promise<void>
+  onRenew: (budgetId: string, period: "weekly" | "monthly" | "yearly") => Promise<void>
 }
 
 /**
@@ -65,6 +66,7 @@ export function BudgetList({
   onAdd,
   onEdit,
   onDelete,
+  onRenew,
 }: BudgetListProps) {
   // Filter to show active budgets first, then inactive
   const sortedBudgets = [...budgets].sort((a, b) => {
@@ -104,6 +106,7 @@ export function BudgetList({
               spent={spent}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRenew={onRenew}
             />
           )
         })}

@@ -15,7 +15,7 @@ interface BudgetsSectionProps {
 }
 
 export function BudgetsSection({ entries, categories, userCurrency }: BudgetsSectionProps) {
-    const { budgets, loading, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, openDialog } = useBudgetsContext();
+    const { budgets, loading, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleRenew, openDialog } = useBudgetsContext();
 
     const t = useTranslations("budgets");
 
@@ -37,7 +37,7 @@ export function BudgetsSection({ entries, categories, userCurrency }: BudgetsSec
                         </div>
                     </div>
                 ) : (
-                    <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />
+                    <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />
                 )}
             </div>
 

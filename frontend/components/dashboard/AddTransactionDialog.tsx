@@ -94,6 +94,7 @@ export function AddTransactionDialog({
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null)
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Populate form when editing
   useEffect(() => {
@@ -127,7 +128,9 @@ export function AddTransactionDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!description || !amount || !category) return
+    if (isSubmitting) return
 
+    setIsSubmitting(true)
     try {
       let receiptUrl = existingReceiptUrl || undefined
 
@@ -187,6 +190,8 @@ export function AddTransactionDialog({
     } catch (error) {
       // Error is handled by parent component
       console.error("Error submitting entry:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -437,7 +442,7 @@ export function AddTransactionDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {tCommon("cancel")}
             </Button>
-            <Button type="submit" disabled={uploadingReceipt}>
+            <Button type="submit" disabled={uploadingReceipt || isSubmitting}>
               {uploadingReceipt ? t("uploading") : editingEntry ? t("updateEntry") : t("addEntry")}
             </Button>
           </DialogFooter>
