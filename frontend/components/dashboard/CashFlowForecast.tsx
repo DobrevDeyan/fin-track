@@ -20,6 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
+import { memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Info } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
@@ -37,17 +38,29 @@ function formatAxisDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-function CustomTooltip({ active, payload, label, currency }: any) {
+interface TooltipPayloadItem {
+  dataKey: string
+  value: number
+}
+
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: TooltipPayloadItem[]
+  label?: string
+  currency?: string
+}
+
+function CustomTooltip({ active, payload, label, currency }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
-  const balance = payload.find((p: any) => p.dataKey === "balance")?.value
-  const lower = payload.find((p: any) => p.dataKey === "lower")?.value
-  const upper = payload.find((p: any) => p.dataKey === "upper")?.value
+  const balance = payload.find((p) => p.dataKey === "balance")?.value
+  const lower = payload.find((p) => p.dataKey === "lower")?.value
+  const upper = payload.find((p) => p.dataKey === "upper")?.value
 
   return (
     <div className="rounded-lg border bg-popover text-popover-foreground p-3 shadow-md text-xs">
-      <p className="font-medium mb-1">{formatAxisDate(label)}</p>
+      <p className="font-medium mb-1">{label ? formatAxisDate(label) : ""}</p>
       <p className="text-foreground font-semibold">
-        {formatCurrency(balance, currency)}
+        {formatCurrency(balance ?? 0, currency)}
       </p>
       {lower !== undefined && upper !== undefined && (
         <p className="text-muted-foreground">
@@ -57,8 +70,7 @@ function CustomTooltip({ active, payload, label, currency }: any) {
     </div>
   )
 }
-
-export function CashFlowForecast({ userCurrency = "EUR" }: { userCurrency?: string }) {
+export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = "EUR" }: { userCurrency?: string }) {
   const { cashFlowData } = useInsightsContext()
 
   if (cashFlowData.length < 3) {
@@ -199,4 +211,4 @@ export function CashFlowForecast({ userCurrency = "EUR" }: { userCurrency?: stri
       </CardContent>
     </Card>
   )
-}
+})

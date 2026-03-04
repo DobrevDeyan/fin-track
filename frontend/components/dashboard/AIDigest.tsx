@@ -8,7 +8,7 @@
  * Gracefully degrades when the AI service is not configured.
  */
 
-import { useEffect, useState } from "react"
+import { memo, useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -20,7 +20,7 @@ function getCurrentMonthLabel(): string {
   return now.toLocaleString("en-US", { month: "long", year: "numeric" })
 }
 
-export function AIDigest() {
+export const AIDigest = memo(function AIDigest() {
   const { digestText, digestLoading, digestNotConfigured, refreshDigest } =
     useInsightsContext()
 
@@ -104,4 +104,4 @@ export function AIDigest() {
       </CardContent>
     </Card>
   )
-}
+})

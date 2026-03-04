@@ -38,6 +38,13 @@ import { formatDateForInput } from "@/lib/date-utils"
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
 import { getQuickItemsForCategory, type QuickItem } from "@/lib/quick-items"
 
+interface SavingsAccountOption {
+  id: string
+  name: string
+  balance: number
+  currency: string
+}
+
 interface QuickExpenseSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -49,7 +56,7 @@ interface QuickExpenseSheetProps {
     date: string
     categoryId?: string
   }) => Promise<void>
-  savingsAccounts?: any[]
+  savingsAccounts?: SavingsAccountOption[]
 }
 
 // Income categories with icons and colors
@@ -80,6 +87,21 @@ const quickExpenseCategories = QUICK_EXPENSE_CATEGORIES.map((cat) => ({
   ...cat,
   icon: expenseCategoryIcons[cat.id] || CircleDot,
 }))
+
+// Fallback color map shared across quick-flow and manual category grids
+const CATEGORY_COLOR_MAP: Record<string, string> = {
+  "Food & Dining": "bg-red-500",
+  "Shopping": "bg-blue-500",
+  "Transportation": "bg-green-500",
+  "Bills & Utilities": "bg-yellow-500",
+  "Taxes & Insurance": "bg-orange-600",
+  "Entertainment": "bg-purple-500",
+  "Health & Pharmacy": "bg-pink-500",
+  "Education": "bg-indigo-500",
+  "Travel & Vacation": "bg-teal-500",
+  "Gifts & Donations": "bg-rose-500",
+  "Other": "bg-gray-500",
+}
 
 type QuickFlowStep = "category" | "item" | "price"
 
@@ -463,6 +485,7 @@ export function QuickExpenseSheet({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
+                  aria-pressed={transactionType === "expense"}
                   onClick={() => setTransactionType("expense")}
                   className={cn(
                     "flex items-center justify-center gap-2 h-10 rounded-lg border-2 font-semibold text-sm transition-all",
@@ -476,6 +499,7 @@ export function QuickExpenseSheet({
                 </button>
                 <button
                   type="button"
+                  aria-pressed={transactionType === "income"}
                   onClick={() => setTransactionType("income")}
                   className={cn(
                     "flex items-center justify-center gap-2 h-10 rounded-lg border-2 font-semibold text-sm transition-all",
@@ -494,6 +518,8 @@ export function QuickExpenseSheet({
             {transactionType === "expense" && (
               <div>
                 <button
+                  type="button"
+                  aria-pressed={useQuickFlow}
                   onClick={handleToggleQuickFlow}
                   className={cn(
                     "w-full py-2 px-4 rounded-lg border-2 text-sm font-semibold transition-all",
@@ -514,21 +540,7 @@ export function QuickExpenseSheet({
                 <div className="grid grid-cols-3 gap-1.5">
                   {quickExpenseCategories.map((category) => {
                     const Icon = category.icon || CircleDot
-                    // Fallback colors for each category if color is missing
-                    const colorMap: Record<string, string> = {
-                      "Food & Dining": "bg-red-500",
-                      "Shopping": "bg-blue-500",
-                      "Transportation": "bg-green-500",
-                      "Bills & Utilities": "bg-yellow-500",
-                      "Taxes & Insurance": "bg-orange-600",
-                      "Entertainment": "bg-purple-500",
-                      "Health & Pharmacy": "bg-pink-500",
-                      "Education": "bg-indigo-500",
-                      "Travel & Vacation": "bg-teal-500",
-                      "Gifts & Donations": "bg-rose-500",
-                      "Other": "bg-gray-500",
-                    }
-                    const bgColor = category.color || colorMap[category.id] || "bg-gray-500"
+                    const bgColor = category.color || CATEGORY_COLOR_MAP[category.id] || "bg-gray-500"
                     return (
                       <button
                         key={category.id}
@@ -621,21 +633,7 @@ export function QuickExpenseSheet({
                   {categories.map((category) => {
                     const Icon = category.icon || CircleDot
                     const isSelected = selectedCategory === category.id
-                    // Fallback colors for each category if color is missing
-                    const colorMap: Record<string, string> = {
-                      "Food & Dining": "bg-red-500",
-                      "Shopping": "bg-blue-500",
-                      "Transportation": "bg-green-500",
-                      "Bills & Utilities": "bg-yellow-500",
-                      "Taxes & Insurance": "bg-orange-600",
-                      "Entertainment": "bg-purple-500",
-                      "Health & Pharmacy": "bg-pink-500",
-                      "Education": "bg-indigo-500",
-                      "Travel & Vacation": "bg-teal-500",
-                      "Gifts & Donations": "bg-rose-500",
-                      "Other": "bg-gray-500",
-                    }
-                    const bgColor = category.color || colorMap[category.id] || "bg-gray-500"
+                    const bgColor = category.color || CATEGORY_COLOR_MAP[category.id] || "bg-gray-500"
                     return (
                       <button
                         key={category.id}
@@ -742,6 +740,7 @@ export function QuickExpenseSheet({
                   <button
                     key={key}
                     type="button"
+                    aria-label={key === "backspace" ? "Delete last digit" : key}
                     onClick={() => handleNumberInput(key)}
                     className={cn(
                       "h-11 text-base font-semibold rounded-lg border-2 flex items-center justify-center",

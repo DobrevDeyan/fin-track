@@ -50,28 +50,22 @@ export function TransactionFilters({
   // Get unique categories from entries
   const categories = getUniqueCategories(entries)
 
-  // Apply filters
-  const applyFilters = () => {
-    const filtered = filterAndSortTransactions(
-      entries,
-      {
-        searchQuery,
-        categoryFilter,
-        typeFilter,
-        dateFilter,
-        customDateRange: showCustomDateRange ? customDateRange : undefined,
-      },
-      sortBy
-    )
-
-    onFilterChange(filtered)
-  }
-
-  // Apply filters when any filter changes
+  // Apply filters whenever any filter value or entries change
   useEffect(() => {
-    applyFilters()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, categoryFilter, typeFilter, dateFilter, sortBy, customDateRange.startDate, customDateRange.endDate, entries.length])
+    onFilterChange(
+      filterAndSortTransactions(
+        entries,
+        {
+          searchQuery,
+          categoryFilter,
+          typeFilter,
+          dateFilter,
+          customDateRange: showCustomDateRange ? customDateRange : undefined,
+        },
+        sortBy
+      )
+    )
+  }, [searchQuery, categoryFilter, typeFilter, dateFilter, sortBy, customDateRange, showCustomDateRange, entries, onFilterChange])
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)

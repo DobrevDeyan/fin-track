@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingDown, Wallet, PiggyBank } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
@@ -16,7 +17,7 @@ interface MetricsCardsProps {
   userCurrency?: string
 }
 
-export function MetricsCards({
+export const MetricsCards = memo(function MetricsCards({
   totalBalance,
   netSavings,
   totalExpenses,
@@ -74,7 +75,7 @@ export function MetricsCards({
             />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {(metric as any).title ? (metric as any).title : t(metric.titleKey)}
+                {t(metric.titleKey)}
               </CardTitle>
               <Icon className={`h-4 w-4 ${metric.iconColor}`} />
             </CardHeader>
@@ -93,4 +94,4 @@ export function MetricsCards({
       })}
     </div>
   )
-}
+})

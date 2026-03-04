@@ -15,6 +15,16 @@ export interface ChatMessage {
   content: string
 }
 
+interface DigestResponse {
+  success: boolean
+  digest?: string
+}
+
+interface ChatResponse {
+  success: boolean
+  response?: string
+}
+
 /**
  * Request an AI-generated monthly financial digest.
  * Returns null if the service is unavailable or not configured.
@@ -32,8 +42,8 @@ export async function fetchAIDigest(
     if (res.status === 503) return null // AI not configured
     if (!res.ok) return null
 
-    const data = await res.json()
-    return data.success ? data.digest : null
+    const data = await res.json() as DigestResponse
+    return data.success && typeof data.digest === "string" ? data.digest : null
   } catch {
     return null
   }
@@ -58,8 +68,8 @@ export async function fetchAIChatResponse(
     if (res.status === 503) return null
     if (!res.ok) return null
 
-    const data = await res.json()
-    return data.success ? data.response : null
+    const data = await res.json() as ChatResponse
+    return data.success && typeof data.response === "string" ? data.response : null
   } catch {
     return null
   }

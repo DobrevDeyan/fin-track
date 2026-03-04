@@ -8,7 +8,7 @@
  * Only renders when anomalies exist; invisible otherwise.
  */
 
-import { useState } from "react"
+import { memo, useState } from "react"
 import { AlertTriangle, X, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
@@ -21,7 +21,7 @@ function formatCurrency(amount: number, currency = "EUR") {
   }).format(amount)
 }
 
-export function AnomalyAlert({ userCurrency = "EUR" }: { userCurrency?: string }) {
+export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR" }: { userCurrency?: string }) {
   const { anomalies } = useInsightsContext()
   const [dismissed, setDismissed] = useState(false)
 
@@ -82,4 +82,4 @@ export function AnomalyAlert({ userCurrency = "EUR" }: { userCurrency?: string }
       </div>
     </div>
   )
-}
+})

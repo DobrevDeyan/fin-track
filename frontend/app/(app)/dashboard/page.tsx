@@ -55,7 +55,7 @@ const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/Receip
 /**
  * Inner dashboard content that uses the feature contexts
  */
-function DashboardInnerContent() {
+function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => void }) {
     const t = useTranslations("dashboard");
     const tSavings = useTranslations("savings");
     const tBudgets = useTranslations("budgets");
@@ -82,11 +82,6 @@ function DashboardInnerContent() {
     const { budgets, loadBudgets } = useBudgetsContext();
     const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
 
-    // Toast state (shared across all features)
-    const [toast, setToast] = useState<ToastState | null>(null);
-    const showToast = useCallback((newToast: ToastState) => setToast(newToast), []);
-    const clearToast = useCallback(() => setToast(null), []);
-
     // Receipt scanner state
     const [scannerDialogOpen, setScannerDialogOpen] = useState(false);
 
@@ -98,7 +93,7 @@ function DashboardInnerContent() {
     const entriesHook = useEntries({
         userId: user?.uid,
         userCurrency,
-        onToast: showToast,
+        onToast,
         onSavingsReload: loadSavingsAccounts,
         onSummaryRefresh: refreshSummary,
     });
@@ -290,9 +285,6 @@ function DashboardInnerContent() {
                 {/* Salary Reminder Notifications */}
                 <SalaryReminderNotification entries={entriesHook.entries} />
 
-                {/* Toast Notification */}
-                {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
-
                 {/* Onboarding Screen */}
                 {user && !onboardingCompleted && (
                     <OnboardingScreen
@@ -326,7 +318,7 @@ export default function DashboardPage() {
 
     return (
         <DashboardProvider userId={user.uid} onToast={showToast}>
-            <DashboardInnerContent />
+            <DashboardInnerContent onToast={showToast} />
             {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
         </DashboardProvider>
     );

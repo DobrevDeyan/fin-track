@@ -72,10 +72,10 @@ export function AIChatDrawer() {
 
   return (
     <>
-      {/* Floating button — sits above the Pocket nav FAB (bottom-24) */}
+      {/* Floating button — bottom-left corner, balancing the "+" FAB on the right */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-44 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+        className="fixed bottom-6 left-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
         aria-label="Open AI Budget Coach"
       >
         <MessageCircle className="h-6 w-6" />

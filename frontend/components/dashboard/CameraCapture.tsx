@@ -74,16 +74,17 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         await videoRef.current.play()
         setCameraState("ready")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Camera error:", error)
+      const err = error as { name?: string }
 
-      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
         setErrorMessage("Camera access was denied. Please enable camera permissions in your browser settings.")
-      } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
         setErrorMessage("No camera found on this device.")
-      } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
         setErrorMessage("Camera is in use by another application.")
-      } else if (error.name === "OverconstrainedError") {
+      } else if (err.name === "OverconstrainedError") {
         // Try again with basic constraints
         try {
           const basicStream = await navigator.mediaDevices.getUserMedia({ video: true })
@@ -115,7 +116,9 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         streamRef.current.getTracks().forEach(track => track.stop())
       }
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Intentionally run once on mount only — camera switching is handled by handleSwitchCamera
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Switch camera
   const handleSwitchCamera = useCallback(() => {
