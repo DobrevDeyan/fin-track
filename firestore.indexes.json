@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "entries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "savingsAccounts",
       "queryScope": "COLLECTION",
       "fields": [

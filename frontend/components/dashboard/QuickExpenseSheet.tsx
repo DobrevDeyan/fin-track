@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -126,6 +126,9 @@ export function QuickExpenseSheet({
   
   // Swipe gesture states
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null)
+  const [headerTouchStart, setHeaderTouchStart] = useState<{ x: number; y: number } | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
   // Get categories based on transaction type
   const categories = transactionType === "expense" ? quickExpenseCategories : incomeCategories
@@ -321,21 +324,28 @@ export function QuickExpenseSheet({
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!useQuickFlow || transactionType !== "expense") return
     const touch = e.touches[0]
-    setTouchStart({ x: touch.clientX, y: touch.clientY })
+    const pos = { x: touch.clientX, y: touch.clientY }
+    setTouchStart(pos)
+    touchStartRef.current = pos
   }
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // Prevent default to avoid scrolling conflicts with horizontal swipes
-    if (!touchStart) return
+  // Registered as non-passive via useEffect so preventDefault works
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!touchStartRef.current) return
     const touch = e.touches[0]
-    const deltaX = touch.clientX - touchStart.x
-    const deltaY = touch.clientY - touchStart.y
-    
-    // If horizontal movement is greater than vertical, prevent scrolling
+    const deltaX = touch.clientX - touchStartRef.current.x
+    const deltaY = touch.clientY - touchStartRef.current.y
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       e.preventDefault()
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    el.addEventListener("touchmove", handleTouchMove, { passive: false })
+    return () => el.removeEventListener("touchmove", handleTouchMove)
+  }, [handleTouchMove])
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!touchStart) return
@@ -362,6 +372,24 @@ export function QuickExpenseSheet({
       }
     }
     setTouchStart(null)
+  }
+
+  // Swipe-down to close handlers (on header only, avoids scroll conflict)
+  const handleHeaderTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    setHeaderTouchStart({ x: touch.clientX, y: touch.clientY })
+  }
+
+  const handleHeaderTouchEnd = (e: React.TouchEvent) => {
+    if (!headerTouchStart) return
+    const touch = e.changedTouches[0]
+    const deltaX = touch.clientX - headerTouchStart.x
+    const deltaY = touch.clientY - headerTouchStart.y
+    setHeaderTouchStart(null)
+    // Swipe down: >60px downward, more vertical than horizontal
+    if (deltaY > 60 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      onOpenChange(false)
+    }
   }
 
   // Get quick items for selected category
@@ -446,7 +474,15 @@ export function QuickExpenseSheet({
         className="!h-[95dvh] max-h-[95dvh] rounded-t-3xl flex flex-col p-0 overflow-hidden"
         style={{ height: '95dvh', maxHeight: '95dvh' }}
       >
-        <div className="px-4 pt-4 pb-2 flex-shrink-0">
+        <div
+          className="px-4 pt-4 pb-2 flex-shrink-0 touch-none"
+          onTouchStart={handleHeaderTouchStart}
+          onTouchEnd={handleHeaderTouchEnd}
+        >
+          {/* Drag handle */}
+          <div className="flex justify-center mb-3">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
           <SheetHeader className="text-left">
             <div className="flex items-center gap-2">
               {useQuickFlow && quickFlowStep !== "category" && transactionType === "expense" && (
@@ -472,10 +508,10 @@ export function QuickExpenseSheet({
           </SheetHeader>
         </div>
 
-        <div 
+        <div
+          ref={scrollRef}
           className="flex-1 overflow-y-auto px-4 pb-2 min-h-0 touch-pan-y"
           onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
           <div className="flex flex-col gap-2.5">

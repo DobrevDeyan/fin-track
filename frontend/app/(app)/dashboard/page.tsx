@@ -12,7 +12,7 @@ import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
-import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
+// import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
 import { AIDigest } from "@/components/dashboard/AIDigest";
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
@@ -216,9 +216,9 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                 )}
 
                 {/* Cash Flow Forecast */}
-                <div className="mb-8">
+                {/* <div className="mb-8">
                     <CashFlowForecast userCurrency={userCurrency} />
-                </div>
+                </div> */}
 
                 {/* Transactions Table (still uses paginated entries for display) */}
                 <TransactionsTable
