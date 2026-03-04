@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -116,6 +116,24 @@ export const AppNavbar = () => {
 
   const [showFloatingMenu, setShowFloatingMenu] = useState(false)
 
+  // Swipe-to-close gesture tracking
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    // Close if swiped right >60px and gesture is more horizontal than vertical
+    if (deltaX > 60 && deltaY < deltaX) {
+      setIsOpen(false)
+    }
+  }
+
   useEffect(() => {
     const handleScroll = () => {
       setShowFloatingMenu(window.scrollY > 100)
@@ -157,6 +175,8 @@ export const AppNavbar = () => {
           className="w-[320px] sm:w-[380px] [&>button]:hidden p-0 flex flex-col"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Profile header with animated gradient */}
           <div

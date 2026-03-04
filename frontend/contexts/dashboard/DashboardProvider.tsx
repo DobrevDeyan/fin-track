@@ -13,6 +13,7 @@ import { SavingsProvider } from "./SavingsContext"
 import { BudgetsProvider } from "./BudgetsContext"
 import { GoalsProvider } from "./GoalsContext"
 import { RecurringProvider } from "./RecurringContext"
+import { InsightsProvider } from "./InsightsContext"
 
 interface ToastState {
   message: string
@@ -43,7 +44,9 @@ export function DashboardProvider({ children, userId, onToast }: DashboardProvid
         <BudgetsProvider userId={userId} onToast={onToast}>
           <GoalsProvider userId={userId} onToast={onToast}>
             <RecurringProvider userId={userId} onToast={onToast}>
-              {children}
+              <InsightsProvider>
+                {children}
+              </InsightsProvider>
             </RecurringProvider>
           </GoalsProvider>
         </BudgetsProvider>

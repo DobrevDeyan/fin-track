@@ -32,8 +32,9 @@ Managed via the [Google Cloud Console](https://console.cloud.google.com/).
 
 | Service | Purpose | Pricing / Free Tier Details | Tracker Link |
 | :--- | :--- | :--- | :--- |
-| **Google Cloud Run** | Hosting the `ml-service` | **Note:** Deployed to `europe-west1`. Free tier (180k vCPU-sec, 360k GiB-sec) only applies to US regions. Estimated cost ~$1-2/month with `min-instances: 0`. | [Cloud Run Services](https://console.cloud.google.com/run?project=fin-track-adc2c) |
+| **Google Cloud Run** | Hosting the `ml-service` (receipt scanning + AI insights) | **Note:** Deployed to `europe-west1`. Free tier (180k vCPU-sec, 360k GiB-sec) only applies to US regions. Estimated cost ~$1-2/month with `min-instances: 0`. | [Cloud Run Services](https://console.cloud.google.com/run?project=fin-track-adc2c) |
 | **Document AI** | Receipt/Bill scanning | **Expense Parser** (`566b35e21d475435`, `eu` region): ~$0.01 per page. No permanent free tier beyond trial credits. | [Document AI Console](https://console.cloud.google.com/ai/document-ai/processors?project=fin-track-adc2c) |
+| **Google Gemini AI** | AI Monthly Digest + AI Budget Coach Chat | Free tier via Google AI Studio (`aistudio.google.com`). Project: `gen-lang-client-0231536440` (Pocket). Model: `gemini-2.5-flash`. ~15 RPM, 1500 RPD. No billing required. | [Google AI Studio](https://aistudio.google.com) |
 | **Artifact Registry** | Storing Docker images | 0.5 GB storage free per month. | [Artifact Registry](https://console.cloud.google.com/artifacts?project=fin-track-adc2c) |
 | **Cloud Build** | CI/CD for ML service | 120 build-minutes free per day. | [Cloud Build History](https://console.cloud.google.com/cloud-build/builds?project=fin-track-adc2c) |
 | **Cloud Storage** | Persistent file storage | 5 GB Standard Storage free (US regions only). | [Storage Browser](https://console.cloud.google.com/storage/browser?project=fin-track-adc2c) |

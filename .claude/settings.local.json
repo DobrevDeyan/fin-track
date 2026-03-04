@@ -14,7 +14,19 @@
       "Bash(ls:*)",
       "Bash(findstr:*)",
       "Bash(npx jest:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(grep -r \"ML_SERVICE\\\\|ml-service\\\\|NEXT_PUBLIC\" /Users/deyandobrev/Development/Repositories/fin-track/frontend/.env*)",
+      "Bash(npx shadcn@latest add skeleton popover --yes)",
+      "Bash(gcloud run services list --project fin-track-adc2c --region europe-west1)",
+      "Bash(gcloud run services update ml-service --set-env-vars GEMINI_API_KEY=AIzaSyAIn5pI4aNlW7s6gDwpfyAGdS7iGJXsbwM --region europe-west1 --project fin-track-adc2c)",
+      "Bash(gcloud run services describe ml-service --region europe-west1 --project fin-track-adc2c --format \"value\\(status.url\\)\")",
+      "Bash(gcloud run services update ml-service --update-env-vars \"FRONTEND_URL=https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000\" --region europe-west1 --project fin-track-adc2c)",
+      "Bash(gcloud run services update ml-service --set-env-vars \"^@^FRONTEND_URL=https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000@GEMINI_API_KEY=AIzaSyAIn5pI4aNlW7s6gDwpfyAGdS7iGJXsbwM\" --region europe-west1 --project fin-track-adc2c)",
+      "Bash(bash deploy.sh)",
+      "Bash(gcloud run services describe ml-service --region europe-west1 --project fin-track-adc2c --format \"value\\(spec.template.spec.containers[0].env\\)\")",
+      "Bash(gcloud run services update ml-service --set-env-vars \"^@^GCP_PROJECT_ID=fin-track-adc2c@GCP_LOCATION=eu@GCP_PROCESSOR_ID=566b35e21d475435@FRONTEND_URL=https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000@GEMINI_API_KEY=AIzaSyAIn5pI4aNlW7s6gDwpfyAGdS7iGJXsbwM\" --region europe-west1 --project fin-track-adc2c)",
+      "Bash(gcloud run services update ml-service --update-env-vars \"GEMINI_API_KEY=AIzaSyDZc9xqAkC_3T3fAVrt9dfH6kdhRo6o5aA\" --region europe-west1 --project fin-track-adc2c)",
+      "Bash(gcloud run services describe ml-service --region europe-west1 --project fin-track-adc2c --format \"value\\(status.latestReadyRevisionName\\)\")"
     ]
   }
 }

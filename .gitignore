@@ -93,4 +93,4 @@ out/
 *.pem
 *.key
 *.cert
-.claude
+.claude/

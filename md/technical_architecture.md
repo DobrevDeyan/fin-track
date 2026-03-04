@@ -54,6 +54,8 @@
 **State Management**: React Context API
 - `AuthContext`: User authentication state
 - `CurrencyContext`: Currency selection and formatting
+- `DashboardProvider`: Nested providers (FinancialSummary → Savings → Budgets → Goals → Recurring → **Insights**)
+- `InsightsContext`: AI insights, health score, anomalies, cash flow forecast, AI digest + chat
 
 **PWA Features**:
 - Service Worker (`sw.js`)
@@ -151,6 +153,38 @@ fin-track/
 ├── firestore.rules                    # Firestore security rules
 └── firestore.indexes.json            # Firestore indexes
 ```
+
+---
+
+## 🤖 ML Service & AI Layer
+
+### Architecture
+```
+Frontend → POST /api/insights/digest  ┐
+           POST /api/insights/chat    ├─ Cloud Run (ml-service) → Gemini 2.5 Flash API
+           POST /api/upload-bill      ┘                         → Google Document AI
+```
+
+### AI Insights Features (March 2026)
+| Feature | Type | Details |
+|---------|------|---------|
+| Financial Health Score | Algorithmic | 0-100, 5 sub-scores, SVG ring card |
+| Spending Anomaly Detector | Algorithmic | Z-score, dismissible banner |
+| Cash Flow Forecast | Algorithmic | 90-day Recharts AreaChart |
+| AI Monthly Digest | Gemini 2.5 Flash | Narrative summary, cached in `aiInsights/{userId}` |
+| AI Budget Coach Chat | Gemini 2.5 Flash | Multi-turn, floating Sheet drawer |
+
+### Key Files
+- `frontend/lib/insights-engine.ts` — Pure algorithmic functions (client-side, zero cost)
+- `frontend/lib/firestore-insights.ts` — Firestore cache (`aiInsights/{userId}`)
+- `frontend/contexts/dashboard/InsightsContext.tsx` — Context for all 5 features
+- `ml-service/src/gemini-handler.ts` — Gemini SDK integration (`gemini-2.5-flash`)
+- `ml-service/src/insights-routes.ts` — Express routes
+
+### Gemini Model Notes
+- **Use**: `gemini-2.5-flash` — only free-tier model available for new Google AI Studio projects
+- `gemini-1.5-flash` → 404 on v1beta for new projects
+- `gemini-2.0-flash` → quota limit:0 on new projects
 
 ---
 
@@ -278,6 +312,37 @@ fin-track/
   balance: number
   currency: string
   createdAt: Timestamp
+  updatedAt: Timestamp
+}
+```
+
+### Collection: `financialSummaries`
+**Document ID**: User's Firebase Auth UID
+Single source of truth for dashboard metrics — updated atomically on every entry mutation.
+
+```typescript
+{
+  userId: string
+  totalBalance: number
+  months: {
+    "YYYY-MM": {
+      totalIncome: number
+      totalExpenses: number
+      expensesByCategory: Record<string, number>
+      incomeByCategory: Record<string, number>
+    }
+  }
+  updatedAt: Timestamp
+}
+```
+
+### Collection: `aiInsights`
+**Document ID**: User's Firebase Auth UID
+Caches Gemini-generated monthly digests to avoid regenerating each visit.
+
+```typescript
+{
+  digests: { "YYYY-MM": "AI-generated narrative text..." }
   updatedAt: Timestamp
 }
 ```
@@ -565,10 +630,10 @@ firebase emulators:start
 ## 🎯 Future Technical Improvements
 
 ### Planned
-- **Cloud Functions**: Recurring transaction auto-creation
-- **Image Upload**: Receipt management with Firebase Storage
-- **Push Notifications**: Budget alerts and reminders
-- **Advanced Caching**: Improved offline support
+- **Receipt Gallery**: UI for browsing/filtering scanned receipts
+- **Net Worth Tracking**: New `assets` Firestore collection
+- **Calendar View**: Transactions on a calendar (react-big-calendar)
+- **Transaction Tags**: Tag input + filter UI
 
 ### Considered
 - **GraphQL**: Alternative to Firestore queries
@@ -594,6 +659,6 @@ firebase emulators:start
 
 ---
 
-**Last Updated**: January 2025  
-**Architecture Version**: 2.0  
+**Last Updated**: March 4, 2026
+**Architecture Version**: 3.0
 **Status**: Production Ready ✅

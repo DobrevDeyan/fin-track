@@ -6,8 +6,11 @@ SERVICE_NAME="ml-service"
 REGION="europe-west1"
 PROCESSOR_ID="566b35e21d475435"
 
-# Your Firebase Hosting URLs (Cloud Run needs to allow CORS from these)
-FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com"
+# Your Firebase Hosting URLs + local dev (Cloud Run needs to allow CORS from these)
+FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000"
+
+# Gemini AI key (free tier from aistudio.google.com)
+GEMINI_API_KEY="${GEMINI_API_KEY:-AIzaSyDZc9xqAkC_3T3fAVrt9dfH6kdhRo6o5aA}"
 
 echo "Deploying $SERVICE_NAME to Google Cloud Run..."
 
@@ -54,7 +57,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --cpu 1 \
   --min-instances 0 \
   --max-instances 3 \
-  --set-env-vars "^@^GCP_PROJECT_ID=$PROJECT_ID@GCP_LOCATION=eu@GCP_PROCESSOR_ID=$PROCESSOR_ID@FRONTEND_URL=$FRONTEND_URL"
+  --set-env-vars "^@^GCP_PROJECT_ID=$PROJECT_ID@GCP_LOCATION=eu@GCP_PROCESSOR_ID=$PROCESSOR_ID@FRONTEND_URL=$FRONTEND_URL@GEMINI_API_KEY=$GEMINI_API_KEY"
 
 # 5. Get the service URL
 SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \

@@ -14,9 +14,10 @@ Firebase Hosting (Static Next.js)     ── https://fin-track-adc2c.web.app
      ├── Firebase Auth                 ── Google/email sign-in
      ├── Firebase Functions            ── recurring transaction processing (daily cron)
      |
-     └── Cloud Run (ML Service)       ── https://ml-service-xxxxx-ew.a.run.app
+     └── Cloud Run (ML Service)       ── https://ml-service-qcggwwshpa-ew.a.run.app
               |
-              └── Google Document AI   ── Receipt/bill OCR parsing (EU processor)
+              ├── Google Document AI   ── Receipt/bill OCR parsing (EU processor)
+              └── Google Gemini AI     ── AI digest + chat (gemini-2.5-flash, free tier)
 ```
 
 ## Components
@@ -26,7 +27,7 @@ Firebase Hosting (Static Next.js)     ── https://fin-track-adc2c.web.app
 | Frontend | `frontend/` | Firebase Hosting |
 | Firestore Rules & Indexes | `firestore.rules`, `firestore.indexes.json` | Firebase Firestore |
 | Cloud Functions | `functions/` | Firebase Functions |
-| ML Service (Receipt Scanner) | `ml-service/` | Google Cloud Run |
+| ML Service (Receipt Scanner + AI Insights) | `ml-service/` | Google Cloud Run |
 
 ---
 
@@ -224,8 +225,21 @@ Firebase config (API key, project ID, etc.) is hardcoded in `frontend/lib/fireba
 | `GCP_PROJECT_ID` | `fin-track-adc2c` | GCP project ID |
 | `GCP_LOCATION` | `eu` | Document AI region |
 | `GCP_PROCESSOR_ID` | `566b35e21d475435` | Document AI processor |
-| `FRONTEND_URL` | `https://fin-track-adc2c.web.app` | CORS allowed origin |
+| `FRONTEND_URL` | `https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000` | CORS allowed origins |
+| `GEMINI_API_KEY` | (set in deploy.sh) | Gemini AI free tier key |
 | `PORT` | `8080` (set by Cloud Run) | Express server port |
+
+**Important**: Use `--update-env-vars` when updating a single var on Cloud Run — `--set-env-vars` replaces ALL vars.
+
+```bash
+# Safe: update one var without wiping others
+gcloud run services update ml-service --update-env-vars GEMINI_API_KEY=new_key --region europe-west1 --project fin-track-adc2c
+```
+
+**Gemini AI setup (free tier):**
+1. Create API key at https://aistudio.google.com (new project → free tier)
+2. Model must be `gemini-2.5-flash` — `gemini-1.5-flash` returns 404, `gemini-2.0-flash` has zero quota on new projects
+3. Key is baked into `deploy.sh` as default; override by setting `GEMINI_API_KEY` env var before running
 
 ### ML Service — Local Development
 
@@ -294,10 +308,18 @@ curl -X POST https://ml-service-xxx-ew.a.run.app/api/upload-bill \
 ## Troubleshooting
 
 ### CORS Errors
-If the frontend gets CORS errors when scanning receipts:
-- Verify `FRONTEND_URL` is set correctly on Cloud Run (must match exactly, including `https://`)
-- Check Cloud Run logs for `CORS blocked request from origin:` messages
-- You can set multiple origins: `FRONTEND_URL=https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com`
+If the frontend gets CORS errors from the ML service:
+- Verify `FRONTEND_URL` includes all origins (Firebase + localhost for dev)
+- Current correct value: `https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000`
+- Update without wiping other vars: `gcloud run services update ml-service --update-env-vars "FRONTEND_URL=..." --region europe-west1 --project fin-track-adc2c`
+
+### AI Chat Returns "not configured"
+- Check `GEMINI_API_KEY` is set: `gcloud run services describe ml-service --region europe-west1 --project fin-track-adc2c --format "yaml(spec.template.spec.containers[0].env)"`
+- Verify model is `gemini-2.5-flash` in `ml-service/src/gemini-handler.ts` (code change requires full `bash deploy.sh`)
+
+### Gemini 404 / Quota errors
+- 404 `gemini-1.5-flash`: deprecated on v1beta for new projects — use `gemini-2.5-flash`
+- 429 `limit: 0` on `gemini-2.0-flash`: no free tier quota on new projects — use `gemini-2.5-flash`
 
 ### Document AI Permission Denied
 If receipt scanning returns 403/permission errors:

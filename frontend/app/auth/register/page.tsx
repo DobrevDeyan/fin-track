@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Chrome, AlertCircle } from "lucide-react";
+import { Chrome, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -120,6 +120,10 @@ export default function RegisterPage() {
     <div className="container flex items-center justify-center min-h-screen py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
+          <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground w-fit mb-2">
+            <ArrowLeft className="h-4 w-4" />
+            Home
+          </Link>
           <CardTitle className="text-2xl">{t("createAccount")}</CardTitle>
           <CardDescription>
             {t("enterInfo")}

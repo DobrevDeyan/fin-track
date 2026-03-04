@@ -1,20 +1,20 @@
 # Feature Implementation Roadmap
 
-**Based on Competitive Analysis - Updated February 17, 2026**
+**Based on Competitive Analysis - Updated March 4, 2026**
 
 ---
 
-## Current App Status: **85% Complete**
+## Current App Status: **95% Complete**
 
 | Category | Status | Completion |
 |----------|--------|------------|
 | Core Features | Fully Implemented | 100% |
-| Financial Features | Near Complete | 95% |
+| Financial Features | Fully Implemented | 100% |
 | Technical Features | Strong | 90% |
 | UI/UX | Excellent | 95% |
 | Analytics/Reporting | Good | 85% |
-| AI/ML | In Progress | 60% |
-| Advanced Features | Started | 20% |
+| AI/ML | **Fully Implemented** | **100%** |
+| Advanced Features | Started | 25% |
 
 ---
 
@@ -36,39 +36,44 @@
 
 ### Technical Features
 - [x] **PWA Support** - Installable, manifest configured
-- [x] **Offline Support** - Service worker, caching, IndexedDB ready
+- [x] **Offline Support** - Service worker, caching
 - [x] **Cloud Functions** - Recurring transaction processor (daily 1 AM UTC)
 - [x] **Dark Mode** - Full theme support
 - [x] **Multi-Currency** - EUR/USD with extensible architecture
 - [x] **Push Notifications** - Salary reminders implemented
-- [x] **GCP Infrastructure** - Cloud Run, Document AI, IAM reviewed and cleaned up (Feb 2026)
-- [x] **Documentation** - Deployment guide and Google Services inventory updated
+- [x] **GCP Infrastructure** - Cloud Run, Document AI, IAM reviewed and cleaned up
+- [x] **Mobile UX** - Swipe-to-close Sheet gestures, stacked FABs, responsive layout
+- [x] **i18n** - Internationalization via next-intl
 
-### AI/ML Features
+### AI/ML Features ✅ (Completed March 2026)
 - [x] **Smart Category Detection** - 100+ merchant keywords
-- [x] **Receipt Scanner Backend** - Google Document AI integration (Expense Parser `566b35e21d475435`, `eu` region)
-- [x] **ML Service API** - Express server on Cloud Run (`europe-west1`), deployed and healthy
+- [x] **Receipt Scanner** - Google Document AI (Expense Parser `566b35e21d475435`, `eu` region)
+- [x] **ML Service API** - Express server on Cloud Run (`europe-west1`), with `/api/insights/digest` + `/api/insights/chat`
+- [x] **Financial Health Score** - Algorithmic 0-100 score (SVG ring card + popover breakdown with 5 sub-scores)
+- [x] **Spending Anomaly Detector** - Z-score based category spike detection, dismissible banner
+- [x] **Cash Flow Forecast** - 90-day Recharts AreaChart projection from recurring transactions
+- [x] **AI Monthly Digest** - Gemini 2.5 Flash narrative, cached in Firestore `aiInsights/{userId}` per month
+- [x] **AI Budget Coach Chat** - Floating drawer, multi-turn chat grounded in aggregated financial data
 
 ---
 
-## In Progress
+## In Progress / Remaining
 
-### This Month (February 2025)
+### Near-term
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Receipt Scanner UI | 70% | Backend done, camera capture done, needs gallery UI |
-| Transaction Tags UI | Schema Ready | Need tag input component |
-| Year-over-Year Analytics | Schema Ready | Need comparison charts |
+| Receipt Gallery & Management | 70% complete | Backend done, camera done; gallery page not built |
+| Transaction Tags UI | Schema ready | Tag input + filter not built |
+| Year-over-Year Analytics | Schema ready | Comparison charts not built |
 
-### Next Month (March 2025)
+### Medium-term
 
 | Feature | Priority | Effort |
 |---------|----------|--------|
-| Receipt Gallery & Management | High | 1 week |
-| Bill Tracking & Reminders | High | 1 week |
-| Net Worth Tracking | Medium | 3-5 days |
+| Net Worth Tracking | High | 3-5 days |
 | Calendar View | Medium | 1 week |
+| Bill Tracking & Reminders | Medium | 1 week |
 
 ---
 
@@ -249,52 +254,48 @@ Storage: Firebase Storage receipts/{userId}/{transactionId}/
 
 ---
 
-### AI-Powered Features
+### AI Insights (Completed March 2026)
 
-**Status**: Partially implemented
-**Effort**: 2-4 weeks
-**Impact**: Very High
+**Status**: Fully implemented
+**Model**: Gemini 2.5 Flash (free tier, `@google/generative-ai` SDK)
 
-**Completed:**
-- [x] Smart category detection from merchant names
-- [x] Receipt OCR with Google Document AI
-- [x] Confidence scoring
+**Files:**
+- `frontend/lib/insights-engine.ts` — Pure algorithmic functions (zero API calls)
+- `frontend/lib/firestore-insights.ts` — Firestore cache for AI digest (`aiInsights/{userId}`)
+- `frontend/lib/insights-api.ts` — ML service HTTP calls
+- `frontend/contexts/dashboard/InsightsContext.tsx` — Context wrapping all 5 features
+- `ml-service/src/gemini-handler.ts` — Gemini 2.5 Flash integration
+- `ml-service/src/insights-routes.ts` — POST `/api/insights/digest` + `/api/insights/chat`
 
-**To Implement:**
-- [ ] Spending insights ("You're spending 30% more on dining")
-- [ ] Budget recommendations
-- [ ] Anomaly detection
-- [ ] AI assistant chat interface
+**Gemini Notes:**
+- Use model `gemini-2.5-flash` — `gemini-1.5-flash` is 404 on new projects, `gemini-2.0-flash` has 0 free quota
+- API key stored in `ml-service/.env` and `ml-service/deploy.sh`
+- Use `--update-env-vars` on Cloud Run (not `--set-env-vars`) to avoid wiping other vars
 
 ---
 
-## Implementation Timeline
+## Implementation Timeline (Revised)
 
-### Q1 2025 (Jan-Mar)
-- [x] Recurring auto-creation (Cloud Function)
-- [x] Receipt scanner backend
-- [ ] Receipt management UI
-- [ ] Transaction tags
+### Q1 2026 (Jan-Mar) ✅
+- [x] Financial Health Score (algorithmic)
+- [x] Spending Anomaly Detection (Z-score)
+- [x] Cash Flow Forecast (90-day, Recharts)
+- [x] AI Monthly Digest (Gemini 2.5 Flash, Firestore cached)
+- [x] AI Budget Coach Chat (Gemini 2.5 Flash, floating Sheet drawer)
+- [x] Mobile UX: swipe gestures, FAB stacking, Sheet close button fixes
+
+### Q2 2026 (Apr-Jun)
+- [ ] Receipt gallery & management UI
 - [ ] Net worth tracking
+- [ ] Transaction tags UI
+- [ ] Bill tracking & reminders
+- [ ] Year-over-Year analytics
+
+### Q3 2026 (Jul-Sep)
 - [ ] Calendar view
-
-### Q2 2025 (Apr-Jun)
-- [ ] Bill tracking
 - [ ] Basic investment tracking
-- [ ] AI spending insights
-- [ ] Enhanced analytics (YoY, Sankey)
-
-### Q3 2025 (Jul-Sep)
-- [ ] Receipt OCR improvements
-- [ ] AI recommendations
 - [ ] Custom report builder
-- [ ] Subscription management
-
-### Q4 2025 (Oct-Dec)
-- [ ] AI assistant
-- [ ] Multi-user support
-- [ ] Expense splitting
-- [ ] Advanced tax features
+- [ ] Enhanced AI recommendations
 
 ---
 
@@ -311,7 +312,7 @@ Storage: Firebase Storage receipts/{userId}/{transactionId}/
 - Cloud Functions (Node.js 20)
 - Google Document AI
 
-**Current Version:** 2.5
+**Current Version:** 3.0
 
 ---
 
@@ -336,6 +337,6 @@ Storage: Firebase Storage receipts/{userId}/{transactionId}/
 
 ---
 
-**Document Version**: 2.1
-**Last Updated**: February 17, 2026
+**Document Version**: 3.0
+**Last Updated**: March 4, 2026
 **Next Review**: Monthly

@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { processDocument } from './document-ai-handler';
+import insightsRouter from './insights-routes';
 import * as fs from 'fs';
 
 const app = express();
@@ -79,6 +80,9 @@ app.get('/api/health', (_req: Request, res: Response) => {
         },
     });
 });
+
+// AI Insights routes (digest + chat via Gemini)
+app.use('/api/insights', insightsRouter);
 
 // Receipt/bill upload endpoint
 app.post('/api/upload-bill', upload.single('billFile'), async (req: Request, res: Response, _next: NextFunction) => {
@@ -161,4 +165,7 @@ app.listen(PORT, () => {
     console.log(`ML Service running on http://localhost:${PORT}`);
     console.log(`Health check: http://localhost:${PORT}/api/health`);
     console.log(`Upload endpoint: POST http://localhost:${PORT}/api/upload-bill`);
+    console.log(`AI Insights: POST http://localhost:${PORT}/api/insights/digest`);
+    console.log(`AI Chat:     POST http://localhost:${PORT}/api/insights/chat`);
+    console.log(`Gemini AI:   ${process.env.GEMINI_API_KEY ? 'configured' : 'NOT configured (add GEMINI_API_KEY)'}`);
 });

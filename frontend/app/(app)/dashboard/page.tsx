@@ -10,6 +10,11 @@ import { ScanLine } from "lucide-react";
 import { MetricsCards } from "@/components/dashboard/MetricsCards";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
+import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
+import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
+import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
+import { AIDigest } from "@/components/dashboard/AIDigest";
+import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
@@ -178,6 +183,11 @@ function DashboardInnerContent() {
                     </Button>
                 </div>
 
+                {/* AI Monthly Digest */}
+                <div className="mb-8">
+                    <AIDigest />
+                </div>
+
                 {/* Metrics Cards - Now powered by financial summary (accurate across ALL entries) */}
                 <div className="mb-8">
                     <MetricsCards
@@ -191,16 +201,29 @@ function DashboardInnerContent() {
                     />
                 </div>
 
+                {/* Health Score + Anomaly Alert */}
+                <div className="flex flex-col md:flex-row gap-4 mb-8">
+                    <HealthScoreCard />
+                    <div className="flex-1">
+                        <AnomalyAlert userCurrency={userCurrency} />
+                    </div>
+                </div>
+
                 {/* Budget Progress - Now uses adjusted spent & budget */}
                 {((monthlyBudget ?? 0) > 0 || currentMonthIncome > 0) && (
                     <div className="mb-8">
-                        <BudgetProgressBar 
-                          monthlyBudget={adjustedBaseBudget} 
-                          currentMonthExpenses={Math.max(0, adjustedSpent)} 
-                          userCurrency={userCurrency} 
+                        <BudgetProgressBar
+                          monthlyBudget={adjustedBaseBudget}
+                          currentMonthExpenses={Math.max(0, adjustedSpent)}
+                          userCurrency={userCurrency}
                         />
                     </div>
                 )}
+
+                {/* Cash Flow Forecast */}
+                <div className="mb-8">
+                    <CashFlowForecast userCurrency={userCurrency} />
+                </div>
 
                 {/* Transactions Table (still uses paginated entries for display) */}
                 <TransactionsTable
@@ -256,10 +279,13 @@ function DashboardInnerContent() {
                 <ReceiptScannerDialog open={scannerDialogOpen} onOpenChange={setScannerDialogOpen} onSubmit={entriesHook.handleAdd} />
 
                 {/* Quick Expense FAB */}
-                <QuickExpenseFAB 
-                  onSubmit={entriesHook.handleAdd} 
+                <QuickExpenseFAB
+                  onSubmit={entriesHook.handleAdd}
                   savingsAccounts={activeSavingsAccounts}
                 />
+
+                {/* AI Budget Coach Chat (floating) */}
+                <AIChatDrawer />
 
                 {/* Salary Reminder Notifications */}
                 <SalaryReminderNotification entries={entriesHook.entries} />
