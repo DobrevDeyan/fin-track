@@ -142,7 +142,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
                 <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded-md">
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
                   <span className="text-sm text-yellow-700">
-                    {t("approachingLimit", { threshold: budget.alertThreshold })}
+                    {t("approachingLimit", { threshold: budget.alertThreshold ?? 0 })}
                   </span>
                 </div>
               )}
