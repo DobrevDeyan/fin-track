@@ -31,16 +31,16 @@ export interface QuickCategory {
 }
 
 export const QUICK_EXPENSE_CATEGORIES: QuickCategory[] = [
-  { id: "Food & Dining", label: "Food", color: "bg-red-500" },
+  { id: "Food & Dining", label: "Food & Dining", color: "bg-red-500" },
   { id: "Shopping", label: "Shopping", color: "bg-blue-500" },
-  { id: "Transportation", label: "Fuel", color: "bg-green-500" },
-  { id: "Bills & Utilities", label: "Bills", color: "bg-yellow-500" },
-  { id: "Taxes & Insurance", label: "Taxes", color: "bg-orange-600" },
-  { id: "Entertainment", label: "Fun", color: "bg-purple-500" },
-  { id: "Health & Pharmacy", label: "Health", color: "bg-pink-500" },
+  { id: "Transportation", label: "Transportation", color: "bg-green-500" },
+  { id: "Bills & Utilities", label: "Bills & Utilities", color: "bg-yellow-500" },
+  { id: "Taxes & Insurance", label: "Taxes & Insurance", color: "bg-orange-600" },
+  { id: "Entertainment", label: "Entertainment", color: "bg-purple-500" },
+  { id: "Health & Pharmacy", label: "Health & Pharmacy", color: "bg-pink-500" },
   { id: "Education", label: "Education", color: "bg-indigo-500" },
-  { id: "Travel & Vacation", label: "Travel", color: "bg-teal-500" },
-  { id: "Gifts & Donations", label: "Gifts", color: "bg-rose-500" },
+  { id: "Travel & Vacation", label: "Travel & Vacation", color: "bg-teal-500" },
+  { id: "Gifts & Donations", label: "Gifts & Donations", color: "bg-rose-500" },
   { id: "Other", label: "Other", color: "bg-gray-500" },
 ];
 

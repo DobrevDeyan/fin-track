@@ -13,7 +13,6 @@ import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 // import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
-import { AIDigest } from "@/components/dashboard/AIDigest";
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
@@ -68,12 +67,10 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
         totalBalance: globalBalance,
         currentMonthIncome,
         currentMonthExpenses,
-        currentMonthBalance,
         currentMonthSalary,
         balanceChange,
+        incomeChange,
         expensesChange,
-        savingsChange: netSavingsChange,
-        salaryChange,
         refreshSummary,
     } = useFinancialSummary();
 
@@ -153,9 +150,12 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
         });
 
         const safeMonthlyBudget = monthlyBudget ?? 0;
-        const discretionaryIncome = currentMonthIncome - currentMonthSalary - excludedIncome;
-        const adjustedBase = currentMonthSalary + Math.max(0, discretionaryIncome);
         const adjustedSpt = currentMonthExpenses - excludedExpenses;
+
+        // If user has a profile budget set, use it as the ceiling.
+        // Otherwise derive budget from income (income-based budgeting).
+        const incomeDerivedBudget = currentMonthSalary + Math.max(0, currentMonthIncome - currentMonthSalary - excludedIncome);
+        const adjustedBase = safeMonthlyBudget > 0 ? safeMonthlyBudget : incomeDerivedBudget;
 
         return {
             adjustedBaseBudget: adjustedBase,
@@ -178,20 +178,16 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                     </Button>
                 </div>
 
-                {/* AI Monthly Digest */}
-                <div className="mb-8">
-                    <AIDigest />
-                </div>
-
-                {/* Metrics Cards - Now powered by financial summary (accurate across ALL entries) */}
+                {/* Metrics Cards */}
                 <div className="mb-8">
                     <MetricsCards
                         totalBalance={globalBalance}
-                        netSavings={currentMonthBalance}
-                        totalExpenses={currentMonthExpenses}
-                        balanceChange={balanceChange}
-                        savingsChange={netSavingsChange}
-                        expensesChange={expensesChange}
+                        monthlyIncome={currentMonthIncome}
+                        monthlySpending={Math.max(0, adjustedSpent)}
+                        monthlyCashFlow={currentMonthIncome - Math.max(0, adjustedSpent)}
+                        incomeChange={incomeChange}
+                        spendingChange={expensesChange}
+                        cashFlowChange={balanceChange}
                         userCurrency={userCurrency}
                     />
                 </div>
@@ -199,9 +195,7 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                 {/* Health Score + Anomaly Alert */}
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <HealthScoreCard />
-                    <div className="flex-1">
-                        <AnomalyAlert userCurrency={userCurrency} />
-                    </div>
+                    <AnomalyAlert userCurrency={userCurrency} className="flex-1" />
                 </div>
 
                 {/* Budget Progress - Now uses adjusted spent & budget */}
@@ -238,16 +232,13 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                 }}>
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
-                            <span className="md:hidden">Savings ({savingsAccounts.length})</span>
-                            <span className="hidden md:inline">{tSavings("title")} ({savingsAccounts.length})</span>
+                            {tSavings("tabLabel")} ({savingsAccounts.length})
                         </TabsTrigger>
                         <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
-                            <span className="md:hidden">Budgets ({budgets.length})</span>
-                            <span className="hidden md:inline">{tBudgets("title")} ({budgets.length})</span>
+                            {tBudgets("tabLabel")} ({budgets.length})
                         </TabsTrigger>
                         <TabsTrigger value="recurring" className="text-xs md:text-sm px-1 md:px-3">
-                            <span className="md:hidden">Recurring ({recurringTransactions.length})</span>
-                            <span className="hidden md:inline">{tRecurring("title")} ({recurringTransactions.length})</span>
+                            {tRecurring("tabLabel")} ({recurringTransactions.length})
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="savings">

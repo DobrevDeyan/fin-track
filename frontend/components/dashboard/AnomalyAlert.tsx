@@ -12,6 +12,7 @@ import { memo, useState } from "react"
 import { AlertTriangle, X, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
+import { cn } from "@/lib/utils"
 
 function formatCurrency(amount: number, currency = "EUR") {
   return new Intl.NumberFormat("en-US", {
@@ -21,14 +22,14 @@ function formatCurrency(amount: number, currency = "EUR") {
   }).format(amount)
 }
 
-export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR" }: { userCurrency?: string }) {
+export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR", className }: { userCurrency?: string; className?: string }) {
   const { anomalies } = useInsightsContext()
   const [dismissed, setDismissed] = useState(false)
 
   if (dismissed || anomalies.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 p-4 shadow-sm">
+    <div className={cn("rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 p-4 shadow-sm", className)}>
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="flex-shrink-0 mt-0.5">

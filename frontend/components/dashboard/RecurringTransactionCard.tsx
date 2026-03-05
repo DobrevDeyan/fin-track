@@ -6,7 +6,7 @@ import { Edit, Trash2, Calendar, Repeat } from "lucide-react"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { formatCurrency } from "@/lib/currency-utils"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
-import { getBudgetPeriodLabel } from "@/lib/constants/budget.constants"
+import { useTranslations } from "next-intl"
 import type { BudgetPeriod } from "@/lib/constants/budget.constants"
 
 interface RecurringTransactionCardProps {
@@ -22,14 +22,15 @@ export function RecurringTransactionCard({
   onDelete,
   userCurrency = "EUR",
 }: RecurringTransactionCardProps) {
+  const t = useTranslations("recurring")
+  const tCommon = useTranslations("common")
+
   const nextDate = recurring.nextDate.toDate()
-  const formattedDate = nextDate.toLocaleDateString("en-US", {
+  const formattedDate = nextDate.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
-  
-  // Use constants for colors and labels
 
   return (
     <Card className={`${!recurring.isActive ? "opacity-60" : ""}`}>
@@ -41,7 +42,7 @@ export function RecurringTransactionCard({
           </div>
           {!recurring.isActive && (
             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-              Inactive
+              {tCommon("inactive")}
             </span>
           )}
         </div>
@@ -49,7 +50,7 @@ export function RecurringTransactionCard({
       <CardContent>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Amount</span>
+            <span className="text-sm text-muted-foreground">{tCommon("amount")}</span>
             <span className={`font-semibold ${getTransactionTypeColor(recurring.type)}`}>
               {recurring.type === "expense" ? "-" : "+"}
               {formatCurrency(recurring.amount, { currency: userCurrency })}
@@ -58,12 +59,12 @@ export function RecurringTransactionCard({
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Repeat className="h-4 w-4" />
-            <span>{getBudgetPeriodLabel(recurring.frequency as BudgetPeriod)}</span>
+            <span>{tCommon(recurring.frequency as BudgetPeriod)}</span>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>Next: {formattedDate}</span>
+            <span>{t("next")}: {formattedDate}</span>
           </div>
 
           <div className="flex gap-2 pt-2 border-t">
@@ -74,7 +75,7 @@ export function RecurringTransactionCard({
               onClick={() => onEdit(recurring)}
             >
               <Edit className="h-4 w-4 mr-2" />
-              Edit
+              {tCommon("edit")}
             </Button>
             <Button
               variant="outline"
@@ -83,7 +84,7 @@ export function RecurringTransactionCard({
               onClick={() => onDelete(recurring.id)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {tCommon("delete")}
             </Button>
           </div>
         </div>
@@ -91,4 +92,3 @@ export function RecurringTransactionCard({
     </Card>
   )
 }
-

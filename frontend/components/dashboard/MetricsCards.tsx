@@ -1,97 +1,137 @@
 "use client"
 
 import { memo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingDown, Wallet, PiggyBank } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { TrendingDown, TrendingUp, Wallet, ArrowUp, ArrowDown, Minus } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
-import { getTrendColor } from "@/lib/constants/ui.constants"
 import { useTranslations } from "next-intl"
+import { cn } from "@/lib/utils"
 
 interface MetricsCardsProps {
   totalBalance: number
-  netSavings: number
-  totalExpenses: number
-  balanceChange: { change: string; trend: "up" | "down" | "neutral" }
-  savingsChange: { change: string; trend: "up" | "down" | "neutral" }
-  expensesChange: { change: string; trend: "up" | "down" | "neutral" }
+  monthlyIncome: number
+  monthlySpending: number
+  monthlyCashFlow: number
+  incomeChange: { change: string; trend: "up" | "down" | "neutral" }
+  spendingChange: { change: string; trend: "up" | "down" | "neutral" }
+  cashFlowChange: { change: string; trend: "up" | "down" | "neutral" }
   userCurrency?: string
+}
+
+function TrendBadge({ change, trend }: { change: string; trend: "up" | "down" | "neutral" }) {
+  if (change === "No change") return null
+  const Icon = trend === "up" ? ArrowUp : trend === "down" ? ArrowDown : Minus
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 text-[10px] font-semibold",
+        trend === "up" ? "text-emerald-600" : trend === "down" ? "text-red-500" : "text-muted-foreground"
+      )}
+    >
+      <Icon className="h-2.5 w-2.5" />
+      {change}
+    </span>
+  )
 }
 
 export const MetricsCards = memo(function MetricsCards({
   totalBalance,
-  netSavings,
-  totalExpenses,
-  balanceChange,
-  savingsChange,
-  expensesChange,
+  monthlyIncome,
+  monthlySpending,
+  monthlyCashFlow,
+  incomeChange,
+  spendingChange,
+  cashFlowChange,
   userCurrency = "EUR",
 }: MetricsCardsProps) {
   const t = useTranslations("dashboard")
+  const fmt = (v: number) => formatCurrency(v, { currency: userCurrency })
 
-  const metrics = [
+  const monthlyStats = [
     {
-      titleKey: "totalBalance",
-      value: formatCurrency(totalBalance, { currency: userCurrency }),
-      icon: Wallet,
-      gradient: "from-blue-600 to-blue-800",
-      iconColor: "text-blue-600",
-      change: balanceChange.change,
-      trend: balanceChange.trend,
-      isSavings: false,
+      label: t("monthlyIncome"),
+      value: fmt(monthlyIncome),
+      rawValue: monthlyIncome,
+      icon: TrendingUp,
+      iconColor: "text-emerald-600",
+      change: incomeChange,
+      positiveIsGood: true,
     },
     {
-      titleKey: "netSavings",
-      value: formatCurrency(netSavings, { currency: userCurrency }),
-      icon: PiggyBank,
-      gradient: netSavings >= 0 ? "from-emerald-600 to-emerald-800" : "from-orange-600 to-orange-800",
-      iconColor: netSavings >= 0 ? "text-emerald-600" : "text-orange-600",
-      change: savingsChange.change,
-      trend: savingsChange.trend,
-      isSavings: false,
-    },
-    {
-      titleKey: "totalExpenses",
-      value: formatCurrency(totalExpenses, { currency: userCurrency }),
+      label: t("monthlySpending"),
+      value: fmt(monthlySpending),
+      rawValue: monthlySpending,
       icon: TrendingDown,
-      gradient: "from-red-600 to-red-800",
-      iconColor: "text-red-600",
-      change: expensesChange.change,
-      trend: expensesChange.trend,
-      isSavings: false,
+      iconColor: "text-red-500",
+      change: spendingChange,
+      positiveIsGood: false,
+    },
+    {
+      label: t("monthlyCashFlow"),
+      value: fmt(monthlyCashFlow),
+      rawValue: monthlyCashFlow,
+      icon: Wallet,
+      iconColor: monthlyCashFlow >= 0 ? "text-emerald-600" : "text-red-500",
+      change: cashFlowChange,
+      positiveIsGood: true,
     },
   ]
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-      {metrics.map((metric) => {
-        const Icon = metric.icon
-        return (
-          <Card
-            key={metric.titleKey}
-            className="relative overflow-hidden drop-shadow-xl shadow-black/10"
-          >
-            <div
-              className={`absolute inset-0 bg-gradient-to-br ${metric.gradient} opacity-10`}
-            />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t(metric.titleKey)}
-              </CardTitle>
-              <Icon className={`h-4 w-4 ${metric.iconColor}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metric.value}</div>
-              {metric.change !== "+100%" && metric.change !== "-100%" && metric.change !== "No change" ? (
-                <p className={`text-xs mt-1 ${getTrendColor(metric.trend as "up" | "down" | "neutral")}`}>
-                  {metric.isSavings
-                    ? metric.change
-                    : `${metric.change} ${t("fromLastMonth")}`}
+    <Card className="overflow-hidden drop-shadow-xl shadow-black/10">
+      {/* Net Balance — all-time */}
+      <div className="px-5 pt-5 pb-4 border-b">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
+              {t("totalBalance")}
+            </p>
+            <p
+              className={cn(
+                "text-3xl font-bold tracking-tight",
+                totalBalance >= 0 ? "text-foreground" : "text-red-500"
+              )}
+            >
+              {fmt(totalBalance)}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">{t("allTimeNet")}</p>
+          </div>
+          <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+            <Wallet className="h-5 w-5 text-blue-600" />
+          </div>
+        </div>
+      </div>
+
+      {/* This Month — 3 stats */}
+      <CardContent className="p-0">
+        <div className="px-5 pt-3 pb-1">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+            {t("thisMonth")}
+          </p>
+        </div>
+        <div className="grid grid-cols-3 divide-x">
+          {monthlyStats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <div key={stat.label} className="px-4 py-3 flex flex-col gap-1">
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Icon className={cn("h-3 w-3", stat.iconColor)} />
+                  <span className="text-[10px] font-medium leading-none">{stat.label}</span>
+                </div>
+                <p
+                  className={cn(
+                    "text-base font-bold leading-tight",
+                    stat.rawValue < 0 ? "text-red-500" : "text-foreground"
+                  )}
+                >
+                  {stat.value}
                 </p>
-              ) : null}
-            </CardContent>
-          </Card>
-        )
-      })}
-    </div>
+                <TrendBadge change={stat.change.change} trend={stat.change.trend} />
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
   )
 })

@@ -87,7 +87,12 @@
     "welcome": "Welcome back, {name}",
     "scanReceipt": "Scan Receipt",
     "balance": "Balance",
-    "totalBalance": "Total Balance",
+    "totalBalance": "Net Balance",
+    "allTimeNet": "All-time · income minus expenses",
+    "thisMonth": "This Month",
+    "monthlyIncome": "Income",
+    "monthlySpending": "Spending",
+    "monthlyCashFlow": "Net",
     "totalIncome": "Total Income",
     "totalExpenses": "Total Expenses",
     "netSavings": "Net Savings",
@@ -179,6 +184,7 @@
   },
   "budgets": {
     "title": "Budget Management",
+    "tabLabel": "Budgets",
     "description": "Track your spending limits and stay on budget",
     "createBudget": "Create Budget",
     "editBudget": "Edit Budget",
@@ -204,10 +210,13 @@
     "overBudget": "over budget",
     "overBudgetAlert": "Over budget!",
     "approachingLimit": "Approaching budget limit ({threshold}%)",
-    "onTrack": "On track"
+    "onTrack": "On track",
+    "expired": "Expired — period ended",
+    "renew": "Renew"
   },
   "savings": {
     "title": "Savings Accounts",
+    "tabLabel": "Savings",
     "description": "Track your savings separately from your spending balance",
     "descriptionWithTotal": "Track your savings separately from your spending balance • Total: {total}",
     "createAccount": "Create Savings Account",
@@ -224,6 +233,7 @@
   },
   "recurring": {
     "title": "Recurring Transactions",
+    "tabLabel": "Recurring",
     "description": "Manage your recurring bills, subscriptions, and income",
     "createRecurring": "Create Recurring Transaction",
     "editRecurring": "Edit Recurring Transaction",
@@ -243,7 +253,11 @@
     "disabled": "Disabled",
     "nextOccurrence": "Next Occurrence Date",
     "nextOccurrenceHint": "When should the next transaction be created?",
-    "activeAutoCreate": "Active (will create transactions automatically)"
+    "activeAutoCreate": "Active (will create transactions automatically)",
+    "next": "Next",
+    "noTransactions": "No Recurring Transactions Yet",
+    "noTransactionsDesc": "Set up recurring bills and subscriptions to automatically create transactions. Perfect for monthly subscriptions, bills, or regular income.",
+    "createFirst": "Create Your First Recurring Transaction"
   },
   "goals": {
     "title": "Financial Goals",

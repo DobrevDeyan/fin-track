@@ -237,6 +237,7 @@ export async function getUserEntries(
         entriesRef,
         where("userId", "==", userId),
         orderBy("date", "desc"),
+        orderBy("createdAt", "desc"),
         startAfter(lastVisible),
         limit(limitCount)
       )
@@ -245,6 +246,7 @@ export async function getUserEntries(
         entriesRef,
         where("userId", "==", userId),
         orderBy("date", "desc"),
+        orderBy("createdAt", "desc"),
         limit(limitCount)
       )
     }
@@ -254,7 +256,7 @@ export async function getUserEntries(
       querySnapshot = await getDocs(q)
     } catch (indexError: unknown) {
       console.error(
-        "Firestore Index Error (likely missing index for userId + date):",
+        "Firestore Index Error (likely missing index for userId + date + createdAt):",
         indexError
       )
       throw indexError
@@ -354,93 +356,18 @@ export async function updateEntry(
 
       const summaryRef = doc(db, "financialSummaries", oldEntry.userId)
 
-      // Reverse old entry's effect (sign = -1, entryCount stays same)
-      const reverseUpdates = buildSummaryIncrements(
-        oldEntry.type,
-        oldEntry.amount,
-        oldEntry.category,
-        oldEntry.date
-      )
-      // Don't change entryCount for updates (it's the same entry)
-      delete reverseUpdates.entryCount
-      // Negate all increments
       const oldMonthKey = getMonthKey(oldEntry.date)
-      const negatedReverse: Record<string, FieldValue> = {
-        updatedAt: serverTimestamp(),
-      }
-      if (oldEntry.type === "income") {
-        negatedReverse.totalIncome = increment(-oldEntry.amount)
-        negatedReverse[`months.${oldMonthKey}.income`] = increment(-oldEntry.amount)
-        negatedReverse[`months.${oldMonthKey}.incomeByCategory.${oldEntry.category}`] = increment(-oldEntry.amount)
-      } else {
-        negatedReverse.totalExpenses = increment(-oldEntry.amount)
-        negatedReverse[`months.${oldMonthKey}.expenses`] = increment(-oldEntry.amount)
-        negatedReverse[`months.${oldMonthKey}.expensesByCategory.${oldEntry.category}`] = increment(-oldEntry.amount)
-      }
-
-      // Apply new entry's effect
       const newType = updates.type ?? oldEntry.type
       const newAmount = updates.amount ?? oldEntry.amount
       const newCategory = updates.category ?? oldEntry.category
       const newDate = updates.date ?? oldEntry.date
       const newMonthKey = getMonthKey(newDate)
 
-      const addUpdates: Record<string, FieldValue> = {}
-      if (newType === "income") {
-        addUpdates.totalIncome = increment(newAmount)
-        addUpdates[`months.${newMonthKey}.income`] = increment(newAmount)
-        addUpdates[`months.${newMonthKey}.incomeByCategory.${newCategory}`] = increment(newAmount)
-      } else {
-        addUpdates.totalExpenses = increment(newAmount)
-        addUpdates[`months.${newMonthKey}.expenses`] = increment(newAmount)
-        addUpdates[`months.${newMonthKey}.expensesByCategory.${newCategory}`] = increment(newAmount)
-      }
-
-      // Merge reverse + add into one update (Firestore handles multiple increments on same field)
-      // But if they target the same field, we need to combine them.
-      // The safest approach: compute net deltas ourselves.
       const combinedUpdates: Record<string, FieldValue> = {
         updatedAt: serverTimestamp(),
       }
 
-      // Net income change
-      const oldIncomeEffect = oldEntry.type === "income" ? oldEntry.amount : 0
-      const newIncomeEffect = newType === "income" ? newAmount : 0
-      const incomeDelta = newIncomeEffect - oldIncomeEffect
-      if (incomeDelta !== 0) {
-        combinedUpdates.totalIncome = increment(incomeDelta)
-      }
-
-      // Net expenses change
-      const oldExpenseEffect = oldEntry.type === "expense" ? oldEntry.amount : 0
-      const newExpenseEffect = newType === "expense" ? newAmount : 0
-      const expenseDelta = newExpenseEffect - oldExpenseEffect
-      if (expenseDelta !== 0) {
-        combinedUpdates.totalExpenses = increment(expenseDelta)
-      }
-
-      // Monthly breakdown: reverse old month, add to new month
-      if (oldEntry.type === "income") {
-        combinedUpdates[`months.${oldMonthKey}.income`] = increment(-oldEntry.amount)
-        combinedUpdates[`months.${oldMonthKey}.incomeByCategory.${oldEntry.category}`] = increment(-oldEntry.amount)
-      } else {
-        combinedUpdates[`months.${oldMonthKey}.expenses`] = increment(-oldEntry.amount)
-        combinedUpdates[`months.${oldMonthKey}.expensesByCategory.${oldEntry.category}`] = increment(-oldEntry.amount)
-      }
-
-      if (newType === "income") {
-        // If same month+field, increments accumulate correctly
-        const key = `months.${newMonthKey}.income`
-        combinedUpdates[key] = increment(
-          newAmount + ((combinedUpdates[key] as unknown as number) || 0)
-        )
-        // Actually, we can't read the FieldValue. Let's use a different approach:
-        // Just add both operations; if they target the same field path, Firestore
-        // handles the second set() call. But in a single update(), duplicate keys
-        // in JS object would overwrite. So we must handle this case manually.
-      }
-
-      // Simplified approach: compute per-field net deltas
+      // Compute net per-field deltas (reverse old, apply new)
       const fieldDeltas: Record<string, number> = {}
 
       // Reverse old

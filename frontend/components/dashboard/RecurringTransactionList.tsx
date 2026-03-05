@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Repeat } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
+import { useTranslations } from "next-intl"
 
 interface RecurringTransactionListProps {
   recurringTransactions: (RecurringEntryDocument & { id: string })[]
@@ -19,6 +20,8 @@ export function RecurringTransactionList({
   onEdit,
   onDelete,
 }: RecurringTransactionListProps) {
+  const t = useTranslations("recurring")
+
   // Sort: active first, then by next date
   const sortedRecurring = [...recurringTransactions].sort((a, b) => {
     if (a.isActive && !b.isActive) return -1
@@ -31,14 +34,13 @@ export function RecurringTransactionList({
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
           <Repeat className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mb-4 md:mb-6" />
-          <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">No Recurring Transactions Yet</h3>
+          <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">{t("noTransactions")}</h3>
           <p className="text-sm md:text-base text-muted-foreground text-center mb-4 md:mb-6 max-w-md md:max-w-lg px-4">
-            Set up recurring bills and subscriptions to automatically create transactions. Perfect for
-            monthly subscriptions, bills, or regular income.
+            {t("noTransactionsDesc")}
           </p>
           <Button onClick={onAdd} size="default" className="md:text-base">
             <Plus className="h-4 w-4 mr-2" />
-            Create Your First Recurring Transaction
+            {t("createFirst")}
           </Button>
         </CardContent>
       </Card>

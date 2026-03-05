@@ -36,6 +36,20 @@ export function AIChatDrawer() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (deltaX > 60 && deltaY < deltaX) setOpen(false)
+  }
+
   const { chatMessages, chatLoading, chatNotConfigured, sendMessage, clearChat } =
     useInsightsContext()
 
@@ -91,6 +105,8 @@ export function AIChatDrawer() {
         <SheetContent
           side="right"
           className="w-full sm:max-w-[420px] flex flex-col p-0 [&>button]:hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Header */}
           <SheetHeader className="px-4 py-3 border-b flex-row items-center justify-between space-y-0">

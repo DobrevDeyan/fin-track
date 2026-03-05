@@ -7,8 +7,8 @@ import { Pencil, Trash2, AlertCircle, CheckCircle2, RefreshCw } from "lucide-rea
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/date-utils"
-import { ColorUtils } from "@/lib/utils/color-utils"
 import { getTrendColor } from "@/lib/constants/ui.constants"
+import { useTranslations } from "next-intl"
 
 interface Budget {
   id: string
@@ -32,6 +32,9 @@ interface BudgetCardProps {
 }
 
 export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetCardProps) {
+  const t = useTranslations("budgets")
+  const tCommon = useTranslations("common")
+
   const remaining = budget.amount - spent
   const percentage = Math.min((spent / budget.amount) * 100, 100)
   const isOverBudget = spent > budget.amount
@@ -41,15 +44,6 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
   const startDate = new Date(budget.startDate)
   const endDate = new Date(budget.endDate)
   const isExpired = endDate < new Date()
-
-  const renewLabel = (() => {
-    const now = new Date()
-    if (budget.period === "monthly") {
-      return `Renew for ${now.toLocaleString("default", { month: "long", year: "numeric" })}`
-    }
-    if (budget.period === "weekly") return "Renew for this week"
-    return `Renew for ${now.getFullYear()}`
-  })()
 
   const getProgressColor = () => {
     if (isOverBudget) return "bg-red-500"
@@ -67,7 +61,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
               {budget.category}
             </Badge>
             <p className="text-sm text-muted-foreground mt-1">
-              {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)} •{" "}
+              {tCommon(budget.period)} •{" "}
               {formatDate(startDate)} - {formatDate(endDate)}
             </p>
           </div>
@@ -96,7 +90,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Spent</span>
+              <span className="text-muted-foreground">{t("spent")}</span>
               <span className="font-medium">
                 {budget.currency} {spent.toFixed(2)} / {budget.currency} {budget.amount.toFixed(2)}
               </span>
@@ -109,12 +103,12 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
             </div>
             <div className="flex justify-between items-center text-xs">
               <span className={`font-medium ${isOverBudget ? "text-red-500" : ""}`}>
-                {percentage.toFixed(1)}% used
+                {percentage.toFixed(1)}% {t("used")}
               </span>
-              <span className={`font-medium ${ColorUtils.getTrendColorClassFromValue(remaining)}`}>
+              <span className={`font-medium ${getTrendColor(remaining > 0 ? "up" : remaining < 0 ? "down" : "neutral")}`}>
                 {remaining >= 0
-                  ? `${budget.currency} ${remaining.toFixed(2)} remaining`
-                  : `${budget.currency} ${Math.abs(remaining).toFixed(2)} over budget`}
+                  ? `${budget.currency} ${remaining.toFixed(2)} ${t("remainingAmount")}`
+                  : `${budget.currency} ${Math.abs(remaining).toFixed(2)} ${t("overBudget")}`}
               </span>
             </div>
           </div>
@@ -124,7 +118,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
             <div className="flex items-center justify-between gap-2 p-2 bg-muted rounded-md">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Expired — period ended</span>
+                <span className="text-sm text-muted-foreground">{t("expired")}</span>
               </div>
               <Button
                 size="sm"
@@ -133,7 +127,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
                 onClick={() => onRenew(budget.id, budget.period)}
               >
                 <RefreshCw className="h-3 w-3" />
-                {renewLabel}
+                {t("renew")}
               </Button>
             </div>
           ) : (
@@ -141,21 +135,21 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
               {isOverBudget && (
                 <div className="flex items-center gap-2 p-2 bg-red-50 rounded-md">
                   <AlertCircle className="h-4 w-4 text-red-500" />
-                  <span className="text-sm text-red-700">Over budget!</span>
+                  <span className="text-sm text-red-700">{t("overBudgetAlert")}</span>
                 </div>
               )}
               {isNearThreshold && !isOverBudget && (
                 <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded-md">
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
                   <span className="text-sm text-yellow-700">
-                    Approaching budget limit ({budget.alertThreshold}%)
+                    {t("approachingLimit", { threshold: budget.alertThreshold })}
                   </span>
                 </div>
               )}
               {!isOverBudget && !isNearThreshold && percentage < 50 && (
                 <div className="flex items-center gap-2 p-2 bg-green-50 rounded-md">
                   <CheckCircle2 className={`h-4 w-4 ${getTrendColor("up")}`} />
-                  <span className="text-sm text-green-700">On track</span>
+                  <span className="text-sm text-green-700">{t("onTrack")}</span>
                 </div>
               )}
             </>
@@ -164,7 +158,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
           {/* Active Status */}
           {!budget.isActive && (
             <Badge variant="outline" className="w-fit">
-              Inactive
+              {tCommon("inactive")}
             </Badge>
           )}
         </div>
@@ -172,4 +166,3 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
     </Card>
   )
 }
-

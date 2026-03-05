@@ -11,9 +11,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getUserEntries } from "@/lib/firestore-entries"
 import { formatCurrency } from "@/lib/currency-utils"
-import { getDateRange, getCustomDateRange } from "@/lib/date-utils"
+import { getCustomDateRange } from "@/lib/date-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
-import { Download, Calendar, FileText, FileSpreadsheet } from "lucide-react"
+import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
+import { fetchAIDigest } from "@/lib/insights-api"
+import type { SpendingContext } from "@/lib/insights-engine"
+import { Sparkles, Calendar, FileText, FileSpreadsheet, Info, RefreshCw } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
 
 // Lazy load charts
@@ -47,6 +51,8 @@ export default function ReportsPage() {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [reportType, setReportType] = useState<"yearly" | "monthly" | "custom">("yearly")
+  const [digestText, setDigestText] = useState<string | null>(null)
+  const [digestLoading, setDigestLoading] = useState(false)
 
   // Load entries
   useEffect(() => {
@@ -54,6 +60,81 @@ export default function ReportsPage() {
       loadEntries()
     }
   }, [user, loading])
+
+  // Load cached AI digest
+  useEffect(() => {
+    if (!user) return
+    const monthKey = new Date().toISOString().slice(0, 7)
+    setDigestLoading(true)
+    getAIDigest(user.uid, monthKey).then((text) => {
+      setDigestText(text)
+      setDigestLoading(false)
+    })
+  }, [user])
+
+  const generateDigest = async () => {
+    if (!user || digestLoading) return
+    setDigestLoading(true)
+    try {
+      const now = new Date()
+      const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+      const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`
+
+      const filterByMonth = (key: string) =>
+        entries.filter((e) => e.date.slice(0, 7) === key)
+
+      const curEntries = filterByMonth(curMonth)
+      const prevEntries = filterByMonth(prevMonth)
+
+      const sumIncome = (arr: typeof entries) => arr.filter(e => e.type === "income").reduce((s, e) => s + e.amount, 0)
+      const sumExpenses = (arr: typeof entries) => arr.filter(e => e.type === "expense").reduce((s, e) => s + e.amount, 0)
+
+      const curInc = sumIncome(curEntries)
+      const curExp = sumExpenses(curEntries)
+      const prevInc = sumIncome(prevEntries)
+      const prevExp = sumExpenses(prevEntries)
+
+      const categoryTotals: Record<string, number> = {}
+      curEntries.filter(e => e.type === "expense").forEach(e => {
+        categoryTotals[e.category] = (categoryTotals[e.category] ?? 0) + e.amount
+      })
+      const topSpendingCategories = Object.entries(categoryTotals)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([name, amount]) => ({
+          name,
+          amount,
+          percentOfTotal: curExp > 0 ? Math.round((amount / curExp) * 100) : 0,
+        }))
+
+      const context: SpendingContext = {
+        month: curMonth,
+        currentMonth: {
+          totalIncome: curInc,
+          totalExpenses: curExp,
+          savingsRate: curInc > 0 ? `${Math.round(((curInc - curExp) / curInc) * 100)}%` : "0%",
+        },
+        previousMonth: {
+          totalIncome: prevInc,
+          totalExpenses: prevExp,
+          savingsRate: prevInc > 0 ? `${Math.round(((prevInc - prevExp) / prevInc) * 100)}%` : "0%",
+        },
+        topSpendingCategories,
+        budgetSummary: "No budget data available on reports page",
+        goalsSummary: "No goals data available on reports page",
+        unusualSpending: [],
+      }
+
+      const text = await fetchAIDigest(context)
+      if (text) {
+        await saveAIDigest(user.uid, curMonth, text)
+        setDigestText(text)
+      }
+    } finally {
+      setDigestLoading(false)
+    }
+  }
 
   const loadEntries = async () => {
     if (!user) return
@@ -213,28 +294,161 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <div className="container py-8 px-4 sm:px-6">
+
+        {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t("description")}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2 w-full">
-            <Button variant="outline" onClick={handleExportPDF} className="flex-1">
-              <FileText className="mr-2 h-4 w-4" />
-              {t("exportPDF")}
-            </Button>
-            <Button variant="outline" onClick={handleExportCSV} className="flex-1">
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {t("exportCSV")}
-            </Button>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("description")}</p>
         </div>
 
-        {/* Date Range Selector */}
+        {/* 1. AI Monthly Digest */}
+        <Card className="mb-8">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  AI Monthly Summary — {new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}
+                </CardTitle>
+                {digestText && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={generateDigest}
+                    disabled={digestLoading}
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${digestLoading ? "animate-spin" : ""}`} />
+                    Refresh
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {digestLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/6" />
+                </div>
+              ) : digestText ? (
+                <div className="space-y-3">
+                  <p className="text-sm leading-relaxed">{digestText}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Generated by Gemini AI · Based on your transaction history
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3 text-sm text-muted-foreground py-1">
+                    <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <p>No AI summary for this month yet.</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={generateDigest}
+                    disabled={digestLoading || entriesLoading}
+                    className="flex-shrink-0"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                    Generate
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+        {/* 2. Spending by Category */}
+        <div className="mb-8">
+          <CategoryChart entries={filteredEntries} userCurrency={userCurrency} />
+        </div>
+
+        {/* 3. Summary Metrics — combined card */}
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalIncome")}</p>
+                <p className="text-xl font-bold text-green-600">
+                  {formatCurrency(metrics.income, { currency: userCurrency })}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalExpenses")}</p>
+                <p className="text-xl font-bold text-red-600">
+                  {formatCurrency(metrics.expenses, { currency: userCurrency })}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("netBalance")}</p>
+                <p className={`text-xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  {formatCurrency(metrics.balance, { currency: userCurrency })}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("savingsRate")}</p>
+                <p className="text-xl font-bold">
+                  {metrics.savingsRate.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 4. Spending Over Time */}
+        <div className="mb-8">
+          <SpendingChart entries={filteredEntries} />
+        </div>
+
+        {/* 5. Category Breakdown Table */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>{t("categoryBreakdown")}</CardTitle>
+            <CardDescription>{t("categoryBreakdownDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {Object.keys(metrics.categoryBreakdown).length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">{t("noExpenseData")}</p>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(metrics.categoryBreakdown)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([category, amount]) => {
+                    const percentage = (amount / metrics.expenses) * 100
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{category}</span>
+                          <span className="font-semibold">
+                            {formatCurrency(amount, { currency: userCurrency })} ({percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-red-600 h-2 rounded-full"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 6. Export + Report Period (before Monthly Trends) */}
+        <div className="flex gap-2 w-full mb-4">
+          <Button variant="outline" onClick={handleExportPDF} className="flex-1">
+            <FileText className="mr-2 h-4 w-4" />
+            {t("exportPDF")}
+          </Button>
+          <Button variant="outline" onClick={handleExportCSV} className="flex-1">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t("exportCSV")}
+          </Button>
+        </div>
+
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>{t("reportPeriod")}</CardTitle>
@@ -280,6 +494,7 @@ export default function ReportsPage() {
                   onClick={() => {
                     const now = new Date()
                     const start = new Date(now.getFullYear(), 0, 1)
+                    setReportType("yearly")
                     setStartDate(start.toISOString().split("T")[0])
                     setEndDate(now.toISOString().split("T")[0])
                   }}
@@ -292,94 +507,7 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Summary Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("totalIncome")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(metrics.income, { currency: userCurrency })}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("totalExpenses")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(metrics.expenses, { currency: userCurrency })}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("netBalance")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                {formatCurrency(metrics.balance, { currency: userCurrency })}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("savingsRate")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metrics.savingsRate.toFixed(1)}%
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <SpendingChart entries={filteredEntries} />
-          <CategoryChart entries={filteredEntries} userCurrency={userCurrency} />
-        </div>
-
-        {/* Category Breakdown Table */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>{t("categoryBreakdown")}</CardTitle>
-            <CardDescription>{t("categoryBreakdownDesc")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {Object.keys(metrics.categoryBreakdown).length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">{t("noExpenseData")}</p>
-            ) : (
-              <div className="space-y-4">
-                {Object.entries(metrics.categoryBreakdown)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([category, amount]) => {
-                    const percentage = (amount / metrics.expenses) * 100
-                    return (
-                      <div key={category} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">{category}</span>
-                          <span className="font-semibold">
-                            {formatCurrency(amount, { currency: userCurrency })} ({percentage.toFixed(1)}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-red-600 h-2 rounded-full"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Monthly Comparison */}
+        {/* 7. Monthly Trends */}
         <Card>
           <CardHeader>
             <CardTitle>{t("monthlyTrends")}</CardTitle>
