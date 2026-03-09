@@ -15,6 +15,7 @@ import { getCustomDateRange } from "@/lib/date-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
 import { fetchAIDigest } from "@/lib/insights-api"
+import { auth } from "@/lib/firebase"
 import type { SpendingContext } from "@/lib/insights-engine"
 import { Sparkles, Calendar, FileText, FileSpreadsheet, Info, RefreshCw } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -126,7 +127,8 @@ export default function ReportsPage() {
         unusualSpending: [],
       }
 
-      const text = await fetchAIDigest(context)
+      const token = await auth.currentUser?.getIdToken()
+      const text = token ? await fetchAIDigest(context, token) : null
       if (text) {
         await saveAIDigest(user.uid, curMonth, text)
         setDigestText(text)

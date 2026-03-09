@@ -1,7 +1,7 @@
 /**
  * Gemini Handler
  *
- * Integrates Google Gemini 1.5 Flash (free tier) for AI-powered
+ * Integrates Google Gemini 2.5 Flash (free tier) for AI-powered
  * financial insights. Uses the @google/generative-ai SDK with an
  * API key from Google AI Studio (aistudio.google.com).
  *
@@ -21,6 +21,29 @@ function getModel() {
     genAI = new GoogleGenerativeAI(apiKey);
   }
   return genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+}
+
+// ── Input Sanitisation ─────────────────────────────────────────────────────
+
+/**
+ * Sanitise a string before embedding it in a Gemini prompt.
+ * Prevents prompt injection by truncating, stripping control characters,
+ * and collapsing excessive whitespace.
+ */
+function sanitizeInput(input: string, maxLength = 500): string {
+  return input
+    .slice(0, maxLength)
+    // Strip null bytes and non-printable ASCII control characters (except \t and \n)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    // Collapse 3+ consecutive newlines into two
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Sanitise a short label string (category name, goal name, etc.) */
+function sanitizeLabel(input: unknown): string {
+  if (typeof input !== "string") return "";
+  return sanitizeInput(String(input), 100);
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -54,19 +77,36 @@ Do NOT list bullet points. Write flowing prose. Keep it under 120 words.`;
 export async function generateDigest(context: SpendingContext): Promise<string> {
   const model = getModel();
 
-  const prompt = `Here is the financial data for ${context.month}:
+  // Sanitise user-originated string fields before embedding in the prompt
+  const sanitizedCategories = context.topSpendingCategories.map(c => ({
+    name: sanitizeLabel(c.name),
+    amount: c.amount,
+    percentOfTotal: c.percentOfTotal,
+  }));
+  const sanitizedBudgetSummary = sanitizeInput(context.budgetSummary, 300);
+  const sanitizedGoals = typeof context.goalsSummary === "string"
+    ? sanitizeInput(context.goalsSummary, 300)
+    : context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }));
+  const sanitizedUnusual = context.unusualSpending.map(u => ({
+    category: sanitizeLabel(u.category),
+    changePercent: sanitizeLabel(u.changePercent),
+    current: u.current,
+    average: u.average,
+  }));
 
-Current month: Income ${context.currentMonth.totalIncome}, Expenses ${context.currentMonth.totalExpenses}, Savings rate ${context.currentMonth.savingsRate}
-Previous month: Income ${context.previousMonth.totalIncome}, Expenses ${context.previousMonth.totalExpenses}, Savings rate ${context.previousMonth.savingsRate}
+  const prompt = `Here is the financial data for ${sanitizeLabel(context.month)}:
 
-Top spending categories: ${context.topSpendingCategories.map(c => `${c.name} (${c.percentOfTotal}% of spend)`).join(", ")}
+Current month: Income ${context.currentMonth.totalIncome}, Expenses ${context.currentMonth.totalExpenses}, Savings rate ${sanitizeLabel(context.currentMonth.savingsRate)}
+Previous month: Income ${context.previousMonth.totalIncome}, Expenses ${context.previousMonth.totalExpenses}, Savings rate ${sanitizeLabel(context.previousMonth.savingsRate)}
 
-Budget status: ${context.budgetSummary}
+Top spending categories: ${sanitizedCategories.map(c => `${c.name} (${c.percentOfTotal}% of spend)`).join(", ")}
 
-Goals: ${typeof context.goalsSummary === "string" ? context.goalsSummary : context.goalsSummary.map(g => `${g.name}: ${g.progress}`).join(", ")}
+Budget status: ${sanitizedBudgetSummary}
 
-${context.unusualSpending.length > 0
-    ? `Unusual spending this month: ${context.unusualSpending.map(u => `${u.category} is ${u.changePercent} above average`).join("; ")}`
+Goals: ${typeof sanitizedGoals === "string" ? sanitizedGoals : sanitizedGoals.map(g => `${g.name}: ${g.progress}`).join(", ")}
+
+${sanitizedUnusual.length > 0
+    ? `Unusual spending this month: ${sanitizedUnusual.map(u => `${u.category} is ${u.changePercent} above average`).join("; ")}`
     : "No unusual spending patterns detected."
   }
 
@@ -98,13 +138,26 @@ export async function generateChatResponse(
 ): Promise<string> {
   const model = getModel();
 
-  const contextSummary = `User's financial context (${context.month}):
-Income: ${context.currentMonth.totalIncome}, Expenses: ${context.currentMonth.totalExpenses}, Savings rate: ${context.currentMonth.savingsRate}
-Top categories: ${context.topSpendingCategories.map(c => `${c.name}: ${c.amount}`).join(", ")}
-Budgets: ${context.budgetSummary}
-Goals: ${typeof context.goalsSummary === "string" ? context.goalsSummary : context.goalsSummary.map(g => `${g.name} ${g.progress}`).join(", ")}`;
+  // Sanitise the user message to prevent prompt injection
+  const safeMessage = sanitizeInput(userMessage, 500);
 
-  // Build conversation history
+  // Sanitise context fields that originate from user data
+  const sanitizedCategories = context.topSpendingCategories.map(c => ({
+    name: sanitizeLabel(c.name),
+    amount: c.amount,
+  }));
+  const sanitizedBudgetSummary = sanitizeInput(context.budgetSummary, 300);
+  const sanitizedGoals = typeof context.goalsSummary === "string"
+    ? sanitizeInput(context.goalsSummary, 300)
+    : context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }));
+
+  const contextSummary = `User's financial context (${sanitizeLabel(context.month)}):
+Income: ${context.currentMonth.totalIncome}, Expenses: ${context.currentMonth.totalExpenses}, Savings rate: ${sanitizeLabel(context.currentMonth.savingsRate)}
+Top categories: ${sanitizedCategories.map(c => `${c.name}: ${c.amount}`).join(", ")}
+Budgets: ${sanitizedBudgetSummary}
+Goals: ${typeof sanitizedGoals === "string" ? sanitizedGoals : sanitizedGoals.map(g => `${g.name} ${g.progress}`).join(", ")}`;
+
+  // Build conversation history (sanitise previous messages too)
   const contents = [
     // Inject context as first user turn
     {
@@ -115,15 +168,15 @@ Goals: ${typeof context.goalsSummary === "string" ? context.goalsSummary : conte
       role: "model" as const,
       parts: [{ text: "Got it, I have your financial context. How can I help you?" }],
     },
-    // Previous chat history
+    // Previous chat history (sanitise each message)
     ...history.map((m) => ({
       role: m.role === "user" ? ("user" as const) : ("model" as const),
-      parts: [{ text: m.content }],
+      parts: [{ text: sanitizeInput(m.content, 500) }],
     })),
-    // Current user message
+    // Current user message (already sanitised above)
     {
       role: "user" as const,
-      parts: [{ text: userMessage }],
+      parts: [{ text: safeMessage }],
     },
   ];
 

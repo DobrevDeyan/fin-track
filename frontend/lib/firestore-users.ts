@@ -9,7 +9,12 @@ import {
   getDoc,
   updateDoc,
   setDoc,
+  deleteDoc,
   collection,
+  query,
+  where,
+  getDocs,
+  writeBatch,
   serverTimestamp,
 } from "firebase/firestore"
 import { db } from "./firebase"
@@ -138,6 +143,60 @@ export async function completeOnboarding(
   } catch (error) {
     console.error("Error completing onboarding:", error)
     throw error
+  }
+}
+
+/**
+ * Delete all Firestore data for a user, then delete their Firebase Auth account.
+ *
+ * Collections deleted:
+ *   entries, budgets, goals, savingsAccounts, recurringTransactions
+ *   (queried by userId field, chunked into 500-doc batches)
+ *
+ * Single documents deleted:
+ *   financialSummaries/{userId}, aiInsights/{userId}, users/{userId}
+ */
+export async function deleteUserData(userId: string): Promise<void> {
+  const BATCH_SIZE = 490 // safely under the 500-write Firestore batch limit
+
+  const userOwnedCollections = [
+    "entries",
+    "budgets",
+    "goals",
+    "savingsAccounts",
+    "recurringTransactions",
+  ]
+
+  // Delete all documents in each collection that belong to this user
+  for (const collectionName of userOwnedCollections) {
+    const colRef = collection(db, collectionName)
+    const q = query(colRef, where("userId", "==", userId))
+    const snapshot = await getDocs(q)
+
+    // Process in chunks to stay within batch size
+    for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
+      const chunk = snapshot.docs.slice(i, i + BATCH_SIZE)
+      const batch = writeBatch(db)
+      chunk.forEach((d) => batch.delete(d.ref))
+      await batch.commit()
+    }
+  }
+
+  // Delete single-document records keyed by userId
+  await Promise.all([
+    deleteDoc(doc(db, "financialSummaries", userId)),
+    deleteDoc(doc(db, "aiInsights", userId)),
+    deleteDoc(doc(db, "users", userId)),
+  ])
+
+  // Finally delete the Firebase Auth account.
+  // Dynamic imports avoid importing browser-only firebase/auth at module level,
+  // which would break server-side evaluation of this shared utility file.
+  const { auth } = await import("./firebase")
+  const { deleteUser } = await import("firebase/auth")
+  const currentUser = auth.currentUser
+  if (currentUser) {
+    await deleteUser(currentUser)
   }
 }
 

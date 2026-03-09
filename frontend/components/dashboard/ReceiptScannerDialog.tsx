@@ -28,6 +28,7 @@ import { isMobileDevice, hasCameraSupport } from "@/lib/device-utils"
 import { CameraCapture } from "./CameraCapture"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { auth } from "@/lib/firebase"
 
 interface TransactionData {
   description: string
@@ -194,7 +195,13 @@ export function ReceiptScannerDialog({
     setErrorMessage("")
 
     try {
-      const data = await scanReceipt(selectedFile, user?.uid)
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) {
+        setScanState("error")
+        setErrorMessage("Not authenticated. Please sign in again.")
+        return
+      }
+      const data = await scanReceipt(selectedFile, token, user?.uid)
       setExtractedData(data)
 
       // Populate form fields with extracted data

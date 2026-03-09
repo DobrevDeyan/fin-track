@@ -17,7 +17,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, LogOut, X, Globe, Info, LayoutDashboard, Calendar as CalendarIcon, FileText } from "lucide-react"
+import { Menu, LogOut, X, Globe, Info, LayoutDashboard, Calendar as CalendarIcon, FileText, Settings } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import {
@@ -288,8 +288,23 @@ export const AppNavbar = () => {
               </div>
             </div>
 
-            {/* Logout at bottom */}
-            <div className="mt-auto pt-6">
+            {/* Account settings + Logout at bottom */}
+            <div className="mt-auto pt-4 space-y-1">
+              <Link
+                href="/settings"
+                onClick={() => setIsOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200",
+                  pathname === "/settings"
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-foreground/70 hover:bg-accent hover:text-foreground"
+                )}
+              >
+                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted">
+                  <Settings className="h-[18px] w-[18px]" />
+                </div>
+                {t("accountSettings")}
+              </Link>
               <Button
                 variant="ghost"
                 onClick={handleLogout}
@@ -403,6 +418,12 @@ export const AppNavbar = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>{t("accountSettings")}</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/?landing" className="cursor-pointer">
                     <Info className="mr-2 h-4 w-4" />

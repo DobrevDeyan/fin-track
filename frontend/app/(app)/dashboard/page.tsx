@@ -14,7 +14,8 @@ import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 // import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
-import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB";
+import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
+import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
 import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
@@ -180,32 +181,40 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
 
                 {/* Metrics Cards */}
                 <div className="mb-8">
-                    <MetricsCards
-                        totalBalance={globalBalance}
-                        monthlyIncome={currentMonthIncome}
-                        monthlySpending={Math.max(0, adjustedSpent)}
-                        monthlyCashFlow={currentMonthIncome - Math.max(0, adjustedSpent)}
-                        incomeChange={incomeChange}
-                        spendingChange={expensesChange}
-                        cashFlowChange={balanceChange}
-                        userCurrency={userCurrency}
-                    />
+                    <SectionErrorBoundary label="Metrics">
+                        <MetricsCards
+                            totalBalance={globalBalance}
+                            monthlyIncome={currentMonthIncome}
+                            monthlySpending={Math.max(0, adjustedSpent)}
+                            monthlyCashFlow={currentMonthIncome - Math.max(0, adjustedSpent)}
+                            incomeChange={incomeChange}
+                            spendingChange={expensesChange}
+                            cashFlowChange={balanceChange}
+                            userCurrency={userCurrency}
+                        />
+                    </SectionErrorBoundary>
                 </div>
 
                 {/* Health Score + Anomaly Alert */}
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
-                    <HealthScoreCard />
-                    <AnomalyAlert userCurrency={userCurrency} className="flex-1" />
+                    <SectionErrorBoundary label="Health Score">
+                        <HealthScoreCard />
+                    </SectionErrorBoundary>
+                    <SectionErrorBoundary label="Anomaly Alert">
+                        <AnomalyAlert userCurrency={userCurrency} className="flex-1" />
+                    </SectionErrorBoundary>
                 </div>
 
                 {/* Budget Progress - Now uses adjusted spent & budget */}
                 {((monthlyBudget ?? 0) > 0 || currentMonthIncome > 0) && (
                     <div className="mb-8">
-                        <BudgetProgressBar
-                          monthlyBudget={adjustedBaseBudget}
-                          currentMonthExpenses={Math.max(0, adjustedSpent)}
-                          userCurrency={userCurrency}
-                        />
+                        <SectionErrorBoundary label="Budget Progress">
+                            <BudgetProgressBar
+                              monthlyBudget={adjustedBaseBudget}
+                              currentMonthExpenses={Math.max(0, adjustedSpent)}
+                              userCurrency={userCurrency}
+                            />
+                        </SectionErrorBoundary>
                     </div>
                 )}
 
@@ -215,16 +224,18 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                 </div> */}
 
                 {/* Transactions Table (still uses paginated entries for display) */}
-                <TransactionsTable
-                    transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries}
-                    onAdd={() => entriesHook.setDialogOpen(true)}
-                    onEdit={entriesHook.handleEdit}
-                    onDelete={entriesHook.handleDelete}
-                    filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />}
-                    onLoadMore={entriesHook.loadMore}
-                    hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore}
-                    isLoadingMore={entriesHook.isLoadingMore}
-                />
+                <SectionErrorBoundary label="Transactions">
+                    <TransactionsTable
+                        transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries}
+                        onAdd={() => entriesHook.setDialogOpen(true)}
+                        onEdit={entriesHook.handleEdit}
+                        onDelete={entriesHook.handleDelete}
+                        filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />}
+                        onLoadMore={entriesHook.loadMore}
+                        hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore}
+                        isLoadingMore={entriesHook.isLoadingMore}
+                    />
+                </SectionErrorBoundary>
 
                 {/* Feature Sections - Tabbed Interface */}
                 <Tabs defaultValue="savings" className="mt-8" ref={tabsRef} onValueChange={() => {
@@ -242,13 +253,19 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                         </TabsTrigger>
                     </TabsList>
                     <TabsContent value="savings">
-                        <SavingsSection userCurrency={userCurrency} />
+                        <SectionErrorBoundary label="Savings">
+                            <SavingsSection userCurrency={userCurrency} />
+                        </SectionErrorBoundary>
                     </TabsContent>
                     <TabsContent value="budgets">
-                        <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} userCurrency={userCurrency} />
+                        <SectionErrorBoundary label="Budgets">
+                            <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} userCurrency={userCurrency} />
+                        </SectionErrorBoundary>
                     </TabsContent>
                     <TabsContent value="recurring">
-                        <RecurringSection categories={categories} />
+                        <SectionErrorBoundary label="Recurring">
+                            <RecurringSection categories={categories} />
+                        </SectionErrorBoundary>
                     </TabsContent>
                 </Tabs>
 

@@ -30,12 +30,16 @@ interface ChatResponse {
  * Returns null if the service is unavailable or not configured.
  */
 export async function fetchAIDigest(
-  context: SpendingContext
+  context: SpendingContext,
+  token: string
 ): Promise<string | null> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}/api/insights/digest`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({ context }),
     })
 
@@ -56,12 +60,16 @@ export async function fetchAIDigest(
 export async function fetchAIChatResponse(
   message: string,
   context: SpendingContext,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  token: string
 ): Promise<string | null> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}/api/insights/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({ message, context, history }),
     })
 

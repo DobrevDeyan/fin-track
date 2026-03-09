@@ -37,7 +37,7 @@ interface ScanReceiptResponse {
  * @returns Extracted receipt data
  * @throws Error if the scan fails
  */
-export async function scanReceipt(file: File, userId?: string): Promise<ExtractedReceiptData> {
+export async function scanReceipt(file: File, token: string, userId?: string): Promise<ExtractedReceiptData> {
   // Validate file type
   const allowedTypes = [
     'image/jpeg',
@@ -76,6 +76,7 @@ export async function scanReceipt(file: File, userId?: string): Promise<Extracte
   try {
     const response = await fetch(`${ML_SERVICE_URL}/api/upload-bill`, {
       method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
     });
 

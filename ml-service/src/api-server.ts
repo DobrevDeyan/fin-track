@@ -2,8 +2,10 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { processDocument } from './document-ai-handler';
 import insightsRouter from './insights-routes';
+import { requireAuth } from './middleware/auth';
 import * as fs from 'fs';
 
 const app = express();
@@ -43,6 +45,38 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
     next();
 });
 
+// ── Rate Limiters ─────────────────────────────────────────────────────────────
+
+// Global: 200 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'Too Many Requests', message: 'Rate limit exceeded. Please try again later.' },
+});
+app.use(globalLimiter);
+
+// Receipt upload: 10 requests per day per IP
+const uploadLimiter = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'Too Many Requests', message: 'Daily receipt scan limit reached (10/day).' },
+});
+
+// AI insights: 50 requests per day per IP
+const insightsLimiter = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000,
+    max: 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'Too Many Requests', message: 'Daily AI insights limit reached (50/day).' },
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Configure multer for file uploads
 const upload = multer({
     dest: 'uploads/',
@@ -68,7 +102,7 @@ const upload = multer({
 
 const PORT = process.env.PORT || 8000;
 
-// Health check endpoint
+// Health check endpoint — no auth required
 app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({
         status: 'healthy',
@@ -81,11 +115,11 @@ app.get('/api/health', (_req: Request, res: Response) => {
     });
 });
 
-// AI Insights routes (digest + chat via Gemini)
-app.use('/api/insights', insightsRouter);
+// AI Insights routes — auth + rate limiting required
+app.use('/api/insights', insightsLimiter, requireAuth, insightsRouter);
 
-// Receipt/bill upload endpoint
-app.post('/api/upload-bill', upload.single('billFile'), async (req: Request, res: Response, _next: NextFunction) => {
+// Receipt/bill upload endpoint — auth + rate limiting required
+app.post('/api/upload-bill', uploadLimiter, requireAuth, upload.single('billFile'), async (req: Request, res: Response, _next: NextFunction) => {
     if (!req.file) {
         res.status(400).json({
             success: false,
@@ -96,14 +130,16 @@ app.post('/api/upload-bill', upload.single('billFile'), async (req: Request, res
     }
 
     try {
-        const { requestId, userId } = req.body;
-        
+        const { requestId } = req.body;
+        // Use the verified uid from auth middleware instead of trusting client-provided userId
+        const userId = req.uid;
+
         // Process the document with Document AI
         const extractedData = await processDocument(
-            req.file.path, 
+            req.file.path,
             req.file.mimetype,
             requestId ? String(requestId) : undefined,
-            userId ? String(userId) : undefined
+            userId,
         );
 
         // Clean up the temporary file

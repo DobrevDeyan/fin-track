@@ -53,7 +53,8 @@
     "login": "Вход",
     "logout": "Изход",
     "menu": "Меню",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "accountSettings": "Настройки на акаунта"
   },
   "auth": {
     "login": "Вход",
@@ -528,5 +529,22 @@
       "deleteSuccess": "Цел изтрита успешно",
       "addFundsSuccess": "Средствата са добавени успешно към вашата цел"
     }
+  },
+  "settings": {
+    "title": "Настройки на акаунта",
+    "subtitle": "Управлявайте настройките на вашия акаунт",
+    "profile": "Профил",
+    "email": "Имейл",
+    "displayName": "Показвано име",
+    "dangerZone": "Опасна зона",
+    "deleteAccount": "Изтрий акаунт",
+    "deleteAccountDescription": "Окончателно изтрива вашия акаунт и всички свързани данни. Това действие не може да бъде отменено.",
+    "deleteAccountConfirmTitle": "Изтрий акаунт",
+    "deleteAccountConfirmDescription": "Това ще изтрие окончателно всички ваши транзакции, бюджети, цели, спестовни сметки и вашия акаунт. Напишете ИЗТРИЙ за потвърждение.",
+    "deleteAccountConfirmPlaceholder": "Напишете ИЗТРИЙ за потвърждение",
+    "deleteAccountConfirmButton": "Окончателно изтриване на акаунта",
+    "deleteAccountSuccess": "Вашият акаунт е изтрит.",
+    "deleteAccountError": "Неуспешно изтриване на акаунта. Моля, опитайте отново.",
+    "deleting": "Изтриване..."
   }
 }

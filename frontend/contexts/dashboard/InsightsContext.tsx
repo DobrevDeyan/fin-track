@@ -25,6 +25,7 @@ import {
   useRef,
 } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import { auth } from "@/lib/firebase"
 import { useFinancialSummary } from "./FinancialSummaryContext"
 import { useBudgetsContext } from "./BudgetsContext"
 import { useGoalsContext } from "./GoalsContext"
@@ -135,7 +136,10 @@ export function InsightsProvider({ children }: InsightsProviderProps) {
         const context = buildSpendingContext(summary, budgets, goals, anomalies)
         if (!context) return
 
-        const digest = await fetchAIDigest(context)
+        const token = await auth.currentUser?.getIdToken()
+        if (!token) return
+
+        const digest = await fetchAIDigest(context, token)
         if (digest === null) {
           setDigestNotConfigured(true)
           return
@@ -168,7 +172,10 @@ export function InsightsProvider({ children }: InsightsProviderProps) {
         const context = buildSpendingContext(summary, budgets, goals, anomalies)
         if (!context) return
 
-        const response = await fetchAIChatResponse(text, context, chatMessages)
+        const token = await auth.currentUser?.getIdToken()
+        if (!token) return
+
+        const response = await fetchAIChatResponse(text, context, chatMessages, token)
         if (response === null) {
           setChatNotConfigured(true)
           setChatMessages((prev) => [

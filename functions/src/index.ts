@@ -54,13 +54,32 @@ function calculateNextDate(
 
 /**
  * Process a single recurring transaction:
- * 1. Create an entry in the entries collection
- * 2. Update the nextDate to the next occurrence
+ * 1. Check idempotency — skip if an entry already exists for this date
+ * 2. Create an entry in the entries collection
+ * 3. Update the nextDate to the next occurrence
  */
 async function processRecurringTransaction(
   recurringId: string,
   recurring: RecurringTransaction
 ): Promise<void> {
+  // Idempotency guard: check if we already created an entry for this
+  // recurringId + date combination to prevent duplicates on retries or
+  // concurrent function executions.
+  const existingSnapshot = await db
+    .collection("entries")
+    .where("recurringId", "==", recurringId)
+    .where("date", "==", recurring.nextDate)
+    .limit(1)
+    .get();
+
+  if (!existingSnapshot.empty) {
+    logger.info(`Skipping duplicate recurring transaction: ${recurring.name}`, {
+      recurringId,
+      nextDate: recurring.nextDate.toDate().toISOString(),
+    });
+    return;
+  }
+
   const batch = db.batch();
 
   // 1. Create the entry

@@ -27,7 +27,13 @@
       "Bash(gcloud run services update ml-service --set-env-vars \"^@^GCP_PROJECT_ID=fin-track-adc2c@GCP_LOCATION=eu@GCP_PROCESSOR_ID=566b35e21d475435@FRONTEND_URL=https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000@GEMINI_API_KEY=AIzaSyAIn5pI4aNlW7s6gDwpfyAGdS7iGJXsbwM\" --region europe-west1 --project fin-track-adc2c)",
       "Bash(gcloud run services update ml-service --update-env-vars \"GEMINI_API_KEY=AIzaSyDZc9xqAkC_3T3fAVrt9dfH6kdhRo6o5aA\" --region europe-west1 --project fin-track-adc2c)",
       "Bash(gcloud run services describe ml-service --region europe-west1 --project fin-track-adc2c --format \"value\\(status.latestReadyRevisionName\\)\")",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(/usr/local/bin/npm install express-rate-limit --save)",
+      "Bash(/Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/npm install express-rate-limit)",
+      "Bash(/Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/node /Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/npm --prefix /Users/deyandobrev/Development/Repositories/fin-track/ml-service install express-rate-limit)",
+      "Bash(/Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/node -e \"const f=require\\(''/Users/deyandobrev/Development/Repositories/fin-track/frontend/messages/en.json''\\); console.log\\(Object.keys\\(f\\).join\\(''\\\\n''\\)\\)\")",
+      "Bash(/Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/node /Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/npx tsc --noEmit)",
+      "Bash(/Users/deyandobrev/.nvm/versions/node/v22.12.0/bin/node ./node_modules/.bin/tsc --noEmit)"
     ]
   }
 }

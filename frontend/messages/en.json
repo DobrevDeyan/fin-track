@@ -53,7 +53,8 @@
     "login": "Login",
     "logout": "Log out",
     "menu": "Menu",
-    "settings": "Settings"
+    "settings": "Settings",
+    "accountSettings": "Account Settings"
   },
   "auth": {
     "login": "Login",
@@ -528,5 +529,22 @@
       "deleteSuccess": "Goal deleted successfully",
       "addFundsSuccess": "Funds added successfully to your goal"
     }
+  },
+  "settings": {
+    "title": "Account Settings",
+    "subtitle": "Manage your account preferences",
+    "profile": "Profile",
+    "email": "Email",
+    "displayName": "Display Name",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDescription": "Permanently delete your account and all associated data. This action cannot be undone.",
+    "deleteAccountConfirmTitle": "Delete Account",
+    "deleteAccountConfirmDescription": "This will permanently delete all your transactions, budgets, goals, savings accounts, and your account. Type DELETE to confirm.",
+    "deleteAccountConfirmPlaceholder": "Type DELETE to confirm",
+    "deleteAccountConfirmButton": "Permanently Delete Account",
+    "deleteAccountSuccess": "Your account has been deleted.",
+    "deleteAccountError": "Failed to delete account. Please try again.",
+    "deleting": "Deleting..."
   }
 }
