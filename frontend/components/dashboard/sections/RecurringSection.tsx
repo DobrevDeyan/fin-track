@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import { RecurringTransactionList } from "@/components/dashboard/RecurringTransactionList";
 import { RecurringTransactionDialog } from "@/components/dashboard/RecurringTransactionDialog";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface RecurringSectionProps {
     categories: string[];
@@ -28,11 +29,17 @@ export function RecurringSection({ categories }: RecurringSectionProps) {
                 </div>
                 <div aria-live="polite" aria-busy={loading}>
                     {loading ? (
-                        <div role="status" className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" aria-hidden="true"></div>
-                                <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
-                            </div>
+                        <div role="status" aria-label={t("loading")} className="space-y-2 mt-4">
+                            {[0, 1, 2].map(i => (
+                                <div key={i} className="flex items-center gap-4 p-3 border rounded-md">
+                                    <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                                    <div className="flex-1 space-y-1">
+                                        <Skeleton className="h-4 w-1/2" />
+                                        <Skeleton className="h-3 w-1/3" />
+                                    </div>
+                                    <Skeleton className="h-4 w-16" />
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <RecurringTransactionList recurringTransactions={recurringTransactions} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />

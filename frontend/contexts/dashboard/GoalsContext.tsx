@@ -8,6 +8,7 @@
  */
 
 import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Timestamp } from "firebase/firestore"
 import { useTranslations } from "next-intl"
 import {
@@ -36,10 +37,6 @@ export interface GoalFormData {
   isActive: boolean
 }
 
-interface ToastState {
-  message: string
-  type: "success" | "error"
-}
 
 interface GoalsContextValue {
   // State
@@ -63,10 +60,9 @@ const GoalsContext = createContext<GoalsContextValue | null>(null)
 interface GoalsProviderProps {
   children: ReactNode
   userId: string | undefined
-  onToast: (toast: ToastState) => void
 }
 
-export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps) {
+export function GoalsProvider({ children, userId }: GoalsProviderProps) {
   const t = useTranslations()
   const { userCurrency } = useCurrency()
   const { refreshSummary } = useFinancialSummary()
@@ -115,7 +111,7 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
           })
 
           await loadGoals()
-          onToast({ message: t("toast.goals.updateSuccess"), type: "success" })
+          toast.success(t("toast.goals.updateSuccess"))
           setEditingGoal(null)
         } else {
           await createGoal(userId, {
@@ -130,15 +126,15 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
           })
 
           await loadGoals()
-          onToast({ message: t("toast.goals.createSuccess"), type: "success" })
+          toast.success(t("toast.goals.createSuccess"))
         }
       } catch (error: unknown) {
         console.error(t(ERROR_MESSAGES.GOAL_SAVE_FAILED) + ":", error)
-        onToast({ message: t(getErrorMessage(error, ERROR_MESSAGES.GOAL_SAVE_FAILED)), type: "error" })
+        toast.error(t(getErrorMessage(error, ERROR_MESSAGES.GOAL_SAVE_FAILED)))
         throw error
       }
     },
-    [userId, editingGoal, loadGoals, onToast, t]
+    [userId, editingGoal, loadGoals, t]
   )
 
   const handleEdit = useCallback((goal: Goal) => {
@@ -150,16 +146,27 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
     async (goalId: string) => {
       if (!userId) return
 
-      try {
-        await deleteGoal(goalId)
-        await loadGoals()
-        onToast({ message: t("toast.goals.deleteSuccess"), type: "success" })
-      } catch (error) {
-        console.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED) + ":", error)
-        onToast({ message: t(ERROR_MESSAGES.GOAL_DELETE_FAILED), type: "error" })
-      }
+      const deletedGoal = goals.find(g => g.id === goalId)
+      if (!deletedGoal) return
+
+      setGoals(prev => prev.filter(g => g.id !== goalId))
+
+      const timer = setTimeout(async () => {
+        try {
+          await deleteGoal(goalId)
+        } catch (error) {
+          console.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED) + ":", error)
+          await loadGoals()
+          toast.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED))
+        }
+      }, 5000)
+
+      toast.success(t("toast.goals.deleted"), {
+        action: { label: t("toast.undo"), onClick: () => { clearTimeout(timer); loadGoals() } },
+        duration: 5000,
+      })
     },
-    [userId, loadGoals, onToast, t]
+    [userId, goals, loadGoals, t]
   )
 
   const handleAddFunds = useCallback(
@@ -189,13 +196,13 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
 
         await loadGoals()
         await refreshSummary()
-        onToast({ message: t("toast.goals.addFundsSuccess"), type: "success" })
+        toast.success(t("toast.goals.addFundsSuccess"))
       } catch (error) {
         console.error(t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED) + ":", error)
-        onToast({ message: t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED), type: "error" })
+        toast.error(t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED))
       }
     },
-    [userId, userCurrency, goals, loadGoals, onToast, refreshSummary, t]
+    [userId, userCurrency, goals, loadGoals, refreshSummary, t]
   )
 
   const handleDialogClose = useCallback((open: boolean) => {

@@ -8,6 +8,7 @@
  */
 
 import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Timestamp } from "firebase/firestore"
 import {
   createRecurringTransaction,
@@ -31,10 +32,6 @@ export interface RecurringFormData {
   isActive: boolean
 }
 
-interface ToastState {
-  message: string
-  type: "success" | "error"
-}
 
 interface RecurringContextValue {
   // State
@@ -57,10 +54,9 @@ const RecurringContext = createContext<RecurringContextValue | null>(null)
 interface RecurringProviderProps {
   children: ReactNode
   userId: string | undefined
-  onToast: (toast: ToastState) => void
 }
 
-export function RecurringProvider({ children, userId, onToast }: RecurringProviderProps) {
+export function RecurringProvider({ children, userId }: RecurringProviderProps) {
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -105,7 +101,7 @@ export function RecurringProvider({ children, userId, onToast }: RecurringProvid
           })
 
           await loadRecurringTransactions()
-          onToast({ message: "Recurring transaction updated successfully", type: "success" })
+          toast.success("Recurring transaction updated successfully")
           setEditingRecurring(null)
         } else {
           await createRecurringTransaction(userId, {
@@ -119,18 +115,15 @@ export function RecurringProvider({ children, userId, onToast }: RecurringProvid
           })
 
           await loadRecurringTransactions()
-          onToast({ message: "Recurring transaction created successfully", type: "success" })
+          toast.success("Recurring transaction created successfully")
         }
       } catch (error: unknown) {
         console.error("Error saving recurring transaction:", error)
-        onToast({
-          message: getErrorMessage(error, ERROR_MESSAGES.RECURRING_SAVE_FAILED),
-          type: "error",
-        })
+        toast.error(getErrorMessage(error, ERROR_MESSAGES.RECURRING_SAVE_FAILED))
         throw error
       }
     },
-    [userId, editingRecurring, loadRecurringTransactions, onToast]
+    [userId, editingRecurring, loadRecurringTransactions]
   )
 
   const handleEdit = useCallback((recurring: RecurringTransaction) => {
@@ -142,16 +135,27 @@ export function RecurringProvider({ children, userId, onToast }: RecurringProvid
     async (recurringId: string) => {
       if (!userId) return
 
-      try {
-        await deleteRecurringTransaction(recurringId)
-        await loadRecurringTransactions()
-        onToast({ message: "Recurring transaction deleted successfully", type: "success" })
-      } catch (error) {
-        console.error("Error deleting recurring transaction:", error)
-        onToast({ message: ERROR_MESSAGES.RECURRING_DELETE_FAILED, type: "error" })
-      }
+      const deletedRecurring = recurringTransactions.find(r => r.id === recurringId)
+      if (!deletedRecurring) return
+
+      setRecurringTransactions(prev => prev.filter(r => r.id !== recurringId))
+
+      const timer = setTimeout(async () => {
+        try {
+          await deleteRecurringTransaction(recurringId)
+        } catch (error) {
+          console.error("Error deleting recurring transaction:", error)
+          await loadRecurringTransactions()
+          toast.error(ERROR_MESSAGES.RECURRING_DELETE_FAILED)
+        }
+      }, 5000)
+
+      toast.success("Recurring transaction deleted", {
+        action: { label: "Undo", onClick: () => { clearTimeout(timer); loadRecurringTransactions() } },
+        duration: 5000,
+      })
     },
-    [userId, loadRecurringTransactions, onToast]
+    [userId, recurringTransactions, loadRecurringTransactions]
   )
 
   const handleDialogClose = useCallback((open: boolean) => {

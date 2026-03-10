@@ -15,12 +15,12 @@ import {
 } from "@/lib/firestore-entries"
 import { addToSavingsAccount } from "@/lib/firestore-savings"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
-import type { Entry, EntryFormData, ToastState } from "./types"
+import { toast } from "sonner"
+import type { Entry, EntryFormData } from "./types"
 
 interface UseEntriesOptions {
   userId: string | undefined
   userCurrency: string
-  onToast: (toast: ToastState) => void
   onSavingsReload?: () => Promise<void>
   onSummaryRefresh?: () => Promise<void>
 }
@@ -28,7 +28,6 @@ interface UseEntriesOptions {
 export function useEntries({
   userId,
   userCurrency,
-  onToast,
   onSavingsReload,
   onSummaryRefresh
 }: UseEntriesOptions) {
@@ -142,7 +141,7 @@ export function useEntries({
 
         await loadEntries()
         if (onSummaryRefresh) await onSummaryRefresh()
-        onToast({ message: SUCCESS_MESSAGES.ENTRY_UPDATED, type: "success" })
+        toast.success(SUCCESS_MESSAGES.ENTRY_UPDATED)
         setEditingEntry(null)
       } else {
         // Handle automated savings/goals transfers for "expense" types
@@ -157,10 +156,7 @@ export function useEntries({
             }
           } catch (transferError) {
              console.error("Error processing auto-transfer:", transferError);
-             onToast({
-               message: "Transaction added but auto-transfer to Savings/Goal failed.",
-               type: "error"
-             });
+             toast.error("Transaction added but auto-transfer to Savings/Goal failed.");
           }
         }
 
@@ -180,15 +176,15 @@ export function useEntries({
         
         await loadEntries()
         if (onSummaryRefresh) await onSummaryRefresh()
-        onToast({ message: SUCCESS_MESSAGES.ENTRY_ADDED(data.type), type: "success" })
+        toast.success(SUCCESS_MESSAGES.ENTRY_ADDED(data.type))
       }
     } catch (error: unknown) {
       console.error("Error saving entry:", error)
       const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SAVE_FAILED
-      onToast({ message: errorMessage, type: "error" })
+      toast.error(errorMessage)
       throw error
     }
-  }, [userId, userCurrency, editingEntry, loadEntries, onToast, onSavingsReload, onSummaryRefresh])
+  }, [userId, userCurrency, editingEntry, loadEntries, onSavingsReload, onSummaryRefresh])
 
   const handleEdit = useCallback((id: string) => {
     const entry = entries.find((e) => e.id === id)
@@ -220,12 +216,12 @@ export function useEntries({
       setEntries((prev) => prev.filter((e) => e.id !== id))
       setFilteredEntries((prev) => prev.filter((e) => e.id !== id))
       if (onSummaryRefresh) await onSummaryRefresh()
-      onToast({ message: "Entry deleted successfully!", type: "success" })
+      toast.success("Entry deleted successfully!")
     } catch (error) {
       console.error("Error deleting entry:", error)
-      onToast({ message: ERROR_MESSAGES.DELETE_FAILED, type: "error" })
+      toast.error(ERROR_MESSAGES.DELETE_FAILED)
     }
-  }, [userId, entries, onToast, onSummaryRefresh])
+  }, [userId, entries, onSummaryRefresh])
 
   const handleDialogClose = useCallback((open: boolean) => {
     setDialogOpen(open)

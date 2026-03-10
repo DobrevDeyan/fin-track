@@ -8,7 +8,8 @@
  */
 
 import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
-import { useTranslations } from "next-intl" // Import useTranslations
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 import {
   createSavingsAccount,
   getUserSavingsAccounts,
@@ -33,10 +34,6 @@ export interface SavingsAccountFormData {
   isActive: boolean
 }
 
-interface ToastState {
-  message: string
-  type: "success" | "error"
-}
 
 interface SavingsContextValue {
   // State
@@ -61,10 +58,9 @@ const SavingsContext = createContext<SavingsContextValue | null>(null)
 interface SavingsProviderProps {
   children: ReactNode
   userId: string | undefined
-  onToast: (toast: ToastState) => void
 }
 
-export function SavingsProvider({ children, userId, onToast }: SavingsProviderProps) {
+export function SavingsProvider({ children, userId }: SavingsProviderProps) {
   const t = useTranslations() // Initialize useTranslations
   const [savingsAccounts, setSavingsAccounts] = useState<SavingsAccount[]>([])
   const [loading, setLoading] = useState(true)
@@ -100,13 +96,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await createSavingsAccount(userId, data)
         await loadSavingsAccounts()
-        onToast({ message: t("toast.savings.createSuccess"), type: "success" }) // Use translated message
+        toast.success(t("toast.savings.createSuccess")) // Use translated message
       } catch (error) {
         console.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED) + ":", error) // Use translated error
-        onToast({ message: t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED), type: "error" }) // Use translated error
+        toast.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED)) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
+    [userId, loadSavingsAccounts, t]
   )
 
   const handleUpdate = useCallback(
@@ -116,13 +112,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await updateSavingsAccount(editingAccount.id, data)
         await loadSavingsAccounts()
-        onToast({ message: t("toast.savings.updateSuccess"), type: "success" }) // Use translated message
+        toast.success(t("toast.savings.updateSuccess")) // Use translated message
       } catch (error) {
         console.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED) + ":", error) // Use translated error
-        onToast({ message: t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED), type: "error" }) // Use translated error
+        toast.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED)) // Use translated error
       }
     },
-    [userId, editingAccount, loadSavingsAccounts, onToast, t] // Add t to dependencies
+    [userId, editingAccount, loadSavingsAccounts, t]
   )
 
   const handleSubmit = useCallback(
@@ -145,16 +141,27 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
     async (accountId: string) => {
       if (!userId) return
 
-      try {
-        await deleteSavingsAccount(accountId)
-        await loadSavingsAccounts()
-        onToast({ message: t("toast.savings.deleteSuccess"), type: "success" }) // Use translated message
-      } catch (error) {
-        console.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED) + ":", error) // Use translated error
-        onToast({ message: t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED), type: "error" }) // Use translated error
-      }
+      const deletedAccount = savingsAccounts.find(a => a.id === accountId)
+      if (!deletedAccount) return
+
+      setSavingsAccounts(prev => prev.filter(a => a.id !== accountId))
+
+      const timer = setTimeout(async () => {
+        try {
+          await deleteSavingsAccount(accountId)
+        } catch (error) {
+          console.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED) + ":", error)
+          await loadSavingsAccounts()
+          toast.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED))
+        }
+      }, 5000)
+
+      toast.success(t("toast.savings.deleted"), {
+        action: { label: t("toast.undo"), onClick: () => { clearTimeout(timer); loadSavingsAccounts() } },
+        duration: 5000,
+      })
     },
-    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
+    [userId, savingsAccounts, loadSavingsAccounts, t]
   )
 
   const handleAddMoney = useCallback(
@@ -164,13 +171,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await addToSavingsAccount(accountId, amount)
         await loadSavingsAccounts()
-        onToast({ message: t("toast.savings.depositSuccess"), type: "success" }) // Use translated message
+        toast.success(t("toast.savings.depositSuccess")) // Use translated message
       } catch (error) {
         console.error(t(ERROR_MESSAGES.DEPOSIT_FAILED) + ":", error) // Use translated error
-        onToast({ message: t(ERROR_MESSAGES.DEPOSIT_FAILED), type: "error" }) // Use translated error
+        toast.error(t(ERROR_MESSAGES.DEPOSIT_FAILED)) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
+    [userId, loadSavingsAccounts, t]
   )
 
   const handleWithdrawMoney = useCallback(
@@ -180,16 +187,16 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
       try {
         await withdrawFromSavingsAccount(accountId, amount)
         await loadSavingsAccounts()
-        onToast({ message: t("toast.savings.withdrawSuccess"), type: "success" }) // Use translated message
+        toast.success(t("toast.savings.withdrawSuccess")) // Use translated message
       } catch (error: unknown) {
         console.error(t(ERROR_MESSAGES.WITHDRAW_FAILED) + ":", error) // Use translated error
         const errorMessage = isInsufficientBalanceError(error)
           ? ERROR_MESSAGES.INSUFFICIENT_BALANCE
           : ERROR_MESSAGES.WITHDRAW_FAILED
-        onToast({ message: t(errorMessage), type: "error" }) // Use translated error
+        toast.error(t(errorMessage)) // Use translated error
       }
     },
-    [userId, loadSavingsAccounts, onToast, t] // Add t to dependencies
+    [userId, loadSavingsAccounts, t]
   )
 
   const handleDialogClose = useCallback((open: boolean) => {

@@ -8,6 +8,7 @@
  */
 
 import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Timestamp } from "firebase/firestore"
 import {
   createBudget,
@@ -44,10 +45,6 @@ export interface BudgetFormData {
   alertThreshold?: number
 }
 
-interface ToastState {
-  message: string
-  type: "success" | "error"
-}
 
 interface BudgetsContextValue {
   // State
@@ -71,10 +68,9 @@ const BudgetsContext = createContext<BudgetsContextValue | null>(null)
 interface BudgetsProviderProps {
   children: ReactNode
   userId: string | undefined
-  onToast: (toast: ToastState) => void
 }
 
-export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderProps) {
+export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -135,7 +131,7 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
           })
 
           await loadBudgets()
-          onToast({ message: "Budget updated successfully", type: "success" })
+          toast.success("Budget updated successfully")
           setEditingBudget(null)
         } else {
           await createBudget(userId, {
@@ -151,15 +147,15 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
           })
 
           await loadBudgets()
-          onToast({ message: "Budget created successfully", type: "success" })
+          toast.success("Budget created successfully")
         }
       } catch (error: unknown) {
         console.error("Error saving budget:", error)
-        onToast({ message: getErrorMessage(error, ERROR_MESSAGES.BUDGET_SAVE_FAILED), type: "error" })
+        toast.error(getErrorMessage(error, ERROR_MESSAGES.BUDGET_SAVE_FAILED))
         throw error
       }
     },
-    [userId, editingBudget, loadBudgets, onToast]
+    [userId, editingBudget, loadBudgets]
   )
 
   const handleEdit = useCallback((budget: Budget) => {
@@ -171,16 +167,27 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
     async (budgetId: string) => {
       if (!userId) return
 
-      try {
-        await deleteBudget(budgetId)
-        await loadBudgets()
-        onToast({ message: "Budget deleted successfully", type: "success" })
-      } catch (error) {
-        console.error("Error deleting budget:", error)
-        onToast({ message: ERROR_MESSAGES.BUDGET_DELETE_FAILED, type: "error" })
-      }
+      const deletedBudget = budgets.find(b => b.id === budgetId)
+      if (!deletedBudget) return
+
+      setBudgets(prev => prev.filter(b => b.id !== budgetId))
+
+      const timer = setTimeout(async () => {
+        try {
+          await deleteBudget(budgetId)
+        } catch (error) {
+          console.error("Error deleting budget:", error)
+          await loadBudgets()
+          toast.error(ERROR_MESSAGES.BUDGET_DELETE_FAILED)
+        }
+      }, 5000)
+
+      toast.success("Budget deleted", {
+        action: { label: "Undo", onClick: () => { clearTimeout(timer); loadBudgets() } },
+        duration: 5000,
+      })
     },
-    [userId, loadBudgets, onToast]
+    [userId, budgets, loadBudgets]
   )
 
   const handleRenew = useCallback(
@@ -188,13 +195,13 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
       try {
         await renewBudget(budgetId, period)
         await loadBudgets()
-        onToast({ message: "Budget renewed for the current period", type: "success" })
+        toast.success("Budget renewed for the current period")
       } catch (error) {
         console.error("Error renewing budget:", error)
-        onToast({ message: "Failed to renew budget", type: "error" })
+        toast.error("Failed to renew budget")
       }
     },
-    [loadBudgets, onToast]
+    [loadBudgets]
   )
 
   const handleDialogClose = useCallback((open: boolean) => {

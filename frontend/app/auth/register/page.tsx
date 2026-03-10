@@ -122,7 +122,7 @@ export default function RegisterPage() {
         <CardHeader>
           <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground w-fit mb-2">
             <ArrowLeft className="h-4 w-4" />
-            Home
+            {t("home")}
           </Link>
           <CardTitle className="text-2xl">{t("createAccount")}</CardTitle>
           <CardDescription>
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                   setPassword(e.target.value);
                   if (passwordError) setPasswordError("");
                   if (confirmPassword && confirmPassword !== e.target.value) {
-                    setConfirmPasswordError("Passwords do not match");
+                    setConfirmPasswordError(t("passwordsNoMatch"));
                   } else if (confirmPasswordError && confirmPassword === e.target.value) {
                     setConfirmPasswordError("");
                   }
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                     if (e.target.value === password) {
                       setConfirmPasswordError("");
                     } else if (e.target.value) {
-                      setConfirmPasswordError("Passwords do not match");
+                      setConfirmPasswordError(t("passwordsNoMatch"));
                     }
                   }
                 }}

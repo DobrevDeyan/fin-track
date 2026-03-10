@@ -7,6 +7,7 @@ import { BudgetList } from "@/components/dashboard/BudgetList";
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Entry } from "@/lib/hooks/dashboard";
 
 interface BudgetsSectionProps {
@@ -32,11 +33,15 @@ export function BudgetsSection({ entries, categories }: BudgetsSectionProps) {
                 </div>
                 <div aria-live="polite" aria-busy={loading}>
                     {loading ? (
-                        <div role="status" className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" aria-hidden="true"></div>
-                                <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
-                            </div>
+                        <div role="status" aria-label={t("loading")} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                            {[0, 1, 2].map(i => (
+                                <div key={i} className="rounded-lg border p-4 space-y-3">
+                                    <Skeleton className="h-5 w-2/3" />
+                                    <Skeleton className="h-4 w-1/3" />
+                                    <Skeleton className="h-3 w-full" />
+                                    <Skeleton className="h-8 w-full mt-2" />
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />

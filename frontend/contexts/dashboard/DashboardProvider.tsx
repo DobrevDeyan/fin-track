@@ -15,15 +15,9 @@ import { GoalsProvider } from "./GoalsContext"
 import { RecurringProvider } from "./RecurringContext"
 import { InsightsProvider } from "./InsightsContext"
 
-interface ToastState {
-  message: string
-  type: "success" | "error"
-}
-
 interface DashboardProviderProps {
   children: ReactNode
   userId: string | undefined
-  onToast: (toast: ToastState) => void
 }
 
 /**
@@ -33,17 +27,17 @@ interface DashboardProviderProps {
  * all dashboard features have access to their respective contexts.
  *
  * @example
- * <DashboardProvider userId={user?.uid} onToast={showToast}>
+ * <DashboardProvider userId={user?.uid}>
  *   <DashboardContent />
  * </DashboardProvider>
  */
-export function DashboardProvider({ children, userId, onToast }: DashboardProviderProps) {
+export function DashboardProvider({ children, userId }: DashboardProviderProps) {
   return (
     <FinancialSummaryProvider userId={userId}>
-      <SavingsProvider userId={userId} onToast={onToast}>
-        <BudgetsProvider userId={userId} onToast={onToast}>
-          <GoalsProvider userId={userId} onToast={onToast}>
-            <RecurringProvider userId={userId} onToast={onToast}>
+      <SavingsProvider userId={userId}>
+        <BudgetsProvider userId={userId}>
+          <GoalsProvider userId={userId}>
+            <RecurringProvider userId={userId}>
               <InsightsProvider>
                 {children}
               </InsightsProvider>

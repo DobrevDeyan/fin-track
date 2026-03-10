@@ -9,6 +9,7 @@ import { AddFundsDialog } from "@/components/dashboard/AddFundsDialog";
 import { useGoalsContext } from "@/contexts/dashboard/GoalsContext";
 import { useState } from "react";
 import { GoalDocument } from "@/lib/firestore-types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface GoalsSectionProps {
     categories: string[];
@@ -39,11 +40,15 @@ export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
                 </div>
                 <div aria-live="polite" aria-busy={loading}>
                     {loading ? (
-                        <div role="status" className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" aria-hidden="true"></div>
-                                <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
-                            </div>
+                        <div role="status" aria-label={t("loading")} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                            {[0, 1, 2].map(i => (
+                                <div key={i} className="rounded-lg border p-4 space-y-3">
+                                    <Skeleton className="h-5 w-2/3" />
+                                    <Skeleton className="h-4 w-1/3" />
+                                    <Skeleton className="h-3 w-full" />
+                                    <Skeleton className="h-8 w-full mt-2" />
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <GoalList goals={goals} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddFunds={onAddFundsClick} />

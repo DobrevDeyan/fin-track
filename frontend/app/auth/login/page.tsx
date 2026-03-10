@@ -100,7 +100,7 @@ export default function LoginPage() {
         <CardHeader>
           <Link href="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground w-fit mb-2">
             <ArrowLeft className="h-4 w-4" />
-            Home
+            {t("home")}
           </Link>
           <CardTitle className="text-2xl">{t("login")}</CardTitle>
           <CardDescription>
@@ -158,6 +158,11 @@ export default function LoginPage() {
               {passwordError && (
                 <p className="text-sm text-destructive">{passwordError}</p>
               )}
+            </div>
+            <div className="text-right -mt-2">
+              <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+                {t("forgotPassword")}
+              </Link>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t("signingIn") : t("signIn")}

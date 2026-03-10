@@ -81,7 +81,17 @@
     "passwordsNoMatch": "Passwords do not match",
     "signInError": "An error occurred during sign in. Please try again.",
     "signUpError": "An error occurred during registration. Please try again.",
-    "googleSignInError": "An error occurred during Google sign in. Please try again."
+    "googleSignInError": "An error occurred during Google sign in. Please try again.",
+    "home": "Home",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset Password",
+    "resetPasswordDesc": "Enter your email address and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "sendingResetLink": "Sending...",
+    "resetEmailSent": "Check your inbox",
+    "resetEmailSentDesc": "If an account exists for {email}, you'll receive a reset link shortly.",
+    "backToLogin": "Back to login",
+    "resetError": "Failed to send reset email. Please try again."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -230,7 +240,10 @@
     "targetAmount": "Target Amount (Optional)",
     "accountBalance": "Balance",
     "deposit": "Deposit",
-    "withdraw": "Withdraw"
+    "withdraw": "Withdraw",
+    "emptyDesc": "No savings accounts yet. Create one to start tracking your savings separately.",
+    "createFirst": "Create Your First Savings Account",
+    "totalSavings": "Total Savings"
   },
   "recurring": {
     "title": "Recurring Transactions",
@@ -516,17 +529,18 @@
     "recurringDeleteFailed": "Failed to delete recurring transaction. Please try again."
   },
   "toast": {
+    "undo": "Undo",
     "savings": {
       "createSuccess": "Savings account created successfully",
       "updateSuccess": "Savings account updated successfully",
-      "deleteSuccess": "Savings account deleted successfully",
+      "deleted": "Savings account deleted",
       "depositSuccess": "Money added to savings account",
       "withdrawSuccess": "Money withdrawn from savings account"
     },
     "goals": {
       "createSuccess": "Goal created successfully",
       "updateSuccess": "Goal updated successfully",
-      "deleteSuccess": "Goal deleted successfully",
+      "deleted": "Goal deleted",
       "addFundsSuccess": "Funds added successfully to your goal"
     }
   },

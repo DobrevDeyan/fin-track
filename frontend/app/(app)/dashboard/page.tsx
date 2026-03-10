@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +19,6 @@ import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundar
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
 import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
-import { Toast } from "@/components/ui/toast";
 import { completeOnboarding } from "@/lib/firestore-users";
 // Dashboard contexts
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
@@ -29,7 +28,7 @@ import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
 import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContext";
 
 // Custom hooks (still need entries for transactions table)
-import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
+import { useEntries } from "@/lib/hooks/dashboard";
 
 // Utilities
 import { getUniqueCategories, getExpenseCategories } from "@/lib/categories";
@@ -55,7 +54,7 @@ const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/Receip
 /**
  * Inner dashboard content that uses the feature contexts
  */
-function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => void }) {
+function DashboardInnerContent() {
     const t = useTranslations("dashboard");
     const tSavings = useTranslations("savings");
     const tBudgets = useTranslations("budgets");
@@ -91,7 +90,6 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
     const entriesHook = useEntries({
         userId: user?.uid,
         userCurrency,
-        onToast,
         onSavingsReload: loadSavingsAccounts,
         onSummaryRefresh: refreshSummary,
     });
@@ -315,19 +313,13 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
 export default function DashboardPage() {
     const { user } = useAuth();
 
-    // Toast state for DashboardProvider
-    const [toast, setToast] = useState<ToastState | null>(null);
-    const showToast = useCallback((newToast: ToastState) => setToast(newToast), []);
-    const clearToast = useCallback(() => setToast(null), []);
-
     if (!user) {
         return null;
     }
 
     return (
-        <DashboardProvider userId={user.uid} onToast={showToast}>
-            <DashboardInnerContent onToast={showToast} />
-            {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
+        <DashboardProvider userId={user.uid}>
+            <DashboardInnerContent />
         </DashboardProvider>
     );
 }

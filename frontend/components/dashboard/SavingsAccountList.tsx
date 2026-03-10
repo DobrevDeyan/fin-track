@@ -5,6 +5,7 @@ import { Plus } from "lucide-react"
 import { SavingsAccountCard } from "./SavingsAccountCard"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/currency-utils"
+import { useTranslations } from "next-intl"
 
 type SavingsAccount = import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
 
@@ -29,6 +30,7 @@ export function SavingsAccountList({
   defaultCurrency = "EUR",
   hideHeader = false,
 }: SavingsAccountListProps) {
+  const t = useTranslations("savings")
   const activeAccounts = accounts.filter((acc) => acc.isActive)
   const totalSavings = activeAccounts.reduce((sum, acc) => sum + acc.balance, 0)
 
@@ -38,25 +40,25 @@ export function SavingsAccountList({
         {!hideHeader && (
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
+              <h2 className="text-2xl font-bold text-foreground">{t("title")}</h2>
               <p className="text-muted-foreground mt-1">
-                Track your savings separately from your spending balance
+                {t("description")}
               </p>
             </div>
             <Button onClick={onAdd} className="w-full md:w-auto">
               <Plus className="mr-2 h-4 w-4" />
-              Create Savings Account
+              {t("createAccount")}
             </Button>
           </div>
         )}
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 md:py-16">
             <p className="text-sm md:text-base text-muted-foreground text-center mb-4 md:mb-6 max-w-md md:max-w-lg px-4">
-              No savings accounts yet. Create one to start tracking your savings separately.
+              {t("emptyDesc")}
             </p>
             <Button onClick={onAdd} size="default" className="md:text-base">
               <Plus className="mr-2 h-4 w-4" />
-              Create Your First Savings Account
+              {t("createFirst")}
             </Button>
           </CardContent>
         </Card>
@@ -69,9 +71,9 @@ export function SavingsAccountList({
       {!hideHeader && (
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Savings Accounts</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t("title")}</h2>
             <p className="text-muted-foreground mt-1">
-              Total Savings:{" "}
+              {t("totalSavings")}:{" "}
               <span className="font-semibold text-foreground">
                 {formatCurrency(totalSavings, { currency: defaultCurrency })}
               </span>
@@ -79,7 +81,7 @@ export function SavingsAccountList({
           </div>
           <Button onClick={onAdd} className="w-full md:w-auto">
             <Plus className="mr-2 h-4 w-4" />
-            Create Savings Account
+            {t("createAccount")}
           </Button>
         </div>
       )}
