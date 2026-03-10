@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { toast } from "sonner"
 
 type SavingsAccount = import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
 
@@ -61,7 +62,7 @@ export function SavingsAccountCard({
     }
 
     if (transactionType === "withdraw" && amountNum > account.balance) {
-      alert("Insufficient balance")
+      toast.error("Insufficient balance")
       return
     }
 
@@ -76,7 +77,7 @@ export function SavingsAccountCard({
       setTransactionDialogOpen(false)
     } catch (error) {
       console.error("Error processing transaction:", error)
-      alert("Failed to process transaction")
+      toast.error("Failed to process transaction")
     } finally {
       setIsSubmitting(false)
     }

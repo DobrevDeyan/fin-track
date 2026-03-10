@@ -41,6 +41,7 @@ import {
 } from "@/lib/insights-engine"
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
 import { fetchAIDigest, fetchAIChatResponse, type ChatMessage } from "@/lib/insights-api"
+import { toast } from "sonner"
 
 function getCurrentMonthKey(): string {
   const now = new Date()
@@ -177,21 +178,37 @@ export function InsightsProvider({ children }: InsightsProviderProps) {
 
         const response = await fetchAIChatResponse(text, context, chatMessages, token)
         if (response === null) {
-          setChatNotConfigured(true)
-          setChatMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content:
-                "AI features are not configured yet. Please add a Gemini API key to the ML service.",
-            },
-          ])
+          if (!chatNotConfigured) {
+            // Transient failure (network error, rate limit, etc.)
+            toast.error("AI chat failed. Please try again.")
+            setChatMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: "Failed to get a response. Please try again." },
+            ])
+          } else {
+            // Already know AI is not configured — show the permanent message once
+            setChatMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content:
+                  "AI features are not configured yet. Please add a Gemini API key to the ML service.",
+              },
+            ])
+          }
           return
         }
 
         setChatMessages((prev) => [
           ...prev,
           { role: "assistant", content: response },
+        ])
+      } catch (err) {
+        console.error("[InsightsContext] sendMessage error:", err)
+        toast.error("AI chat failed. Please try again.")
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Something went wrong. Please try again." },
         ])
       } finally {
         setChatLoading(false)

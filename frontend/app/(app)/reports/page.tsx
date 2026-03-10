@@ -18,6 +18,7 @@ import { fetchAIDigest } from "@/lib/insights-api"
 import { auth } from "@/lib/firebase"
 import type { SpendingContext } from "@/lib/insights-engine"
 import { Sparkles, Calendar, FileText, FileSpreadsheet, Info, RefreshCw } from "lucide-react"
+import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
 
@@ -244,7 +245,7 @@ export default function ReportsPage() {
   const handleExportPDF = async () => {
     try {
       if (!startDate || !endDate) {
-        alert(t("selectDateRange"))
+        toast.error(t("selectDateRange"))
         return
       }
 
@@ -259,14 +260,14 @@ export default function ReportsPage() {
       })
     } catch (error) {
       console.error("Error exporting PDF:", error)
-      alert(t("exportPDFFailed"))
+      toast.error(t("exportPDFFailed"))
     }
   }
 
   const handleExportCSV = () => {
     try {
       if (!startDate || !endDate) {
-        alert(t("selectDateRange"))
+        toast.error(t("selectDateRange"))
         return
       }
 
@@ -274,7 +275,7 @@ export default function ReportsPage() {
       exportEntriesToCSV(filteredEntries, filename)
     } catch (error) {
       console.error("Error exporting CSV:", error)
-      alert(t("exportCSVFailed"))
+      toast.error(t("exportCSVFailed"))
     }
   }
 

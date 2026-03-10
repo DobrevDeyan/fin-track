@@ -43,6 +43,7 @@ import { useLanguage } from "@/contexts/LanguageContext"
 import { locales, localeNames, type Locale } from "@/i18n/config"
 import { ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 export const AppNavbar = () => {
   const t = useTranslations("nav")
@@ -70,7 +71,7 @@ export const AppNavbar = () => {
       }, 100)
     } catch (error) {
       console.error("Error updating currency:", error)
-      alert(ERROR_MESSAGES.CURRENCY_UPDATE_FAILED)
+      toast.error(ERROR_MESSAGES.CURRENCY_UPDATE_FAILED)
     } finally {
       setCurrencyLoading(false)
     }

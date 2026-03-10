@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
 import { Upload, FileImage, Loader2, AlertCircle, Check, X, Camera } from "lucide-react"
-import { scanReceipt, ExtractedReceiptData } from "@/lib/receipt-scanner-api"
+import { scanReceipt, validateMagicBytes, ExtractedReceiptData } from "@/lib/receipt-scanner-api"
 import { detectCategory } from "@/lib/category-detector"
 import { isMobileDevice, hasCameraSupport } from "@/lib/device-utils"
 import { CameraCapture } from "./CameraCapture"
@@ -99,7 +99,7 @@ export function ReceiptScannerDialog({
   }
 
   // Handle file selection (from upload or camera)
-  const handleFileSelect = useCallback((file: File) => {
+  const handleFileSelect = useCallback(async (file: File) => {
     // Validate file type
     const allowedTypes = [
       "image/jpeg",
@@ -119,6 +119,14 @@ export function ReceiptScannerDialog({
     const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
       setErrorMessage("File size must be less than 10MB.")
+      setScanState("error")
+      return
+    }
+
+    // Validate actual file content via magic bytes
+    const validBytes = await validateMagicBytes(file)
+    if (!validBytes) {
+      setErrorMessage("File content does not match its type. Please upload a valid image or PDF.")
       setScanState("error")
       return
     }

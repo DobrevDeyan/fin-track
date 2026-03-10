@@ -32,6 +32,7 @@ import { X, Upload, FileImage, Trash2 } from "lucide-react"
 import { uploadReceipt, deleteReceipt, validateReceiptFile } from "@/lib/receipt-utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
 interface TransactionData {
   description: string
@@ -140,7 +141,7 @@ export function AddTransactionDialog({
         try {
           receiptUrl = await uploadReceipt(user.uid, receiptFile, editingEntry?.id)
         } catch (error: any) {
-          alert(error.message || "Failed to upload receipt. Please try again.")
+          toast.error(error.message || "Failed to upload receipt. Please try again.")
           setUploadingReceipt(false)
           return
         } finally {
@@ -202,7 +203,7 @@ export function AddTransactionDialog({
     if (e.key === "Enter" && tagInput.trim()) {
       e.preventDefault()
       const newTag = tagInput.trim().toLowerCase()
-      if (!tags.includes(newTag) && newTag.length > 0) {
+      if (!tags.includes(newTag) && newTag.length > 0 && newTag.length <= 50) {
         setTags([...tags, newTag])
         setTagInput("")
       }
@@ -220,7 +221,7 @@ export function AddTransactionDialog({
 
     const error = validateReceiptFile(file)
     if (error) {
-      alert(error)
+      toast.error(error)
       return
     }
 
@@ -241,7 +242,7 @@ export function AddTransactionDialog({
         await deleteReceipt(existingReceiptUrl)
       } catch (error) {
         console.error("Error deleting receipt:", error)
-        // Continue anyway - the URL won't be included in the update
+        toast.error("Could not delete the receipt file from storage, but it was removed from this transaction.")
       }
     }
     setReceiptFile(null)
@@ -281,6 +282,7 @@ export function AddTransactionDialog({
                 placeholder={t("descriptionPlaceholder")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                maxLength={500}
                 required
               />
             </div>
@@ -349,6 +351,7 @@ export function AddTransactionDialog({
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}
+                maxLength={50}
               />
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -432,6 +435,7 @@ export function AddTransactionDialog({
                 placeholder={t("notesPlaceholder")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                maxLength={2000}
                 rows={3}
               />
             </div>

@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
 import { defaultLocale } from "@/i18n/config"
+import { Toaster } from "sonner"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -97,6 +98,7 @@ export default function RootLayout({
                 {children}
                 <RegisterSW />
                 <InstallPrompt />
+                <Toaster richColors position="top-right" />
               </LanguageProvider>
             </CurrencyProvider>
           </AuthProvider>

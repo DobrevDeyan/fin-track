@@ -6,15 +6,16 @@ import { Plus } from "lucide-react";
 import { BudgetList } from "@/components/dashboard/BudgetList";
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { Entry } from "@/lib/hooks/dashboard";
 
 interface BudgetsSectionProps {
     entries: Entry[];
     categories: string[];
-    userCurrency: string;
 }
 
-export function BudgetsSection({ entries, categories, userCurrency }: BudgetsSectionProps) {
+export function BudgetsSection({ entries, categories }: BudgetsSectionProps) {
+    const { userCurrency } = useCurrency();
     const { budgets, loading, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleRenew, openDialog } = useBudgetsContext();
 
     const t = useTranslations("budgets");

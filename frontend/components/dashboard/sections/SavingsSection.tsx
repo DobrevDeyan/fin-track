@@ -8,12 +8,10 @@ import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialo
 import { formatCurrency } from "@/lib/currency-utils";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
 import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
-interface SavingsSectionProps {
-    userCurrency: string;
-}
-
-export function SavingsSection({ userCurrency }: SavingsSectionProps) {
+export function SavingsSection() {
+    const { userCurrency } = useCurrency();
     const { savingsAccounts, loading, dialogOpen, editingAccount, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleAddMoney, handleWithdrawMoney, openDialog } = useSavingsContext();
 
     const t = useTranslations("savings");

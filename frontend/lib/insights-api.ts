@@ -48,7 +48,8 @@ export async function fetchAIDigest(
 
     const data = await res.json() as DigestResponse
     return data.success && typeof data.digest === "string" ? data.digest : null
-  } catch {
+  } catch (err) {
+    console.error("[insights-api] fetchAIDigest error:", err)
     return null
   }
 }
@@ -78,7 +79,8 @@ export async function fetchAIChatResponse(
 
     const data = await res.json() as ChatResponse
     return data.success && typeof data.response === "string" ? data.response : null
-  } catch {
+  } catch (err) {
+    console.error("[insights-api] fetchAIChatResponse error:", err)
     return null
   }
 }

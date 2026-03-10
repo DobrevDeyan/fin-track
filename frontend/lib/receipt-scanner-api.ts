@@ -31,6 +31,31 @@ interface ScanReceiptResponse {
 }
 
 /**
+ * Validate that a file's actual content matches an allowed image/PDF format
+ * by checking the first 12 bytes against known magic byte signatures.
+ * This prevents spoofed MIME types (e.g. a .txt renamed to .jpg).
+ */
+export async function validateMagicBytes(file: File): Promise<boolean> {
+  const buffer = await file.slice(0, 12).arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+
+  // JPEG: FF D8 FF
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return true
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
+      bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A) return true
+  // PDF: %PDF (25 50 44 46)
+  if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) return true
+  // WebP: RIFF....WEBP (bytes 0-3 = RIFF, bytes 8-11 = WEBP)
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return true
+  // GIF: GIF8 (47 49 46 38)
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return true
+
+  return false
+}
+
+/**
  * Scan a receipt file using the ML service
  * @param file - The receipt image or PDF file to scan
  * @param userId - Optional user ID for tracking
@@ -55,6 +80,12 @@ export async function scanReceipt(file: File, token: string, userId?: string): P
   const maxSize = 10 * 1024 * 1024;
   if (file.size > maxSize) {
     throw new Error('File size must be less than 10MB.');
+  }
+
+  // Validate actual file content via magic bytes (prevents spoofed MIME types)
+  const validBytes = await validateMagicBytes(file);
+  if (!validBytes) {
+    throw new Error('File content does not match its type. Please upload a valid image or PDF.');
   }
 
   // Generate a request ID for tracing

@@ -254,12 +254,12 @@ function DashboardInnerContent({ onToast }: { onToast: (toast: ToastState) => vo
                     </TabsList>
                     <TabsContent value="savings">
                         <SectionErrorBoundary label="Savings">
-                            <SavingsSection userCurrency={userCurrency} />
+                            <SavingsSection />
                         </SectionErrorBoundary>
                     </TabsContent>
                     <TabsContent value="budgets">
                         <SectionErrorBoundary label="Budgets">
-                            <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} userCurrency={userCurrency} />
+                            <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} />
                         </SectionErrorBoundary>
                     </TabsContent>
                     <TabsContent value="recurring">
