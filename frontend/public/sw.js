@@ -1,17 +1,29 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v13'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v14'; // Increment this when deploying new version
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// Install event - cache static assets only
+// Critical app shell URLs to pre-cache on install.
+// These ensure the app loads instantly and navigates offline.
+const PRECACHE_URLS = [
+  '/',
+  '/dashboard/',
+  '/manifest.json',
+  '/icons/icon-192x192.png?v=2.5',
+  '/icons/icon-512x512.png?v=2.5',
+];
+
+// Install event - pre-cache app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker installed with cache:', CACHE_NAME);
-        // Don't cache HTML pages during install - let them be fetched fresh
-        return Promise.resolve();
+        // Pre-cache shell URLs; ignore individual failures so install always succeeds
+        return Promise.allSettled(
+          PRECACHE_URLS.map(url => cache.add(url).catch(() => {}))
+        );
       })
   );
   // Don't skip waiting automatically - let user decide when to update

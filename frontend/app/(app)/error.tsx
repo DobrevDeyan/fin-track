@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Sentry } from "@/lib/sentry"
 
 export default function AppError({
   error,
@@ -12,6 +13,7 @@ export default function AppError({
 }) {
   useEffect(() => {
     console.error(error)
+    Sentry.captureException(error)
   }, [error])
 
   return (

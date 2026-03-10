@@ -3,6 +3,7 @@
 import React, { ReactNode } from "react"
 import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Sentry } from "@/lib/sentry"
 
 interface Props {
   children: ReactNode
@@ -39,6 +40,7 @@ export class SectionErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error(`[SectionErrorBoundary] ${this.props.label ?? "Section"} crashed:`, error, info)
+    Sentry.captureException(error, { extra: { label: this.props.label, componentStack: info.componentStack } })
   }
 
   handleReset = () => {

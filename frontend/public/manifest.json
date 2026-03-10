@@ -63,7 +63,22 @@
     "productivity",
     "utilities"
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile.svg",
+      "sizes": "390x844",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Pocket dashboard — mobile view"
+    },
+    {
+      "src": "/screenshots/desktop.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Pocket dashboard — desktop view"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Dashboard",
