@@ -6,12 +6,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
-import { Toast } from "@/components/ui/toast";
 
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
 
-import { useEntries, type ToastState } from "@/lib/hooks/dashboard";
+import { useEntries } from "@/lib/hooks/dashboard";
 
 /**
  * Inner content that uses the dashboard contexts
@@ -21,10 +20,6 @@ function CalendarInnerContent() {
     const { user } = useAuth();
     const { userCurrency } = useCurrency();
     const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
-
-    const [toast, setToast] = useState<ToastState | null>(null);
-    const showToast = useCallback((t: ToastState) => setToast(t), []);
-    const clearToast = useCallback(() => setToast(null), []);
 
     const hasLoadedRef = useRef(false);
 
@@ -92,9 +87,6 @@ function CalendarInnerContent() {
                     savingsAccounts={[]}
                     defaultDate={prefilledDate}
                 />
-
-                {/* Toast */}
-                {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
             </div>
         </div>
     );
@@ -103,18 +95,13 @@ function CalendarInnerContent() {
 export default function CalendarPage() {
     const { user } = useAuth();
 
-    const [toast, setToast] = useState<ToastState | null>(null);
-    const showToast = useCallback((t: ToastState) => setToast(t), []);
-    const clearToast = useCallback(() => setToast(null), []);
-
     if (!user) {
         return null;
     }
 
     return (
-        <DashboardProvider userId={user.uid} onToast={showToast}>
+        <DashboardProvider userId={user.uid}>
             <CalendarInnerContent />
-            {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
         </DashboardProvider>
     );
 }
