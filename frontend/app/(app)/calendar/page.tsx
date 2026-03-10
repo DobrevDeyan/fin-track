@@ -34,8 +34,7 @@ function CalendarInnerContent() {
 
     const entriesHook = useEntries({
         userId: user?.uid,
-        userCurrency,
-        onToast: showToast
+        userCurrency
     });
 
     useEffect(() => {
