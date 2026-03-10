@@ -7,7 +7,7 @@
  * Eliminates prop drilling for budget-related data
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
 import { Timestamp } from "firebase/firestore"
 import {
   createBudget,
@@ -79,6 +79,13 @@ export function BudgetsProvider({ children, userId, onToast }: BudgetsProviderPr
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
+
+  useEffect(() => {
+    if (!userId) {
+      setBudgets([])
+      setLoading(false)
+    }
+  }, [userId])
 
   const loadBudgets = useCallback(async () => {
     if (!userId) return

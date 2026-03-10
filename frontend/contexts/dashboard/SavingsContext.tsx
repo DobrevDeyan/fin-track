@@ -7,7 +7,7 @@
  * Eliminates prop drilling for savings-related data
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
 import { useTranslations } from "next-intl" // Import useTranslations
 import {
   createSavingsAccount,
@@ -70,6 +70,13 @@ export function SavingsProvider({ children, userId, onToast }: SavingsProviderPr
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<SavingsAccount | null>(null)
+
+  useEffect(() => {
+    if (!userId) {
+      setSavingsAccounts([])
+      setLoading(false)
+    }
+  }, [userId])
 
   const loadSavingsAccounts = useCallback(async () => {
     if (!userId) return

@@ -7,7 +7,7 @@
  * Adding funds to a goal now creates an expense entry for proper accounting.
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
 import { Timestamp } from "firebase/firestore"
 import { useTranslations } from "next-intl"
 import {
@@ -74,6 +74,13 @@ export function GoalsProvider({ children, userId, onToast }: GoalsProviderProps)
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+
+  useEffect(() => {
+    if (!userId) {
+      setGoals([])
+      setLoading(false)
+    }
+  }, [userId])
 
   const loadGoals = useCallback(async () => {
     if (!userId) return

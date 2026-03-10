@@ -71,6 +71,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
               size="icon"
               onClick={() => onEdit(budget)}
               className="h-8 w-8"
+              aria-label={`Edit budget: ${budget.name}`}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -79,6 +80,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
               size="icon"
               onClick={() => onDelete(budget.id)}
               className="h-8 w-8 text-destructive"
+              aria-label={`Delete budget: ${budget.name}`}
             >
               <Trash2 className="h-4 w-4" />
             </Button>

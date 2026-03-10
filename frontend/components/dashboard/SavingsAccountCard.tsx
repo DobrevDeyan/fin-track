@@ -113,6 +113,7 @@ export function SavingsAccountCard({
                 size="icon"
                 onClick={() => onEdit(account)}
                 className="h-8 w-8"
+                aria-label={`Edit ${account.name}`}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -121,6 +122,7 @@ export function SavingsAccountCard({
                 size="icon"
                 onClick={() => onDelete(account.id)}
                 className="h-8 w-8 text-destructive"
+                aria-label={`Delete ${account.name}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

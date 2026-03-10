@@ -7,7 +7,7 @@
  * Eliminates prop drilling for recurring transaction-related data
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
 import { Timestamp } from "firebase/firestore"
 import {
   createRecurringTransaction,
@@ -65,6 +65,13 @@ export function RecurringProvider({ children, userId, onToast }: RecurringProvid
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null)
+
+  useEffect(() => {
+    if (!userId) {
+      setRecurringTransactions([])
+      setLoading(false)
+    }
+  }, [userId])
 
   const loadRecurringTransactions = useCallback(async () => {
     if (!userId) return

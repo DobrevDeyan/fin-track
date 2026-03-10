@@ -29,16 +29,18 @@ export function SavingsSection() {
                         {t("createAccount")}
                     </Button>
                 </div>
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                            <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                <div aria-live="polite" aria-busy={loading}>
+                    {loading ? (
+                        <div role="status" className="flex items-center justify-center py-12">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" aria-hidden="true"></div>
+                                <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <SavingsAccountList accounts={savingsAccounts} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddMoney={handleAddMoney} onWithdrawMoney={handleWithdrawMoney} defaultCurrency={userCurrency} hideHeader={true} />
-                )}
+                    ) : (
+                        <SavingsAccountList accounts={savingsAccounts} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddMoney={handleAddMoney} onWithdrawMoney={handleWithdrawMoney} defaultCurrency={userCurrency} hideHeader={true} />
+                    )}
+                </div>
             </div>
 
             <SavingsAccountDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingAccount={editingAccount} defaultCurrency={userCurrency} />

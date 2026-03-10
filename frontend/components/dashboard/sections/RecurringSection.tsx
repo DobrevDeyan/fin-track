@@ -26,16 +26,18 @@ export function RecurringSection({ categories }: RecurringSectionProps) {
                         {t("createRecurring")}
                     </Button>
                 </div>
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                            <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                <div aria-live="polite" aria-busy={loading}>
+                    {loading ? (
+                        <div role="status" className="flex items-center justify-center py-12">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" aria-hidden="true"></div>
+                                <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <RecurringTransactionList recurringTransactions={recurringTransactions} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />
-                )}
+                    ) : (
+                        <RecurringTransactionList recurringTransactions={recurringTransactions} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />
+                    )}
+                </div>
             </div>
 
             <RecurringTransactionDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingRecurring={editingRecurring} categories={categories} />

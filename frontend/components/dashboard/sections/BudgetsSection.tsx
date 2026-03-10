@@ -30,16 +30,18 @@ export function BudgetsSection({ entries, categories }: BudgetsSectionProps) {
                         {t("createBudget")}
                     </Button>
                 </div>
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                            <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                <div aria-live="polite" aria-busy={loading}>
+                    {loading ? (
+                        <div role="status" className="flex items-center justify-center py-12">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" aria-hidden="true"></div>
+                                <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />
-                )}
+                    ) : (
+                        <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />
+                    )}
+                </div>
             </div>
 
             <BudgetDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingBudget={editingBudget} categories={categories} defaultCurrency={userCurrency} />

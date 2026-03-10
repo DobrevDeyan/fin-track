@@ -223,7 +223,7 @@ export function TransactionsTable({
                                 setReceiptDialogOpen(true)
                               }}
                               className="flex-shrink-0 p-1 hover:bg-muted rounded"
-                              title={t("viewReceipt")}
+                              aria-label={`${t("viewReceipt")}: ${transaction.description}`}
                             >
                               <FileImage className="h-4 w-4 text-primary" />
                             </button>
@@ -257,7 +257,7 @@ export function TransactionsTable({
                             size="icon"
                             onClick={() => onEdit(transaction.id)}
                             className="hover:bg-primary/10"
-                            title={t("editEntryTitle")}
+                            aria-label={`${t("editEntryTitle")}: ${transaction.description}`}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -270,7 +270,7 @@ export function TransactionsTable({
                               setDeleteConfirmName(transaction.description)
                             }}
                             className="hover:bg-destructive/10 hover:text-destructive"
-                            title={t("deleteEntryTitle")}
+                            aria-label={`${t("deleteEntryTitle")}: ${transaction.description}`}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
