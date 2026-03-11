@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { deleteUserData } from "@/lib/firestore-users"
+import { useSubscription } from "@/lib/hooks/useSubscription"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,12 +18,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Trash2, User } from "lucide-react"
+import { AlertTriangle, CreditCard, Trash2, User } from "lucide-react"
+import { BillingPortalButton } from "@/components/BillingPortalButton"
 
 export default function SettingsPage() {
   const t = useTranslations("settings")
   const { user } = useAuth()
   const router = useRouter()
+  const { tier, subscription, loading: subscriptionLoading } = useSubscription()
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState("")
@@ -50,6 +53,8 @@ export default function SettingsPage() {
 
   if (!user) return null
 
+  const tierLabel = tier === "free" ? t("billing.freePlan") : tier === "pro" ? t("billing.proPlan") : t("billing.businessPlan")
+
   return (
     <div className="container max-w-2xl py-8 px-4">
       <div className="mb-8">
@@ -76,6 +81,32 @@ export default function SettingsPage() {
               <p className="text-sm font-medium mt-0.5">{user.displayName}</p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Billing */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4" />
+            {t("billing.title")}
+          </CardTitle>
+          <CardDescription>{t("billing.description")}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">
+              {t("billing.currentPlan")}: {subscriptionLoading ? "..." : tierLabel}
+            </p>
+            {subscription?.currentPeriodEnd && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {subscription.cancelAtPeriodEnd
+                  ? t("billing.expiresOn", { date: subscription.currentPeriodEnd.toLocaleDateString() })
+                  : t("billing.renewsOn", { date: subscription.currentPeriodEnd.toLocaleDateString() })}
+              </p>
+            )}
+          </div>
+          {tier !== "free" && <BillingPortalButton label={t("billing.manageBilling")} />}
         </CardContent>
       </Card>
 

@@ -559,6 +559,17 @@
     "deleteAccountConfirmButton": "Окончателно изтриване на акаунта",
     "deleteAccountSuccess": "Вашият акаунт е изтрит.",
     "deleteAccountError": "Неуспешно изтриване на акаунта. Моля, опитайте отново.",
-    "deleting": "Изтриване..."
+    "deleting": "Изтриване...",
+    "billing": {
+      "title": "Фактуриране",
+      "description": "Управлявайте абонамента и метода на плащане",
+      "currentPlan": "Текущ план",
+      "freePlan": "Безплатен",
+      "proPlan": "Pro",
+      "businessPlan": "Бизнес",
+      "manageBilling": "Управление на плащанията",
+      "renewsOn": "Подновяване на {date}",
+      "expiresOn": "Изтича на {date}"
+    }
   }
 }

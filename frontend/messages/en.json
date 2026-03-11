@@ -559,6 +559,17 @@
     "deleteAccountConfirmButton": "Permanently Delete Account",
     "deleteAccountSuccess": "Your account has been deleted.",
     "deleteAccountError": "Failed to delete account. Please try again.",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "billing": {
+      "title": "Billing",
+      "description": "Manage your subscription and payment method",
+      "currentPlan": "Current plan",
+      "freePlan": "Free",
+      "proPlan": "Pro",
+      "businessPlan": "Business",
+      "manageBilling": "Manage Billing",
+      "renewsOn": "Renews on {date}",
+      "expiresOn": "Expires on {date}"
+    }
   }
 }

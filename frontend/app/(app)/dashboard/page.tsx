@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,16 @@ function DashboardInnerContent() {
             refreshSummary();
         }
     }, [user, entriesHook.loadEntries, loadBudgets, loadRecurringTransactions, loadSavingsAccounts, refreshSummary]);
+
+    // Handle checkout success redirect from Stripe
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("checkout") === "success") {
+            toast.success("Subscription activated! Welcome to your new plan.");
+            window.history.replaceState({}, "", "/dashboard");
+        }
+    }, []);
 
     // Memoized values
     const categories = useMemo(() => getUniqueCategories(entriesHook.entries), [entriesHook.entries]);
