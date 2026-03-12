@@ -45,6 +45,25 @@ export async function getUserDocument(userId: string): Promise<(UserDocument & {
 }
 
 /**
+ * Update user display name in Firestore and Firebase Auth
+ */
+export async function updateUserDisplayName(userId: string, displayName: string): Promise<void> {
+  try {
+    const userRef = doc(db, "users", userId)
+    await updateDoc(userRef, { displayName, updatedAt: serverTimestamp() })
+
+    const { auth } = await import("./firebase")
+    const { updateProfile } = await import("firebase/auth")
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, { displayName })
+    }
+  } catch (error) {
+    console.error("Error updating display name:", error)
+    throw error
+  }
+}
+
+/**
  * Update user currency preference
  */
 export async function updateUserCurrency(userId: string, currency: SupportedCurrency): Promise<void> {

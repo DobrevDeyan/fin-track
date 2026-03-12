@@ -4,12 +4,12 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
-import { deleteUserData } from "@/lib/firestore-users"
+import { deleteUserData, updateUserDisplayName } from "@/lib/firestore-users"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -18,33 +18,114 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, CreditCard, Trash2, User } from "lucide-react"
+import { AlertTriangle, Check, CreditCard, Loader2, Pencil, Trash2, User } from "lucide-react"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
 import { useScanQuota } from "@/lib/hooks/useScanQuota"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { collection, addDoc, onSnapshot } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { toast } from "sonner"
+
+const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? null
+
+const PRO_FEATURES = [
+  "Unlimited transactions",
+  "30 receipt scans / month",
+  "AI Monthly Summary & Budget Coach",
+  "90-day Cash Flow Forecast",
+  "PDF & CSV export",
+  "Unlimited budgets, goals & accounts",
+]
 
 export default function SettingsPage() {
   const t = useTranslations("settings")
   const { user } = useAuth()
   const router = useRouter()
   const { tier, subscription, loading: subscriptionLoading } = useSubscription()
-  const { count: scanCount, limit: scanLimit, remaining: scanRemaining, resetAt: scanResetAt } = useScanQuota()
+  const { count: scanCount, limit: scanLimit, resetAt: scanResetAt } = useScanQuota()
 
+  // Display name editing
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(user?.displayName ?? "")
+  const [savingName, setSavingName] = useState(false)
+
+  // Stripe upgrade
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+
+  // Delete account
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState("")
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  const handleSaveName = async () => {
+    if (!user || !nameValue.trim()) return
+    setSavingName(true)
+    try {
+      await updateUserDisplayName(user.uid, nameValue.trim())
+      toast.success("Display name updated.")
+      setEditingName(false)
+    } catch {
+      toast.error("Failed to update display name. Please try again.")
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  const handleUpgradeToPro = async () => {
+    if (!user) {
+      window.location.href = "/auth/register"
+      return
+    }
+    if (!PRO_PRICE_ID || PRO_PRICE_ID.startsWith("price_REPLACE_")) {
+      toast.error("Upgrade is not available yet. Please try again later.")
+      return
+    }
+
+    setCheckoutLoading(true)
+    try {
+      const checkoutSessionRef = collection(db, "customers", user.uid, "checkout_sessions")
+      const docRef = await addDoc(checkoutSessionRef, {
+        price: PRO_PRICE_ID,
+        success_url: `${window.location.origin}/settings?checkout=success`,
+        cancel_url: `${window.location.origin}/settings`,
+        allow_promotion_codes: true,
+      })
+
+      const timeout = setTimeout(() => {
+        unsubscribe()
+        setCheckoutLoading(false)
+        toast.error("Checkout is taking too long. Please try again.")
+      }, 30_000)
+
+      const unsubscribe = onSnapshot(docRef, (snap) => {
+        const data = snap.data()
+        if (data?.error) {
+          clearTimeout(timeout)
+          toast.error("Failed to start checkout. Please try again.")
+          setCheckoutLoading(false)
+          unsubscribe()
+          return
+        }
+        if (data?.url) {
+          clearTimeout(timeout)
+          window.location.assign(data.url)
+          unsubscribe()
+        }
+      })
+    } catch {
+      toast.error("Could not create checkout session. Please try again.")
+      setCheckoutLoading(false)
+    }
+  }
+
   const handleDeleteAccount = async () => {
     if (!user) return
-
     setDeleting(true)
     setDeleteError(null)
-
     try {
       await deleteUserData(user.uid)
-      // Auth account deleted — redirect to login
       router.push("/auth/login")
     } catch (err: any) {
       console.error("Account deletion failed:", err)
@@ -57,7 +138,12 @@ export default function SettingsPage() {
 
   if (!user) return null
 
-  const tierLabel = tier === "free" ? t("billing.freePlan") : tier === "pro" ? t("billing.proPlan") : t("billing.businessPlan")
+  const tierLabel =
+    tier === "free"
+      ? t("billing.freePlan")
+      : tier === "pro"
+      ? t("billing.proPlan")
+      : t("billing.businessPlan")
 
   return (
     <div className="container max-w-2xl py-8 px-4">
@@ -66,7 +152,7 @@ export default function SettingsPage() {
         <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
-      {/* Profile summary */}
+      {/* Profile */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -74,17 +160,46 @@ export default function SettingsPage() {
             {t("profile")}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <div>
             <Label className="text-xs text-muted-foreground">{t("email")}</Label>
             <p className="text-sm font-medium mt-0.5">{user.email}</p>
           </div>
-          {user.displayName && (
-            <div>
-              <Label className="text-xs text-muted-foreground">{t("displayName")}</Label>
-              <p className="text-sm font-medium mt-0.5">{user.displayName}</p>
-            </div>
-          )}
+          <div>
+            <Label className="text-xs text-muted-foreground">{t("displayName")}</Label>
+            {editingName ? (
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveName()
+                    if (e.key === "Escape") setEditingName(false)
+                  }}
+                  className="h-8 text-sm max-w-xs"
+                  autoFocus
+                  disabled={savingName}
+                />
+                <Button size="sm" onClick={handleSaveName} disabled={savingName || !nameValue.trim()}>
+                  {savingName ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => { setEditingName(false); setNameValue(user.displayName ?? "") }} disabled={savingName}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm font-medium">{user.displayName || <span className="text-muted-foreground italic">Not set</span>}</p>
+                <button
+                  onClick={() => { setNameValue(user.displayName ?? ""); setEditingName(true) }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Edit display name"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -98,6 +213,7 @@ export default function SettingsPage() {
           <CardDescription>{t("billing.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Current plan row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -116,16 +232,12 @@ export default function SettingsPage() {
                 </p>
               )}
             </div>
-            {tier !== "free" ? (
+            {tier !== "free" && (
               <BillingPortalButton label={t("billing.manageBilling")} />
-            ) : (
-              <Button size="sm" onClick={() => window.location.href = "/?landing#pricing"}>
-                Upgrade to Pro
-              </Button>
             )}
           </div>
 
-          {/* Scan quota usage */}
+          {/* Scan quota for paid users */}
           {tier !== "free" && scanLimit > 0 && (
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -134,16 +246,40 @@ export default function SettingsPage() {
               </div>
               <Progress value={(scanCount / scanLimit) * 100} className="h-2" />
               {scanResetAt && (
-                <p className="text-xs text-muted-foreground">
-                  Resets on {scanResetAt.toLocaleDateString()}
-                </p>
+                <p className="text-xs text-muted-foreground">Resets on {scanResetAt.toLocaleDateString()}</p>
               )}
             </div>
           )}
-          {tier === "free" && (
-            <p className="text-xs text-muted-foreground">
-              Upgrade to Pro to unlock receipt scanning (30 scans/month) and AI features.
-            </p>
+
+          {/* Inline upgrade card for free users */}
+          {!subscriptionLoading && tier === "free" && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold">Upgrade to Pro</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Unlock AI features and unlimited tracking</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-xl font-bold">€7.99</span>
+                  <span className="text-xs text-muted-foreground">/month</span>
+                </div>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                {PRO_FEATURES.map((f) => (
+                  <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full sm:w-auto" onClick={handleUpgradeToPro} disabled={checkoutLoading}>
+                {checkoutLoading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Setting up checkout...</>
+                ) : (
+                  "Upgrade to Pro — €7.99/month"
+                )}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -177,14 +313,11 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Confirmation dialog */}
+      {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
         if (!deleting) {
           setDeleteDialogOpen(open)
-          if (!open) {
-            setConfirmText("")
-            setDeleteError(null)
-          }
+          if (!open) { setConfirmText(""); setDeleteError(null) }
         }
       }}>
         <DialogContent>
@@ -193,11 +326,8 @@ export default function SettingsPage() {
               <AlertTriangle className="h-5 w-5" />
               {t("deleteAccountConfirmTitle")}
             </DialogTitle>
-            <DialogDescription>
-              {t("deleteAccountConfirmDescription")}
-            </DialogDescription>
+            <DialogDescription>{t("deleteAccountConfirmDescription")}</DialogDescription>
           </DialogHeader>
-
           <div className="py-2">
             <Input
               value={confirmText}
@@ -206,19 +336,12 @@ export default function SettingsPage() {
               disabled={deleting}
               className="font-mono"
             />
-            {deleteError && (
-              <p className="text-sm text-destructive mt-2">{deleteError}</p>
-            )}
+            {deleteError && <p className="text-sm text-destructive mt-2">{deleteError}</p>}
           </div>
-
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setDeleteDialogOpen(false)
-                setConfirmText("")
-                setDeleteError(null)
-              }}
+              onClick={() => { setDeleteDialogOpen(false); setConfirmText(""); setDeleteError(null) }}
               disabled={deleting}
             >
               Cancel
