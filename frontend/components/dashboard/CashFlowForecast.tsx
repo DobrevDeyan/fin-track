@@ -74,7 +74,23 @@ function CustomTooltip({ active, payload, label, currency }: CustomTooltipProps)
 }
 export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = "EUR" }: { userCurrency?: string }) {
   const { cashFlowData } = useInsightsContext()
-  const { isPro } = useSubscription()
+  const { isPro, loading: subscriptionLoading } = useSubscription()
+
+  if (subscriptionLoading) {
+    return (
+      <Card className="drop-shadow-xl shadow-black/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            Cash Flow Forecast — Next 90 Days
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-40 rounded-lg animate-pulse bg-muted" />
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (!isPro) {
     return (

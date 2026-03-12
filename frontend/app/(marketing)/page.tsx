@@ -61,8 +61,11 @@ export default function Home() {
   }, [user, loading])
 
   // While checking auth or redirecting, show a minimal loading screen
-  // This prevents the landing page from flashing before redirect
-  if ((loading || redirecting) && !showLanding) {
+  // This prevents the landing page from flashing before redirect.
+  // Include `user` in the check: when auth resolves but the useEffect redirect
+  // hasn't fired yet there is a one-render gap where loading=false, redirecting=false,
+  // user=<User> — without this guard the Hero animations briefly appear.
+  if (!showLanding && (loading || redirecting || !!user)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">

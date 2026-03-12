@@ -40,7 +40,7 @@ export function AIChatDrawer() {
   const [open, setOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [input, setInput] = useState("")
-  const { isPro } = useSubscription()
+  const { isPro, loading: subscriptionLoading } = useSubscription()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -107,7 +107,11 @@ export function AIChatDrawer() {
 
       {/* Floating button — bottom-left corner, balancing the "+" FAB on the right */}
       <button
-        onClick={() => isPro ? setOpen(true) : setUpgradeOpen(true)}
+        onClick={() => {
+          if (subscriptionLoading) return
+          if (isPro) setOpen(true)
+          else setUpgradeOpen(true)
+        }}
         className="fixed bottom-6 left-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
         aria-label="Open AI Budget Coach"
       >

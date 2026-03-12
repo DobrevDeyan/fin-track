@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { collection, addDoc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { toast } from "sonner"
 
 const PRICE_IDS: Record<string, string | null> = {
   free: null,
@@ -69,21 +70,31 @@ export const Pricing = () => {
         allow_promotion_codes: true,
       })
 
+      const timeout = setTimeout(() => {
+        unsubscribe()
+        setLoadingPlan(null)
+        toast.error("Checkout is taking too long. Please try again.")
+      }, 30_000)
+
       const unsubscribe = onSnapshot(docRef, (snap) => {
         const data = snap.data()
         if (data?.error) {
+          clearTimeout(timeout)
           console.error("Checkout session error:", data.error.message)
+          toast.error("Failed to start checkout. Please try again.")
           setLoadingPlan(null)
           unsubscribe()
           return
         }
         if (data?.url) {
+          clearTimeout(timeout)
           window.location.assign(data.url)
           unsubscribe()
         }
       })
     } catch (error) {
       console.error("Error creating checkout session:", error)
+      toast.error("Could not create checkout session. Please try again.")
       setLoadingPlan(null)
     }
   }

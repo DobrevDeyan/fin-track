@@ -67,7 +67,7 @@ export function ReceiptScannerDialog({
 
   // Auth context for logging user ID
   const { user } = useAuth()
-  const { isPro } = useSubscription()
+  const { isPro, loading: subscriptionLoading } = useSubscription()
   const { remaining, limit } = useScanQuota()
 
   // Device capabilities
@@ -453,7 +453,11 @@ export function ReceiptScannerDialog({
         </DialogHeader>
 
         {/* Free-tier gate */}
-        {!isPro ? (
+        {subscriptionLoading ? (
+          <div className="py-4">
+            <div className="h-48 rounded-lg animate-pulse bg-muted" />
+          </div>
+        ) : !isPro ? (
           <div className="py-4">
             <UpgradePrompt
               mode="card"

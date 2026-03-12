@@ -25,7 +25,7 @@ function getCurrentMonthLabel(): string {
 export const AIDigest = memo(function AIDigest() {
   const { digestText, digestLoading, digestNotConfigured, refreshDigest } =
     useInsightsContext()
-  const { isPro } = useSubscription()
+  const { isPro, loading: subscriptionLoading } = useSubscription()
 
   const [autoTriggered, setAutoTriggered] = useState(false)
 
@@ -39,7 +39,7 @@ export const AIDigest = memo(function AIDigest() {
 
   return (
     <Card className="drop-shadow-xl shadow-black/10 relative overflow-hidden">
-      {!isPro && (
+      {!isPro && !subscriptionLoading && (
         <UpgradePrompt
           mode="overlay"
           feature="AI Monthly Summary"

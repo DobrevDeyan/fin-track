@@ -5,6 +5,7 @@ import { Button } from "./ui/button"
 import { httpsCallable } from "firebase/functions"
 import { functions } from "@/lib/firebase"
 import { CreditCard } from "lucide-react"
+import { toast } from "sonner"
 
 interface BillingPortalButtonProps {
   label?: string
@@ -35,6 +36,7 @@ export function BillingPortalButton({
       window.location.assign(data.url)
     } catch (error) {
       console.error("Error creating billing portal link:", error)
+      toast.error("Failed to open billing portal. Please try again.")
       setLoading(false)
     }
   }

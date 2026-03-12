@@ -88,9 +88,10 @@ This deploys:
 
 ### Step 2: Deploy Firebase Functions
 
-Two functions are deployed:
+Three functions are deployed:
 - `processRecurringTransactionsScheduled` — Runs daily at 1:00 AM UTC, processes recurring transactions
 - `processMyRecurringTransactions` — HTTPS callable, lets a user manually trigger their recurring transactions
+- `resetMonthlyScanCounts` — Runs on the 1st of each month at 00:05 UTC, resets receipt scan quotas to 0 for all users
 
 ```bash
 # Install dependencies (if not done)
@@ -152,15 +153,22 @@ Expected response:
 
 ### Step 4: Build & Deploy Frontend
 
-#### 4a. Set the ML Service URL
+#### 4a. Set environment variables
 
-Create `frontend/.env.production` with the Cloud Run URL from Step 3:
+Create `frontend/.env.production` with the Cloud Run URL from Step 3 and your Stripe keys:
 
 ```bash
-echo "NEXT_PUBLIC_ML_SERVICE_URL=https://ml-service-xxxxxxxxxx-ew.a.run.app" > frontend/.env.production
+cat > frontend/.env.production << 'EOF'
+NEXT_PUBLIC_ML_SERVICE_URL=https://ml-service-xxxxxxxxxx-ew.a.run.app
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_...
+NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID=price_...
+EOF
 ```
 
-This env var is baked into the static bundle at build time (it's a `NEXT_PUBLIC_` variable).
+For **sandbox/test** use `pk_test_` keys and the corresponding test price IDs from the Stripe dashboard.
+
+These env vars are baked into the static bundle at build time (`NEXT_PUBLIC_` prefix).
 
 #### 4b. Build the Frontend
 
@@ -210,13 +218,18 @@ firebase deploy --only hosting,functions # Frontend + functions
 
 ## Environment Variables Reference
 
-### Frontend (build-time)
+### Frontend (build-time, baked into static bundle)
 
-| Variable | Default | Where |
-|----------|---------|-------|
-| `NEXT_PUBLIC_ML_SERVICE_URL` | `http://localhost:8000` | `frontend/.env.production` |
+| Variable | Dev default | Where |
+|----------|-------------|-------|
+| `NEXT_PUBLIC_ML_SERVICE_URL` | `http://localhost:8000` | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | *(test price ID)* | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID` | *(test price ID)* | `frontend/.env.local` / `.env.production` |
 
 Firebase config (API key, project ID, etc.) is hardcoded in `frontend/lib/firebase.ts`.
+
+> **Test vs Production**: Use `pk_test_` / test price IDs for sandbox. Use `pk_live_` / live price IDs for production. The Stripe Firebase Extension must also be configured with the matching secret key (`sk_test_` or `sk_live_`).
 
 ### ML Service (set automatically by `deploy.sh`)
 
@@ -262,6 +275,36 @@ FRONTEND_URL=http://localhost:3001
 ### Firebase Functions
 
 No environment variables needed — Firebase Admin auto-initializes in the Functions runtime.
+
+---
+
+## Stripe Extension Setup
+
+The `firestore-stripe-payments` Firebase Extension handles all Stripe integration (checkout sessions, webhooks, subscription syncing).
+
+### One-Time Extension Configuration
+
+1. In Firebase Console → Extensions → "Run Payments with Stripe"
+2. Set the Stripe secret key (`sk_test_...` or `sk_live_...`)
+3. Set the webhook secret (from Stripe Dashboard → Webhooks)
+4. Set **Products and prices collection**: `products`
+5. Set **Customer details and subscriptions collection**: `customers`
+6. Set **Sync new users to Stripe**: `Sync`
+
+### Product/Price Setup in Stripe
+
+For each plan, create a Product in Stripe Dashboard with a recurring Price, then set the **metadata** on the **Product**:
+- Key: `firebaseRole` — Value: `pro` (for Pro plan) or `business` (for Business plan)
+
+This `firebaseRole` value becomes the `role` field on subscription documents in Firestore, which `useSubscription.ts` uses to determine the tier.
+
+### Quota Limits (defined in `frontend/lib/constants/subscription.constants.ts`)
+
+| Role | Scan Quota/month |
+|------|-----------------|
+| free | 0 |
+| pro | 30 |
+| business | 150 |
 
 ---
 
