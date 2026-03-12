@@ -44,7 +44,8 @@
       "Bash(GOOGLE_APPLICATION_CREDENTIALS=\"/Users/deyandobrev/Development/Repositories/fin-track/functions/service-account.json\" node -e \":*)",
       "Read(//Users/deyandobrev/.config/gcloud/**)",
       "Bash(grep -r \"checkout_sessions\\\\|createCheckoutSession\\\\|stripe.*create\" /d/repos/fin-track --include=*.ts --include=*.tsx --exclude-dir=node_modules --exclude-dir=.next)",
-      "Bash(grep -r \"QuotaExceeded\\\\|402\\\\|scan\" /d/repos/fin-track --include=*.ts --include=*.tsx --exclude-dir=node_modules --exclude-dir=.next)"
+      "Bash(grep -r \"QuotaExceeded\\\\|402\\\\|scan\" /d/repos/fin-track --include=*.ts --include=*.tsx --exclude-dir=node_modules --exclude-dir=.next)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
     ]
   }
 }
