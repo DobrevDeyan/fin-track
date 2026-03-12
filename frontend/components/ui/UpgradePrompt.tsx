@@ -43,7 +43,7 @@ export function UpgradePrompt({
       </div>
       <Button
         size="sm"
-        onClick={() => router.push("/#pricing")}
+        onClick={() => router.push("/?landing#pricing")}
         className="mt-1"
       >
         Upgrade to {tierLabel}

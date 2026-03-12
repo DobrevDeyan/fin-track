@@ -42,7 +42,7 @@ export const Pricing = () => {
   const handleSubscribe = async (planKey: string) => {
     const priceId = PRICE_IDS[planKey]
 
-    if (!priceId) {
+    if (!priceId || priceId.startsWith("price_REPLACE_")) {
       window.location.href = user ? "/dashboard" : "/auth/register"
       return
     }
