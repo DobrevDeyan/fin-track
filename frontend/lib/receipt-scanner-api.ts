@@ -114,7 +114,10 @@ export async function scanReceipt(file: File, token: string, userId?: string): P
     const result: ScanReceiptResponse = await response.json();
 
     if (!response.ok || !result.success) {
-      throw new Error(result.message || result.error || 'Failed to scan receipt');
+      const err: any = new Error(result.message || result.error || 'Failed to scan receipt');
+      err.status = response.status;
+      err.errorCode = (result as any).error;
+      throw err;
     }
 
     if (!result.data) {

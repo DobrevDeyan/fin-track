@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v13'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v14'; // Increment this when deploying new version
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Critical app shell URLs to pre-cache on install.
@@ -93,8 +93,9 @@ self.addEventListener('fetch', (event) => {
     url.pathname.startsWith('/icons/');
   
   if (!isStaticAsset) {
-    // For non-static assets (like API calls), just fetch from network
-    event.respondWith(fetch(request));
+    // For non-static assets (API calls, external services), let the browser handle natively.
+    // Do NOT call event.respondWith for cross-origin requests (Firestore streams, etc.)
+    // or for same-origin API routes — just return and let the browser fetch normally.
     return;
   }
   

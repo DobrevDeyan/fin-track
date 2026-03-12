@@ -29,6 +29,9 @@ import { CameraCapture } from "./CameraCapture"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { auth } from "@/lib/firebase"
+import { useSubscription } from "@/lib/hooks/useSubscription"
+import { useScanQuota } from "@/lib/hooks/useScanQuota"
+import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
 interface TransactionData {
   description: string
@@ -64,6 +67,8 @@ export function ReceiptScannerDialog({
 
   // Auth context for logging user ID
   const { user } = useAuth()
+  const { isPro } = useSubscription()
+  const { remaining, limit } = useScanQuota()
 
   // Device capabilities
   const [isMobile, setIsMobile] = useState(false)
@@ -224,7 +229,12 @@ export function ReceiptScannerDialog({
       setScanState("success")
     } catch (error: any) {
       console.error("Error scanning receipt:", error)
-      setErrorMessage(error.message || "Failed to scan receipt. Please try again.")
+      const isQuotaError = error?.status === 402 || error?.errorCode === "QuotaExceeded"
+      setErrorMessage(
+        isQuotaError
+          ? "You've used all your receipt scans for this month. Upgrade your plan to get more."
+          : error.message || "Failed to scan receipt. Please try again."
+      )
       setScanState("error")
     }
   }
@@ -442,6 +452,24 @@ export function ReceiptScannerDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Free-tier gate */}
+        {!isPro ? (
+          <div className="py-4">
+            <UpgradePrompt
+              mode="card"
+              feature="Receipt Scanning"
+              description="Automatically extract expense details from photos and PDFs using AI."
+            />
+          </div>
+        ) : (
+        <>
+        {/* Quota indicator for paying users */}
+        {limit > 0 && (
+          <div className="text-xs text-muted-foreground text-right pb-1">
+            {remaining} / {limit} scans remaining this month
+          </div>
+        )}
+
         <div className="space-y-4 py-4">
           {/* Mode Selection / Camera / Upload Section */}
           {scanState === "idle" && !extractedData && (
@@ -602,6 +630,8 @@ export function ReceiptScannerDialog({
             </>
           )}
         </DialogFooter>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   )

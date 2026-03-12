@@ -17,11 +17,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { MessageCircle, Send, X, Bot, User, Sparkles } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
+import { useSubscription } from "@/lib/hooks/useSubscription"
+import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
 const SUGGESTED_PROMPTS = [
   "Why am I running out of money mid-month?",
@@ -32,7 +38,9 @@ const SUGGESTED_PROMPTS = [
 
 export function AIChatDrawer() {
   const [open, setOpen] = useState(false)
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [input, setInput] = useState("")
+  const { isPro } = useSubscription()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -86,9 +94,20 @@ export function AIChatDrawer() {
 
   return (
     <>
+      {/* Upgrade dialog for free users */}
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent className="max-w-xs p-0">
+          <UpgradePrompt
+            mode="card"
+            feature="AI Budget Coach"
+            description="Chat with Gemini about your finances. Ask why you're overspending or how to reach your goals."
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Floating button — bottom-left corner, balancing the "+" FAB on the right */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => isPro ? setOpen(true) : setUpgradeOpen(true)}
         className="fixed bottom-6 left-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
         aria-label="Open AI Budget Coach"
       >

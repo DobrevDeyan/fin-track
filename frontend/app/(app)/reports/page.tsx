@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
+import { useSubscription } from "@/lib/hooks/useSubscription"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,7 @@ export default function ReportsPage() {
   const tCommon = useTranslations("common")
   const { locale } = useLanguage()
   const { user, loading } = useAuth()
+  const { isPro } = useSubscription()
   const { userCurrency } = useCurrency()
   const [entries, setEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(true)
@@ -76,6 +78,10 @@ export default function ReportsPage() {
 
   const generateDigest = async () => {
     if (!user || digestLoading) return
+    if (!isPro) {
+      toast.error("Pro feature", { description: "AI Monthly Summary requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/#pricing" } })
+      return
+    }
     setDigestLoading(true)
     try {
       const now = new Date()
@@ -243,6 +249,10 @@ export default function ReportsPage() {
   }, [filteredEntries])
 
   const handleExportPDF = async () => {
+    if (!isPro) {
+      toast.error("Pro feature", { description: "PDF export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/#pricing" } })
+      return
+    }
     try {
       if (!startDate || !endDate) {
         toast.error(t("selectDateRange"))
@@ -265,6 +275,10 @@ export default function ReportsPage() {
   }
 
   const handleExportCSV = () => {
+    if (!isPro) {
+      toast.error("Pro feature", { description: "CSV export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/#pricing" } })
+      return
+    }
     try {
       if (!startDate || !endDate) {
         toast.error(t("selectDateRange"))

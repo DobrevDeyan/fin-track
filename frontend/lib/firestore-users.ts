@@ -186,6 +186,7 @@ export async function deleteUserData(userId: string): Promise<void> {
   await Promise.all([
     deleteDoc(doc(db, "financialSummaries", userId)),
     deleteDoc(doc(db, "aiInsights", userId)),
+    deleteDoc(doc(db, "scanUsage", userId)),
     deleteDoc(doc(db, "users", userId)),
   ])
 

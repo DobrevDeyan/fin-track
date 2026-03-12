@@ -24,6 +24,8 @@ import { memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Info } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
+import { useSubscription } from "@/lib/hooks/useSubscription"
+import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
 function formatCurrency(amount: number, currency = "EUR") {
   return new Intl.NumberFormat("en-US", {
@@ -72,6 +74,27 @@ function CustomTooltip({ active, payload, label, currency }: CustomTooltipProps)
 }
 export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = "EUR" }: { userCurrency?: string }) {
   const { cashFlowData } = useInsightsContext()
+  const { isPro } = useSubscription()
+
+  if (!isPro) {
+    return (
+      <Card className="drop-shadow-xl shadow-black/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            Cash Flow Forecast — Next 90 Days
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UpgradePrompt
+            mode="card"
+            feature="90-Day Cash Flow Forecast"
+            description="See a projection of your balance for the next 90 days based on your recurring transactions and spending patterns."
+          />
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (cashFlowData.length < 3) {
     return (

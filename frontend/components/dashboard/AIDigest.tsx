@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Sparkles, RefreshCw, Info } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
+import { useSubscription } from "@/lib/hooks/useSubscription"
+import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
 function getCurrentMonthLabel(): string {
   const now = new Date()
@@ -23,19 +25,27 @@ function getCurrentMonthLabel(): string {
 export const AIDigest = memo(function AIDigest() {
   const { digestText, digestLoading, digestNotConfigured, refreshDigest } =
     useInsightsContext()
+  const { isPro } = useSubscription()
 
   const [autoTriggered, setAutoTriggered] = useState(false)
 
-  // Auto-load on first mount
+  // Auto-load on first mount (only for paying users)
   useEffect(() => {
-    if (!autoTriggered && !digestText && !digestLoading && !digestNotConfigured) {
+    if (isPro && !autoTriggered && !digestText && !digestLoading && !digestNotConfigured) {
       setAutoTriggered(true)
       refreshDigest()
     }
-  }, [autoTriggered, digestText, digestLoading, digestNotConfigured, refreshDigest])
+  }, [isPro, autoTriggered, digestText, digestLoading, digestNotConfigured, refreshDigest])
 
   return (
-    <Card className="drop-shadow-xl shadow-black/10">
+    <Card className="drop-shadow-xl shadow-black/10 relative overflow-hidden">
+      {!isPro && (
+        <UpgradePrompt
+          mode="overlay"
+          feature="AI Monthly Summary"
+          description="Get a Gemini-powered narrative of your spending patterns every month."
+        />
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold flex items-center gap-2">

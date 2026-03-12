@@ -177,6 +177,52 @@ export const processRecurringTransactionsScheduled = onSchedule(
 );
 
 /**
+ * Scheduled function that runs on the 1st of every month at 00:05 UTC.
+ * Resets all scanUsage documents so each user starts a fresh quota.
+ */
+export const resetMonthlyScanCounts = onSchedule(
+  {
+    schedule: "5 0 1 * *", // 1st of each month at 00:05 UTC
+    timeZone: "UTC",
+    retryCount: 2,
+  },
+  async () => {
+    logger.info("Starting monthly scan count reset");
+
+    const newMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    const snapshot = await db.collection("scanUsage").get();
+
+    if (snapshot.empty) {
+      logger.info("No scanUsage documents to reset");
+      return;
+    }
+
+    // Process in batches of 490 (Firestore limit is 500 per batch)
+    const BATCH_SIZE = 490;
+    const docs = snapshot.docs;
+    let resetCount = 0;
+
+    for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+      const batch = db.batch();
+      const chunk = docs.slice(i, i + BATCH_SIZE);
+
+      for (const doc of chunk) {
+        batch.update(doc.ref, {
+          count: 0,
+          month: newMonth,
+          resetAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      resetCount += chunk.length;
+    }
+
+    logger.info(`Reset scan counts for ${resetCount} users`, { month: newMonth });
+  }
+);
+
+/**
  * Callable function to manually trigger processing
  * Useful for testing or catching up on missed transactions
  * Can only be called by authenticated users (processes only their transactions)

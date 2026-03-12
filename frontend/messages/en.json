@@ -440,29 +440,33 @@
       "getStarted": "Get Started",
       "free": {
         "name": "Free",
-        "price": "$0",
-        "description": "Perfect for getting started",
-        "feature1": "100 transactions/month",
-        "feature2": "Basic categorization",
-        "feature3": "Mobile app access"
+        "price": "€0",
+        "description": "Get started with personal finance tracking",
+        "feature1": "50 transactions per month",
+        "feature2": "Up to 3 budgets",
+        "feature3": "Up to 2 savings goals",
+        "feature4": "Financial health score",
+        "feature5": "Spending anomaly alerts"
       },
       "pro": {
         "name": "Pro",
-        "price": "$9.99",
-        "description": "For power users",
+        "price": "€7.99",
+        "description": "Unlock AI features and unlimited tracking",
         "feature1": "Unlimited transactions",
-        "feature2": "AI categorization",
-        "feature3": "Advanced analytics",
-        "feature4": "Budget alerts"
+        "feature2": "30 receipt scans per month",
+        "feature3": "AI Monthly Summary & Budget Coach",
+        "feature4": "90-day Cash Flow Forecast",
+        "feature5": "PDF & CSV export",
+        "feature6": "Unlimited budgets, goals & accounts"
       },
       "business": {
         "name": "Business",
-        "price": "$29.99",
-        "description": "For teams",
+        "price": "€19.99",
+        "description": "Maximum scans for power users & freelancers",
         "feature1": "Everything in Pro",
-        "feature2": "Multi-user accounts",
-        "feature3": "Team collaboration",
-        "feature4": "API access"
+        "feature2": "150 receipt scans per month",
+        "feature3": "Priority support",
+        "feature4": "Advanced analytics"
       }
     },
     "newsletter": {

@@ -20,12 +20,16 @@ import {
 } from "@/components/ui/dialog"
 import { AlertTriangle, CreditCard, Trash2, User } from "lucide-react"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
+import { useScanQuota } from "@/lib/hooks/useScanQuota"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 
 export default function SettingsPage() {
   const t = useTranslations("settings")
   const { user } = useAuth()
   const router = useRouter()
   const { tier, subscription, loading: subscriptionLoading } = useSubscription()
+  const { count: scanCount, limit: scanLimit, remaining: scanRemaining, resetAt: scanResetAt } = useScanQuota()
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState("")
@@ -93,20 +97,54 @@ export default function SettingsPage() {
           </CardTitle>
           <CardDescription>{t("billing.description")}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">
-              {t("billing.currentPlan")}: {subscriptionLoading ? "..." : tierLabel}
-            </p>
-            {subscription?.currentPeriodEnd && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {subscription.cancelAtPeriodEnd
-                  ? t("billing.expiresOn", { date: subscription.currentPeriodEnd.toLocaleDateString() })
-                  : t("billing.renewsOn", { date: subscription.currentPeriodEnd.toLocaleDateString() })}
-              </p>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium">
+                  {t("billing.currentPlan")}: {subscriptionLoading ? "..." : tierLabel}
+                </p>
+                <Badge variant={tier === "free" ? "secondary" : "default"} className="text-xs">
+                  {subscriptionLoading ? "..." : tier.charAt(0).toUpperCase() + tier.slice(1)}
+                </Badge>
+              </div>
+              {subscription?.currentPeriodEnd && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {subscription.cancelAtPeriodEnd
+                    ? t("billing.expiresOn", { date: subscription.currentPeriodEnd.toLocaleDateString() })
+                    : t("billing.renewsOn", { date: subscription.currentPeriodEnd.toLocaleDateString() })}
+                </p>
+              )}
+            </div>
+            {tier !== "free" ? (
+              <BillingPortalButton label={t("billing.manageBilling")} />
+            ) : (
+              <Button size="sm" onClick={() => window.location.href = "/#pricing"}>
+                Upgrade to Pro
+              </Button>
             )}
           </div>
-          {tier !== "free" && <BillingPortalButton label={t("billing.manageBilling")} />}
+
+          {/* Scan quota usage */}
+          {tier !== "free" && scanLimit > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Receipt scans this month</span>
+                <span>{scanCount} / {scanLimit}</span>
+              </div>
+              <Progress value={(scanCount / scanLimit) * 100} className="h-2" />
+              {scanResetAt && (
+                <p className="text-xs text-muted-foreground">
+                  Resets on {scanResetAt.toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
+          {tier === "free" && (
+            <p className="text-xs text-muted-foreground">
+              Upgrade to Pro to unlock receipt scanning (30 scans/month) and AI features.
+            </p>
+          )}
         </CardContent>
       </Card>
 

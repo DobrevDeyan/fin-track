@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { processDocument } from './document-ai-handler';
 import insightsRouter from './insights-routes';
 import { requireAuth } from './middleware/auth';
+import { checkSubscriptionTier, checkAndIncrementScanQuota } from './firestore-quota';
 import * as fs from 'fs';
 
 const app = express();
@@ -132,7 +133,27 @@ app.post('/api/upload-bill', uploadLimiter, requireAuth, upload.single('billFile
     try {
         const { requestId } = req.body;
         // Use the verified uid from auth middleware instead of trusting client-provided userId
-        const userId = req.uid;
+        const userId = req.uid!;
+
+        // Check subscription tier and scan quota before hitting Document AI
+        const tier = await checkSubscriptionTier(userId);
+        const quota = await checkAndIncrementScanQuota(userId, tier);
+
+        if (!quota.allowed) {
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            res.status(402).json({
+                success: false,
+                error: 'QuotaExceeded',
+                message: quota.limit === 0
+                    ? 'Receipt scanning requires a Pro or Business subscription.'
+                    : `You have used all ${quota.limit} receipt scans for this month. Upgrade to scan more.`,
+                count: quota.count,
+                limit: quota.limit,
+            });
+            return;
+        }
 
         // Process the document with Document AI
         const extractedData = await processDocument(

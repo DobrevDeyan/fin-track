@@ -10,6 +10,7 @@
 
 import { Router, Request, Response } from "express";
 import { generateDigest, generateChatResponse, type ChatMessage } from "./gemini-handler";
+import { checkSubscriptionTier } from "./firestore-quota";
 
 const router = Router();
 
@@ -25,6 +26,16 @@ router.post("/digest", async (req: Request, res: Response) => {
       success: false,
       error: "AI not configured",
       message: "Add GEMINI_API_KEY to environment variables to enable AI insights.",
+    });
+    return;
+  }
+
+  const tier = await checkSubscriptionTier(req.uid!);
+  if (tier === "free") {
+    res.status(403).json({
+      success: false,
+      error: "SubscriptionRequired",
+      message: "AI Monthly Summary requires a Pro or Business subscription.",
     });
     return;
   }
@@ -56,6 +67,16 @@ router.post("/chat", async (req: Request, res: Response) => {
       success: false,
       error: "AI not configured",
       message: "Add GEMINI_API_KEY to environment variables to enable AI insights.",
+    });
+    return;
+  }
+
+  const tier = await checkSubscriptionTier(req.uid!);
+  if (tier === "free") {
+    res.status(403).json({
+      success: false,
+      error: "SubscriptionRequired",
+      message: "AI Budget Coach requires a Pro or Business subscription.",
     });
     return;
   }
