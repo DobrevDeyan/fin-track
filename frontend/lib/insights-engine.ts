@@ -196,7 +196,7 @@ export function calculateHealthScore(
 
   const raw =
     savingsRateScore + budgetScore + goalScore + incomeScore + spendingScore
-  const score = clamp(Math.round(raw), 0, 100)
+  const score = clamp(Math.round(isNaN(raw) ? 0 : raw), 0, 100)
 
   const tier =
     score < 40
@@ -209,14 +209,15 @@ export function calculateHealthScore(
       ? "excellent"
       : "outstanding"
 
+  const safeRound = (v: number) => Math.round(isNaN(v) ? 0 : v)
   return {
     score,
     breakdown: {
-      savingsRate: Math.round(savingsRateScore),
-      budgetAdherence: Math.round(budgetScore),
-      goalProgress: Math.round(goalScore),
-      incomeStability: Math.round(incomeScore),
-      spendingRegularity: Math.round(spendingScore),
+      savingsRate: safeRound(savingsRateScore),
+      budgetAdherence: safeRound(budgetScore),
+      goalProgress: safeRound(goalScore),
+      incomeStability: safeRound(incomeScore),
+      spendingRegularity: safeRound(spendingScore),
     },
     tier,
   }

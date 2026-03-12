@@ -1,16 +1,16 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 import { useTranslations } from "next-intl";
 
 export const Testimonials = () => {
   const t = useTranslations("landing.testimonials");
 
   const testimonials = [
-    { name: "John Doe", username: "@johndoe", contentKey: "testimonial1", avatar: "https://github.com/shadcn.png" },
-    { name: "Jane Smith", username: "@janesmith", contentKey: "testimonial2", avatar: "https://github.com/shadcn.png" },
-    { name: "Mike Johnson", username: "@mikej", contentKey: "testimonial3", avatar: "https://github.com/shadcn.png" },
+    { name: "Maria K.", username: "@mariak", contentKey: "testimonial1", initials: "MK" },
+    { name: "Thomas R.", username: "@thomasr", contentKey: "testimonial2", initials: "TR" },
+    { name: "Elena V.", username: "@elenav", contentKey: "testimonial3", initials: "EV" },
   ];
 
   return (
@@ -24,8 +24,9 @@ export const Testimonials = () => {
             <CardHeader>
               <div className="flex items-center gap-4">
                 <Avatar>
-                  <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
-                  <AvatarFallback>{testimonial.name[0]}</AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {testimonial.initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle className="text-lg">{testimonial.name}</CardTitle>
@@ -42,4 +43,3 @@ export const Testimonials = () => {
     </section>
   );
 };
-

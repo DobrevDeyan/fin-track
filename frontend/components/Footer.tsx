@@ -11,7 +11,7 @@ export const Footer = () => {
   return (
     <footer id="footer" className="border-t border-border bg-background">
       <div className="container py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Left side - Logo and Company Info */}
           <div className="lg:col-span-2">
             <Link
@@ -66,7 +66,7 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* Solutions Column */}
+          {/* Use Cases Column */}
           <div className="flex flex-col gap-3">
             <h3 className="font-semibold text-sm text-foreground">{t("solutions")}</h3>
             <div className="flex flex-col gap-2">
@@ -91,32 +91,7 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* Resources Column */}
-          <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-sm text-foreground">{t("resources")}</h3>
-            <div className="flex flex-col gap-2">
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("blog")}
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("documentation")}
-              </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("support")}
-              </Link>
-            </div>
-          </div>
-
-          {/* Company Column */}
+          {/* Legal Column */}
           <div className="flex flex-col gap-3">
             <h3 className="font-semibold text-sm text-foreground">{t("company")}</h3>
             <div className="flex flex-col gap-2">
@@ -125,12 +100,6 @@ export const Footer = () => {
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("about")}
-              </Link>
-              <Link
-                href="#contact"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("contact")}
               </Link>
               <Link
                 href="#"
@@ -144,12 +113,6 @@ export const Footer = () => {
               >
                 {t("termsOfService")}
               </Link>
-              <Link
-                href="#"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("securityCompliance")}
-              </Link>
             </div>
           </div>
         </div>
@@ -157,4 +120,3 @@ export const Footer = () => {
     </footer>
   );
 };
-

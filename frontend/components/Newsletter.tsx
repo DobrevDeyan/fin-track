@@ -1,11 +1,13 @@
 "use client"
 
-import { Input } from "./ui/input";
+import Link from "next/link";
 import { Button } from "./ui/button";
 import { useTranslations } from "next-intl";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Newsletter = () => {
   const t = useTranslations("landing.newsletter");
+  const { user } = useAuth();
 
   return (
     <section className="container py-24 sm:py-32">
@@ -16,12 +18,10 @@ export const Newsletter = () => {
         <p className="text-muted-foreground text-xl mb-8 max-w-2xl mx-auto">
           {t("description")}
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-          <Input type="email" placeholder={t("placeholder")} className="flex-1" />
-          <Button>{t("subscribe")}</Button>
-        </div>
+        <Link href={user ? "/dashboard" : "/auth/register"}>
+          <Button size="lg">{t("cta")}</Button>
+        </Link>
       </div>
     </section>
   );
 };
-

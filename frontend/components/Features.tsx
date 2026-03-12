@@ -1,11 +1,8 @@
 "use client"
 
-import { Badge } from "./ui/badge";
 import {
   Card,
-  CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -18,9 +15,9 @@ interface FeatureProps {
 }
 
 const featureKeys: FeatureProps[] = [
-  { titleKey: "feature1Title", descKey: "feature1Desc", icon: "🤖" },
-  { titleKey: "feature2Title", descKey: "feature2Desc", icon: "📊" },
-  { titleKey: "feature3Title", descKey: "feature3Desc", icon: "💰" },
+  { titleKey: "feature1Title", descKey: "feature1Desc", icon: "📊" },
+  { titleKey: "feature2Title", descKey: "feature2Desc", icon: "✨" },
+  { titleKey: "feature3Title", descKey: "feature3Desc", icon: "🧾" },
 ];
 
 export const Features = () => {
@@ -53,4 +50,3 @@ export const Features = () => {
     </section>
   );
 };
-

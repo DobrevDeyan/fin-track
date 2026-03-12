@@ -119,7 +119,7 @@ export default function SettingsPage() {
             {tier !== "free" ? (
               <BillingPortalButton label={t("billing.manageBilling")} />
             ) : (
-              <Button size="sm" onClick={() => window.location.href = "/#pricing"}>
+              <Button size="sm" onClick={() => window.location.href = "/?landing#pricing"}>
                 Upgrade to Pro
               </Button>
             )}

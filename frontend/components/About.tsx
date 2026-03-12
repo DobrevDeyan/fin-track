@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
 export const About = () => {
@@ -7,7 +8,7 @@ export const About = () => {
 
   return (
     <section id="about" className="container py-24 sm:py-32">
-      <div className="grid lg:grid-cols-2 gap-8 items-center">
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             {t("title")} <span className="text-foreground">{t("pocket")}</span>
@@ -17,12 +18,15 @@ export const About = () => {
           </p>
         </div>
         <div className="flex justify-center">
-          <div className="w-full max-w-md h-64 bg-muted rounded-lg flex items-center justify-center">
-            <span className="text-muted-foreground">{t("visualPlaceholder")}</span>
-          </div>
+          <Image
+            src="/images/dashboard.png"
+            alt="Pocket dashboard"
+            width={600}
+            height={380}
+            className="w-full max-w-xl rounded-xl shadow-xl border border-border"
+          />
         </div>
       </div>
     </section>
   );
 };
-

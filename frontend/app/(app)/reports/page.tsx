@@ -79,7 +79,7 @@ export default function ReportsPage() {
   const generateDigest = async () => {
     if (!user || digestLoading) return
     if (!isPro) {
-      toast.error("Pro feature", { description: "AI Monthly Summary requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/#pricing" } })
+      toast.error("Pro feature", { description: "AI Monthly Summary requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/?landing#pricing" } })
       return
     }
     setDigestLoading(true)
@@ -250,7 +250,7 @@ export default function ReportsPage() {
 
   const handleExportPDF = async () => {
     if (!isPro) {
-      toast.error("Pro feature", { description: "PDF export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/#pricing" } })
+      toast.error("Pro feature", { description: "PDF export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/?landing#pricing" } })
       return
     }
     try {
@@ -276,7 +276,7 @@ export default function ReportsPage() {
 
   const handleExportCSV = () => {
     if (!isPro) {
-      toast.error("Pro feature", { description: "CSV export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/#pricing" } })
+      toast.error("Pro feature", { description: "CSV export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/?landing#pricing" } })
       return
     }
     try {

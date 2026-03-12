@@ -33,11 +33,12 @@ export const Pricing = () => {
       featureKeys: ["feature1", "feature2", "feature3", "feature4", "feature5", "feature6"],
       popular: true,
     },
-    {
-      planKey: "business",
-      featureKeys: ["feature1", "feature2", "feature3", "feature4"],
-      popular: false,
-    },
+    // Business plan — coming soon, hidden from UI for now
+    // {
+    //   planKey: "business",
+    //   featureKeys: ["feature1", "feature2", "feature3", "feature4"],
+    //   popular: false,
+    // },
   ]
 
   const handleSubscribe = async (planKey: string) => {
@@ -104,7 +105,7 @@ export const Pricing = () => {
       <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
         {t("title")} <span className="text-foreground">{t("pricing")}</span>
       </h2>
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
         {plans.map(({ planKey, featureKeys, popular }) => (
           <Card key={planKey} className={popular ? "border-primary" : ""}>
             <CardHeader>

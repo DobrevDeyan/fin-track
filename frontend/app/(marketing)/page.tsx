@@ -21,9 +21,9 @@ const Services = dynamic(() => import("@/components/Services").then(mod => ({ de
 const Cta = dynamic(() => import("@/components/Cta").then(mod => ({ default: mod.Cta })), {
   loading: () => <div className="min-h-[400px]" />,
 });
-const Testimonials = dynamic(() => import("@/components/Testimonials").then(mod => ({ default: mod.Testimonials })), {
-  loading: () => <div className="min-h-[400px]" />,
-});
+// const Testimonials = dynamic(() => import("@/components/Testimonials").then(mod => ({ default: mod.Testimonials })), {
+//   loading: () => <div className="min-h-[400px]" />,
+// });
 const Pricing = dynamic(() => import("@/components/Pricing").then(mod => ({ default: mod.Pricing })), {
   loading: () => <div className="min-h-[400px]" />,
 });
@@ -60,6 +60,24 @@ export default function Home() {
     }
   }, [user, loading])
 
+  // After the landing page becomes visible, scroll to the hash anchor.
+  // Native hash scroll fires too early (before the loading spinner is removed
+  // and before dynamic components mount), so we handle it manually.
+  useEffect(() => {
+    if (!showLanding) return
+    const hash = window.location.hash
+    if (!hash) return
+    const scrollToHash = () => {
+      const el = document.querySelector(hash)
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" })
+      }
+    }
+    // Give dynamic imports time to mount
+    const t = setTimeout(scrollToHash, 600)
+    return () => clearTimeout(t)
+  }, [showLanding])
+
   // While checking auth or redirecting, show a minimal loading screen
   // This prevents the landing page from flashing before redirect.
   // Include `user` in the check: when auth resolves but the useEffect redirect
@@ -85,7 +103,7 @@ export default function Home() {
       <Features />
       <Services />
       <Cta />
-      <Testimonials />
+      {/* <Testimonials /> */}
       {/* <Team /> */}
       <Pricing />
       <Newsletter />
