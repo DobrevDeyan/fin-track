@@ -44,23 +44,39 @@ export default function Home() {
   const router = useRouter()
   const [redirecting, setRedirecting] = useState(false)
   const [showLanding, setShowLanding] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
+  // Check landing param and set initial redirecting state
   useEffect(() => {
     if (typeof window === "undefined") return
 
-    // Allow authenticated users to view landing page via /?landing
+    setMounted(true)
     const params = new URLSearchParams(window.location.search)
+
+    // Allow authenticated users to view landing page via /?landing
     if (params.has("landing")) {
       setShowLanding(true)
       return
     }
 
+    // If user already exists on mount, mark as redirecting immediately
+    // This prevents flash of landing page content
+    if (user) {
+      setRedirecting(true)
+    }
+  }, []) // Empty deps - only run once on mount
+
+  // Handle redirect when user state changes
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (showLanding) return // Don't redirect if ?landing param present
+
     // Redirect authenticated users to dashboard using Next.js router
-    if (!loading && user) {
+    if (!loading && user && !redirecting) {
       setRedirecting(true)
       router.push("/dashboard")
     }
-  }, [user, loading, router])
+  }, [user, loading, router, showLanding, redirecting])
 
   // After the landing page becomes visible, scroll to the hash anchor.
   // Native hash scroll fires too early (before the loading spinner is removed
@@ -82,10 +98,13 @@ export default function Home() {
 
   // While checking auth or redirecting, show a minimal loading screen
   // This prevents the landing page from flashing before redirect.
-  // Include `user` in the check: when auth resolves but the useEffect redirect
-  // hasn't fired yet there is a one-render gap where loading=false, redirecting=false,
-  // user=<User> — without this guard the Hero animations briefly appear.
-  if (!showLanding && (loading || redirecting || !!user)) {
+  // We check multiple conditions to ensure no flash:
+  // 1. !mounted - Component hasn't mounted yet
+  // 2. loading - Auth is still loading
+  // 3. redirecting - We're in the process of redirecting
+  // 4. !!user - User exists (even if redirect hasn't started yet)
+  // 5. !showLanding - Landing param not present
+  if (!mounted || !showLanding && (loading || redirecting || !!user)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
