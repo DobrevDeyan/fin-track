@@ -13,6 +13,7 @@ import {
   updateBudget,
 } from "@/lib/firestore-budgets"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
+import { toISOString } from "@/lib/utils/timestamp"
 import type { Budget, BudgetFormData, ToastState } from "./types"
 
 interface UseBudgetsOptions {
@@ -40,16 +41,8 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
         amount: budget.amount,
         currency: budget.currency,
         period: budget.period,
-        startDate: budget.startDate instanceof Timestamp
-          ? budget.startDate.toDate().toISOString()
-          : typeof budget.startDate === "string"
-          ? budget.startDate
-          : new Date(budget.startDate as unknown as string | number | Date).toISOString(),
-        endDate: budget.endDate instanceof Timestamp
-          ? budget.endDate.toDate().toISOString()
-          : typeof budget.endDate === "string"
-          ? budget.endDate
-          : new Date(budget.endDate as unknown as string | number | Date).toISOString(),
+        startDate: toISOString(budget.startDate) || "",
+        endDate: toISOString(budget.endDate) || "",
         isActive: budget.isActive,
         alertThreshold: budget.alertThreshold,
       }))

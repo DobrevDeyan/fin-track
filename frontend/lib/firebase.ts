@@ -1,20 +1,28 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  Firestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import type { Analytics } from "firebase/analytics";
 import { getFunctions, Functions } from "firebase/functions";
+import { logger } from "@/lib/utils/logger";
 
 // Your web app's Firebase configuration
+// Read from environment variables for better security
 const firebaseConfig = {
-  apiKey: "AIzaSyAj_TioYX7kZsDm9uuKPVrf8BwuOmaN1hA",
-  authDomain: "fin-track-adc2c.firebaseapp.com",
-  projectId: "fin-track-adc2c",
-  storageBucket: "fin-track-adc2c.firebasestorage.app",
-  messagingSenderId: "185936461123",
-  appId: "1:185936461123:web:90b48701c1a520457383f6",
-  measurementId: "G-YRYCTR1THT"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
 // Initialize Firebase
@@ -34,40 +42,19 @@ if (typeof window !== "undefined") {
   }
   
   auth = getAuth(app);
-  
-  // Initialize Firestore with offline persistence
-  import("firebase/firestore").then(({ initializeFirestore, persistentLocalCache, persistentMultipleTabManager }) => {
-    try {
-      db = initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager()
-        })
-      });
-    } catch (err) {
-      // If already initialized or other error, fallback to getFirestore
-      console.warn("Firestore persistence init failed or already initialized:", err);
-      if (!db) db = getFirestore(app);
-    }
-  });
 
-  // Fallback if async init hasn't finished when exported (though typically safe due to module loading)
-  // We initialize db synchronously with getFirestore for immediate use, 
-  // but the above async call will configure persistence if it's the first call.
-  // Actually, to be safe and synchronous for exports, we should use enableIndexedDbPersistence 
-  // but that is deprecated in favor of initializeFirestore with cache settings.
-  // Let's use the standard synchronous getFirestore first, then enable persistence.
-  
-  db = getFirestore(app);
-  
-  import("firebase/firestore").then(({ enableIndexedDbPersistence }) => {
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code == 'failed-precondition') {
-        console.warn('Firestore persistence failed: Multiple tabs open');
-      } else if (err.code == 'unimplemented') {
-        console.warn('Firestore persistence not supported in this browser');
-      }
+  // Initialize Firestore with modern offline persistence API (non-deprecated)
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
     });
-  });
+  } catch (err: any) {
+    // If initializeFirestore fails (e.g., already initialized), use getFirestore
+    logger.warn('Firestore persistence initialization failed, using standard Firestore', { error: err });
+    db = getFirestore(app);
+  }
 
   storage = getStorage(app);
   functions = getFunctions(app);
@@ -78,7 +65,7 @@ if (typeof window !== "undefined") {
       const { getAnalytics } = await import("firebase/analytics");
       analytics = getAnalytics(app);
     } catch (error) {
-      console.warn("Analytics initialization failed:", error);
+      logger.warn("Analytics initialization failed", { error });
     }
   }, 3000);
 } else {

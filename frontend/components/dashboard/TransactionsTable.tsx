@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp } from "lucide-react"
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp, Receipt } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -174,8 +174,18 @@ export function TransactionsTable({
       </CardHeader>
       <CardContent className="px-2 sm:px-4 md:px-6">
         {transactions.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            {t("noEntriesYet")}
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="rounded-full bg-muted p-6 mb-4">
+              <Receipt className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">{t("noEntriesYet")}</h3>
+            <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+              {t("noEntriesDescription")}
+            </p>
+            <Button onClick={onAdd} size="lg" className="gap-2">
+              <Plus className="h-5 w-5" />
+              {t("addFirstEntry")}
+            </Button>
           </div>
         ) : (
           <>

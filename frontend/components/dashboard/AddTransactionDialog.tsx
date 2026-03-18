@@ -33,6 +33,7 @@ import { uploadReceipt, deleteReceipt, validateReceiptFile } from "@/lib/receipt
 import { useAuth } from "@/contexts/AuthContext"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
+import { AMOUNT_RULES, VALIDATION_MESSAGES } from "@/lib/constants/validation.constants"
 
 interface TransactionData {
   description: string
@@ -96,6 +97,7 @@ export function AddTransactionDialog({
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null)
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [amountError, setAmountError] = useState<string | null>(null)
 
   // Populate form when editing
   useEffect(() => {
@@ -110,6 +112,7 @@ export function AddTransactionDialog({
       setExistingReceiptUrl(editingEntry.receiptUrl || null)
       setReceiptFile(null)
       setReceiptPreview(null)
+      setAmountError(null)
     } else {
       // Reset form for new entry
       setDescription("")
@@ -123,12 +126,42 @@ export function AddTransactionDialog({
       setReceiptFile(null)
       setReceiptPreview(null)
       setExistingReceiptUrl(null)
+      setAmountError(null)
     }
   }, [editingEntry, open, defaultDate])
 
+  const validateAmount = (value: string): boolean => {
+    setAmountError(null)
+
+    if (!value || value.trim() === "") {
+      setAmountError(VALIDATION_MESSAGES.AMOUNT_REQUIRED)
+      return false
+    }
+
+    const numValue = parseFloat(value)
+
+    if (isNaN(numValue)) {
+      setAmountError(VALIDATION_MESSAGES.AMOUNT_INVALID)
+      return false
+    }
+
+    if (numValue <= 0) {
+      setAmountError(VALIDATION_MESSAGES.AMOUNT_TOO_SMALL)
+      return false
+    }
+
+    if (numValue > AMOUNT_RULES.MAX) {
+      setAmountError(VALIDATION_MESSAGES.AMOUNT_TOO_LARGE(AMOUNT_RULES.MAX))
+      return false
+    }
+
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!description || !amount || !category) return
+    if (!description || !category) return
+    if (!validateAmount(amount)) return
     if (isSubmitting) return
 
     setIsSubmitting(true)
@@ -292,11 +325,24 @@ export function AddTransactionDialog({
                 id="amount"
                 type="number"
                 step="0.01"
+                min="0.01"
+                max={AMOUNT_RULES.MAX}
                 placeholder="0.00"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  setAmount(e.target.value)
+                  if (amountError) setAmountError(null)
+                }}
+                className={amountError ? "border-destructive" : ""}
                 required
+                aria-invalid={!!amountError}
+                aria-describedby={amountError ? "amount-error" : undefined}
               />
+              {amountError && (
+                <p id="amount-error" className="text-sm text-destructive mt-1" role="alert">
+                  {amountError}
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="category">{tCommon("category")}</Label>

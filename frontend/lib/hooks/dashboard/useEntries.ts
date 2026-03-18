@@ -16,6 +16,7 @@ import {
 import { addToSavingsAccount } from "@/lib/firestore-savings"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { toast } from "sonner"
+import { toISOString } from "@/lib/utils/timestamp"
 import type { Entry, EntryFormData } from "./types"
 
 interface UseEntriesOptions {
@@ -92,11 +93,7 @@ export function useEntries({
         description: entry.description,
         amount: entry.amount,
         category: entry.category,
-        date: entry.date instanceof Timestamp
-          ? entry.date.toDate().toISOString()
-          : typeof entry.date === "string"
-          ? entry.date
-          : new Date(entry.date as unknown as string | number | Date).toISOString(),
+        date: toISOString(entry.date) || "",
         type: entry.type,
         currency: entry.currency,
         notes: entry.notes,
