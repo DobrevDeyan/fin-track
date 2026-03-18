@@ -22,10 +22,12 @@ const mockBudget = {
 describe('BudgetCard', () => {
   const mockOnEdit = jest.fn()
   const mockOnDelete = jest.fn()
+  const mockOnRenew = jest.fn().mockResolvedValue(undefined)
 
   beforeEach(() => {
     mockOnEdit.mockClear()
     mockOnDelete.mockClear()
+    mockOnRenew.mockClear()
   })
 
   it('should render budget name', () => {
@@ -35,6 +37,7 @@ describe('BudgetCard', () => {
         spent={300}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     expect(screen.getByText('Groceries')).toBeInTheDocument()
@@ -47,6 +50,7 @@ describe('BudgetCard', () => {
         spent={300}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     expect(screen.getByText('Food & Dining')).toBeInTheDocument()
@@ -59,6 +63,7 @@ describe('BudgetCard', () => {
         spent={300}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     expect(screen.getByText(/EUR 300.00 \/ EUR 500.00/)).toBeInTheDocument()
@@ -71,6 +76,7 @@ describe('BudgetCard', () => {
           spent={300}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
+          onRenew={mockOnRenew}
         />
       )
       expect(screen.getByText(/EUR 200.00 remaining/)).toBeInTheDocument()
@@ -83,6 +89,7 @@ describe('BudgetCard', () => {
         spent={600}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     expect(screen.getByText(/Over budget: EUR 100.00/)).toBeInTheDocument()
@@ -96,6 +103,7 @@ describe('BudgetCard', () => {
         spent={300}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     
@@ -114,6 +122,7 @@ describe('BudgetCard', () => {
         spent={300}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     
@@ -131,6 +140,7 @@ describe('BudgetCard', () => {
           spent={250}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
+          onRenew={mockOnRenew}
         />
       )
       // 250 / 500 = 50%
@@ -146,6 +156,7 @@ describe('BudgetCard', () => {
         spent={300}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
+        onRenew={mockOnRenew}
       />
     )
     expect(screen.getByText(/Monthly/)).toBeInTheDocument()
@@ -158,6 +169,7 @@ describe('BudgetCard', () => {
           spent={0}
           onEdit={mockOnEdit}
           onDelete={mockOnDelete}
+          onRenew={mockOnRenew}
         />
       )
       expect(screen.getByText(/EUR 0.00 \/ EUR 500.00/)).toBeInTheDocument()

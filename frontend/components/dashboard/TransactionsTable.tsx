@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp, Receipt } from "lucide-react"
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp, Receipt, Zap } from "lucide-react"
+import { VirtualizedTransactionTable } from "./VirtualizedTransactionTable"
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,7 @@ interface TransactionsTableProps {
 const INITIAL_VISIBLE = 2
 const EXPANDED_VISIBLE = 20
 const ITEMS_PER_PAGE = 20
+const VIRTUALIZATION_THRESHOLD = 100 // Use virtualization for 100+ transactions
 
 export function TransactionsTable({
   transactions,
@@ -72,6 +74,10 @@ export function TransactionsTable({
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [deleteConfirmName, setDeleteConfirmName] = useState<string>("")
+  const [useVirtualization, setUseVirtualization] = useState(false)
+
+  // Automatically enable virtualization for large datasets
+  const shouldVirtualize = transactions.length >= VIRTUALIZATION_THRESHOLD
 
   // Calculate visible count based on expanded state
   const visibleCount = expanded ? EXPANDED_VISIBLE : INITIAL_VISIBLE
@@ -186,6 +192,34 @@ export function TransactionsTable({
               <Plus className="h-5 w-5" />
               {t("addFirstEntry")}
             </Button>
+          </div>
+        ) : shouldVirtualize && (useVirtualization || expanded) ? (
+          <div className="space-y-4">
+            {shouldVirtualize && !useVirtualization && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
+                <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm text-blue-600 dark:text-blue-400 flex-1">
+                  Performance mode enabled for {transactions.length} transactions
+                </p>
+              </div>
+            )}
+            <VirtualizedTransactionTable
+              transactions={paginatedTransactions}
+              onEdit={onEdit}
+              onDelete={(id) => {
+                const transaction = transactions.find(t => t.id === id)
+                if (transaction) {
+                  setDeleteConfirmId(id)
+                  setDeleteConfirmName(transaction.description)
+                }
+              }}
+              onViewReceipt={(url) => {
+                setSelectedReceiptUrl(url)
+                setReceiptDialogOpen(true)
+              }}
+              height={600}
+              itemSize={100}
+            />
           </div>
         ) : (
           <>
