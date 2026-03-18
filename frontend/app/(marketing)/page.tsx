@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Hero } from "@/components/Hero"
 import { useAuth } from "@/contexts/AuthContext"
@@ -40,6 +41,7 @@ const ScrollToTop = dynamic(() => import("@/components/ScrollToTop").then(mod =>
 
 export default function Home() {
   const { user, loading } = useAuth()
+  const router = useRouter()
   const [redirecting, setRedirecting] = useState(false)
   const [showLanding, setShowLanding] = useState(false)
 
@@ -53,12 +55,12 @@ export default function Home() {
       return
     }
 
-    // Redirect authenticated users to dashboard
+    // Redirect authenticated users to dashboard using Next.js router
     if (!loading && user) {
       setRedirecting(true)
-      window.location.href = "/dashboard"
+      router.push("/dashboard")
     }
-  }, [user, loading])
+  }, [user, loading, router])
 
   // After the landing page becomes visible, scroll to the hash anchor.
   // Native hash scroll fires too early (before the loading spinner is removed

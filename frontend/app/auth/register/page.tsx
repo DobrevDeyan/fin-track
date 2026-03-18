@@ -89,11 +89,11 @@ export default function RegisterPage() {
 
     try {
       await signUp(email, password);
-      router.push("/dashboard");
+      // Don't manually redirect - the useEffect above will handle it
+      // This prevents double navigation
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("signUpError");
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -106,9 +106,9 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // signInWithRedirect will redirect the page, so we don't need to handle navigation here
       await signInWithGoogle();
-      // The redirect will happen automatically - user will be redirected back after Google auth
+      // Don't manually redirect - the useEffect above will handle it
+      // This prevents double navigation
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("googleSignInError");
       setError(message);

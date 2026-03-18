@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v13'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v14'; // Increment this when deploying new version
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Critical app shell URLs to pre-cache on install.
@@ -9,6 +9,7 @@ const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 const PRECACHE_URLS = [
   '/',
   '/dashboard/',
+  '/offline.html',
   '/manifest.json',
   '/icons/icon-192x192.png?v=2.5',
   '/icons/icon-512x512.png?v=2.5',
@@ -55,7 +56,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Handle navigation requests (HTML pages)
-  // Network first, fallback to offline page or home page
+  // Network first, fallback to offline page
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -65,10 +66,14 @@ self.addEventListener('fetch', (event) => {
               if (cachedResponse) {
                 return cachedResponse;
               }
-              // If not found in cache and network fails, return the cached home page (shell)
-              // This assumes '/' is cached during install/usage
-              return caches.match('/')
-                .then(response => response || caches.match('/dashboard')); 
+              // If not found in cache and network fails, show the offline page
+              return caches.match('/offline.html')
+                .then(response => {
+                  if (response) return response;
+                  // Final fallback to cached dashboard or home
+                  return caches.match('/dashboard')
+                    .then(r => r || caches.match('/'));
+                });
             });
         })
     );

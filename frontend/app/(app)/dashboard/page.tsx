@@ -322,10 +322,17 @@ function DashboardInnerContent() {
 }
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
 
-    if (!user) {
-        return null;
+    if (loading || !user) {
+        return (
+            <div className="container flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                    <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+                </div>
+            </div>
+        );
     }
 
     return (

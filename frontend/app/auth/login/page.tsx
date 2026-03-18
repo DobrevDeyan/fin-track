@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,14 +19,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading, signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("auth");
 
-  // Redirect already-authenticated users to dashboard
+  // Redirect already-authenticated users to return URL or dashboard
   useEffect(() => {
     if (!authLoading && user) {
-      router.push("/dashboard");
+      const returnUrl = searchParams.get('returnUrl');
+      const destination = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
+      router.push(destination);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, searchParams]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,11 +71,11 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push("/dashboard");
+      // Don't manually redirect - the useEffect above will handle it
+      // This prevents double navigation and allows return URL to work
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("signInError");
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -85,11 +88,11 @@ export default function LoginPage() {
 
     try {
       await signInWithGoogle();
-      router.push("/dashboard");
+      // Don't manually redirect - the useEffect above will handle it
+      // This prevents double navigation and allows return URL to work
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("googleSignInError");
       setError(message);
-    } finally {
       setLoading(false);
     }
   };

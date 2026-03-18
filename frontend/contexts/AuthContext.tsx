@@ -96,9 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onTimeout: async () => {
       console.log("Session timeout: Logging out due to inactivity");
       await signOut(auth);
-      if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
-      }
+      // The onAuthStateChanged listener will set user to null
+      // Components watching the user state will handle navigation
     },
   });
 
@@ -164,21 +163,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await signOut(auth);
-      // Wait a moment for auth state to update, then redirect
       // The onAuthStateChanged listener will set user to null
-      // But we need to ensure redirect happens
-      if (typeof window !== "undefined") {
-        // Use setTimeout to ensure auth state has updated
-        setTimeout(() => {
-          window.location.href = "/auth/login";
-        }, 100);
-      }
+      // Components watching the user state will handle navigation
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if signOut fails, try to redirect
-      if (typeof window !== "undefined") {
-        window.location.href = "/auth/login";
-      }
       throw error;
     }
   };
@@ -194,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
