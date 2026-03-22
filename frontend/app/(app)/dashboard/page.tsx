@@ -61,7 +61,7 @@ function DashboardInnerContent() {
     const tBudgets = useTranslations("budgets");
     const tRecurring = useTranslations("recurring");
     const { user } = useAuth();
-    const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency } = useCurrency();
+    const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
 
     // Financial summary (single source of truth for metrics)
     const {
@@ -303,7 +303,7 @@ function DashboardInnerContent() {
                 <SalaryReminderNotification entries={entriesHook.entries} />
 
                 {/* Onboarding Screen */}
-                {user && !onboardingCompleted && (
+                {user && !currencyLoading && onboardingCompleted === false && (
                     <OnboardingScreen
                         onComplete={async (data) => {
                             await completeOnboarding(user.uid, data);

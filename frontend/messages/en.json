@@ -38,7 +38,8 @@
     "actions": "Actions",
     "optional": "Optional",
     "later": "Later",
-    "currency": "Currency"
+    "currency": "Currency",
+    "loadMore": "Load More"
   },
   "nav": {
     "pocket": "Pocket",
@@ -121,6 +122,8 @@
     "transactions": "Transactions",
     "noTransactions": "No transactions yet. Add your first entry!",
     "noEntriesYet": "No entries yet. Add your first entry to get started!",
+    "noEntriesDescription": "Track your income and expenses by adding your first transaction.",
+    "addFirstEntry": "Add First Entry",
     "showingEntries": "Showing {from} to {to} of {total} entries",
     "receipt": "Receipt",
     "receiptOptional": "Receipt (Optional)",

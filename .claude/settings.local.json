@@ -51,7 +51,17 @@
       "Bash(npm test:*)",
       "Bash(npx storybook@latest init:*)",
       "Bash(npm uninstall:*)",
-      "Bash(timeout 30 npm run storybook:*)"
+      "Bash(timeout 30 npm run storybook:*)",
+      "Bash(ls /d/repos/fin-track/frontend/app/\\\\\\(app\\\\\\)/)",
+      "Bash(ls /d/repos/fin-track/frontend/app/\\\\\\(marketing\\\\\\)/)",
+      "Bash(git ls-files:*)",
+      "Bash(git -C /d/repos/fin-track log --all --oneline --diff-filter=A -- \"frontend/.env.local\")",
+      "Bash(grep -r console.log /d/repos/fin-track/frontend/lib/ --include=*.ts -l)",
+      "Bash(grep -r console.log /d/repos/fin-track/frontend/app/ --include=*.tsx --include=*.ts -l)",
+      "Bash(grep -rn \"hardcoded\\\\|HARDCODED\\\\|secret\\\\|SECRET\" /d/repos/fin-track/frontend/lib /d/repos/fin-track/frontend/contexts --include=*.ts --include=*.tsx)",
+      "Bash(find /d/repos/fin-track/frontend -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json \\\\\\))",
+      "Bash(grep -r \"FREE_TIER_LIMITS\\\\|transactions.*50\\\\|budgets.*3\\\\|goals.*2\\\\|recurringTransactions.*3\" /d/repos/fin-track/frontend --include=*.tsx --include=*.ts)",
+      "Bash(grep -rn \"FREE_TIER_LIMITS\\\\|limit.*exceeded\\\\|max.*budget\\\\|max.*goal\" /d/repos/fin-track/frontend/lib/firestore*)"
     ]
   }
 }

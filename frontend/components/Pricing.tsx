@@ -45,7 +45,13 @@ export const Pricing = () => {
     const priceId = PRICE_IDS[planKey]
 
     if (!priceId || priceId.startsWith("price_REPLACE_")) {
-      window.location.href = user ? "/dashboard" : "/auth/register"
+      if (planKey === "free") {
+        window.location.href = user ? "/dashboard" : "/auth/register"
+      } else if (!user) {
+        window.location.href = "/auth/register"
+      } else {
+        toast.error("Checkout is not available right now. Please try again later.")
+      }
       return
     }
 

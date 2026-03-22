@@ -204,7 +204,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Billing */}
-      <Card className="mb-6">
+      <Card id="billing" className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <CreditCard className="h-4 w-4" />
