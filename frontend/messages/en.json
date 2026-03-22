@@ -412,7 +412,7 @@
       "feature2Title": "AI-Powered Insights",
       "feature2Desc": "Pro users get a Gemini-powered monthly summary, an AI Budget Coach chat, and a 90-day cash flow forecast based on recurring transactions.",
       "feature3Title": "Receipt Scanning",
-      "feature3Desc": "Snap a photo or upload a PDF — AI extracts the merchant, amount, and date automatically. Available on Pro and Business plans."
+      "feature3Desc": "Snap a photo or upload a PDF — AI extracts the merchant, amount, and date automatically. Available on Pro plan."
     },
     "services": {
       "title": "Our",
@@ -484,7 +484,7 @@
       "title": "Frequently Asked",
       "questions": "Questions",
       "q1": "What AI features does Pocket offer?",
-      "a1": "Pro and Business subscribers get access to AI-powered features: a monthly financial summary, an AI Budget Coach powered by Gemini, a 90-day Cash Flow Forecast, and receipt scanning that automatically extracts expense details from photos and PDFs.",
+      "a1": "Pro subscribers get access to AI-powered features: a monthly financial summary, an AI Budget Coach powered by Gemini, a 90-day Cash Flow Forecast, and receipt scanning that automatically extracts expense details from photos and PDFs.",
       "q2": "Is my financial data secure?",
       "a2": "Yes, we use bank-level encryption to protect your data. All your entries are stored securely and encrypted in transit and at rest.",
       "q3": "Can I use Pocket on mobile?",

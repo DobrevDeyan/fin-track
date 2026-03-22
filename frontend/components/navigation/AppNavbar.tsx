@@ -5,11 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu"
-import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -17,7 +12,11 @@ import {
   SheetClose,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, LogOut, X, Globe, Info, LayoutDashboard, Calendar as CalendarIcon, FileText, Settings, Receipt, Landmark } from "lucide-react"
+import {
+  Menu, LogOut, X, Globe, Info, LayoutDashboard,
+  Calendar as CalendarIcon, FileText, Settings, Receipt,
+  Landmark, ChevronDown, DollarSign,
+} from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import {
@@ -27,15 +26,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { updateUserCurrency, updateUserLanguage } from "@/lib/firestore-users"
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { useCurrency } from "@/contexts/CurrencyContext"
@@ -44,6 +42,7 @@ import { locales, localeNames, type Locale } from "@/i18n/config"
 import { ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { motion, AnimatePresence, type Variants } from "framer-motion"
 
 export const AppNavbar = () => {
   const t = useTranslations("nav")
@@ -119,7 +118,6 @@ export const AppNavbar = () => {
 
   const [showFloatingMenu, setShowFloatingMenu] = useState(false)
 
-  // Swipe-to-close gesture tracking
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
 
@@ -131,7 +129,6 @@ export const AppNavbar = () => {
   const handleTouchEnd = (e: React.TouchEvent) => {
     const deltaX = e.changedTouches[0].clientX - touchStartX.current
     const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
-    // Close if swiped right >60px and gesture is more horizontal than vertical
     if (deltaX > 60 && deltaY < deltaX) {
       setIsOpen(false)
     }
@@ -145,279 +142,342 @@ export const AppNavbar = () => {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  const mobileNavVariants: Variants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: (i: number) => ({
+      opacity: 1,
+      x: 0,
+      transition: { delay: i * 0.06, duration: 0.25, ease: "easeOut" },
+    }),
+  }
+
   return (
     <>
-      {/* Floating menu button - mobile only, visible when scrolled */}
-      <button
+      {/* Floating FAB - mobile only */}
+      <motion.button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-24 right-6 h-16 w-16 rounded-full shadow-2xl",
-          "bg-[#4CAF50] overflow-hidden",
-          "z-50",
-          "transition-all duration-300",
-          "hover:scale-110 active:scale-95",
-          "flex items-center justify-center",
-          "md:hidden",
-          showFloatingMenu ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+          "fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl",
+          "bg-[#4CAF50] overflow-hidden z-50",
+          "flex items-center justify-center md:hidden",
         )}
+        animate={showFloatingMenu ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 16, scale: 0.85 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        style={{ pointerEvents: showFloatingMenu ? "auto" : "none" }}
         aria-label="Open menu"
+        whileTap={{ scale: 0.9 }}
       >
-        <Image
-          src="/icons/icon-192x192.png"
-          alt="Menu"
-          width={64}
-          height={64}
-          className="w-full h-full object-cover"
-        />
-      </button>
+        <Image src="/icons/icon-192x192.png" alt="Menu" width={56} height={56} className="w-full h-full object-cover" />
+      </motion.button>
 
-      {/* Mobile Sheet menu - controlled, no trigger */}
+      {/* Mobile Sheet */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
           side="right"
-          className="w-[320px] sm:w-[380px] [&>button]:hidden p-0 flex flex-col"
+          className="w-[300px] sm:w-[340px] [&>button]:hidden p-0 flex flex-col border-l-0"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Profile header with animated gradient */}
+          {/* Gradient header */}
           <div
-            className="px-6 pt-6 pb-5 relative overflow-hidden"
+            className="px-5 pt-6 pb-6 relative overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #35DB96, #2E7D32, #1a1a1a, #35DB96)",
-              backgroundSize: "300% 300%",
-              animation: "navGradientShift 8s ease infinite",
+              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #1a4731 100%)",
             }}
           >
+            {/* Decorative circles */}
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
+            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-emerald-500/10" />
+
             <SheetHeader className="mb-0">
-              <div className="flex items-center justify-between mb-4">
-                <SheetTitle className="font-bold text-xl text-left text-white">
+              <div className="flex items-center justify-between mb-5">
+                <SheetTitle className="font-bold text-lg text-white tracking-tight">
                   Pocket
                 </SheetTitle>
                 <SheetClose asChild>
                   <button
-                    className="rounded-full p-1.5 hover:bg-white/20 transition-colors duration-200 focus:outline-none"
+                    className="rounded-full p-1.5 hover:bg-white/15 transition-colors duration-200 focus:outline-none"
                     aria-label="Close menu"
                   >
-                    <X className="h-5 w-5 text-white/80" strokeWidth={2.5} />
+                    <X className="h-4 w-4 text-white/70" strokeWidth={2.5} />
                   </button>
                 </SheetClose>
               </div>
             </SheetHeader>
+
+            {/* User info */}
             <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12 ring-2 ring-white/30">
-                <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
-                <AvatarFallback className="bg-white/20 text-white font-semibold text-lg">
-                  {getUserInitials(user)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-11 w-11 ring-2 ring-emerald-400/40">
+                  <AvatarImage src={user?.photoURL || undefined} />
+                  <AvatarFallback className="bg-emerald-500/30 text-white font-semibold text-base">
+                    {getUserInitials(user)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-[#0f3460]" />
+              </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-white font-semibold text-sm truncate">
+                <span className="text-white font-semibold text-sm truncate leading-tight">
                   {displayName || user?.displayName || "User"}
                 </span>
-                <span className="text-white/70 text-xs truncate">
+                <span className="text-white/50 text-xs truncate mt-0.5">
                   {user?.email}
                 </span>
               </div>
             </div>
+
+            {/* Currency + Language pills */}
+            <div className="flex gap-2 mt-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-xs font-medium">
+                    <DollarSign className="h-3 w-3 text-emerald-400" />
+                    {userCurrency}
+                    <ChevronDown className="h-3 w-3 text-white/50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-36" align="start">
+                  {SUPPORTED_CURRENCIES.map((currency) => (
+                    <DropdownMenuItem
+                      key={currency}
+                      onClick={() => handleCurrencyChange(currency as SupportedCurrency)}
+                      className={cn("text-sm", userCurrency === currency && "font-semibold text-primary")}
+                    >
+                      {currency}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-xs font-medium">
+                    <Globe className="h-3 w-3 text-emerald-400" />
+                    {localeNames[locale as Locale] ?? locale.toUpperCase()}
+                    <ChevronDown className="h-3 w-3 text-white/50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-36" align="start">
+                  {locales.map((loc) => (
+                    <DropdownMenuItem
+                      key={loc}
+                      onClick={() => handleLanguageChange(loc)}
+                      className={cn("text-sm", locale === loc && "font-semibold text-primary")}
+                    >
+                      {localeNames[loc]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          {/* Navigation links */}
-          <nav className="flex flex-col flex-1 px-4 pt-4 pb-6">
-            <div className="flex flex-col gap-1">
-              {appRoutes.map(({ href, label, icon: Icon }) => {
+          {/* Nav links */}
+          <nav className="flex flex-col flex-1 px-3 pt-3 pb-4 overflow-y-auto">
+            <div className="flex flex-col gap-0.5">
+              {appRoutes.map(({ href, label, icon: Icon }, i) => {
                 const isActive = pathname === href
                 return (
-                  <Link
+                  <motion.div
                     key={href}
-                    href={href}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200 relative group",
-                      isActive
-                        ? "bg-primary/10 text-primary font-semibold shadow-sm"
-                        : "text-foreground/70 hover:bg-accent hover:text-foreground"
-                    )}
+                    custom={i}
+                    initial="hidden"
+                    animate={isOpen ? "visible" : "hidden"}
+                    variants={mobileNavVariants}
                   >
-                    <div className={cn(
-                      "flex items-center justify-center h-9 w-9 rounded-lg transition-colors duration-200",
-                      isActive
-                        ? "bg-primary/15"
-                        : "bg-muted group-hover:bg-accent"
-                    )}>
-                      <Icon className="h-[18px] w-[18px]" />
-                    </div>
-                    {label}
-                    {isActive && (
-                      <div className="ml-auto h-2 w-2 rounded-full bg-primary" />
-                    )}
-                  </Link>
+                    <Link
+                      href={href}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-150 relative group",
+                        isActive
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "text-foreground/65 hover:bg-accent hover:text-foreground"
+                      )}
+                    >
+                      <div className={cn(
+                        "flex items-center justify-center h-8 w-8 rounded-lg transition-colors duration-150 shrink-0",
+                        isActive
+                          ? "bg-emerald-100 text-emerald-600"
+                          : "bg-muted/70 text-muted-foreground group-hover:bg-accent"
+                      )}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span>{label}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobileActiveIndicator"
+                          className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-500"
+                        />
+                      )}
+                    </Link>
+                  </motion.div>
                 )
               })}
             </div>
 
-            {/* Settings section */}
-            <div className="mt-6 pt-5 border-t border-border/60">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-4 mb-2 block">
-                {t("settings")}
-              </span>
-              <div className="flex gap-2 w-full mt-2">
-                <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
-                  <SelectTrigger className="flex-1 h-10 text-sm font-medium rounded-xl bg-muted/50 border-0 hover:bg-muted transition-colors">
-                    <SelectValue placeholder="EUR" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_CURRENCIES.map((currency) => (
-                      <SelectItem key={currency} value={currency}>
-                        {currency}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={locale} onValueChange={handleLanguageChange}>
-                  <SelectTrigger className="flex-1 h-10 text-sm font-medium rounded-xl bg-muted/50 border-0 hover:bg-muted transition-colors">
-                    <Globe className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locales.map((loc) => (
-                      <SelectItem key={loc} value={loc}>
-                        {localeNames[loc]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {/* Bottom actions */}
+            <div className="mt-auto pt-3 border-t border-border/40 space-y-0.5">
+              <motion.div
+                custom={appRoutes.length}
+                initial="hidden"
+                animate={isOpen ? "visible" : "hidden"}
+                variants={mobileNavVariants}
+              >
+                <Link
+                  href="/settings"
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-150",
+                    pathname === "/settings"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "text-foreground/65 hover:bg-accent hover:text-foreground"
+                  )}
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/70">
+                    <Settings className="h-4 w-4" />
+                  </div>
+                  {t("accountSettings")}
+                </Link>
+              </motion.div>
 
-            {/* Account settings + Logout at bottom */}
-            <div className="mt-auto pt-4 space-y-1">
-              <Link
-                href="/settings"
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium transition-all duration-200",
-                  pathname === "/settings"
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-foreground/70 hover:bg-accent hover:text-foreground"
-                )}
+              <motion.div
+                custom={appRoutes.length + 1}
+                initial="hidden"
+                animate={isOpen ? "visible" : "hidden"}
+                variants={mobileNavVariants}
               >
-                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-muted">
-                  <Settings className="h-[18px] w-[18px]" />
-                </div>
-                {t("accountSettings")}
-              </Link>
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                className="w-full h-11 rounded-xl font-medium text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                {t("logout")}
-              </Button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all duration-150"
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/70">
+                    <LogOut className="h-4 w-4" />
+                  </div>
+                  {t("logout")}
+                </button>
+              </motion.div>
             </div>
           </nav>
         </SheetContent>
       </Sheet>
 
-    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white border-gray-200">
-      <NavigationMenu className="mx-auto">
-        <NavigationMenuList className="container h-14 px-4 flex justify-between w-full">
-          <NavigationMenuItem className="flex">
-            <Link
-              href="/dashboard"
-              className="ml-2 font-semibold text-xl tracking-tight flex items-center gap-2"
-            >
-              <Image
-                src="/icons/icon-32x32.png"
-                alt="Pocket Logo"
-                width={32}
-                height={32}
-                className="w-6 h-6"
-                priority
-              />
-              <span className="text-foreground">Pocket</span>
-            </Link>
-          </NavigationMenuItem>
+      {/* Desktop header */}
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <div className="h-14 px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
 
-          {/* mobile hamburger */}
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg tracking-tight shrink-0">
+            <Image src="/icons/icon-32x32.png" alt="Pocket Logo" width={28} height={28} className="w-6 h-6" priority />
+            <span className="text-foreground">Pocket</span>
+          </Link>
+
+          {/* Mobile hamburger */}
           <button
-            className="flex md:hidden px-2"
+            className="flex md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
             onClick={() => setIsOpen(true)}
             aria-label={t("menu")}
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* desktop */}
-          <nav className="hidden md:flex gap-1">
-            {appRoutes.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname === href
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            ))}
-          </nav>
+          {/* Desktop nav — icon pills with tooltips */}
+          <TooltipProvider delayDuration={400}>
+            <nav className="hidden md:flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+              {appRoutes.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href
+                return (
+                  <Tooltip key={href}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={href}
+                        className={cn(
+                          "relative flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? "bg-white text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-white/70"
+                        )}
+                      >
+                        <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-emerald-600")} />
+                        <span className="hidden lg:inline">{label}</span>
+                        {isActive && (
+                          <motion.div
+                            layoutId="desktopActiveBar"
+                            className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-emerald-500"
+                          />
+                        )}
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="lg:hidden">
+                      {label}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              })}
+            </nav>
+          </TooltipProvider>
 
-          <div className="hidden md:flex gap-2 items-center">
-            {/* Language selector */}
-            <Select value={locale} onValueChange={handleLanguageChange}>
-              <SelectTrigger className="w-[100px]">
-                <Globe className="h-3.5 w-3.5 mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {locales.map((loc) => (
-                  <SelectItem key={loc} value={loc}>
-                    {localeNames[loc]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Currency selector */}
-            <Select value={userCurrency} onValueChange={handleCurrencyChange} disabled={currencyLoading}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="EUR" />
-              </SelectTrigger>
-              <SelectContent>
-                {SUPPORTED_CURRENCIES.map((currency) => (
-                  <SelectItem key={currency} value={currency}>
-                    {currency}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* User avatar dropdown */}
+          {/* Desktop right — avatar dropdown (consolidates everything) */}
+          <div className="hidden md:flex items-center gap-2">
+            {/* Currency + Language compact badges */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-transparent hover:border-border/50">
+                  <span className="text-xs font-semibold">{userCurrency}</span>
+                  <span className="text-border">·</span>
+                  <Globe className="h-3.5 w-3.5" />
+                  <span className="text-xs font-semibold">{locale.toUpperCase()}</span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48" align="end">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal pb-1">Currency</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={userCurrency} onValueChange={(v) => handleCurrencyChange(v as SupportedCurrency)}>
+                  {SUPPORTED_CURRENCIES.map((currency) => (
+                    <DropdownMenuRadioItem key={currency} value={currency} className="text-sm">
+                      {currency}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal pb-1">Language</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
+                  {locales.map((loc) => (
+                    <DropdownMenuRadioItem key={loc} value={loc} className="text-sm">
+                      {localeNames[loc]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Avatar dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                  <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-emerald-200 transition-all">
                     <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
-                    <AvatarFallback className="bg-black text-white">
+                    <AvatarFallback className="bg-emerald-600 text-white text-sm font-semibold">
                       {getUserInitials(user)}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {user?.displayName || "User"}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user?.email}
-                    </p>
+                <DropdownMenuLabel className="font-normal pb-2">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.photoURL || undefined} />
+                      <AvatarFallback className="bg-emerald-600 text-white text-xs font-semibold">
+                        {getUserInitials(user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col min-w-0">
+                      <p className="text-sm font-semibold leading-tight truncate">{displayName || user?.displayName || "User"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    </div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -434,16 +494,15 @@ export const AppNavbar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{t("logout")}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </NavigationMenuList>
-      </NavigationMenu>
-    </header>
+        </div>
+      </header>
     </>
   )
 }
