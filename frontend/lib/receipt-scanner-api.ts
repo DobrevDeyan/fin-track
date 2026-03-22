@@ -174,15 +174,25 @@ export interface TransactionData {
  * @param category - Category to assign to the transaction
  * @returns Transaction data ready to save
  */
+function filterMeaningfulItems(items: string[]): string[] {
+  return items
+    .map((i) => i.trim())
+    .filter((i) =>
+      i.length >= 3 &&
+      !/^\d+([.,]\d+)?$/.test(i) &&
+      !i.startsWith('#') &&
+      !/^[A-Z0-9\/\-]{6,}$/.test(i)
+    )
+    .filter((i, idx, arr) => arr.indexOf(i) === idx)
+}
+
 export function mapToTransactionData(
   extracted: ExtractedReceiptData,
   category: string
 ): TransactionData {
-  // Build notes from extracted items
-  let notes = '';
-  if (extracted.items && extracted.items.length > 0) {
-    notes = `Items: ${extracted.items.join(', ')}`;
-  }
+  // Build notes from meaningful extracted items only
+  const meaningful = filterMeaningfulItems(extracted.items ?? [])
+  let notes = meaningful.length > 0 ? `Items: ${meaningful.join(', ')}` : '';
 
   // Add confidence info to notes if it's low
   if (extracted.confidence < 0.7 && notes) {
@@ -192,7 +202,7 @@ export function mapToTransactionData(
   }
 
   return {
-    description: extracted.merchant || 'Scanned Receipt',
+    description: extracted.merchant && extracted.merchant !== 'Unknown Merchant' ? extracted.merchant : 'Scanned Receipt',
     amount: extracted.amount,
     category,
     type: 'expense',

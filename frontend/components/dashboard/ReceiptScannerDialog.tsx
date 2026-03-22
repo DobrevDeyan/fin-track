@@ -217,8 +217,8 @@ export function ReceiptScannerDialog({
       const data = await scanReceipt(selectedFile, token, user?.uid)
       setExtractedData(data)
 
-      // Populate form fields with extracted data
-      setMerchant(data.merchant || "")
+      // Populate form fields — treat "Unknown Merchant" as blank so user fills it in
+      setMerchant(data.merchant && data.merchant !== "Unknown Merchant" ? data.merchant : "")
       setAmount(data.amount > 0 ? data.amount.toString() : "")
       setDate(data.date || formatDateForInput(new Date()))
 
@@ -239,6 +239,19 @@ export function ReceiptScannerDialog({
     }
   }
 
+  // Filter raw OCR items to only meaningful, human-readable text
+  const getMeaningfulItems = (items: string[]): string[] => {
+    return items
+      .map((i) => i.trim())
+      .filter((i) =>
+        i.length >= 3 &&                        // skip very short tokens
+        !/^\d+([.,]\d+)?$/.test(i) &&           // skip pure numbers
+        !i.startsWith("#") &&                   // skip bank/payment codes
+        !/^[A-Z0-9\/\-]{6,}$/.test(i)          // skip all-caps codes (e.g. DT1279283-0011)
+      )
+      .filter((i, idx, arr) => arr.indexOf(i) === idx) // deduplicate
+  }
+
   // Save as expense
   const handleSave = async () => {
     if (!amount || !category) {
@@ -246,15 +259,18 @@ export function ReceiptScannerDialog({
       return
     }
 
+    const meaningfulItems = getMeaningfulItems(extractedData?.items ?? [])
+    const description = merchant && merchant !== "Unknown Merchant" ? merchant : "Scanned Receipt"
+
     try {
       await onSubmit({
-        description: merchant || "Scanned Receipt",
+        description,
         amount: parseFloat(amount),
         category,
         type: "expense",
         date,
-        notes: extractedData?.items?.length
-          ? `Items: ${extractedData.items.join(", ")}`
+        notes: meaningfulItems.length > 0
+          ? `Items: ${meaningfulItems.join(", ")}`
           : undefined,
         tags: ["scanned-receipt"],
       })
@@ -439,7 +455,7 @@ export function ReceiptScannerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Scan Receipt</DialogTitle>
           <DialogDescription>
