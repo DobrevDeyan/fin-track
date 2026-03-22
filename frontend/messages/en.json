@@ -55,7 +55,8 @@
     "logout": "Log out",
     "menu": "Menu",
     "settings": "Settings",
-    "accountSettings": "Account Settings"
+    "accountSettings": "Account Settings",
+    "receipts": "Receipts"
   },
   "auth": {
     "login": "Login",
@@ -577,5 +578,51 @@
       "renewsOn": "Renews on {date}",
       "expiresOn": "Expires on {date}"
     }
+  },
+  "receipts": {
+    "title": "Receipts",
+    "subtitle": "All receipts attached to your transactions",
+    "noReceipts": "No receipts yet",
+    "noReceiptsDescription": "Receipts will appear here when you scan or attach them to a transaction.",
+    "scanFirst": "Scan a Receipt",
+    "viewTransaction": "View Transaction",
+    "receiptFrom": "Receipt from {merchant}",
+    "loading": "Loading receipts...",
+    "error": "Failed to load receipts"
+  },
+  "csvImport": {
+    "title": "Import Transactions",
+    "subtitle": "Import transactions from a CSV file",
+    "button": "Import CSV",
+    "step1Title": "Upload File",
+    "step1Description": "Select a CSV file exported from your bank or another finance app.",
+    "step2Title": "Map Columns",
+    "step2Description": "Match your CSV columns to the required fields.",
+    "step3Title": "Preview & Import",
+    "step3Description": "Review the parsed transactions before importing.",
+    "dropzone": "Drop your CSV file here, or click to select",
+    "dropzoneHint": "Supports .csv files up to 5 MB",
+    "columnDate": "Date",
+    "columnDescription": "Description",
+    "columnAmount": "Amount",
+    "columnType": "Type (income/expense)",
+    "columnCategory": "Category",
+    "columnNotes": "Notes",
+    "notMapped": "— not mapped —",
+    "autoDetected": "Auto-detected",
+    "preview": "Preview ({count} rows)",
+    "importing": "Importing...",
+    "importButton": "Import {count} Transactions",
+    "successMessage": "{count} transactions imported successfully.",
+    "errorMessage": "Import failed. Please check your file and try again.",
+    "parseError": "Could not parse the CSV file. Make sure it is a valid CSV.",
+    "noRows": "No valid rows found in this file.",
+    "skipHeader": "First row is a header",
+    "dateFormat": "Date format",
+    "dateFormatHint": "e.g. YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY",
+    "amountSign": "Negative amounts are expenses",
+    "back": "Back",
+    "next": "Next",
+    "cancel": "Cancel"
   }
 }

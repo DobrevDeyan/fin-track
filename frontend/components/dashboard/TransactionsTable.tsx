@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp, Receipt, Zap } from "lucide-react"
+import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp, Receipt, Zap, FileUp } from "lucide-react"
 import { VirtualizedTransactionTable } from "./VirtualizedTransactionTable"
 import {
   Dialog,
@@ -45,6 +45,7 @@ interface TransactionsTableProps {
   onAdd: () => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
+  onImportCSV?: () => void
   filters?: React.ReactNode
   onLoadMore?: () => void
   hasMore?: boolean
@@ -61,6 +62,7 @@ export function TransactionsTable({
   onAdd,
   onEdit,
   onDelete,
+  onImportCSV,
   filters,
   onLoadMore,
   hasMore,
@@ -166,10 +168,18 @@ export function TransactionsTable({
                 )}
               </CardDescription>
             </div>
-            <Button onClick={onAdd} className="gap-2 w-full sm:w-auto">
-              <Plus className="h-4 w-4" />
-              {t("addEntry")}
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              {onImportCSV && (
+                <Button variant="outline" onClick={onImportCSV} className="gap-2 flex-1 sm:flex-none">
+                  <FileUp className="h-4 w-4" />
+                  Import CSV
+                </Button>
+              )}
+              <Button onClick={onAdd} className="gap-2 flex-1 sm:flex-none">
+                <Plus className="h-4 w-4" />
+                {t("addEntry")}
+              </Button>
+            </div>
           </div>
           {filters && (
             <div className="pt-2 border-t">

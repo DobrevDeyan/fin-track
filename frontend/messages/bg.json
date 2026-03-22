@@ -55,7 +55,8 @@
     "logout": "Изход",
     "menu": "Меню",
     "settings": "Настройки",
-    "accountSettings": "Настройки на акаунта"
+    "accountSettings": "Настройки на акаунта",
+    "receipts": "Касови бележки"
   },
   "auth": {
     "login": "Вход",
@@ -577,5 +578,51 @@
       "renewsOn": "Подновяване на {date}",
       "expiresOn": "Изтича на {date}"
     }
+  },
+  "receipts": {
+    "title": "Касови бележки",
+    "subtitle": "Всички бележки, прикачени към вашите транзакции",
+    "noReceipts": "Няма касови бележки",
+    "noReceiptsDescription": "Бележките ще се появят тук, когато ги сканирате или прикачите към транзакция.",
+    "scanFirst": "Сканирайте бележка",
+    "viewTransaction": "Виж транзакция",
+    "receiptFrom": "Бележка от {merchant}",
+    "loading": "Зареждане на бележки...",
+    "error": "Неуспешно зареждане на бележките"
+  },
+  "csvImport": {
+    "title": "Импортиране на транзакции",
+    "subtitle": "Импортирайте транзакции от CSV файл",
+    "button": "Импортирай CSV",
+    "step1Title": "Качи файл",
+    "step1Description": "Изберете CSV файл, експортиран от вашата банка или друго приложение.",
+    "step2Title": "Свържи колоните",
+    "step2Description": "Свържете колоните в CSV с необходимите полета.",
+    "step3Title": "Преглед и импортиране",
+    "step3Description": "Прегледайте транзакциите преди импортиране.",
+    "dropzone": "Пуснете CSV файла тук или кликнете за избор",
+    "dropzoneHint": "Поддържа .csv файлове до 5 МБ",
+    "columnDate": "Дата",
+    "columnDescription": "Описание",
+    "columnAmount": "Сума",
+    "columnType": "Тип (приход/разход)",
+    "columnCategory": "Категория",
+    "columnNotes": "Бележки",
+    "notMapped": "— не е свързано —",
+    "autoDetected": "Автоматично",
+    "preview": "Преглед ({count} реда)",
+    "importing": "Импортиране...",
+    "importButton": "Импортирай {count} транзакции",
+    "successMessage": "{count} транзакции импортирани успешно.",
+    "errorMessage": "Неуспешно импортиране. Проверете файла и опитайте отново.",
+    "parseError": "Файлът не може да бъде прочетен. Уверете се, че е валиден CSV.",
+    "noRows": "В файла няма валидни редове.",
+    "skipHeader": "Първият ред е заглавен",
+    "dateFormat": "Формат на датата",
+    "dateFormatHint": "напр. YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY",
+    "amountSign": "Отрицателните суми са разходи",
+    "back": "Назад",
+    "next": "Напред",
+    "cancel": "Отказ"
   }
 }

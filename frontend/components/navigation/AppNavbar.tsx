@@ -17,7 +17,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, LogOut, X, Globe, Info, LayoutDashboard, Calendar as CalendarIcon, FileText, Settings } from "lucide-react"
+import { Menu, LogOut, X, Globe, Info, LayoutDashboard, Calendar as CalendarIcon, FileText, Settings, Receipt } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import {
@@ -58,6 +58,7 @@ export const AppNavbar = () => {
     { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
     { href: "/calendar", label: t("calendar"), icon: CalendarIcon },
     { href: "/reports", label: t("reports"), icon: FileText },
+    { href: "/receipts", label: t("receipts"), icon: Receipt },
   ]
 
   const handleCurrencyChange = async (currency: SupportedCurrency) => {

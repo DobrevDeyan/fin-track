@@ -283,6 +283,32 @@ export async function getUserEntries(
 }
 
 /**
+ * Get all entries for a user that have a receipt attached
+ */
+export async function getUserEntriesWithReceipts(
+  userId: string
+): Promise<(EntryDocument & { id: string })[]> {
+  try {
+    const entriesRef = collection(db, "entries")
+    const { limit } = await import("firebase/firestore")
+    // Firestore supports != null to find docs where the field exists and is not null
+    const q = query(
+      entriesRef,
+      where("userId", "==", userId),
+      where("receiptUrl", "!=", null),
+      orderBy("receiptUrl"),
+      orderBy("date", "desc"),
+      limit(200)
+    )
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map((d) => ({ ...(d.data() as EntryDocument), id: d.id }))
+  } catch (error) {
+    console.error("Error fetching entries with receipts:", error)
+    throw error
+  }
+}
+
+/**
  * Update an existing entry + atomically update financial summary
  *
  * @param oldEntry - The previous state of the entry (for reversing its summary effect)

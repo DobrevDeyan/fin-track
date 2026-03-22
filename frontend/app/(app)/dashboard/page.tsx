@@ -13,7 +13,7 @@ import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
-// import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
+import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
@@ -52,6 +52,9 @@ const RecurringSection = dynamic(() => import("@/components/dashboard/sections/R
 // Lazy load receipt scanner (only needed when user clicks scan button)
 const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/ReceiptScannerDialog").then((mod) => ({ default: mod.ReceiptScannerDialog })), { ssr: false });
 
+// Lazy load CSV import dialog
+const CSVImportDialog = dynamic(() => import("@/components/dashboard/CSVImportDialog").then((mod) => ({ default: mod.CSVImportDialog })), { ssr: false });
+
 /**
  * Inner dashboard content that uses the feature contexts
  */
@@ -82,6 +85,9 @@ function DashboardInnerContent() {
 
     // Receipt scanner state
     const [scannerDialogOpen, setScannerDialogOpen] = useState(false);
+
+    // CSV import state
+    const [csvImportOpen, setCsvImportOpen] = useState(false);
 
     // Track if initial load has happened
     const hasLoadedRef = useRef(false);
@@ -228,9 +234,11 @@ function DashboardInnerContent() {
                 )}
 
                 {/* Cash Flow Forecast */}
-                {/* <div className="mb-8">
-                    <CashFlowForecast userCurrency={userCurrency} />
-                </div> */}
+                <div className="mb-8">
+                    <SectionErrorBoundary label="Cash Flow Forecast">
+                        <CashFlowForecast userCurrency={userCurrency} />
+                    </SectionErrorBoundary>
+                </div>
 
                 {/* Transactions Table (still uses paginated entries for display) */}
                 <SectionErrorBoundary label="Transactions">
@@ -239,6 +247,7 @@ function DashboardInnerContent() {
                         onAdd={() => entriesHook.setDialogOpen(true)}
                         onEdit={entriesHook.handleEdit}
                         onDelete={entriesHook.handleDelete}
+                        onImportCSV={() => setCsvImportOpen(true)}
                         filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />}
                         onLoadMore={entriesHook.loadMore}
                         hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore}
@@ -289,6 +298,16 @@ function DashboardInnerContent() {
 
                 {/* Receipt Scanner Dialog */}
                 <ReceiptScannerDialog open={scannerDialogOpen} onOpenChange={setScannerDialogOpen} onSubmit={entriesHook.handleAdd} />
+
+                {/* CSV Import Dialog */}
+                <CSVImportDialog
+                    open={csvImportOpen}
+                    onOpenChange={setCsvImportOpen}
+                    onImportComplete={() => {
+                        entriesHook.loadEntries();
+                        refreshSummary();
+                    }}
+                />
 
                 {/* Quick Expense FAB */}
                 <QuickExpenseFAB
