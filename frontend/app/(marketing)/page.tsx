@@ -69,14 +69,15 @@ export default function Home() {
   // Handle redirect when user state changes
   useEffect(() => {
     if (typeof window === "undefined") return
-    if (showLanding) return // Don't redirect if ?landing param present
+    // Check URL directly — don't rely on showLanding state which may be stale in this closure
+    if (new URLSearchParams(window.location.search).has("landing")) return
 
     // Redirect authenticated users to dashboard using Next.js router
     if (!loading && user && !redirecting) {
       setRedirecting(true)
       router.push("/dashboard")
     }
-  }, [user, loading, router, showLanding, redirecting])
+  }, [user, loading, router, redirecting])
 
   // After the landing page becomes visible, scroll to the hash anchor.
   // Native hash scroll fires too early (before the loading spinner is removed
