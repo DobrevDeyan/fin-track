@@ -63,7 +63,8 @@
       "Bash(grep -r \"FREE_TIER_LIMITS\\\\|transactions.*50\\\\|budgets.*3\\\\|goals.*2\\\\|recurringTransactions.*3\" /d/repos/fin-track/frontend --include=*.tsx --include=*.ts)",
       "Bash(grep -rn \"FREE_TIER_LIMITS\\\\|limit.*exceeded\\\\|max.*budget\\\\|max.*goal\" /d/repos/fin-track/frontend/lib/firestore*)",
       "Bash(npx shadcn@latest add alert-dialog --yes)",
-      "Bash(npx shadcn@latest add alert-dialog)"
+      "Bash(npx shadcn@latest add alert-dialog)",
+      "Bash(firebase deploy:*)"
     ]
   }
 }

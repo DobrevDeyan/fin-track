@@ -23,6 +23,7 @@ import { TRANSACTION_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
 import { Upload, FileImage, Loader2, AlertCircle, Check, X, Camera } from "lucide-react"
 import { scanReceipt, validateMagicBytes, ExtractedReceiptData } from "@/lib/receipt-scanner-api"
+import { uploadReceipt } from "@/lib/receipt-utils"
 import { detectCategory } from "@/lib/category-detector"
 import { isMobileDevice, hasCameraSupport } from "@/lib/device-utils"
 import { CameraCapture } from "./CameraCapture"
@@ -41,6 +42,7 @@ interface TransactionData {
   date: string
   notes?: string
   tags?: string[]
+  receiptUrl?: string
 }
 
 interface ReceiptScannerDialogProps {
@@ -263,6 +265,17 @@ export function ReceiptScannerDialog({
     const description = merchant && merchant !== "Unknown Merchant" ? merchant : "Scanned Receipt"
 
     try {
+      // Upload the receipt image to Firebase Storage
+      let receiptUrl: string | undefined
+      if (selectedFile && user) {
+        try {
+          receiptUrl = await uploadReceipt(user.uid, selectedFile)
+        } catch (uploadError) {
+          console.error("Receipt upload failed:", uploadError)
+          // Non-fatal — save the entry without a receipt URL
+        }
+      }
+
       await onSubmit({
         description,
         amount: parseFloat(amount),
@@ -273,6 +286,7 @@ export function ReceiptScannerDialog({
           ? `Items: ${meaningfulItems.join(", ")}`
           : undefined,
         tags: ["scanned-receipt"],
+        receiptUrl,
       })
 
       // Close dialog and reset state
