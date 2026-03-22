@@ -1,29 +1,29 @@
-# Competitive Analysis: Fin-Track vs Mint Alternatives
+# Pocket — Competitive Analysis
 
-**Analysis Date**: February 8, 2025 (Updated)
-**Source**: [Rob Berger's Mint Alternatives Guide](https://robberger.com/mint-alternatives/)
+**Analysis Date**: March 2026
+**Last Updated**: March 2026
 
 ---
 
 ## Executive Summary
 
-Fin-Track (Pocket) is a **privacy-first, manual-entry financial management PWA** competing against established players like Monarch Money, Quicken Simplifi, and Empower.
+Pocket is a **privacy-first, manual-entry financial management PWA** competing against established players like Monarch Money, Quicken Simplifi, and Empower.
 
 **Current Strengths:**
 - Privacy & Data Control (10/10)
-- PWA/Offline Support (10/10)
+- PWA / Offline Support (10/10)
 - Multi-Currency (9/10)
-- Core Financial Features (95% complete)
-- AI/ML Receipt Scanning (implemented)
-- Cloud Functions for automation
+- AI/ML Features — fully implemented (10/10)
+- Core Financial Features (100% complete)
+- Receipt Scanning with Google Document AI
 
 **Areas for Growth:**
 - Investment tracking
-- Advanced analytics (YoY, Sankey)
-- Calendar view
-- Multi-user support
+- Advanced analytics (YoY comparison, Sankey)
+- Net worth tracking
+- Multi-user / couple support
 
-**Overall Competitive Position**: **8.5/10** - Strong foundation with excellent execution
+**Overall Competitive Position**: **9/10** — Strong foundation with excellent execution and a fully implemented AI layer
 
 ---
 
@@ -31,25 +31,25 @@ Fin-Track (Pocket) is a **privacy-first, manual-entry financial management PWA**
 
 ### Core Budgeting & Expense Tracking
 
-| Feature | Fin-Track | Monarch | Simplifi | Empower | Rocket Money |
-|---------|-----------|---------|----------|---------|--------------|
+| Feature | Pocket | Monarch | Simplifi | Empower | Rocket Money |
+|---------|--------|---------|----------|---------|--------------|
 | Manual Entry | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Auto Bank Sync | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Budget Tracking | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Category Management | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Smart Categories | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Multi-Currency | ✅ | ✅ | ❌ | ❌ | ❌ |
-| PWA/Offline | ✅ | ❌ | ❌ | ❌ | ❌ |
+| PWA / Offline | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Privacy (No Bank Sync) | ✅ | ❌ | ❌ | ❌ | ❌ |
 
-**Verdict**: ✅ **Excellent** - Full feature parity + unique advantages
+**Verdict**: ✅ **Excellent** — Full feature parity + unique privacy and PWA advantages
 
 ---
 
 ### Analytics & Reporting
 
-| Feature | Fin-Track | Monarch | Simplifi | Empower |
-|---------|-----------|---------|----------|---------|
+| Feature | Pocket | Monarch | Simplifi | Empower |
+|---------|--------|---------|----------|---------|
 | Basic Reports | ✅ | ✅ | ✅ | ✅ |
 | PDF Export | ✅ | ✅ | ✅ | ✅ |
 | CSV Export | ✅ | ✅ | ✅ | ✅ |
@@ -57,346 +57,238 @@ Fin-Track (Pocket) is a **privacy-first, manual-entry financial management PWA**
 | Category Breakdown | ✅ | ✅ | ✅ | ✅ |
 | Monthly Trends | ✅ | ✅ | ✅ | ✅ |
 | Custom Date Ranges | ✅ | ✅ | ✅ | ✅ |
+| Cash Flow Forecast | ✅ | ✅ | ❌ | ❌ |
+| AI Monthly Digest | ✅ | ❌ | ❌ | ❌ |
 | Year-over-Year | ❌ | ✅ | ✅ | ✅ |
 | Sankey Diagrams | ❌ | ✅ | ❌ | ❌ |
-| Forecasting | ❌ | ✅ | ❌ | ❌ |
 
-**Verdict**: ✅ **Good** - Core reporting strong, advanced features planned
+**Verdict**: ✅ **Good** — Core reporting strong, AI digest is a differentiator; YoY and Sankey planned
 
 ---
 
 ### Investment Tracking
 
-| Feature | Fin-Track | Monarch | Simplifi | Empower | Origin |
-|---------|-----------|---------|----------|---------|--------|
+| Feature | Pocket | Monarch | Simplifi | Empower | Origin |
+|---------|--------|---------|----------|---------|--------|
 | Investment Accounts | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Portfolio Value | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Performance Tracking | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Asset Allocation | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Crypto Tracking | ❌ | ✅ | ❌ | ✅ | ✅ |
 | Net Worth | ❌ | ✅ | ✅ | ✅ | ✅ |
 
-**Verdict**: ❌ **Gap** - Planned for Q2 2025 (manual entry, privacy-first)
+**Verdict**: ❌ **Gap** — Planned for Q2 2026 (manual entry, privacy-first approach)
 
 ---
 
 ### Financial Goals & Savings
 
-| Feature | Fin-Track | Monarch | Simplifi | Empower |
-|---------|-----------|---------|----------|---------|
+| Feature | Pocket | Monarch | Simplifi | Empower |
+|---------|--------|---------|----------|---------|
 | Savings Goals | ✅ | ✅ | ✅ | ✅ |
 | Emergency Fund | ✅ | ✅ | ✅ | ✅ |
 | Progress Tracking | ✅ | ✅ | ✅ | ✅ |
 | Multiple Savings Accounts | ✅ | ❌ | ❌ | ❌ |
-| Deposit/Withdraw | ✅ | ❌ | ❌ | ❌ |
+| Deposit / Withdraw | ✅ | ❌ | ❌ | ❌ |
 | Goal Categories | ✅ | ✅ | ✅ | ✅ |
 
-**Verdict**: ✅ **Excellent** - Multiple savings accounts is a key differentiator
+**Verdict**: ✅ **Excellent** — Multiple savings accounts is a genuine differentiator
 
 ---
 
 ### Recurring Transactions & Subscriptions
 
-| Feature | Fin-Track | Monarch | Simplifi | Rocket Money |
-|---------|-----------|---------|----------|--------------|
+| Feature | Pocket | Monarch | Simplifi | Rocket Money |
+|---------|--------|---------|----------|--------------|
 | Recurring Templates | ✅ | ✅ | ✅ | ✅ |
 | Subscription Tracking | ✅ | ✅ | ✅ | ✅ |
-| Auto-Creation | ✅ | ✅ | ✅ | ✅ |
+| Auto-Creation (Cloud Function) | ✅ | ✅ | ✅ | ✅ |
 | Frequency Options | ✅ | ✅ | ✅ | ✅ |
-| Active/Inactive Toggle | ✅ | ✅ | ✅ | ✅ |
+| Active / Inactive Toggle | ✅ | ✅ | ✅ | ✅ |
 | Cancellation Help | ❌ | ❌ | ✅ | ✅ |
 
-**Verdict**: ✅ **Complete** - Cloud Function processes daily at 1 AM UTC
+**Verdict**: ✅ **Complete** — Cloud Function processes daily at 1:00 AM UTC
 
 ---
 
 ### Receipt Management
 
-| Feature | Fin-Track | Monarch | Simplifi | CountAbout |
-|---------|-----------|---------|----------|------------|
+| Feature | Pocket | Monarch | Simplifi | CountAbout |
+|---------|--------|---------|----------|------------|
 | Receipt Upload | ✅ | ✅ | ❌ | ✅ |
-| Receipt Scanner | ✅ | ✅ | ❌ | ❌ |
-| OCR/Auto-Entry | ✅ | ✅ | ❌ | ❌ |
+| Receipt Scanner (OCR) | ✅ | ✅ | ❌ | ❌ |
+| Auto-Entry from Receipt | ✅ | ✅ | ❌ | ❌ |
 | Confidence Scoring | ✅ | ❌ | ❌ | ❌ |
 | Camera Capture | ✅ | ✅ | ❌ | ❌ |
-| Receipt Gallery | 🔜 | ✅ | ❌ | ✅ |
+| Receipt Gallery UI | 🔜 | ✅ | ❌ | ✅ |
 
-**Verdict**: ✅ **Strong** - Google Document AI integration, gallery UI in progress
+**Verdict**: ✅ **Strong** — Google Document AI integration; gallery UI is the remaining piece
 
 ---
 
 ### AI & Automation
 
-| Feature | Fin-Track | Monarch | Origin |
-|---------|-----------|---------|--------|
+| Feature | Pocket | Monarch | Origin |
+|---------|--------|---------|--------|
 | Smart Categorization | ✅ | ✅ | ✅ |
 | Receipt OCR | ✅ | ✅ | ❌ |
-| ML Service | ✅ | ❌ | ❌ |
-| AI Assistant | ❌ | ✅ | ✅ |
-| Budget Recommendations | ❌ | ❌ | ✅ |
-| Spending Insights | ❌ | ❌ | ✅ |
-| Anomaly Detection | ❌ | ❌ | ❌ |
+| Financial Health Score | ✅ | ❌ | ❌ |
+| Spending Anomaly Detection | ✅ | ❌ | ❌ |
+| Cash Flow Forecast | ✅ | ✅ | ❌ |
+| AI Monthly Digest | ✅ | ❌ | ❌ |
+| AI Budget Coach Chat | ✅ | ✅ | ✅ |
+| Budget Recommendations | ✅ | ❌ | ✅ |
 
-**Verdict**: ⚠️ **Good Foundation** - Core AI implemented, insights planned
-
----
-
-### Calendar & Forecasting
-
-| Feature | Fin-Track | PocketSmith | Simplifi |
-|---------|-----------|-------------|----------|
-| Calendar View | ❌ | ✅ | ✅ |
-| Bill Calendar | ❌ | ✅ | ✅ |
-| Upcoming Expenses | ❌ | ✅ | ✅ |
-| Cash Flow Forecasting | ❌ | ✅ | ❌ |
-| FIRE Calculator | ❌ | ✅ | ❌ |
-
-**Verdict**: ❌ **Gap** - Planned for Q1 2025
+**Verdict**: ✅ **Excellent** — Five AI features fully implemented; Gemini 2.5 Flash for digest + chat; algorithmic features run client-side (zero cost, zero data leakage)
 
 ---
 
 ### Technical Features
 
-| Feature | Fin-Track | Monarch | Simplifi | Empower |
-|---------|-----------|---------|----------|---------|
+| Feature | Pocket | Monarch | Simplifi | Empower |
+|---------|--------|---------|----------|---------|
 | PWA | ✅ | ❌ | ❌ | ❌ |
 | Offline Support | ✅ | ❌ | ❌ | ❌ |
 | Service Worker | ✅ | ❌ | ❌ | ❌ |
-| Push Notifications | ✅ | ✅ | ✅ | ✅ |
 | Dark Mode | ✅ | ✅ | ✅ | ✅ |
-| Cloud Functions | ✅ | ✅ | ✅ | ✅ |
 | Multi-Currency | ✅ | ✅ | ❌ | ❌ |
+| i18n (multi-language) | ✅ | ❌ | ❌ | ❌ |
+| Cloud Functions | ✅ | ✅ | ✅ | ✅ |
 
-**Verdict**: ✅ **Excellent** - Best-in-class PWA implementation
+**Verdict**: ✅ **Excellent** — Best-in-class PWA; only product with English + Bulgarian i18n
 
 ---
 
-### Multi-User/Couple Support
+### Multi-User / Couple Support
 
-| Feature | Fin-Track | Monarch |
-|---------|-----------|---------|
+| Feature | Pocket | Monarch |
+|---------|--------|---------|
 | Separate Logins | ❌ | ✅ |
 | Shared Budgets | ❌ | ✅ |
 | Joint Expenses | ❌ | ✅ |
 
-**Verdict**: ❌ **Gap** - Planned for Q4 2025
+**Verdict**: ❌ **Gap** — Planned for a future quarter
 
 ---
 
 ## Competitive Ranking by Category
 
-### Current Strengths (8-10/10)
-1. **Privacy & Data Control**: 10/10
-2. **PWA/Offline Support**: 10/10
-3. **Multi-Currency**: 9/10
-4. **Manual Entry Experience**: 9/10
-5. **Savings Accounts**: 9/10
-6. **Recurring Transactions**: 9/10 (with Cloud Function)
-7. **Receipt Scanning**: 8/10
+### Strengths (8–10/10)
+1. **Privacy & Data Control** — 10/10
+2. **PWA / Offline Support** — 10/10
+3. **AI/ML Features** — 10/10 (all 5 implemented)
+4. **Multi-Currency** — 9/10
+5. **Manual Entry Experience** — 9/10
+6. **Savings Accounts** — 9/10
+7. **Recurring Transactions** — 9/10
+8. **Receipt Scanning** — 8/10
 
-### Good, Needs Enhancement (6-7/10)
-8. **Basic Reporting**: 7/10
-9. **Budget Management**: 8/10
-10. **AI/ML Features**: 7/10
+### Competitive (6–7/10)
+9. **Budget Management** — 8/10
+10. **Reporting** — 7/10 (missing YoY, Sankey)
 
-### Gaps to Address (0-5/10)
-11. **Investment Tracking**: 0/10
-12. **Advanced Analytics**: 5/10
-13. **Calendar/Forecasting**: 0/10
-14. **Multi-User Support**: 0/10
-
----
-
-## Actionable Recommendations
-
-### Completed (Feb 2025)
-
-#### 1. Recurring Transactions Auto-Creation ✅
-**Status**: COMPLETE
-- Cloud Function deployed
-- Runs daily at 1:00 AM UTC
-- Processes all due recurring transactions
-- Updates nextDate automatically
-- Manual trigger available via callable function
-
-#### 2. Receipt Scanner Backend ✅
-**Status**: COMPLETE
-- ML Service with Google Document AI
-- Extracts: merchant, amount, date, items
-- Confidence scoring
-- Camera capture component
-- File validation (images, PDFs up to 10MB)
-
-#### 3. Smart Category Detection ✅
-**Status**: COMPLETE
-- 100+ merchant keywords mapped
-- Auto-suggest categories
-- Supports Bulgarian merchants (Billa, Lidl, Fantastico, etc.)
-
----
-
-### High Priority (Next 1-2 Months)
-
-#### 1. Receipt Gallery UI
-**Why**: Backend complete, need frontend integration
-**Impact**: High user satisfaction
-**Effort**: 1 week
-
-#### 2. Transaction Tags UI
-**Why**: Schema ready, quick win
-**Impact**: Medium
-**Effort**: 2-3 days
-
-#### 3. Net Worth Tracking
-**Why**: Foundation for investment tracking
-**Impact**: High
-**Effort**: 3-5 days
-
-#### 4. Calendar View
-**Why**: Highly requested, shows upcoming transactions
-**Impact**: High UX improvement
-**Effort**: 1 week
-
----
-
-### Medium Priority (3-6 Months)
-
-#### 5. Basic Investment Tracking
-**Why**: Major competitive gap
-**Impact**: Very High
-**Effort**: 2-3 weeks
-**Approach**: Manual entry (privacy-first)
-
-#### 6. Enhanced Analytics
-**Why**: Match competitor features
-**Impact**: Medium-High
-**Effort**: 1-2 weeks
-- Year-over-Year comparisons
-- Sankey diagrams
-- Forecasting
-
-#### 7. Bill Tracking & Reminders
-**Why**: Complements recurring transactions
-**Impact**: High
-**Effort**: 1 week
-
-#### 8. AI Spending Insights
-**Why**: Modern feature expectation
-**Impact**: High
-**Effort**: 2 weeks
-
----
-
-### Lower Priority (6-12 Months)
-
-- Multi-user/Couple support
-- Expense splitting
-- Advanced tax features
-- Voice input
-- AI assistant
+### Gaps to Address (0–5/10)
+11. **Investment Tracking** — 0/10
+12. **Net Worth** — 0/10
+13. **Advanced Analytics** — 5/10
+14. **Multi-User Support** — 0/10
 
 ---
 
 ## Competitive Advantages to Leverage
 
-### 1. Privacy-First Approach
-- **Message**: "Your financial data never leaves your control"
-- **Target**: Privacy-conscious users, security-focused individuals
-- **Differentiator**: No bank syncing required
+### 1. Privacy-First
+**Message**: "Your financial data never leaves your control — no bank linking required."
+**Target**: Privacy-conscious users, people uncomfortable with bank credential sharing
+**Differentiator**: Competitors require bank syncing; Pocket does not
 
-### 2. PWA/Offline Support
-- **Message**: "Works offline, install anywhere, no app store"
-- **Target**: Users wanting cross-platform flexibility
-- **Differentiator**: Only PWA in the market
+### 2. AI Without Compromise
+**Message**: "AI insights powered by Gemini — without sharing your transaction details."
+**Target**: Users who want smart insights but don't trust black-box data pipelines
+**Differentiator**: Algorithmic features (health score, anomaly detection, forecast) run entirely in the browser. Only aggregated totals are sent to Gemini for the digest and chat.
 
-### 3. Multi-Currency
-- **Message**: "Track expenses in any currency - perfect for travelers"
-- **Target**: International users, expats, travelers
-- **Differentiator**: Most competitors are USD-focused
+### 3. PWA / Offline
+**Message**: "Works on any device, works offline, no app store required."
+**Target**: Users wanting cross-platform flexibility
+**Differentiator**: Only finance app in this category with a proper PWA
 
-### 4. Manual Control
-- **Message**: "Full control, no automatic categorization errors"
-- **Target**: Users who want to understand their spending
-- **Differentiator**: Auto-categorization often fails
+### 4. Multiple Savings Accounts
+**Message**: "Track each savings goal in its own account — not a single balance."
+**Target**: Users with multiple parallel financial goals
+**Differentiator**: Most apps have a single savings goal concept
 
-### 5. Multiple Savings Accounts
-- **Message**: "Track multiple savings goals separately"
-- **Target**: Users with multiple financial goals
-- **Differentiator**: Most apps have single savings goal
+### 5. Multi-Currency
+**Message**: "Track expenses in any currency — perfect for expats and travellers."
+**Target**: International users, expats, frequent travellers
+**Differentiator**: Most competitors are USD-centric
 
 ### 6. Receipt OCR
-- **Message**: "Snap a receipt, auto-fill the transaction"
-- **Target**: Users who keep receipts
-- **Differentiator**: Google Document AI integration
+**Message**: "Snap a receipt — Pocket fills in the amount, date, and merchant automatically."
+**Target**: Users who keep physical receipts for tax or warranty purposes
+**Differentiator**: Google Document AI with confidence scoring
+
+---
+
+## Pricing Comparison
+
+| App | Price | Bank Linking | AI Features | Privacy |
+|-----|-------|-------------|-------------|---------|
+| Mint (defunct) | Free (ads) | Required | Basic | Low |
+| YNAB | $14.99/mo | Optional | None | Medium |
+| Monarch Money | $14.99/mo | Required | Good | Medium |
+| Empower | Free | Required | Basic | Low |
+| Rocket Money | $3–12/mo | Required | Basic | Low |
+| **Pocket** | **Free–€19.99/mo** | **Not required** | **Strong (Gemini 2.5)** | **High** |
+
+Pocket's freemium tiers:
+
+| Plan | Price | Receipt Scans/mo | AI Features |
+|------|-------|-----------------|-------------|
+| Free | €0 | 0 | Health score, anomaly detection, forecast |
+| Pro | €7.99/mo | 30 | + AI digest, AI chat |
+| Business | €19.99/mo | 150 | + AI digest, AI chat |
 
 ---
 
 ## Market Positioning
 
 ### Primary Positioning
-**"Privacy-First Financial Management for the Security-Conscious"**
+**"Privacy-first financial management with AI insights — no bank linking required."**
 
 ### Target Users
-1. Privacy-conscious individuals (tech-savvy, security-focused)
-2. International users/travelers (multi-currency)
-3. Users who prefer manual control (no auto-errors)
-4. Users who want offline access (PWA)
-5. Users with multiple savings goals
-
-### Pricing Strategy (Future)
-- **Free Tier**: Current features
-- **Premium ($3-5/mo)**:
-  - Investment tracking
-  - Advanced analytics
-  - AI insights
-  - Priority support
+1. Privacy-conscious individuals who won't share bank credentials
+2. International users / expats (multi-currency)
+3. Users who prefer manual control (no auto-categorisation errors)
+4. Users who want offline / cross-platform access (PWA)
+5. Budget-focused users with multiple savings goals
 
 ---
 
-## Success Metrics
-
-### Feature Completion Goals
-- **Q1 2025**: 85% feature parity ✅ (achieved)
-- **Q2 2025**: 90% feature parity (target)
-- **Q4 2025**: 95% feature parity + unique differentiators
-
-### Current Status
-| Metric | Target | Current |
-|--------|--------|---------|
-| Core Features | 100% | 100% ✅ |
-| Financial Features | 100% | 95% |
-| Technical Features | 100% | 90% |
-| AI/ML Features | 80% | 60% |
-| Advanced Features | 50% | 20% |
-
----
-
-## Summary: Competitive Position
+## Overall Competitive Position
 
 ### Where We Excel
-1. Privacy & Security - **Best in Class**
-2. PWA/Offline - **Unique in Market**
-3. Multi-Currency - **Strong Advantage**
-4. Savings Management - **Above Average**
-5. Receipt Scanning - **Competitive**
+1. Privacy & Security — **Best in Class**
+2. PWA / Offline — **Unique in Market**
+3. AI Features — **Best in Class** (5 features, client-side + Gemini)
+4. Multi-Currency — **Strong Advantage**
+5. Savings Management — **Above Average**
+6. Receipt Scanning — **Competitive**
 
-### Where We're Competitive
-1. Core Budgeting - **At Parity**
-2. Recurring Transactions - **At Parity**
-3. Reports/Export - **At Parity**
-4. AI Categorization - **At Parity**
+### Where We're at Parity
+1. Core Budgeting
+2. Recurring Transactions
+3. Reports & Export
+4. AI Categorisation
 
 ### Where We Need Work
-1. Investment Tracking - **Major Gap**
-2. Advanced Analytics - **Minor Gap**
-3. Calendar View - **Missing**
-4. Multi-User - **Missing**
+1. Investment Tracking — **Major Gap**
+2. Advanced Analytics (YoY, Sankey) — **Minor Gap**
+3. Net Worth — **Missing**
+4. Multi-User — **Missing**
 
-### Overall Score: **8.5/10**
-*Up from 7/10 in January 2025*
+### Overall Score: **9/10**
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: February 8, 2025
-**Next Review**: April 2025
+**Document Version**: 3.0
+**Last Updated**: March 2026
+**Next Review**: June 2026

@@ -1,6 +1,6 @@
-# Fin-Track Deployment Guide
+# Pocket — Deployment Guide
 
-Complete step-by-step guide to deploy the entire Fin-Track application from scratch.
+Complete step-by-step guide to deploy the entire Pocket application from scratch.
 
 ## Architecture Overview
 
@@ -222,12 +222,19 @@ firebase deploy --only hosting,functions # Frontend + functions
 
 | Variable | Dev default | Where |
 |----------|-------------|-------|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | *(your project key)* | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `your-project.firebaseapp.com` | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `your-project-id` | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `your-project.firebasestorage.app` | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | *(sender ID)* | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | *(app ID)* | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | *(G-XXXXXXX)* | `frontend/.env.local` / `.env.production` |
 | `NEXT_PUBLIC_ML_SERVICE_URL` | `http://localhost:8000` | `frontend/.env.local` / `.env.production` |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` | `frontend/.env.local` / `.env.production` |
 | `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | *(test price ID)* | `frontend/.env.local` / `.env.production` |
 | `NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID` | *(test price ID)* | `frontend/.env.local` / `.env.production` |
 
-Firebase config (API key, project ID, etc.) is hardcoded in `frontend/lib/firebase.ts`.
+Firebase config is read from `NEXT_PUBLIC_FIREBASE_*` env vars — add them to `frontend/.env.local` (dev) or `frontend/.env.production` (prod build).
 
 > **Test vs Production**: Use `pk_test_` / test price IDs for sandbox. Use `pk_live_` / live price IDs for production. The Stripe Firebase Extension must also be configured with the matching secret key (`sk_test_` or `sk_live_`).
 
@@ -321,6 +328,21 @@ cd ml-service && npm run dev
 ```
 
 The frontend defaults to `http://localhost:8000` for the ML service, and the ML service defaults to allowing CORS from `http://localhost:3001`.
+
+### Stripe Test Credentials
+
+When testing the subscription checkout locally or in sandbox, use these Stripe test card details:
+
+| Field | Value |
+|-------|-------|
+| **Card number** | `4242 4242 4242 4242` |
+| **Expiry** | Any future date — e.g. `12/34` |
+| **CVC** | Any 3 digits — e.g. `123` |
+| **Name / ZIP** | Any value |
+
+This is Stripe's standard test Visa card that always succeeds. Use `pk_test_` publishable key and test price IDs in `.env.local`.
+
+> **Note:** Browser extensions (password managers, ad blockers) may show CSP errors in the console on Stripe's checkout page — these come from the extension trying to inject scripts into Stripe's hosted page and do not affect the checkout. Test in incognito with extensions disabled if you see unexpected behaviour.
 
 ---
 

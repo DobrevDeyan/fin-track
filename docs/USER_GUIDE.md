@@ -1,8 +1,6 @@
-# Fin-Track User Guide
+# Pocket — User Guide
 
-**Welcome to Fin-Track** - Your Personal Finance Management Solution
-
-**Version:** 2.5
+**Version:** 1.0
 **Last Updated:** March 2026
 
 ---
@@ -15,11 +13,14 @@
 4. [Budgets](#budgets)
 5. [Savings Goals](#savings-goals)
 6. [Recurring Transactions](#recurring-transactions)
-7. [Reports & Analytics](#reports--analytics)
-8. [Settings & Preferences](#settings--preferences)
-9. [Tips & Best Practices](#tips--best-practices)
-10. [FAQ](#faq)
-11. [Troubleshooting](#troubleshooting)
+7. [Savings Accounts](#savings-accounts)
+8. [Reports & Analytics](#reports--analytics)
+9. [AI Features](#ai-features)
+10. [Settings & Preferences](#settings--preferences)
+11. [Installing as a PWA](#installing-as-a-pwa)
+12. [Tips & Best Practices](#tips--best-practices)
+13. [FAQ](#faq)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -27,831 +28,407 @@
 
 ### Creating Your Account
 
-1. **Visit Fin-Track** at [your-domain.com](https://your-domain.com)
+1. Visit **Pocket** at [fin-track-adc2c.web.app](https://fin-track-adc2c.web.app)
+2. Click **"Get Started"** or **"Sign Up"** on the landing page
+3. Choose your sign-up method:
+   - **Email & Password** — enter your email and create a password
+   - **Google Sign-In** — one-click sign-up using your Google account
+4. Complete your profile — set your default currency and language (English or Bulgarian)
 
-2. **Click "Sign Up"** on the homepage
+### First Steps
 
-3. **Choose registration method:**
-   - **Email & Password:** Enter your email and create a strong password
-   - **Google Sign-In:** Quick setup using your Google account
+Once inside the app:
 
-4. **Verify your email** (if using email/password)
-   - Check your inbox for verification link
-   - Click to activate your account
-
-5. **Complete your profile**
-   - Set your default currency (EUR, USD, GBP, etc.)
-   - Choose your preferred date format
-   - Select language preference
-
-### First Login
-
-Upon first login, you'll see:
-- **Welcome Dashboard** - Your financial command center
-- **Quick Tutorial** - 5-minute walkthrough (optional)
-- **Sample Data** - Demo transactions to explore (can be deleted)
+1. **Add your first transaction** — click **"+ Add Entry"** in the Recent Transactions section
+2. **Create a budget** — set spending limits for your top categories (Food, Transport, etc.)
+3. **Set a savings goal** — something you're working toward: emergency fund, vacation, new laptop
+4. **Set up recurring transactions** — subscriptions and bills that repeat every month
 
 ---
 
 ## Dashboard Overview
 
-Your dashboard is divided into **6 main sections**, each collapsible for a cleaner view:
+The dashboard is your financial command center. Sections are **collapsible** — click any section header to expand or collapse it.
 
-```
-┌─────────────────────────────────────────────────────┐
-│  📊 Recent Transactions                             │
-│  Track daily income and expenses                    │
-├─────────────────────────────────────────────────────┤
-│  💰 Budgets                                         │
-│  Monitor spending limits by category                │
-├─────────────────────────────────────────────────────┤
-│  🎯 Savings Goals                                   │
-│  Work toward financial milestones                   │
-├─────────────────────────────────────────────────────┤
-│  🔁 Recurring Transactions                          │
-│  Automate regular income/expenses                   │
-├─────────────────────────────────────────────────────┤
-│  🏦 Savings Accounts                                │
-│  Track balances across accounts                     │
-├─────────────────────────────────────────────────────┤
-│  📈 Quick Stats                                     │
-│  Summary cards: Total Income, Expenses, Net Worth   │
-└─────────────────────────────────────────────────────┘
-```
+| Section | What It Shows |
+|---------|--------------|
+| **AI Insights** | Health score, anomaly alerts, cash flow forecast |
+| **Recent Transactions** | Your latest income and expenses |
+| **Budgets** | Spending limits with progress bars |
+| **Savings Goals** | Progress toward financial targets |
+| **Recurring Transactions** | Upcoming automated transactions |
+| **Savings Accounts** | Balances across your virtual accounts |
 
-### Navigation Bar
+### Navigation
 
-Located at the top of every page:
-
-- **🏠 Dashboard** - Main view with all sections
-- **📅 Calendar** - Visual month view of transactions
-- **📊 Reports** - Charts, graphs, and analytics
-- **⚙️ Settings** - Preferences and account management
-- **👤 Profile** - User menu with logout option
+- **Dashboard** — main view
+- **Calendar** — month-view of all transactions
+- **Reports** — charts, analytics, and AI digest
+- **Settings** — account preferences and data management
 
 ---
 
 ## Managing Transactions
 
-Transactions are the foundation of Fin-Track. Every purchase, payment, or income is recorded here.
-
 ### Adding a Transaction
 
-**Method 1: Quick Add (Dashboard)**
+**Quick Add (floating "+" button)**
+Best for fast mobile entry:
+1. Tap the **"+"** button (bottom-right)
+2. Select **Expense** or **Income**
+3. Choose category → item → amount
+4. Tap **Save**
 
-1. Click **"+ Add Entry"** button in Recent Transactions section
-2. Fill in the form:
-   - **Description:** What was the transaction? (e.g., "Grocery Shopping")
-   - **Amount:** How much? (e.g., 45.50)
-   - **Category:** Select from dropdown (Food & Dining, Transportation, etc.)
-   - **Type:** Income, Expense, or Transfer
-   - **Date:** When did it occur? (defaults to today)
-   - **Currency:** EUR, USD, etc. (defaults to your preference)
-3. **Optional fields:**
-   - **Notes:** Additional details (e.g., "Bought items for dinner party")
-   - **Tags:** Keywords for searching (e.g., "groceries", "urgent")
-   - **Receipt:** Upload photo of receipt (tap camera icon)
-4. Click **"Add Entry"** to save
+**Full Entry ("+ Add Entry" in the Transactions section)**
+For detailed entries:
+1. Click **"+ Add Entry"**
+2. Fill in:
+   - **Description** — what was it? (e.g. "Weekly groceries")
+   - **Amount** — how much?
+   - **Category** — Food & Dining, Transport, Housing, etc.
+   - **Type** — Income or Expense
+   - **Date** — defaults to today
+   - **Currency** — defaults to your preference
+   - **Notes** — optional context
+   - **Tags** — optional keywords for searching
+3. Optionally **scan a receipt** (Pro/Business plan) using the camera icon
+4. Click **"Add Entry"**
 
-**Method 2: Import from Bank (Future Feature)**
+### Editing & Deleting
 
-### Editing a Transaction
+- Click the **pencil icon** on any transaction to edit it
+- Click the **trash icon** to delete — confirm in the popup
+- Deletions are permanent; edit instead if you're unsure
 
-1. Find the transaction in Recent Transactions list
-2. Click the **✏️ Edit** icon
-3. Modify any field
-4. Click **"Save Changes"**
+### Receipt Scanning (Pro & Business)
 
-**Note:** You can only edit transactions you created. Changes are instant.
+1. Click **"+ Add Entry"** → camera icon
+2. Take a photo or upload an image/PDF (max 10 MB, JPG/PNG/PDF)
+3. Google Document AI extracts the merchant, amount, and date automatically
+4. Review and confirm the extracted data before saving
 
-### Deleting a Transaction
+### Searching & Filtering
 
-1. Find the transaction
-2. Click the **🗑️ Delete** icon
-3. Confirm deletion in popup
-4. Transaction is permanently removed
+| Filter | Options |
+|--------|---------|
+| **Search** | Description, category, or notes |
+| **Date** | Today, This Week, This Month, Last Month, This Year, Custom |
+| **Category** | Any single category |
+| **Type** | Income or Expense |
+| **Sort** | Date, Amount, Description, Category (asc/desc) |
 
-**⚠️ Warning:** Deleted transactions cannot be recovered. Consider editing instead if you're unsure.
+### Exporting
 
-### Uploading Receipts
-
-Keep digital records of your purchases:
-
-1. When adding/editing a transaction, click **"Upload Receipt"**
-2. Choose photo from:
-   - **Camera:** Take photo now
-   - **Gallery:** Select existing image
-3. Image is uploaded and attached to transaction
-4. Click **receipt icon** on transaction to view later
-
-**Supported formats:** JPG, PNG, PDF (max 5MB)
-
-### Using Tags
-
-Tags help organize and find transactions:
-
-**Adding tags:**
-```
-Tags: groceries, weekly-shopping, costco
-```
-
-**Searching by tag:**
-- Type `#groceries` in search bar
-- All transactions with "groceries" tag appear
-
-**Common tag ideas:**
-- `#tax-deductible` - Business expenses
-- `#shared` - Split with roommate
-- `#subscription` - Monthly services
-- `#emergency` - Unexpected costs
-
-### Transaction Types Explained
-
-| Type | Use Case | Example |
-|------|----------|---------|
-| **Income** | Money received | Salary, freelance payment, gifts |
-| **Expense** | Money spent | Rent, food, entertainment |
-| **Transfer** | Moving money between accounts | Savings → Checking, ATM withdrawal |
-
-**Color coding:**
-- 🟢 Income - Green (positive)
-- 🔴 Expense - Red (negative)
-- 🔵 Transfer - Blue (neutral)
+- **CSV** — export filtered or all transactions for spreadsheets or tax software
+- **PDF** — generate a formatted report from the Reports page
 
 ---
 
 ## Budgets
 
-Budgets help you control spending by setting limits for specific categories.
+Budgets let you set spending limits per category and track how close you are in real time.
 
 ### Creating a Budget
 
-1. Navigate to **Budgets** section on dashboard
+1. Go to the **Budgets** section on the dashboard
 2. Click **"+ Create Budget"**
-3. Fill in budget details:
-   - **Name:** Descriptive title (e.g., "Monthly Groceries")
-   - **Category:** What spending area? (Food & Dining, Transportation)
-   - **Amount:** Spending limit (e.g., 400)
-   - **Period:** Weekly, Monthly, or Yearly
-   - **Start Date:** When does budget begin?
-   - **Alert Threshold:** Warning % (default: 80%)
+3. Fill in:
+   - **Name** — e.g. "Monthly Groceries"
+   - **Category** — what spending area?
+   - **Amount** — your limit (e.g. €400)
+   - **Period** — Weekly, Monthly, or Yearly
+   - **Alert Threshold** — get a warning at X% (default: 80%)
 4. Click **"Create Budget"**
 
-### Budget Status Indicators
+### Budget Status
 
-Your budget card shows:
+| Color | Meaning |
+|-------|---------|
+| Green | Under budget (0–79%) |
+| Yellow | Approaching limit (80–99%) |
+| Red | Over budget (100%+) |
 
-```
-┌──────────────────────────────────────┐
-│  🍔 Monthly Groceries                │
-│  Food & Dining                       │
-│                                      │
-│  $320.00 / $400.00                   │
-│  ████████░░ 80%                      │
-│                                      │
-│  $80.00 remaining                    │
-│  Status: ⚠️ Warning (80%+ spent)     │
-└──────────────────────────────────────┘
-```
+### Tips
 
-**Status colors:**
-- 🟢 **Green (0-79%):** Under budget - you're good!
-- 🟡 **Yellow (80-99%):** Warning - approaching limit
-- 🔴 **Red (100%+):** Over budget - exceeded limit
-
-### Budget Alerts
-
-When you reach your alert threshold (default 80%):
-- 📧 Email notification sent
-- 🔔 In-app notification badge
-- Budget card turns yellow
-
-**Customizing alerts:**
-1. Edit budget
-2. Change "Alert Threshold" (0-100%)
-3. Examples:
-   - 90% for stricter control
-   - 50% for early warnings
-
-### Renewing Budgets
-
-At the end of each period, you can:
-
-**Option 1: Auto-Renew**
-1. Click "Renew" on budget card
-2. New period starts with same amount
-3. Spending resets to $0
-
-**Option 2: Adjust & Renew**
-1. Click "Edit" before renewing
-2. Modify amount based on last period
-3. Click "Renew" with new settings
-
-**Option 3: Archive**
-- Click "Delete" if budget is no longer needed
-- Historical data is preserved in Reports
+- Create a budget for your biggest spending categories first
+- If you consistently go over, adjust the amount rather than ignoring the alerts
+- Use the yearly period for irregular expenses like insurance or subscriptions
 
 ---
 
 ## Savings Goals
 
-Track progress toward financial milestones like vacations, emergency funds, or big purchases.
+Goals track your progress toward financial targets — an emergency fund, a holiday, a new device.
 
-### Creating a Savings Goal
+### Creating a Goal
 
-1. Go to **Savings Goals** section
+1. Go to the **Savings Goals** section
 2. Click **"+ Add Goal"**
-3. Enter goal details:
-   - **Name:** What are you saving for? (e.g., "Europe Vacation")
-   - **Target Amount:** How much do you need? (e.g., 3000)
-   - **Current Amount:** How much have you saved already? (e.g., 500)
-   - **Deadline:** When do you need it? (e.g., June 2027)
-   - **Category:** Optional grouping (Travel, Emergency, etc.)
+3. Enter:
+   - **Name** — what are you saving for?
+   - **Target Amount** — total you need
+   - **Current Amount** — what you've saved so far
+   - **Deadline** — optional target date
 4. Click **"Create Goal"**
 
-### Goal Progress Visualization
+The goal card shows your progress as a percentage and, if you set a deadline, the monthly amount needed to reach it on time.
 
-```
-┌─────────────────────────────────────┐
-│  ✈️ Europe Vacation                 │
-│  Target: $3,000 by June 2027        │
-│                                     │
-│  ████████░░░░░░░░░░░░ 33%           │
-│  $1,000 / $3,000                    │
-│                                     │
-│  $2,000 remaining                   │
-│  Recommended: $167/month            │
-└─────────────────────────────────────┘
-```
+### Updating Progress
 
-**Smart calculations:**
-- Monthly savings needed
-- Days remaining
-- On-track status
-
-### Adding to a Goal
-
-**Method 1: Manual Contribution**
-1. Click goal card
-2. Click "Add Contribution"
-3. Enter amount saved
-4. Progress bar updates
-
-**Method 2: Link to Savings Account**
-1. Edit goal
-2. Select "Link Account"
-3. Choose savings account
-4. Balance syncs automatically
-
-### Goal Milestones
-
-Celebrate progress with automatic milestones:
-- 🎯 25% - First quarter saved!
-- 🎯 50% - Halfway there!
-- 🎯 75% - Final stretch!
-- 🎉 100% - Goal achieved!
-
-**Notification sent at each milestone.**
+Click on the goal card and update the **Current Amount** as your savings grow.
 
 ---
 
 ## Recurring Transactions
 
-Automate regular income and expenses so you never forget to log them.
+Set up templates for regular income and expenses so they appear automatically each period.
 
-### Setting Up Recurring Transactions
+### Setting Up a Recurring Transaction
 
-1. Navigate to **Recurring Transactions** section
+1. Go to the **Recurring Transactions** section
 2. Click **"+ Add Recurring"**
-3. Configure transaction:
-   - **Description:** What is it? (e.g., "Netflix Subscription")
-   - **Amount:** How much each time? (e.g., 15.99)
-   - **Category:** Select category
-   - **Type:** Income or Expense
-   - **Frequency:** How often?
-     - Daily
-     - Weekly (specify day)
-     - Monthly (specify date)
-     - Yearly (specify date)
-   - **Start Date:** When should it begin?
-4. Click **"Save Recurring"**
+3. Configure:
+   - **Description** — e.g. "Netflix"
+   - **Amount** — e.g. €15.99
+   - **Category** and **Type** (Income or Expense)
+   - **Frequency** — Weekly, Monthly, or Yearly
+   - **Next Date** — when should the next entry be created?
+4. Click **"Save"**
 
-### How Auto-Generation Works
+### How Auto-Creation Works
 
-Every day at midnight:
-1. System checks all active recurring transactions
-2. If `nextDate` matches today, creates transaction
-3. Updates `nextDate` to next occurrence
-4. You receive notification
-
-**Example:**
-```
-Recurring: Netflix - $15.99 on 1st of month
-Next Date: April 1, 2026
-
-On April 1:
-✅ Transaction created: "Netflix - $15.99"
-📅 Next Date updated: May 1, 2026
-```
+A scheduled Cloud Function runs daily at **1:00 AM UTC** and creates an entry for every recurring transaction whose Next Date matches today. The Next Date then advances to the next occurrence automatically.
 
 ### Managing Recurring Transactions
 
-**Pause temporarily:**
-1. Click recurring transaction
-2. Toggle "Active" switch to OFF
-3. No new transactions created until re-enabled
+- **Pause** — toggle the Active switch off to stop new entries without deleting the template
+- **Skip** — edit the Next Date to skip an unwanted period
+- **Edit** — update amount or frequency for future entries
+- **Delete** — removes the template; past entries are kept
 
-**Skip next occurrence:**
-1. Edit recurring transaction
-2. Change "Next Date" to skip unwanted month
-3. Save
+---
 
-**Edit amount (e.g., price increase):**
-1. Click Edit
-2. Update amount
-3. Future transactions use new amount
+## Savings Accounts
 
-**Delete:**
-- Removes recurring rule
-- Keeps historical transactions already created
+Virtual savings accounts let you track money you've set aside — separate from your day-to-day spending.
+
+### Creating a Savings Account
+
+1. Go to the **Savings Accounts** section
+2. Click **"+ Create Account"**
+3. Enter account name, initial balance, and currency
+4. Click **"Save"**
+
+### Adding & Withdrawing
+
+- **Add Money** — allocate income directly to a savings account
+- **Withdraw** — move money out when you spend from savings
+
+Each account shows its current balance in real time.
 
 ---
 
 ## Reports & Analytics
 
-Visualize your financial health with charts, graphs, and insights.
+Navigate to **Reports** in the top navigation.
 
-### Accessing Reports
+### Available Views
 
-Click **📊 Reports** in navigation bar
+| Report | What It Shows |
+|--------|--------------|
+| **This Year** | Full-year income, expenses, savings rate |
+| **This Month** | Current month summary |
+| **Custom Range** | Pick any start and end date |
 
-### Available Reports
+### Charts
 
-#### 1. Spending by Category (Pie Chart)
+- **Income vs Expenses** — bar chart by month
+- **Spending by Category** — breakdown with percentages
+- **Monthly Trends** — line chart over the selected period
 
-Shows where your money goes:
+### AI Monthly Digest (Pro & Business)
 
-```
-        Other
-         12%
-                    Food & Dining
-  Utilities          28%
-    15%
-             Rent
-             30%
-     Transport
-       15%
-```
+A Gemini-generated 3–5 sentence narrative that summarises your month's spending, highlights notable changes vs the previous month, and suggests one or two specific improvements. Cached so it loads instantly after the first generation.
 
-**Filters:**
-- Date range (Last 30 days, This month, Custom)
-- Transaction type (Expense, Income)
-- Specific categories
+### Exporting
 
-#### 2. Income vs Expenses (Bar Chart)
+- **PDF** — click "Export PDF" for a formatted report
+- **CSV** — click "Export CSV" for raw transaction data
 
-Monthly comparison:
+---
 
-```
-Jan  ████████ $3,200  ██████ $2,800 | +$400
-Feb  █████████ $3,500  ███████ $3,100 | +$400
-Mar  ████████ $3,200  ████████ $3,300 | -$100
-```
+## AI Features
 
-- Green bars: Income
-- Red bars: Expenses
-- Net shown on right
+Pocket includes five AI-powered insights, visible on the dashboard.
 
-#### 3. Spending Trends (Line Chart)
+### 1. Financial Health Score
 
-Track changes over time:
+A 0–100 score calculated entirely in your browser (no data leaves the app) from five components:
 
-```
-$4000│                    ╱
-     │                  ╱
-$3000│        ╱──╲    ╱
-     │      ╱      ╲╱
-$2000│    ╱
-     │  ╱
-$1000│╱
-     └──────────────────────
-     Jan Feb Mar Apr May Jun
-```
+| Component | Weight |
+|-----------|--------|
+| Savings Rate | 30% |
+| Budget Adherence | 25% |
+| Goal Progress | 20% |
+| Income Stability | 15% |
+| Spending Regularity | 10% |
 
-**Insights highlighted:**
-- 📈 Increasing trend
-- 📉 Decreasing trend
-- ⚠️ Unusual spikes
+Click the score ring to see the full breakdown.
 
-#### 4. Budget Performance
+### 2. Anomaly Detection
 
-See how you're doing against all budgets:
+If spending in a category is significantly higher than your historical average, a dismissible alert banner appears at the top of the dashboard. The detection uses a Z-score algorithm — it only fires when the spike is statistically unusual, not just slightly above average.
 
-| Budget | Limit | Spent | Remaining | Status |
-|--------|-------|-------|-----------|--------|
-| Groceries | $400 | $320 | $80 | ⚠️ 80% |
-| Gas | $150 | $95 | $55 | ✅ 63% |
-| Dining Out | $200 | $245 | -$45 | ❌ Over |
+### 3. Cash Flow Forecast
 
-**Export options:**
-- 📄 PDF Report
-- 📊 Excel Spreadsheet
-- 📧 Email to yourself
+A 90-day forward projection of your balance, based on your recurring transactions. Shows upper and lower confidence bands so you can see a range of likely outcomes.
 
-### Custom Date Ranges
+### 4. AI Monthly Digest
 
-For all reports:
-1. Click "Date Range" dropdown
-2. Select preset:
-   - Last 7 days
-   - Last 30 days
-   - This month
-   - Last month
-   - This year
-   - Custom range
-3. For custom: pick start and end dates
-4. Click "Apply"
+Available on the Reports page. See [Reports & Analytics](#reports--analytics) above.
+
+### 5. AI Budget Coach Chat (Pro & Business)
+
+A floating chat button (bottom-left of the dashboard) opens a conversation with an AI coach that has context on your actual spending. Ask questions like:
+
+- *"Where can I cut back this month?"*
+- *"Am I on track to meet my savings goal?"*
+- *"Why did my health score drop?"*
+
+The coach only sees aggregated spending totals — never individual transaction descriptions.
 
 ---
 
 ## Settings & Preferences
 
-Customize Fin-Track to work the way you want.
-
-### Accessing Settings
-
-Click **⚙️ Settings** in navigation bar
-
-### Profile Settings
-
-**Personal Information:**
-- Name
-- Email (requires re-verification if changed)
-- Profile photo
-
-**Security:**
-- Change password
-- Enable 2-factor authentication (2FA)
-- View active sessions
-- Sign out all devices
+Click **Settings** (gear icon, top-right) to manage your account.
 
 ### Display Preferences
 
-**Currency:**
-- Default currency for new transactions
-- Options: EUR, USD, GBP, JPY, etc.
-- Can override per-transaction
+| Setting | Options |
+|---------|---------|
+| **Currency** | EUR, USD, GBP, BGN, and 150+ others |
+| **Language** | English, Bulgarian |
+| **Theme** | Light, Dark, System |
 
-**Date Format:**
-- MM/DD/YYYY (US)
-- DD/MM/YYYY (EU)
-- YYYY-MM-DD (ISO)
+### Subscription
 
-**Language:**
-- English
-- Spanish
-- German
-- French
-- (More coming soon)
+View your current plan (Free, Pro, or Business) and upgrade or manage billing from the Settings page.
 
-**Theme:**
-- ☀️ Light mode
-- 🌙 Dark mode
-- 🔄 Auto (matches system)
-
-### Notification Preferences
-
-Control what alerts you receive:
-
-**Email notifications:**
-- [ ] Budget alerts (80% threshold reached)
-- [ ] Goal milestones (25%, 50%, 75%, 100%)
-- [ ] Recurring transaction created
-- [ ] Weekly summary email
-- [ ] Monthly report email
-
-**In-app notifications:**
-- [ ] Budget warnings
-- [ ] Goal progress updates
-- [ ] Large transactions (over $X)
-
-**Notification frequency:**
-- Instant
-- Daily digest
-- Weekly summary
+| Plan | Price | Receipt Scans/month | AI Features |
+|------|-------|---------------------|-------------|
+| Free | €0 | 0 | Health score, anomaly detection, forecast |
+| Pro | €7.99/mo | 30 | + AI digest, AI chat |
+| Business | €19.99/mo | 150 | + AI digest, AI chat |
 
 ### Data & Privacy
 
 **Export your data:**
-1. Go to Settings > Data & Privacy
-2. Click "Export All Data"
-3. Choose format: JSON or CSV
-4. Receive download link via email (within 24 hours)
+1. Settings → Data & Privacy → **Export All Data**
+2. Download as CSV
 
 **Delete your account:**
-1. Settings > Data & Privacy
-2. Click "Delete Account"
-3. Confirm with password
-4. ⚠️ All data permanently deleted (cannot be undone)
+1. Settings → **Account Settings**
+2. Scroll to the danger zone and type **DELETE** to confirm
+3. All your data and your Firebase account are permanently removed
+
+---
+
+## Installing as a PWA
+
+Pocket is a Progressive Web App — you can install it on any device without an app store.
+
+**Desktop (Chrome / Edge):**
+1. Open Pocket in your browser
+2. Click the install icon in the address bar
+3. Click **"Install"**
+
+**Android (Chrome):**
+1. Open Pocket in Chrome
+2. Tap the menu → **"Add to Home Screen"**
+3. Or tap the install prompt that appears at the bottom
+
+**iOS (Safari):**
+1. Open Pocket in Safari
+2. Tap the **Share** button
+3. Select **"Add to Home Screen"**
+
+Once installed, Pocket works offline — recent data is cached locally and syncs automatically when you reconnect.
 
 ---
 
 ## Tips & Best Practices
 
-### Getting the Most from Fin-Track
+**Log transactions regularly.** Even 2–3 minutes in the evening prevents backlog and keeps your reports accurate.
 
-#### 1. Log Transactions Daily
+**Use categories consistently.** If you put coffee shops under "Food & Dining" one day and "Entertainment" the next, your reports become misleading. Pick a rule and stick to it.
 
-**Why:** Prevents forgotten expenses and keeps data accurate
+**Set realistic budgets.** Look at your last 3 months of spending before setting a limit. Starting with a 10% reduction is more sustainable than a 50% cut.
 
-**How:**
-- Set daily reminder (9 PM)
-- Review receipts each evening
-- Takes only 2-3 minutes
+**Use tags for seasonal or one-off spending.** Tag holiday shopping, moving expenses, or medical costs so you can filter them out of your regular analysis.
 
-#### 2. Use Categories Consistently
+**Review Reports monthly.** The first weekend of each month takes 5 minutes and helps you spot trends before they become problems.
 
-**Why:** Better reports and insights
-
-**How:**
-- "Food & Dining" for ALL food (groceries + restaurants)
-- "Transportation" for gas, parking, public transit
-- Don't create too many categories (10-15 is ideal)
-
-#### 3. Set Realistic Budgets
-
-**Why:** Unrealistic budgets demotivate
-
-**How:**
-- Review last 3 months of spending
-- Start with 10% reduction, not 50%
-- Adjust monthly based on performance
-
-**Example:**
-```
-Average groceries last 3 months: $450
-First budget: $400 (12% reduction)
-After 2 months: $350 if going well
-```
-
-#### 4. Upload Receipts for Big Purchases
-
-**Why:** Proof for returns, warranties, and taxes
-
-**How:**
-- Any purchase over $50
-- All tax-deductible expenses
-- Electronics, appliances, major items
-
-#### 5. Review Reports Monthly
-
-**Why:** Spot trends and adjust behavior
-
-**How:**
-- First Sunday of each month
-- Review all reports
-- Adjust budgets if needed
-- Celebrate wins!
-
-#### 6. Use Tags for Seasonal Spending
-
-**Why:** Understand holiday impacts
-
-**Examples:**
-- `#holiday-shopping` (December)
-- `#back-to-school` (August)
-- `#tax-prep` (April)
-- `#vacation` (Summer)
-
-#### 7. Link Goals to Accounts
-
-**Why:** Automatic progress tracking
-
-**How:**
-- Create savings goal
-- Link to dedicated savings account
-- Balance updates automatically
-
-### Common Mistakes to Avoid
-
-❌ **Don't:**
-- Log lump sums ("Spent $200 this week")
-- Skip small transactions ("Only $5, doesn't matter")
-- Create overly complex category systems
-- Forget to renew budgets
-- Ignore budget warnings
-
-✅ **Do:**
-- Log each transaction individually
-- Track every expense, even $1
-- Keep categories simple
-- Set calendar reminders for budget renewals
-- Adjust budgets when warnings occur
+**Use the AI chat proactively.** It's grounded in your data — it can tell you things a generic finance article can't.
 
 ---
 
 ## FAQ
 
-### General Questions
+**Is my data private?**
+Yes. All data is stored in your Firebase account, access-controlled so only you can read it. We do not link to your bank account, and no transaction descriptions are ever sent to AI services — only aggregated totals.
 
-**Q: Is my financial data secure?**
-A: Yes. We use bank-level encryption (256-bit SSL), and all data is stored in secure Firebase servers. We never share your data with third parties.
+**Can I use Pocket offline?**
+Yes. Recent data is cached locally via Firestore's offline persistence. Changes you make offline sync automatically when you reconnect.
 
-**Q: Can I access Fin-Track offline?**
-A: Yes! Recent data is cached locally. Changes sync automatically when you reconnect to the internet.
+**What currencies are supported?**
+Over 150 currencies. Set your default in Settings — you can also override it per transaction.
 
-**Q: Is there a mobile app?**
-A: The web version works great on mobile browsers. Native iOS/Android apps are coming in Q3 2026.
+**How do I handle a refund?**
+Add it as an **Income** transaction in the same category as the original expense. For example, a €50 grocery refund → Income, Food & Dining, €50.
 
-**Q: How much does it cost?**
-A: Currently free during beta. Pricing will be announced before official launch.
+**Can I have multiple budgets for the same category?**
+Yes — for example a weekly grocery budget alongside a monthly one.
 
-### Transactions
+**What happens when I exceed a budget?**
+The budget card turns red and you receive a warning. Pocket doesn't block transactions — it's a tracking tool, not an enforcer.
 
-**Q: Can I import transactions from my bank?**
-A: This feature is coming soon. Currently, transactions must be added manually.
+**Is there a mobile app?**
+Pocket is a PWA — install it from your browser on any device. It behaves like a native app once installed.
 
-**Q: What's the maximum transaction amount?**
-A: €1,000,000 per transaction for security reasons.
-
-**Q: Can I split a transaction across categories?**
-A: Not yet. For now, choose the primary category or create separate transactions.
-
-**Q: How do I handle refunds?**
-A: Add as an income transaction with the original category. Example: If you return $50 groceries, add $50 income in "Food & Dining."
-
-### Budgets
-
-**Q: Can I have multiple budgets for the same category?**
-A: Yes! For example: "Groceries - Weekly" ($100) and "Groceries - Monthly" ($400).
-
-**Q: What happens when I exceed a budget?**
-A: You receive a warning notification, but Fin-Track doesn't block transactions. It's a tracking tool, not enforcement.
-
-**Q: Can I share budgets with family?**
-A: Family sharing is planned for a future update. Currently, each user has separate budgets.
-
-### Data & Sync
-
-**Q: How often does data sync?**
-A: Real-time! Changes appear instantly on all your devices.
-
-**Q: What if I accidentally delete something?**
-A: Currently, deletions are permanent. An "undo" feature is planned. For now, edit instead of delete when uncertain.
-
-**Q: Can I export data for taxes?**
-A: Yes! Go to Settings > Data & Privacy > Export Data. Download as CSV for Excel or your tax software.
+**What's the difference between Free and Pro?**
+Free gives you full manual tracking with AI health score, anomaly detection, and cash flow forecast. Pro adds receipt scanning (30/month) and the AI digest and chat features. Business raises the scan quota to 150/month.
 
 ---
 
 ## Troubleshooting
 
-### Login Issues
+**"Invalid API key" error on load**
+Your `frontend/.env.local` is missing the Firebase configuration. See the [deployment guide](../md/deployment.md) for the required `NEXT_PUBLIC_FIREBASE_*` variables.
 
-**Problem:** "Invalid email or password"
-**Solution:**
-1. Check for typos (email is case-sensitive)
-2. Click "Forgot Password" to reset
-3. Check spam folder for reset email
-4. Clear browser cache and try again
-
-**Problem:** "Email not verified"
-**Solution:**
-1. Check inbox for verification email
-2. Click verification link
-3. If expired, request new verification email
-4. Check spam/promotions folders
-
-### Data Not Showing
-
-**Problem:** Transactions not appearing
-**Solution:**
-1. Check internet connection
-2. Refresh page (Ctrl+R or Cmd+R)
-3. Sign out and sign back in
-4. Clear browser cache
-5. Try different browser
-
-**Problem:** Reports showing "No data"
-**Solution:**
-1. Verify date range (not set to future)
-2. Check that transactions exist in that period
-3. Ensure category filter isn't too restrictive
-4. Try changing to "All Categories"
-
-### Upload Issues
-
-**Problem:** Receipt upload fails
-**Solution:**
-1. Check file size (max 5MB)
-2. Verify format (JPG, PNG, PDF only)
-3. Check internet connection
-4. Try compressing image
-5. Use mobile browser for camera uploads
-
-### Performance Issues
-
-**Problem:** App loading slowly
-**Solution:**
-1. Close unnecessary browser tabs
+**App loading slowly**
+1. Close unused browser tabs
 2. Clear browser cache
-3. Check internet speed
-4. Disable browser extensions temporarily
-5. Try incognito/private mode
+3. Disable browser extensions (especially ad blockers) temporarily
+4. Try an incognito window
 
-**Problem:** Charts not rendering
-**Solution:**
-1. Update browser to latest version
-2. Enable JavaScript
-3. Disable ad blockers for Fin-Track
-4. Try different browser
+**Transactions not appearing**
+1. Check your internet connection
+2. Hard-refresh the page (Ctrl+Shift+R / Cmd+Shift+R)
+3. Check the active date filter — it may be set to a range with no data
+4. Sign out and sign back in
 
-### Getting Help
+**Receipt upload fails**
+1. Check file size (max 10 MB) and format (JPG, PNG, PDF)
+2. Verify you're on a Pro or Business plan
+3. Check your scan quota in Settings
 
-**Can't find your answer?**
+**AI features show "not configured"**
+The ML service is either not running locally or the `GEMINI_API_KEY` is not set. See the [deployment guide](../md/deployment.md) for setup instructions.
 
-1. **Check documentation:**
-   - [Technical Docs](docs/TECHNICAL.md) for developers
-   - This User Guide for features
-
-2. **Contact support:**
-   - Email: support@fin-track.com
-   - Response time: 24-48 hours
-
-3. **Community:**
-   - GitHub Discussions: Ask questions
-   - Feature requests: Submit on GitHub Issues
-
-4. **Emergency issues:**
-   - Security concerns: security@fin-track.com
-   - Data loss: contact support immediately
+**Stripe checkout CSP errors in browser console**
+These come from browser extensions (password managers, ad blockers) trying to inject scripts into Stripe's hosted checkout page. They do not affect the checkout flow. Test in an incognito window with extensions disabled to confirm.
 
 ---
 
-## Appendix
-
-### Keyboard Shortcuts
-
-Speed up your workflow:
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+N` / `Cmd+N` | New transaction |
-| `Ctrl+B` / `Cmd+B` | New budget |
-| `Ctrl+G` / `Cmd+G` | New goal |
-| `Ctrl+F` / `Cmd+F` | Search transactions |
-| `Ctrl+,` / `Cmd+,` | Open settings |
-| `Esc` | Close dialog/modal |
-
-### Supported Currencies
-
-Over 150 currencies including:
-
-- EUR (€) - Euro
-- USD ($) - US Dollar
-- GBP (£) - British Pound
-- JPY (¥) - Japanese Yen
-- CAD - Canadian Dollar
-- AUD - Australian Dollar
-- CHF - Swiss Franc
-- CNY - Chinese Yuan
-- INR - Indian Rupee
-- BRL - Brazilian Real
-
-### Category List
-
-**Income:**
-- Salary
-- Freelance
-- Investments
-- Gifts
-- Other Income
-
-**Expenses:**
-- Food & Dining
-- Transportation
-- Housing (Rent/Mortgage)
-- Utilities
-- Healthcare
-- Entertainment
-- Shopping
-- Education
-- Travel
-- Subscriptions
-- Insurance
-- Personal Care
-- Gifts & Donations
-- Business Expenses
-- Other
-
----
-
-**Need more help?** Visit our [Support Center](https://fin-track.com/support) or email support@fin-track.com
-
-**Stay updated:** Follow [@FinTrackApp](https://twitter.com/FinTrackApp) for tips and feature announcements
-
----
-
-**Last Updated:** March 2026
-**Version:** 2.5
-**License:** Proprietary - All rights reserved
+*For developer and deployment documentation, see [README.md](../README.md) and [md/deployment.md](../md/deployment.md).*

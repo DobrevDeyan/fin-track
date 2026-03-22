@@ -7,7 +7,6 @@
 - AI budget coach, receipt scanning, anomaly detection, health score
 - Freemium model (Free → €7.99 Pro → €19.99 Business)
 - PWA with offline support, English + Bulgarian
-- ~85-90% production-ready
 
 **Core differentiator** vs Mint/YNAB/Revolut: **Privacy + No bank linking + AI insights**
 

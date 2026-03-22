@@ -1,6 +1,6 @@
-# Feature Implementation Roadmap
+# Pocket — Feature Implementation Roadmap
 
-**Based on Competitive Analysis - Updated March 4, 2026**
+**Based on Competitive Analysis - Updated March 2026**
 
 ---
 
@@ -302,17 +302,20 @@ Storage: Firebase Storage receipts/{userId}/{transactionId}/
 ## Tech Stack
 
 **Frontend:**
-- Next.js 14.2.5 (React 18, TypeScript)
+- Next.js 14 (React 18, TypeScript)
 - Tailwind CSS + shadcn/ui
 - Recharts (visualization)
 - jsPDF (PDF export)
+- next-intl (English + Bulgarian)
 
 **Backend:**
-- Firebase (Auth, Firestore, Storage, Hosting)
-- Cloud Functions (Node.js 20)
-- Google Document AI
+- Firebase (Auth, Firestore, Storage, Hosting, Cloud Functions Node.js 20)
+- Stripe via `firestore-stripe-payments` extension (subscriptions)
 
-**Current Version:** 3.0
+**ML Service (Cloud Run):**
+- Express.js on Google Cloud Run (`europe-west1`)
+- Google Document AI — Expense Parser (`566b35e21d475435`, `eu` region)
+- Google Gemini 2.5 Flash — AI digest + chat
 
 ---
 

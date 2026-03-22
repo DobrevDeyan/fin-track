@@ -1,8 +1,8 @@
-# Fin-Track Technical Documentation
+# Pocket — Technical Documentation
 
-**Version:** 2.5
+**Version:** 1.0
 **Last Updated:** March 2026
-**Framework:** Next.js 14.2.35 (App Router)
+**Framework:** Next.js 14 (App Router)
 
 ---
 
@@ -16,84 +16,74 @@
 6. [Component Architecture](#component-architecture)
 7. [State Management](#state-management)
 8. [Firebase Integration](#firebase-integration)
-9. [Testing Strategy](#testing-strategy)
-10. [Build & Deployment](#build--deployment)
-11. [Performance Optimizations](#performance-optimizations)
-12. [Security Best Practices](#security-best-practices)
-13. [Troubleshooting](#troubleshooting)
+9. [ML Service](#ml-service)
+10. [AI Features](#ai-features)
+11. [Subscription System](#subscription-system)
+12. [Security](#security)
+13. [Testing](#testing)
+14. [Build & Deployment](#build--deployment)
+15. [Performance Optimizations](#performance-optimizations)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Architecture Overview
 
-Fin-Track is a modern, full-stack personal finance tracking application built with Next.js 14 using the App Router pattern. The application follows a modular, component-based architecture with clear separation of concerns.
-
-### High-Level Architecture
+Pocket is a monorepo with three independently deployed services:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Client Layer                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Next.js UI  │  │   Contexts   │  │   Hooks      │      │
-│  │  Components  │←─│  (State Mgmt)│←─│  (Business   │      │
-│  │  (shadcn/ui) │  │              │  │   Logic)     │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                            ↕
-┌─────────────────────────────────────────────────────────────┐
-│                     Firebase Services                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Firestore   │  │     Auth     │  │   Storage    │      │
-│  │  (Database)  │  │ (User Mgmt)  │  │  (Receipts)  │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
+                    ┌────────────────────────────┐
+                    │    Frontend (Next.js 14)    │
+                    │     PWA / Static Export     │
+                    │   Firebase Hosting (CDN)    │
+                    └─────────┬──────────────────┘
+                              │
+               ┌──────────────┼──────────────────┐
+               ▼              ▼                  ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+    │   Firebase    │  │  Firestore   │  │   ML Service     │
+    │   Auth        │  │  (Database)  │  │   (Cloud Run)    │
+    └──────────────┘  └──────────────┘  │                  │
+                             ▲          │  - Document AI   │
+                             │          │  - Gemini 2.5    │
+                      ┌──────────────┐  └──────────────────┘
+                      │   Cloud      │
+                      │   Functions  │
+                      │ (Scheduled)  │
+                      └──────────────┘
 ```
 
 ### Design Principles
 
-1. **Component Composition** - Small, reusable components over large monoliths
-2. **Separation of Concerns** - UI, business logic, and data access are separated
-3. **Type Safety** - Strict TypeScript with comprehensive type definitions
-4. **Performance First** - Code splitting, lazy loading, and virtualization
-5. **Accessibility** - WCAG 2.1 AA compliance with ARIA attributes
-6. **Security** - Environment variables, PII redaction, input validation
+1. **Privacy-first** — no bank linking; only aggregated data is sent to AI services
+2. **Client-side computation** — algorithmic AI features (health score, anomaly detection, forecast) run entirely in the browser
+3. **Atomic writes** — all entry mutations update the `financialSummaries` document in the same batch write
+4. **Single source of truth** — `financialSummaries/{userId}` is the aggregated financial state; raw entries are the audit log
+5. **Type safety** — strict TypeScript throughout; no `any` without justification
+6. **Component composition** — small, reusable components; context shared only where needed
 
 ---
 
 ## Tech Stack
 
-### Frontend
-- **Framework:** Next.js 14.2.35 (App Router, React 18)
-- **Language:** TypeScript 5.4.5
-- **Styling:** Tailwind CSS 3.4.4 + CSS Modules
-- **UI Components:** shadcn/ui (Radix UI primitives)
-- **Charts:** Recharts 3.4.1
-- **Icons:** Lucide React
-- **Forms:** Native React with controlled components
-- **Internationalization:** next-intl 4.8.2
-- **Theming:** next-themes 0.3.0
-
-### Backend & Services
-- **Database:** Firebase Firestore (NoSQL)
-- **Authentication:** Firebase Auth (Email/Password, Google OAuth)
-- **Storage:** Firebase Storage (Receipt images)
-- **Functions:** Firebase Cloud Functions
-- **Analytics:** Firebase Analytics
-- **Monitoring:** Sentry 10.42.0
-
-### Development Tools
-- **Testing:** Jest 29.7.0 + React Testing Library 14.3.1
-- **Linting:** ESLint 8.57.1
-- **Type Checking:** TypeScript compiler
-- **Package Manager:** npm
-- **Version Control:** Git
-
-### Performance
-- **Virtualization:** react-window 2.2.7 (100+ items)
-- **PDF Generation:** jsPDF 2.5.1 + jspdf-autotable
-- **Image Capture:** html2canvas 1.4.1
-- **Code Splitting:** Next.js automatic
-- **Caching:** Firebase offline persistence
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 14, React 18, TypeScript |
+| **Styling** | Tailwind CSS, shadcn/ui (Radix UI) |
+| **Charts** | Recharts |
+| **Auth** | Firebase Authentication (Email + Google OAuth) |
+| **Database** | Cloud Firestore (NoSQL) |
+| **Storage** | Firebase Storage (receipt images) |
+| **Backend** | Firebase Cloud Functions (Node.js 20) |
+| **ML Service** | Express.js on Google Cloud Run (europe-west1) |
+| **Receipt Scanning** | Google Document AI (Expense Parser) |
+| **AI Digest & Chat** | Google Gemini 2.5 Flash |
+| **Subscriptions** | Stripe via `firestore-stripe-payments` Firebase Extension |
+| **Hosting** | Firebase Hosting |
+| **i18n** | next-intl (English, Bulgarian) |
+| **Export** | jsPDF, CSV |
+| **Monitoring** | Sentry |
+| **Testing** | Jest, React Testing Library |
 
 ---
 
@@ -101,87 +91,67 @@ Fin-Track is a modern, full-stack personal finance tracking application built wi
 
 ```
 fin-track/
-├── frontend/
-│   ├── app/                          # Next.js App Router pages
-│   │   ├── (app)/                   # Authenticated routes
-│   │   │   ├── dashboard/           # Main dashboard
-│   │   │   ├── reports/             # Financial reports
-│   │   │   ├── calendar/            # Calendar view
-│   │   │   └── settings/            # User settings
-│   │   ├── auth/                    # Authentication pages
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   └── forgot-password/
-│   │   ├── layout.tsx               # Root layout
-│   │   └── globals.css              # Global styles
-│   │
-│   ├── components/                   # React components
-│   │   ├── ui/                      # Base UI components (shadcn)
-│   │   │   ├── button.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   ├── input.tsx
+├── frontend/                       # Next.js 14 PWA
+│   ├── app/
+│   │   ├── (app)/                  # Authenticated routes (auth-gated)
+│   │   │   ├── dashboard/          # Main dashboard
+│   │   │   ├── reports/            # Reports & AI digest
+│   │   │   ├── calendar/           # Calendar view
+│   │   │   └── settings/           # Account & subscription settings
+│   │   ├── auth/                   # Login / register / forgot-password
+│   │   └── page.tsx                # Landing page
+│   ├── components/
+│   │   ├── dashboard/              # Feature components
+│   │   │   ├── HealthScoreCard.tsx
+│   │   │   ├── AnomalyAlert.tsx
+│   │   │   ├── CashFlowForecast.tsx
+│   │   │   ├── AIDigest.tsx
+│   │   │   ├── AIChatDrawer.tsx
 │   │   │   └── ...
-│   │   └── dashboard/               # Feature components
-│   │       ├── AddTransactionDialog.tsx
-│   │       ├── TransactionsTable.tsx
-│   │       ├── BudgetCard.tsx
-│   │       └── ...
-│   │
-│   ├── contexts/                     # React Context providers
+│   │   ├── landing/                # Marketing / landing page
+│   │   └── ui/                     # shadcn/ui base components
+│   ├── contexts/
 │   │   └── dashboard/
-│   │       ├── EntriesContext.tsx   # ❌ Not used (hook pattern)
+│   │       ├── DashboardProvider.tsx   # Nested provider wrapper
+│   │       ├── FinancialSummaryContext.tsx
 │   │       ├── BudgetsContext.tsx
 │   │       ├── GoalsContext.tsx
 │   │       ├── RecurringContext.tsx
 │   │       ├── SavingsContext.tsx
-│   │       └── DashboardProvider.tsx # Wrapper provider
-│   │
-│   ├── lib/                          # Core utilities & logic
-│   │   ├── constants/               # Application constants
-│   │   │   ├── category.constants.ts
-│   │   │   ├── currency.constants.ts
-│   │   │   ├── transaction.constants.ts
-│   │   │   ├── ui.constants.ts
-│   │   │   └── validation.constants.ts
-│   │   ├── hooks/                   # Custom React hooks
-│   │   │   └── dashboard/
-│   │   │       ├── useEntries.ts    # Transaction CRUD
-│   │   │       ├── useBudgets.ts
-│   │   │       └── types.ts
-│   │   ├── utils/                   # Helper functions
-│   │   │   ├── logger.ts            # Structured logging
-│   │   │   └── timestamp.ts         # Date conversions
-│   │   ├── firebase.ts              # Firebase initialization
-│   │   ├── firestore-*.ts           # Firestore operations
-│   │   ├── date-utils.ts            # Date formatting
-│   │   └── currency-utils.ts        # Currency formatting
-│   │
-│   ├── __tests__/                    # Test files
-│   │   ├── components/
-│   │   │   ├── AddTransactionDialog.test.tsx
-│   │   │   ├── TransactionsTable.test.tsx
-│   │   │   └── sections/
-│   │   └── utils/
-│   │       └── test-utils.tsx       # Testing utilities
-│   │
-│   ├── public/                       # Static assets
-│   │   ├── icons/
-│   │   ├── images/
-│   │   └── manifest.json
-│   │
-│   ├── .env.local                    # Environment variables (gitignored)
-│   ├── .env.local.example            # Template for env vars
-│   ├── next.config.js                # Next.js configuration
-│   ├── tailwind.config.ts            # Tailwind CSS config
-│   ├── tsconfig.json                 # TypeScript config
-│   └── package.json                  # Dependencies
+│   │       └── InsightsContext.tsx     # All 5 AI features
+│   ├── lib/
+│   │   ├── constants/              # Subscription tiers, categories, etc.
+│   │   ├── hooks/                  # useEntries, useSubscription, etc.
+│   │   ├── utils/                  # logger, timestamp, formatting
+│   │   ├── firebase.ts             # Firebase initialization
+│   │   ├── firestore-*.ts          # Firestore CRUD per collection
+│   │   ├── insights-engine.ts      # Algorithmic AI (client-side)
+│   │   ├── insights-api.ts         # ML service HTTP client
+│   │   ├── firestore-insights.ts   # AI digest Firestore cache
+│   │   └── receipt-scanner-api.ts  # Receipt upload HTTP client
+│   ├── messages/
+│   │   ├── en.json                 # English translations
+│   │   └── bg.json                 # Bulgarian translations
+│   └── public/                     # SW, manifest, icons
 │
-├── docs/                             # Documentation
-│   ├── TECHNICAL.md                 # This file
-│   ├── USER_GUIDE.md                # User documentation
-│   └── API.md                       # API reference
+├── functions/                      # Firebase Cloud Functions
+│   └── src/index.ts                # Recurring tx processor + scan quota reset
 │
-└── README.md                         # Project overview
+├── ml-service/                     # AI/ML microservice (Cloud Run)
+│   ├── src/
+│   │   ├── api-server.ts           # Express entry point + rate limiting
+│   │   ├── document-ai-handler.ts  # Receipt scanning
+│   │   ├── gemini-handler.ts       # Digest + chat (Gemini 2.5 Flash)
+│   │   ├── insights-routes.ts      # POST /api/insights/digest|chat
+│   │   └── middleware/auth.ts      # Firebase Auth token verification
+│   ├── Dockerfile
+│   └── deploy.sh
+│
+├── docs/                           # Documentation
+├── md/                             # Internal docs (deployment, strategy)
+├── firestore.rules                 # Security rules
+├── firestore.indexes.json
+└── firebase.json
 ```
 
 ---
@@ -190,332 +160,215 @@ fin-track/
 
 ### Prerequisites
 
-- **Node.js:** >= 18.0.0 (LTS recommended)
-- **npm:** >= 9.0.0
-- **Git:** Latest version
-- **Firebase Account:** Free tier sufficient for development
+- **Node.js** 20+ LTS
+- **npm** 9+
+- **Firebase CLI**: `npm install -g firebase-tools`
+- **Google Cloud CLI** (optional — only needed for ML service deployment)
 
 ### Initial Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/fin-track.git
-   cd fin-track/frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   ```bash
-   cp .env.local.example .env.local
-   ```
-
-   Edit `.env.local` with your Firebase credentials:
-   ```env
-   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-   ```
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   # Server runs at http://localhost:3001
-   ```
-
-### Development Commands
-
 ```bash
-# Development
-npm run dev              # Start dev server (port 3001)
-npm run dev:turbo        # Start with Turbopack (experimental)
+git clone <repo-url>
+cd fin-track
 
-# Build
-npm run build            # Production build
-npm start                # Start production server
+# Frontend
+cd frontend
+npm install
 
-# Testing
-npm test                 # Run all tests
-npm run test:watch       # Watch mode
-npm run test:coverage    # Generate coverage report
+# Cloud Functions
+cd ../functions
+npm install
 
-# Code Quality
-npm run lint             # Run ESLint
-npx tsc --noEmit         # Type check without build
+# ML Service (optional — AI features only)
+cd ../ml-service
+npm install
 ```
 
-### Firebase Setup
+### Environment Variables
 
-1. **Create Firebase Project**
-   - Go to [Firebase Console](https://console.firebase.google.com)
-   - Create new project
-   - Enable Google Analytics (optional)
+Create `frontend/.env.local`:
 
-2. **Enable Services**
-   - **Authentication:** Email/Password, Google OAuth
-   - **Firestore Database:** Start in test mode, then configure rules
-   - **Storage:** Enable for receipt uploads
-   - **Analytics:** Optional
+```env
+# Firebase (required)
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
-3. **Configure Firestore Security Rules**
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       // Users can only access their own data
-       match /users/{userId}/{document=**} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-     }
-   }
-   ```
+# ML Service
+NEXT_PUBLIC_ML_SERVICE_URL=http://localhost:8000
+
+# Stripe (test keys for local dev)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_...
+NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID=price_...
+```
+
+### Running Locally
+
+```bash
+# Terminal 1 — Frontend (http://localhost:3001)
+cd frontend && npm run dev
+
+# Terminal 2 — ML Service (http://localhost:8000, optional)
+cd ml-service && npm run dev
+
+# Terminal 3 — Firebase Emulators (optional)
+firebase emulators:start
+```
 
 ---
 
 ## Core Concepts
 
-### 1. Transactions (Entries)
+### Financial Summary (Single Source of Truth)
 
-Financial transactions are the core entity in Fin-Track.
+Every entry mutation (add, edit, delete) atomically updates `financialSummaries/{userId}` in the same Firestore batch write:
 
-**Type Definition:**
 ```typescript
-interface Entry {
-  id: string
-  userId: string
-  description: string
-  amount: number              // Always positive
-  currency: string            // ISO 4217 (EUR, USD, etc.)
-  category: string
-  type: "income" | "expense" | "transfer"
-  date: string               // ISO 8601
-  notes?: string
-  tags?: string[]
-  receiptUrl?: string
-  createdAt: Timestamp
-  updatedAt: Timestamp
-}
+// All mutations batch-update the summary
+const batch = writeBatch(db)
+batch.set(entryRef, entryData)
+batch.update(summaryRef, {
+  totalIncome: increment(amount),
+  [`months.${yyyyMM}.income`]: increment(amount),
+  [`months.${yyyyMM}.incomeByCategory.${category}`]: increment(amount),
+})
+await batch.commit()
 ```
 
-**CRUD Operations:**
-- Managed by `useEntries()` hook (NOT context)
-- Firestore path: `users/{userId}/entries/{entryId}`
-- Real-time sync with Firestore listeners
+This means dashboard metrics are always in sync — no re-aggregation needed.
 
-### 2. Budgets
+### Data Loading Pattern
 
-Monthly/weekly spending limits per category.
+No real-time listeners. Data is loaded once on mount via explicit `load*()` calls in each context. The provider hierarchy controls load order:
 
-**Type Definition:**
+```
+FinancialSummaryProvider
+  └── SavingsProvider
+        └── BudgetsProvider
+              └── GoalsProvider
+                    └── RecurringProvider
+                          └── InsightsProvider
+                                └── children
+```
+
+`InsightsContext` calls `loadGoals()` as a side effect — goals are not loaded elsewhere on the dashboard by default.
+
+### Key Types
+
 ```typescript
+// Flat collection, not subcollection
+interface EntryDocument {
+  userId: string
+  type: "income" | "expense"
+  amount: number
+  category: string
+  date: Timestamp
+  description: string
+  tags?: string[]
+  notes?: string
+  receiptUrl?: string
+  recurring?: boolean
+}
+
+// Single doc per user, keyed by month
+interface FinancialSummaryDocument {
+  userId: string
+  totalIncome: number
+  totalExpenses: number
+  months: {
+    [yyyyMM: string]: {
+      income: number
+      expenses: number
+      expensesByCategory: { [category: string]: number }
+      incomeByCategory: { [category: string]: number }
+    }
+  }
+  updatedAt: Timestamp
+}
+
+// ISO date strings (not Timestamps)
 interface Budget {
   id: string
   userId: string
   name: string
   category: string
   amount: number
-  currency: string
   period: "weekly" | "monthly" | "yearly"
-  startDate: string
-  endDate: string
+  startDate: string   // ISO
+  endDate: string     // ISO
+  alertThreshold: number
   isActive: boolean
-  alertThreshold: number     // Percentage (0-100)
-  createdAt: Timestamp
 }
+
+// nextDate is a Firestore Timestamp
+type RecurringTransaction = RecurringEntryDocument & { id: string }
+
+type Goal = GoalDocument & { id: string }
 ```
-
-**Features:**
-- Alert when spending exceeds threshold (e.g., 80%)
-- Progress visualization with color coding
-- Renewal functionality
-
-### 3. Savings Goals
-
-Long-term financial targets.
-
-**Type Definition:**
-```typescript
-interface SavingsGoal {
-  id: string
-  userId: string
-  name: string
-  targetAmount: number
-  currentAmount: number
-  currency: string
-  deadline: string
-  category: string
-  isCompleted: boolean
-  createdAt: Timestamp
-}
-```
-
-### 4. Recurring Transactions
-
-Automated regular transactions.
-
-**Type Definition:**
-```typescript
-interface RecurringTransaction {
-  id: string
-  userId: string
-  description: string
-  amount: number
-  category: string
-  type: "income" | "expense"
-  frequency: "daily" | "weekly" | "monthly" | "yearly"
-  nextDate: string
-  isActive: boolean
-  createdAt: Timestamp
-}
-```
-
-**Auto-generation:**
-- Cloud Function triggers daily
-- Creates entries on `nextDate`
-- Updates `nextDate` based on frequency
 
 ---
 
 ## Component Architecture
 
-### Pattern: CollapsibleSection Wrapper
+### Dashboard Section Pattern
 
-All dashboard sections follow this pattern:
+All dashboard sections follow this structure:
 
 ```tsx
-// Structure
-<CollapsibleSection title="Section Title" defaultOpen={true}>
-  <SectionHeader />           // Add button, filters
-  <SectionList />            // Card grid
-  <SectionDialog />          // Add/Edit modal
-</CollapsibleSection>
-
-// Example: BudgetsSection
-<BudgetsSection>
+<CollapsibleSection title="Budgets" defaultOpen={true}>
   <BudgetList>
-    <BudgetCard />           // Individual budget
+    <BudgetCard />
   </BudgetList>
-  <BudgetDialog />           // Add/Edit
-</BudgetsSection>
+  <BudgetDialog />  {/* Add/Edit modal */}
+</CollapsibleSection>
 ```
 
-### Component Hierarchy
+### Error Boundaries
 
-```
-Dashboard
-├── DashboardProvider (Context wrapper)
-│   ├── EntriesSection (uses useEntries hook)
-│   │   └── TransactionsTable
-│   │       └── VirtualizedTransactionTable (100+ items)
-│   ├── BudgetsSection (uses BudgetsContext)
-│   │   ├── BudgetList
-│   │   │   └── BudgetCard
-│   │   └── BudgetDialog
-│   ├── GoalsSection (uses GoalsContext)
-│   ├── RecurringSection (uses RecurringContext)
-│   └── SavingsSection (uses SavingsContext)
-```
+Each dashboard section is wrapped in `SectionErrorBoundary` — a React class component that catches render errors and shows a graceful fallback instead of crashing the whole dashboard.
 
-### Key Design Patterns
+### shadcn/ui Components Available
 
-1. **Controlled Components**
-   - All form inputs use `value` + `onChange`
-   - State lifted to parent dialog component
+`accordion`, `avatar`, `badge`, `button`, `card`, `chart`, `checkbox`, `collapsible-section`, `dialog`, `dropdown-menu`, `input`, `label`, `navigation-menu`, `progress`, `select`, `sheet`, `skeleton`, `popover`, `table`, `tabs`, `textarea`, `toast`
 
-2. **Optimistic Updates**
-   - UI updates immediately
-   - Firestore sync happens in background
-   - Error states trigger rollback
+All shadcn Sheets use `[&>button]:hidden` to suppress the default close button (replaced with custom close logic).
 
-3. **Compound Components**
-   - Related components share state via composition
-   - Example: `<Dialog>` + `<DialogContent>` + `<DialogFooter>`
+### Mobile UX Conventions
 
-4. **Render Props (Limited Use)**
-   - Used sparingly for complex conditional rendering
-   - Prefer composition over render props
+- **AppNavbar mobile Sheet** — swipe-right gesture closes it (>60px horizontal, more horizontal than vertical)
+- **AIChatDrawer FAB** — positioned `bottom-6 left-6` (opposite the Quick Expense "+" at `bottom-6 right-6`)
 
 ---
 
 ## State Management
 
-### Pattern Overview
+| Feature | Pattern | Reason |
+|---------|---------|--------|
+| Transactions (entries) | `useEntries()` hook | Used only in one section |
+| Budgets | `BudgetsContext` | Shared across multiple components |
+| Goals | `GoalsContext` | Shared across dashboard + insights |
+| Recurring | `RecurringContext` | Shared state |
+| Savings | `SavingsContext` | Shared state |
+| Financial Summary | `FinancialSummaryContext` | Global — needed everywhere |
+| Auth | `AuthContext` | Global user state |
+| AI Insights | `InsightsContext` | Wraps all 5 AI features |
 
-| Feature | State Management | Why |
-|---------|-----------------|-----|
-| Entries (Transactions) | `useEntries()` hook | Simple CRUD, no cross-component sharing needed |
-| Budgets | Context (`BudgetsContext`) | Shared across multiple components |
-| Goals | Context (`GoalsContext`) | Shared state |
-| Recurring | Context (`RecurringContext`) | Shared state |
-| Savings | Context (`SavingsContext`) | Shared state |
-| Auth | Context (`AuthContext`) | Global user state |
+### Context Consumer Pattern
 
-### Hook Pattern: useEntries()
-
-**Why not Context?**
-- Entries are only used in one section
-- Avoids unnecessary re-renders
-- Simpler mental model
-
-**Usage:**
 ```typescript
-const {
-  entries,
-  loading,
-  addEntry,
-  updateEntry,
-  deleteEntry,
-  error
-} = useEntries()
-
-// Add transaction
-await addEntry({
-  description: "Groceries",
-  amount: 50,
-  category: "Food & Dining",
-  type: "expense",
-  date: new Date().toISOString()
-})
+const { budgets, loading, addBudget, updateBudget, deleteBudget } = useBudgetsContext()
 ```
 
-### Context Pattern: Budgets
-
-**Why Context?**
-- Budget data needed in multiple components
-- Alert calculations shared across UI
-- Spending totals computed once
-
-**Usage:**
-```typescript
-// Provider wraps dashboard
-<BudgetsProvider>
-  <BudgetsSection />
-</BudgetsProvider>
-
-// Consumer hook
-const {
-  budgets,
-  loading,
-  openDialog,
-  addBudget,
-  updateBudget,
-  deleteBudget
-} = useBudgetsContext()
-```
-
-### Authentication State
+### Auth Guard
 
 ```typescript
-const { user, loading, signIn, signOut, signUp } = useAuth()
+const { user, loading } = useAuth()
 
-// Protected route pattern
 if (loading) return <LoadingSpinner />
 if (!user) {
   router.push('/auth/login')
@@ -527,697 +380,331 @@ if (!user) {
 
 ## Firebase Integration
 
-### Initialization (Modern API)
+### Initialization
 
-**File:** `lib/firebase.ts`
+`frontend/lib/firebase.ts` reads all config from `NEXT_PUBLIC_FIREBASE_*` env vars and initializes on the client side only:
 
 ```typescript
-// Modern offline persistence (Firebase v10+)
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager
-} from "firebase/firestore"
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore"
 
-const db = initializeFirestore(app, {
+// Modern offline persistence API (non-deprecated)
+db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
 })
 ```
 
-**Features:**
-- ✅ Offline persistence with multi-tab sync
-- ✅ Environment variable configuration
-- ✅ Structured logging with PII redaction
-- ✅ Lazy analytics loading (3s delay)
+### Firestore Collections
 
-### Firestore Operations
+| Collection | Document ID | Description |
+|-----------|------------|-------------|
+| `users` | Firebase UID | User profile (name, email, currency, language) |
+| `entries` | Auto | Transactions (flat, not subcollection) |
+| `budgets` | Auto | Budget limits per category |
+| `goals` | Auto | Savings goals |
+| `savingsAccounts` | Auto | Virtual savings accounts |
+| `recurringTransactions` | Auto | Recurring transaction templates |
+| `financialSummaries` | Firebase UID | Aggregated monthly data (single doc per user) |
+| `aiInsights` | Firebase UID | Cached AI-generated monthly digests |
+| `customers` | Firebase UID | Stripe customer data (managed by extension) |
+| `products` | Stripe product ID | Stripe products with `firebaseRole` metadata |
 
-**Pattern: Collection Queries**
-```typescript
-// Real-time listener
-const entriesRef = collection(db, `users/${userId}/entries`)
-const q = query(
-  entriesRef,
-  where("date", ">=", startDate),
-  orderBy("date", "desc"),
-  limit(100)
-)
+### Security Rules
 
-const unsubscribe = onSnapshot(q, (snapshot) => {
-  const entries = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }))
-  setEntries(entries)
-})
-
-// Cleanup
-return () => unsubscribe()
-```
-
-**Pattern: CRUD Operations**
-```typescript
-// Create
-await addDoc(collection(db, `users/${userId}/entries`), {
-  ...entryData,
-  createdAt: serverTimestamp(),
-  updatedAt: serverTimestamp()
-})
-
-// Update
-await updateDoc(doc(db, `users/${userId}/entries/${entryId}`), {
-  ...updates,
-  updatedAt: serverTimestamp()
-})
-
-// Delete
-await deleteDoc(doc(db, `users/${userId}/entries/${entryId}`))
-```
-
-### Security Rules (Production)
+All user data is scoped by `userId`. Key rules:
 
 ```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Helper functions
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
+// All collections with a userId field
+allow read, write: if request.auth != null
+  && resource.data.userId == request.auth.uid;
 
-    function hasValidAmount() {
-      return request.resource.data.amount is number
-        && request.resource.data.amount > 0
-        && request.resource.data.amount <= 1000000;
-    }
+// Summary and insights (doc ID = UID)
+match /financialSummaries/{userId} {
+  allow read, write: if request.auth.uid == userId;
+}
+match /aiInsights/{userId} {
+  allow read, write: if request.auth.uid == userId;
+}
 
-    // User data
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-
-      // Entries
-      match /entries/{entryId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && hasValidAmount();
-        allow update: if isOwner(userId) && hasValidAmount();
-        allow delete: if isOwner(userId);
-      }
-
-      // Budgets, Goals, etc.
-      match /{document=**} {
-        allow read, write: if isOwner(userId);
-      }
-    }
-  }
+// Stripe collections (managed by extension)
+match /customers/{uid} {
+  allow read: if request.auth.uid == uid;
 }
 ```
 
 ---
 
-## Testing Strategy
+## ML Service
 
-### Test Coverage
+The ML service is an Express.js server deployed to Cloud Run (`europe-west1`). It handles two capabilities that cannot run client-side: receipt OCR and Gemini AI calls.
 
-```
-Total Tests: 122
-Passing: 115 (94%)
-Coverage: 75%+ on critical paths
-```
+### Endpoints
 
-### Testing Pyramid
+| Method | Path | Auth | Rate Limit | Description |
+|--------|------|------|------------|-------------|
+| `GET` | `/api/health` | None | — | Service health check |
+| `POST` | `/api/upload-bill` | Firebase token | 10/day/user | Receipt scanning via Document AI |
+| `POST` | `/api/insights/digest` | Firebase token | 50/day/user | Generate AI monthly digest |
+| `POST` | `/api/insights/chat` | Firebase token | 50/day/user | AI budget coach chat |
 
-```
-        ┌─────────────┐
-        │   E2E (0)   │  Future: Playwright
-        ├─────────────┤
-        │ Integration │  Component + Context
-        │    (37)     │
-        ├─────────────┤
-        │    Unit     │  Utilities, hooks
-        │    (85)     │
-        └─────────────┘
-```
+### Authentication
 
-### Unit Tests
+All sensitive endpoints require a valid Firebase Auth ID token in the `Authorization: Bearer <token>` header. The middleware verifies this with `firebase-admin`.
 
-**File:** `__tests__/components/AddTransactionDialog.test.tsx`
+### Gemini Setup
 
-```typescript
-describe('AddTransactionDialog', () => {
-  it('validates zero amount', async () => {
-    const user = userEvent.setup()
-    render(<AddTransactionDialog {...props} />)
+- **Model**: `gemini-2.5-flash` (the only model available on the free tier for new Google AI Studio projects)
+- `gemini-1.5-flash` returns 404 (deprecated on v1beta for new projects)
+- `gemini-2.0-flash` has zero quota on new projects' free tier
+- Input sanitization (`sanitizeInput`/`sanitizeLabel`) applied to all user data before Gemini prompts
 
-    await user.type(screen.getByLabelText(/amount/i), '0')
-    await user.click(screen.getByRole('button', { name: /add/i }))
-
-    expect(screen.getByRole('alert')).toHaveTextContent(/greater than 0/i)
-    expect(mockOnSubmit).not.toHaveBeenCalled()
-  })
-})
-```
-
-### Integration Tests
-
-**File:** `__tests__/components/sections/BudgetsSection.test.tsx`
-
-```typescript
-// Mock context
-jest.mock('@/contexts/dashboard/BudgetsContext', () => ({
-  useBudgetsContext: () => ({
-    budgets: mockBudgets,
-    loading: false,
-    addBudget: mockAdd
-  })
-}))
-
-it('displays budgets from context', () => {
-  render(<BudgetsSection />)
-  expect(screen.getByText('Groceries Budget')).toBeInTheDocument()
-})
-```
-
-### Test Utilities
-
-**File:** `__tests__/utils/test-utils.tsx`
-
-```typescript
-// Custom render with providers
-export function render(ui: React.ReactElement) {
-  return rtlRender(
-    <IntlProvider locale="en" messages={{}}>
-      {ui}
-    </IntlProvider>
-  )
-}
-```
-
-### Running Tests
+### Local Development
 
 ```bash
-# All tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-# Opens: coverage/lcov-report/index.html
-
-# Single file
-npm test AddTransactionDialog
-
-# Debug mode
-node --inspect-brk node_modules/.bin/jest --runInBand
+cd ml-service
+cp .env.example .env
+# Fill in GCP_PROJECT_ID, GCP_PROCESSOR_ID, GEMINI_API_KEY
+npm run dev   # Starts on port 8000
 ```
+
+Without `GEMINI_API_KEY`, AI features show "AI not configured" gracefully — algorithmic features still work.
+
+### Deployment
+
+```bash
+cd ml-service
+bash deploy.sh   # Builds Docker image via Cloud Build, deploys to Cloud Run
+```
+
+See [md/deployment.md](../md/deployment.md) for the full deployment guide.
+
+---
+
+## AI Features
+
+All five AI features are implemented across these files:
+
+| File | Purpose |
+|------|---------|
+| `frontend/lib/insights-engine.ts` | Algorithmic functions (health score, anomaly Z-score, forecast) |
+| `frontend/lib/firestore-insights.ts` | AI digest Firestore cache read/write |
+| `frontend/lib/insights-api.ts` | HTTP client for ML service endpoints |
+| `frontend/contexts/dashboard/InsightsContext.tsx` | Context wrapping all 5 features |
+| `frontend/components/dashboard/HealthScoreCard.tsx` | SVG ring score + popover breakdown |
+| `frontend/components/dashboard/AnomalyAlert.tsx` | Dismissible Z-score banner |
+| `frontend/components/dashboard/CashFlowForecast.tsx` | 90-day Recharts AreaChart |
+| `frontend/components/dashboard/AIDigest.tsx` | Gemini monthly narrative |
+| `frontend/components/dashboard/AIChatDrawer.tsx` | Floating chat button + Sheet |
+| `ml-service/src/gemini-handler.ts` | Gemini 2.5 Flash integration |
+| `ml-service/src/insights-routes.ts` | POST /api/insights/digest + chat |
+
+### Client-Side Features (Free, Zero Cost)
+
+The health score, anomaly detection, and cash flow forecast run entirely in the browser. No data leaves the app for these features.
+
+### Gemini Features (Pro & Business)
+
+The AI digest and chat call the ML service, which calls Gemini. Auth tokens are retrieved via `auth.currentUser?.getIdToken()` before each call.
+
+---
+
+## Subscription System
+
+Pocket uses the **`firestore-stripe-payments` Firebase Extension** for all Stripe integration.
+
+### How It Works
+
+1. User clicks upgrade → frontend creates a Stripe Checkout Session via the extension's Firestore-triggered Cloud Function
+2. User completes checkout on Stripe's hosted page
+3. Stripe webhook fires → extension writes subscription data to `customers/{uid}/subscriptions`
+4. `useSubscription` hook reads the subscription from Firestore to determine the user's tier
+
+### Subscription Tiers
+
+Defined in `frontend/lib/constants/subscription.constants.ts`:
+
+| Role | Plan | Receipt Scans/month |
+|------|------|---------------------|
+| `free` | Free | 0 |
+| `pro` | Pro (€7.99/mo) | 30 |
+| `business` | Business (€19.99/mo) | 150 |
+
+The `firebaseRole` metadata on Stripe Products (`pro` or `business`) maps directly to these roles.
+
+### Scan Quota
+
+The `resetMonthlyScanCounts` Cloud Function runs on the 1st of each month at 00:05 UTC and resets all users' `monthlyScanCount` to 0 in the `users` collection.
+
+### Testing Subscriptions
+
+Use Stripe test mode with these card details:
+
+| Field | Value |
+|-------|-------|
+| Card number | `4242 4242 4242 4242` |
+| Expiry | Any future date (e.g. `12/34`) |
+| CVC | Any 3 digits (e.g. `123`) |
+| Name / ZIP | Any value |
+
+---
+
+## Security
+
+### Firestore Rules
+
+- All `allow list` queries use `resource.data.userId == request.auth.uid`
+- `financialSummaries` and `aiInsights` use the user's UID as the document ID for access control
+- Stripe extension collections (`customers`, `products`) have their own rules
+
+### ML Service
+
+- Firebase Auth token verification on all sensitive endpoints (`middleware/auth.ts`)
+- `express-rate-limit`: uploads 10/day/user, insights 50/day/user, global 200/15min
+- Prompt injection protection: `sanitizeInput`/`sanitizeLabel` strip special characters before Gemini calls
+- CORS restricted to known origins via `FRONTEND_URL` env var
+
+### Frontend
+
+- All `NEXT_PUBLIC_FIREBASE_*` credentials in `.env.local` (gitignored)
+- PII auto-redacted from structured logger (`frontend/lib/utils/logger.ts`)
+- React escapes all rendered values by default — no `dangerouslySetInnerHTML`
+
+### GDPR
+
+Account deletion (Settings → Account Settings) batch-deletes all Firestore collections for the user and then deletes the Firebase Auth account. Implemented in `frontend/lib/firestore-users.ts`.
+
+---
+
+## Testing
+
+```bash
+cd frontend
+
+npm test                # Run all tests
+npm run test:watch      # Watch mode
+npm run test:coverage   # Coverage report (opens coverage/lcov-report/index.html)
+npm test AddTransaction # Single file
+```
+
+Tests use **Jest** and **React Testing Library**. Contexts are mocked in integration tests — no real Firestore connections in tests.
 
 ---
 
 ## Build & Deployment
 
-### Production Build
+### Frontend Build
 
 ```bash
-# Type check
-npx tsc --noEmit
-
-# Build
-npm run build
-
-# Output
-├── .next/
-│   ├── static/           # Static assets
-│   ├── server/           # Server bundles
-│   └── standalone/       # Standalone server (optional)
-```
-
-### Build Optimization
-
-**Automatic by Next.js:**
-- Code splitting per route
-- Image optimization (Sharp)
-- Font optimization (next/font)
-- CSS minification
-- Tree shaking
-
-**Manual Optimizations:**
-- Dynamic imports for heavy components
-- Virtualization for long lists (100+ items)
-- Lazy loading for analytics (3s delay)
-
-### Environment Variables
-
-**Required for build:**
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=...
-```
-
-**Build-time validation:**
-- Next.js validates all `NEXT_PUBLIC_*` vars at build time
-- Missing vars cause build failure
-
-### Deployment Options
-
-#### Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
 cd frontend
-vercel
-
-# Production
-vercel --prod
+npm run build
 ```
 
-**Automatic:**
-- Push to `main` branch
-- Vercel auto-deploys
-- Preview deployments for PRs
-
-#### Self-Hosted
+The build script:
+1. Runs `sync-version` — updates cache-busting version in `sw.js`, `manifest.json`, and `layout.tsx`
+2. Runs `next build` — static export to `frontend/out/`
 
 ```bash
-# Build standalone
-npm run build
-
-# Start server
-npm start
-# Or use PM2, Docker, etc.
+firebase deploy --only hosting   # Deploy to Firebase Hosting CDN
 ```
 
-**Docker example:**
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY .next .next
-COPY public public
-CMD ["npm", "start"]
+### Cloud Functions
+
+```bash
+firebase deploy --only functions
 ```
 
-### Performance Monitoring
+Requires the Firebase Blaze (pay-as-you-go) plan for scheduled functions.
 
-**Metrics tracked:**
-- First Contentful Paint (FCP): < 1.8s
-- Largest Contentful Paint (LCP): < 2.5s
-- Time to Interactive (TTI): < 3.8s
-- Cumulative Layout Shift (CLS): < 0.1
+### ML Service
 
-**Tools:**
-- Lighthouse CI
-- Sentry Performance Monitoring
-- Firebase Analytics
+```bash
+cd ml-service && bash deploy.sh
+```
+
+Builds a Docker container via Cloud Build and deploys to Cloud Run (`europe-west1`, 512 MB RAM, 1 CPU, 0–3 instances).
+
+### Full Deploy (after initial setup)
+
+```bash
+# ML service (only if ml-service code changed)
+cd ml-service && bash deploy.sh && cd ..
+
+# Everything Firebase
+cd frontend && npm run build && cd ..
+firebase deploy
+```
+
+For detailed step-by-step instructions, see [md/deployment.md](../md/deployment.md).
 
 ---
 
 ## Performance Optimizations
 
-### 1. Virtualization
+### Virtualization
 
-**When:** 100+ transactions displayed
+Lists with 100+ entries automatically switch to `react-window` virtualised rendering (~95% faster for 1000+ items).
 
-**Implementation:**
+### Code Splitting
+
+Next.js automatically splits code per route. Heavy components use dynamic imports:
+
 ```typescript
-// Automatic activation
-const THRESHOLD = 100
-const shouldVirtualize = transactions.length >= THRESHOLD
-
-{shouldVirtualize ? (
-  <VirtualizedTransactionTable transactions={transactions} />
-) : (
-  <TransactionsTable transactions={transactions} />
-)}
-```
-
-**Library:** react-window `List` component
-
-**Performance gain:** ~95% faster rendering for 1000+ items
-
-### 2. Code Splitting
-
-**Route-based (automatic):**
-```typescript
-// Each route in app/ is a separate chunk
-app/
-├── dashboard/page.tsx    → dashboard-chunk.js
-├── reports/page.tsx      → reports-chunk.js
-└── settings/page.tsx     → settings-chunk.js
-```
-
-**Component-based (manual):**
-```typescript
-import dynamic from 'next/dynamic'
-
 const HeavyChart = dynamic(() => import('./HeavyChart'), {
   loading: () => <Skeleton />,
-  ssr: false  // Client-only
+  ssr: false
 })
 ```
 
-### 3. Image Optimization
+### Package Import Optimization
 
-```typescript
-import Image from 'next/image'
+`next.config.js` uses `optimizePackageImports` for `lucide-react`, `@radix-ui/react-icons`, `firebase/firestore`, and `firebase/auth` to reduce bundle size.
 
-<Image
-  src="/receipts/image.jpg"
-  width={400}
-  height={300}
-  alt="Receipt"
-  loading="lazy"
-  quality={75}  // Balance size/quality
-/>
-```
+### Firebase Offline Persistence
 
-**Benefits:**
-- WebP/AVIF format conversion
-- Responsive sizes generated
-- Lazy loading by default
-- Automatic blur placeholder
+Firestore's `persistentLocalCache` with `persistentMultipleTabManager` caches data locally and syncs across tabs. The app works fully offline for cached data.
 
-### 4. Firestore Query Optimization
+### Analytics Lazy Load
 
-**Compound indexes:**
-```javascript
-// Firestore indexes
-collection: users/{userId}/entries
-fields: [date DESC, category ASC]
-```
-
-**Pagination:**
-```typescript
-// Limit results
-const q = query(entriesRef, limit(50))
-
-// Cursor-based pagination
-const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]
-const next = query(entriesRef, startAfter(lastVisible), limit(50))
-```
-
-### 5. Caching Strategy
-
-**Firestore offline persistence:**
-- Recent data cached locally
-- Works offline automatically
-- Sync when connection restored
-
-**Next.js caching:**
-```typescript
-// Static generation
-export const revalidate = 3600  // 1 hour
-
-// Dynamic with cache
-fetch(url, { next: { revalidate: 60 } })
-```
-
----
-
-## Security Best Practices
-
-### 1. Input Validation
-
-**Client-side:**
-```typescript
-const validateAmount = (value: string): boolean => {
-  const num = parseFloat(value)
-
-  if (isNaN(num)) return false
-  if (num <= 0) return false
-  if (num > MAX_AMOUNT) return false
-
-  return true
-}
-```
-
-**Server-side (Firestore Rules):**
-```javascript
-function hasValidAmount() {
-  return request.resource.data.amount is number
-    && request.resource.data.amount > 0
-    && request.resource.data.amount <= 1000000;
-}
-```
-
-### 2. PII Redaction
-
-**Structured logger:**
-```typescript
-import { logger } from "@/lib/utils/logger"
-
-// Automatically redacts:
-// - Email addresses
-// - Phone numbers
-// - Credit card numbers
-// - SSNs
-
-logger.info("User action", {
-  userId: "abc123",         // ✅ Allowed
-  email: "user@example.com" // ❌ Auto-redacted
-})
-```
-
-### 3. Environment Variables
-
-**Never commit:**
-- API keys
-- Firebase credentials
-- Secret tokens
-
-**Use .env.local:**
-```bash
-# .gitignore
-.env.local
-.env*.local
-```
-
-**Validation:**
-```typescript
-if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-  throw new Error("Missing Firebase API key")
-}
-```
-
-### 4. XSS Prevention
-
-**React escapes by default:**
-```tsx
-// Safe - React escapes HTML
-<div>{userInput}</div>
-
-// Dangerous - bypass escaping
-<div dangerouslySetInnerHTML={{ __html: userInput }} /> // ❌ Avoid
-```
-
-**Sanitize if needed:**
-```typescript
-import DOMPurify from 'dompurify'
-
-const clean = DOMPurify.sanitize(dirtyHTML)
-```
-
-### 5. CSRF Protection
-
-**Next.js built-in:**
-- SameSite cookies
-- CORS headers
-- Origin validation
-
-**Firebase Security Rules:**
-- User-scoped data access
-- Server-side validation
+Firebase Analytics is initialised 3 seconds after page load to avoid blocking the critical path.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+**`auth/invalid-api-key`**
+Firebase env vars are missing or blank in `frontend/.env.local`. Ensure all `NEXT_PUBLIC_FIREBASE_*` vars are set and restart the dev server.
 
-#### 1. Firebase "Permission Denied"
+**`permission-denied` from Firestore**
+The user is not authenticated or the security rules don't match. Verify `request.auth.uid` matches `resource.data.userId` in your rules, and check that the user is signed in.
 
-**Symptom:** Firestore queries fail with permission denied
-
-**Cause:** Security rules not configured or user not authenticated
-
-**Fix:**
-```javascript
-// Firestore rules
-match /users/{userId}/{document=**} {
-  allow read, write: if request.auth.uid == userId;
-}
-```
-
-Verify authentication:
-```typescript
-const { user } = useAuth()
-console.log("Authenticated:", !!user)
-```
-
-#### 2. Environment Variables Not Loading
-
-**Symptom:** `process.env.NEXT_PUBLIC_*` is undefined
-
-**Cause:** Missing `.env.local` or incorrect naming
-
-**Fix:**
-1. Copy `.env.local.example` to `.env.local`
-2. Ensure variables start with `NEXT_PUBLIC_`
-3. Restart dev server after changes
-
+**AI chat returns "not configured"**
+`GEMINI_API_KEY` is not set on the ML service. Check with:
 ```bash
-# Restart required
-npm run dev
+gcloud run services describe ml-service --region europe-west1 --project fin-track-adc2c \
+  --format "yaml(spec.template.spec.containers[0].env)"
 ```
-
-#### 3. Build Errors - Type Mismatches
-
-**Symptom:** TypeScript errors during build
-
-**Cause:** Strict mode catches issues missed in dev
-
-**Fix:**
+Update without wiping other vars:
 ```bash
-# Check types without build
-npx tsc --noEmit
-
-# Fix and re-run
-npm run build
+gcloud run services update ml-service \
+  --update-env-vars GEMINI_API_KEY=your_key \
+  --region europe-west1 --project fin-track-adc2c
 ```
 
-#### 4. "Module not found" Errors
+**Gemini 404 / quota errors**
+- 404 on `gemini-1.5-flash` — deprecated on v1beta for new projects; use `gemini-2.5-flash`
+- quota `limit:0` on `gemini-2.0-flash` — not on free tier for new projects; use `gemini-2.5-flash`
 
-**Symptom:** Import errors for valid modules
-
-**Cause:** Path aliases not configured or cache issues
-
-**Fix:**
+**Frontend build fails with TypeScript errors**
 ```bash
-# Clear Next.js cache
-rm -rf .next
-
-# Reinstall dependencies
-rm -rf node_modules package-lock.json
-npm install
-
-# Rebuild
-npm run build
+npx tsc --noEmit   # Check types without building
 ```
 
-#### 5. Virtualized List Not Rendering
+**Environment variable not loading**
+Env vars must start with `NEXT_PUBLIC_` to be available in the browser. Always restart the dev server after changing `.env.local`.
 
-**Symptom:** react-window List shows blank
-
-**Cause:** Missing height prop or incorrect rowHeight
-
-**Fix:**
-```typescript
-<List
-  height={600}        // Required: container height
-  rowHeight={80}      // Required: row height
-  rowCount={items.length}
-  rowComponent={Row}
-  rowProps={{ items }}
-  style={{ width: "100%" }}
-/>
+**ML service CORS error**
+Verify `FRONTEND_URL` on Cloud Run includes all required origins:
 ```
-
-### Debug Tools
-
-**TypeScript Check:**
-```bash
-npx tsc --noEmit
+https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000
 ```
-
-**Build Analysis:**
-```bash
-npm run build
-# Check .next/build-manifest.json for chunk sizes
-```
-
-**Firestore Debug:**
-```typescript
-import { logger } from "@/lib/utils/logger"
-
-logger.firestore("Query", { collection: "entries", filters })
-```
-
-**React DevTools:**
-- Profiler tab for performance
-- Components tab for state inspection
-
----
-
-## Contributing Guidelines
-
-### Code Standards
-
-1. **TypeScript:** Strict mode, no `any` without justification
-2. **Formatting:** Prettier with 2-space indent
-3. **Naming:**
-   - Components: PascalCase
-   - Files: kebab-case or PascalCase (components)
-   - Functions: camelCase
-4. **Comments:** JSDoc for public APIs, inline for complex logic
-
-### Pull Request Process
-
-1. Create feature branch: `feature/description` or `fix/description`
-2. Write tests for new features
-3. Run checks:
-   ```bash
-   npx tsc --noEmit
-   npm run lint
-   npm test
-   npm run build
-   ```
-4. Update documentation if needed
-5. Submit PR with clear description
-
-### Commit Messages
-
-Follow Conventional Commits:
-
-```
-feat: add budget renewal functionality
-fix: correct amount validation for zero values
-docs: update technical documentation
-test: add tests for TransactionsTable
-refactor: extract timestamp conversion to utility
-```
-
----
-
-## Resources
-
-### Documentation
-- [Next.js 14 Docs](https://nextjs.org/docs)
-- [Firebase Docs](https://firebase.google.com/docs)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [shadcn/ui](https://ui.shadcn.com)
-
-### Tools
-- [TypeScript Playground](https://www.typescriptlang.org/play)
-- [Firebase Console](https://console.firebase.google.com)
-- [Vercel Dashboard](https://vercel.com/dashboard)
-
-### Support
-- GitHub Issues: [Report bugs](https://github.com/yourusername/fin-track/issues)
-- Discussions: [Ask questions](https://github.com/yourusername/fin-track/discussions)
-
----
-
-**Last Updated:** March 2026
-**Maintained By:** Development Team
-**License:** MIT
