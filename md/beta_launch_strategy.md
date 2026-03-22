@@ -200,21 +200,35 @@ Post to YouTube (searchable), include on Product Hunt page and landing page.
 
 ## Launch Checklist
 
-| Priority | Action | Effort | Impact |
-|----------|--------|--------|--------|
-| 🔴 Critical | Add Sentry error tracking | 1 hour | Catch bugs before users complain |
-| 🔴 Critical | Add in-app feedback button | 2 hours | Core feedback mechanism |
-| 🔴 Critical | Set up Plausible/Umami analytics | 2 hours | Understand your funnel |
-| 🟠 High | Enable cash flow forecast | 30 min | Justifies Pro upgrade |
-| 🟠 High | Raise free tier to 100 tx for beta | 5 min | Better first impression |
-| 🟠 High | Post on Reddit r/personalfinance | 1 hour | First wave of real users |
-| 🟠 High | DM 10 people personally for feedback | 2 hours | Highest quality early feedback |
-| 🟡 Medium | Product Hunt Ship page (waitlist) | 1 hour | Build audience before launch day |
-| 🟡 Medium | "Build in public" Twitter/X thread | 30 min | Low-cost community building |
-| 🟡 Medium | Show HN post | 1 hour | Tech-savvy early adopters |
-| 🟢 Later | Drip email sequence (Resend) | 4 hours | Retention |
-| 🟢 Later | 3 SEO blog posts | 6 hours | Long-term organic traffic |
-| 🟢 Later | 3-minute YouTube demo video | 3 hours | Product Hunt + landing page asset |
+| Priority | Action | Status | Effort | Impact |
+|----------|--------|--------|--------|--------|
+| 🔴 Critical | Add Sentry error tracking | ✅ Done | — | Catch bugs before users complain |
+| 🔴 Critical | Add in-app feedback button | ⬜ Pending | 2 hours | Core feedback mechanism |
+| 🔴 Critical | Set up Plausible/Umami analytics | ✅ Done (opt-in via env var) | — | Understand your funnel |
+| 🟠 High | Enable cash flow forecast | ⏸ Built, temporarily disabled | 5 min | Justifies Pro upgrade |
+| 🟠 High | Raise free tier to 100 tx for beta | ⬜ Pending | 5 min | Better first impression |
+| 🟠 High | Post on Reddit r/personalfinance | ⬜ Pending | 1 hour | First wave of real users |
+| 🟠 High | DM 10 people personally for feedback | ⬜ Pending | 2 hours | Highest quality early feedback |
+| 🟡 Medium | Product Hunt Ship page (waitlist) | ⬜ Pending | 1 hour | Build audience before launch day |
+| 🟡 Medium | "Build in public" Twitter/X thread | ⬜ Pending | 30 min | Low-cost community building |
+| 🟡 Medium | Show HN post | ⬜ Pending | 1 hour | Tech-savvy early adopters |
+| 🟢 Later | Drip email sequence (Resend) | ⬜ Pending | 4 hours | Retention |
+| 🟢 Later | 3 SEO blog posts | ⬜ Pending | 6 hours | Long-term organic traffic |
+| 🟢 Later | 3-minute YouTube demo video | ⬜ Pending | 3 hours | Product Hunt + landing page asset |
+
+### Pre-Launch Must-Fix — Status Update (March 22, 2026)
+
+**A. ~~Enable the Cash Flow Forecast~~** — Built and functional. Temporarily disabled on dashboard while UX is reviewed. Re-enable: uncomment `CashFlowForecast` in `frontend/app/(app)/dashboard/page.tsx`.
+
+**B. Raise the Free Tier for Beta** — Still pending. Change `FREE_TIER_LIMITS.transactions` in `frontend/lib/constants/subscription.constants.ts`.
+
+**C. Beta Badge on Landing Page** — Pending.
+
+**D. ~~Set Up Error Tracking (Sentry)~~** ✅ — `@sentry/nextjs` installed, `SentryProvider` in layout, DSN in `NEXT_PUBLIC_SENTRY_DSN`. Set the same var in Firebase Hosting env / `.env.production` for prod.
+
+**E. In-App Feedback Widget** — Pending. Add Tally.so or Canny embed.
+
+**F. ~~Set Up Privacy-Respecting Analytics~~** ✅ — Plausible script added to `layout.tsx`. Activate by setting `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=your-domain.com` in `.env.production`. No code changes needed.
 
 ---
 

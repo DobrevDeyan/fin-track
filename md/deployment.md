@@ -74,17 +74,20 @@ gcloud projects describe fin-track-adc2c
 
 ## Deployment Steps (In Order)
 
-### Step 1: Deploy Firestore Rules & Indexes
+### Step 1: Deploy Firestore Rules, Indexes & Storage Rules
 
 This has no build step and no dependencies. Deploy first.
 
 ```bash
-firebase deploy --only firestore
+firebase deploy --only firestore,storage
 ```
 
 This deploys:
-- `firestore.rules` — Security rules for all collections
-- `firestore.indexes.json` — Composite indexes for recurring transactions and savings accounts
+- `firestore.rules` — Security rules for all collections (entries, budgets, goals, assets, aiInsights, etc.)
+- `firestore.indexes.json` — Composite indexes for recurring transactions, savings accounts, receipts query (`userId + receiptUrl + date`), and assets
+- `storage.rules` — Restricts Firebase Storage to `receipts/{userId}/**` owner-only access
+
+> **Note:** Firebase Storage must be initialised in the Firebase Console (Storage → Get Started) before storage rules can be deployed. This is a one-time step per project.
 
 ### Step 2: Deploy Firebase Functions
 
@@ -233,6 +236,8 @@ firebase deploy --only hosting,functions # Frontend + functions
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` | `frontend/.env.local` / `.env.production` |
 | `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | *(test price ID)* | `frontend/.env.local` / `.env.production` |
 | `NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID` | *(test price ID)* | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_SENTRY_DSN` | *(DSN from sentry.io)* | `frontend/.env.local` / `.env.production` |
+| `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` | *(e.g. pocket.app — optional)* | `frontend/.env.production` |
 
 Firebase config is read from `NEXT_PUBLIC_FIREBASE_*` env vars — add them to `frontend/.env.local` (dev) or `frontend/.env.production` (prod build).
 
@@ -410,4 +415,24 @@ cd frontend
 rm -rf .next out node_modules
 npm install
 npm run build
+```
+
+### Firebase Storage Rules Deploy Fails
+If you see `Error: Firebase Storage has not been set up on project`:
+1. Go to Firebase Console → Storage → Get Started
+2. Choose a region (use `europe-west1` to match Cloud Run)
+3. Accept defaults, click Done
+4. Then re-run `firebase deploy --only storage`
+
+### Receipts Page Shows "Failed to load receipts"
+The query `userId + receiptUrl + date` requires a composite Firestore index:
+```bash
+firebase deploy --only firestore:indexes
+```
+The index definition is already in `firestore.indexes.json`.
+
+### Net Worth Page Shows "Something went wrong"
+The `assets` collection query no longer uses `orderBy` (sorting is done client-side) so no composite index is needed. If you still see the error, check Firestore rules are deployed:
+```bash
+firebase deploy --only firestore:rules
 ```

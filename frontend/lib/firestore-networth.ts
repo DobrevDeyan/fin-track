@@ -14,7 +14,6 @@ import {
   deleteDoc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore"
@@ -48,11 +47,16 @@ export interface CreateAssetInput {
 export async function getAssets(userId: string): Promise<Asset[]> {
   const q = query(
     collection(db, "assets"),
-    where("userId", "==", userId),
-    orderBy("createdAt", "asc")
+    where("userId", "==", userId)
   )
   const snapshot = await getDocs(q)
-  return snapshot.docs.map((d) => ({ ...(d.data() as AssetDocument), id: d.id }))
+  const assets = snapshot.docs.map((d) => ({ ...(d.data() as AssetDocument), id: d.id }))
+  // Sort client-side to avoid requiring a composite index
+  return assets.sort((a, b) => {
+    const aTime = a.createdAt?.toMillis?.() ?? 0
+    const bTime = b.createdAt?.toMillis?.() ?? 0
+    return aTime - bTime
+  })
 }
 
 export async function createAsset(userId: string, input: CreateAssetInput): Promise<string> {
