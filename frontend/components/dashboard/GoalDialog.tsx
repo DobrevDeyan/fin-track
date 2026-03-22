@@ -64,6 +64,7 @@ export function GoalDialog({
   const [category, setCategory] = useState<string>("")
   const [description, setDescription] = useState("")
   const [isActive, setIsActive] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Populate form when editing
   useEffect(() => {
@@ -96,8 +97,9 @@ export function GoalDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !targetAmount) return
+    if (!name || !targetAmount || isSubmitting) return
 
+    setIsSubmitting(true)
     try {
       await onSubmit({
         name,
@@ -122,6 +124,8 @@ export function GoalDialog({
       onOpenChange(false)
     } catch (error) {
       console.error("Error submitting goal:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -253,7 +257,7 @@ export function GoalDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{editingGoal ? "Update Goal" : "Create Goal"}</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : editingGoal ? "Update Goal" : "Create Goal"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

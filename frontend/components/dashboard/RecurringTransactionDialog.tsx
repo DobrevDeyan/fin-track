@@ -54,6 +54,7 @@ export function RecurringTransactionDialog({
   const [frequency, setFrequency] = useState<"weekly" | "monthly" | "yearly">("monthly")
   const [nextDate, setNextDate] = useState("")
   const [isActive, setIsActive] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Populate form when editing
   useEffect(() => {
@@ -92,8 +93,9 @@ export function RecurringTransactionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !amount || !category) return
+    if (!name || !amount || !category || isSubmitting) return
 
+    setIsSubmitting(true)
     try {
       await onSubmit({
         name,
@@ -117,6 +119,8 @@ export function RecurringTransactionDialog({
       onOpenChange(false)
     } catch (error) {
       console.error("Error submitting recurring transaction:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -243,8 +247,8 @@ export function RecurringTransactionDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
-              {editingRecurring ? "Update Recurring Transaction" : "Create Recurring Transaction"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : editingRecurring ? "Update Recurring Transaction" : "Create Recurring Transaction"}
             </Button>
           </DialogFooter>
         </form>

@@ -80,6 +80,7 @@ export function BudgetDialog({
   const [endDate, setEndDate] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [alertThreshold, setAlertThreshold] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Populate form when editing
   useEffect(() => {
@@ -121,8 +122,9 @@ export function BudgetDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !amount || !category) return
+    if (!name || !amount || !category || isSubmitting) return
 
+    setIsSubmitting(true)
     try {
       await onSubmit({
         name,
@@ -152,6 +154,8 @@ export function BudgetDialog({
     } catch (error) {
       // Error is handled by parent component
       console.error("Error submitting budget:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -302,7 +306,7 @@ export function BudgetDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {tCommon("cancel")}
             </Button>
-            <Button type="submit">{editingBudget ? t("updateBudget") : t("createBudget")}</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : editingBudget ? t("updateBudget") : t("createBudget")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

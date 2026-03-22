@@ -66,6 +66,7 @@ export function ReceiptScannerDialog({
   const [filePreview, setFilePreview] = useState<string | null>(null)
   const [extractedData, setExtractedData] = useState<ExtractedReceiptData | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [isSaving, setIsSaving] = useState(false)
 
   // Auth context for logging user ID
   const { user } = useAuth()
@@ -261,6 +262,9 @@ export function ReceiptScannerDialog({
       return
     }
 
+    if (isSaving) return
+    setIsSaving(true)
+
     const meaningfulItems = getMeaningfulItems(extractedData?.items ?? [])
     const description = merchant && merchant !== "Unknown Merchant" ? merchant : "Scanned Receipt"
 
@@ -293,6 +297,8 @@ export function ReceiptScannerDialog({
       handleOpenChange(false)
     } catch (error: any) {
       setErrorMessage(error.message || "Failed to save expense. Please try again.")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -657,8 +663,8 @@ export function ReceiptScannerDialog({
                 Cancel
               </Button>
               {scanState === "success" && (
-                <Button type="button" onClick={handleSave} disabled={!amount || !category}>
-                  Save as Expense
+                <Button type="button" onClick={handleSave} disabled={!amount || !category || isSaving}>
+                  {isSaving ? "Saving..." : "Save as Expense"}
                 </Button>
               )}
             </>
