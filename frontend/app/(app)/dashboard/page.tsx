@@ -13,7 +13,7 @@ import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
-import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast";
+// import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast"; // temporarily disabled
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
@@ -233,12 +233,12 @@ function DashboardInnerContent() {
                     </div>
                 )}
 
-                {/* Cash Flow Forecast */}
-                <div className="mb-8">
+                {/* Cash Flow Forecast — temporarily disabled */}
+                {/* <div className="mb-8">
                     <SectionErrorBoundary label="Cash Flow Forecast">
                         <CashFlowForecast userCurrency={userCurrency} />
                     </SectionErrorBoundary>
-                </div>
+                </div> */}
 
                 {/* Transactions Table (still uses paginated entries for display) */}
                 <SectionErrorBoundary label="Transactions">

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
+import Script from "next/script"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { CurrencyProvider } from "@/contexts/CurrencyContext"
@@ -10,6 +11,8 @@ import { InstallPrompt } from "@/components/InstallPrompt"
 import { SentryProvider } from "@/components/SentryProvider"
 import { defaultLocale } from "@/i18n/config"
 import { Toaster } from "sonner"
+
+const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -85,6 +88,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png?v=2.5" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png?v=2.5" />
       </head>
+      {plausibleDomain && (
+        <Script
+          defer
+          data-domain={plausibleDomain}
+          src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
+      )}
       <body className={`${inter.variable} ${poppins.variable} ${inter.className}`}>
         <ThemeProvider
           attribute="class"

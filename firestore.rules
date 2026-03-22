@@ -122,6 +122,14 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == uid;
       }
     }
+
+    // Assets (net worth tracking)
+    match /assets/{assetId} {
+      allow get: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow list: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
   }
 }
 

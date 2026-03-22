@@ -56,7 +56,8 @@
     "menu": "Меню",
     "settings": "Настройки",
     "accountSettings": "Настройки на акаунта",
-    "receipts": "Касови бележки"
+    "receipts": "Касови бележки",
+    "netWorth": "Нетна стойност"
   },
   "auth": {
     "login": "Вход",
@@ -578,6 +579,38 @@
       "renewsOn": "Подновяване на {date}",
       "expiresOn": "Изтича на {date}"
     }
+  },
+  "netWorth": {
+    "title": "Нетна стойност",
+    "subtitle": "Проследявайте активите и пасивите си за пълна финансова картина",
+    "totalNetWorth": "Обща нетна стойност",
+    "totalAssets": "Общо активи",
+    "totalLiabilities": "Общо пасиви",
+    "addAsset": "Добави актив",
+    "addLiability": "Добави пасив",
+    "editAsset": "Редактирай",
+    "deleteAsset": "Изтрий",
+    "assetName": "Наименование",
+    "assetNamePlaceholder": "напр. Спестовна сметка, Апартамент, Кола",
+    "assetType": "Тип",
+    "assetValue": "Стойност",
+    "assetNotes": "Бележки",
+    "assetNotesPlaceholder": "Незадължителни бележки",
+    "isLiability": "Това е пасив (дълг)",
+    "typeBank": "Банкова сметка",
+    "typeInvestment": "Инвестиция",
+    "typeProperty": "Имот",
+    "typeVehicle": "Превозно средство",
+    "typeOther": "Друго",
+    "noAssets": "Няма активи",
+    "noAssetsDescription": "Добавете банкови сметки, инвестиции, имоти и задължения, за да изчислите нетната си стойност.",
+    "assets": "Активи",
+    "liabilities": "Пасиви",
+    "loading": "Зареждане...",
+    "createSuccess": "Активът е добавен",
+    "updateSuccess": "Активът е обновен",
+    "deleteSuccess": "Активът е изтрит",
+    "error": "Нещо се обърка"
   },
   "receipts": {
     "title": "Касови бележки",

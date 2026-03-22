@@ -19,6 +19,7 @@ export function filterTransactions(
     categoryFilter = "all",
     typeFilter = "all",
     dateFilter = "all",
+    tagFilter = "",
     customDateRange,
   } = options;
 
@@ -29,8 +30,17 @@ export function filterTransactions(
       (t) =>
         t.description.toLowerCase().includes(query) ||
         t.category.toLowerCase().includes(query) ||
-        (t.notes && t.notes.toLowerCase().includes(query))
+        (t.notes && t.notes.toLowerCase().includes(query)) ||
+        (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(query)))
     );
+  }
+
+  // Tag filter
+  if (tagFilter.trim()) {
+    const tag = tagFilter.toLowerCase()
+    filtered = filtered.filter(
+      (t) => t.tags && t.tags.some((tt) => tt.toLowerCase() === tag)
+    )
   }
 
   // Category filter

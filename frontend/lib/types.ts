@@ -15,6 +15,7 @@ export interface Entry {
   type: TransactionType;
   date: string;
   notes?: string;
+  tags?: string[];
 }
 
 export interface TransactionData {
@@ -77,6 +78,7 @@ export interface FilterOptions {
   categoryFilter?: string;
   typeFilter?: string;
   dateFilter?: string;
+  tagFilter?: string;
   customDateRange?: {
     startDate: string;
     endDate: string;

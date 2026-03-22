@@ -61,7 +61,9 @@
       "Bash(grep -rn \"hardcoded\\\\|HARDCODED\\\\|secret\\\\|SECRET\" /d/repos/fin-track/frontend/lib /d/repos/fin-track/frontend/contexts --include=*.ts --include=*.tsx)",
       "Bash(find /d/repos/fin-track/frontend -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.json \\\\\\))",
       "Bash(grep -r \"FREE_TIER_LIMITS\\\\|transactions.*50\\\\|budgets.*3\\\\|goals.*2\\\\|recurringTransactions.*3\" /d/repos/fin-track/frontend --include=*.tsx --include=*.ts)",
-      "Bash(grep -rn \"FREE_TIER_LIMITS\\\\|limit.*exceeded\\\\|max.*budget\\\\|max.*goal\" /d/repos/fin-track/frontend/lib/firestore*)"
+      "Bash(grep -rn \"FREE_TIER_LIMITS\\\\|limit.*exceeded\\\\|max.*budget\\\\|max.*goal\" /d/repos/fin-track/frontend/lib/firestore*)",
+      "Bash(npx shadcn@latest add alert-dialog --yes)",
+      "Bash(npx shadcn@latest add alert-dialog)"
     ]
   }
 }

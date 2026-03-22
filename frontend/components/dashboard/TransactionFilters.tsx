@@ -23,6 +23,7 @@ interface Entry {
   date: string
   type: "income" | "expense"
   notes?: string
+  tags?: string[]
 }
 
 interface TransactionFiltersProps {
@@ -42,6 +43,7 @@ export function TransactionFilters({
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [dateFilter, setDateFilter] = useState<string>("all")
+  const [tagFilter, setTagFilter] = useState<string>("")
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState<string>("date-desc")
   const [customDateRange, setCustomDateRange] = useState({ startDate: "", endDate: "" })
@@ -49,6 +51,11 @@ export function TransactionFilters({
 
   // Get unique categories from entries
   const categories = getUniqueCategories(entries)
+
+  // Collect all unique tags across entries
+  const allTags = Array.from(
+    new Set(entries.flatMap((e) => e.tags ?? []))
+  ).sort()
 
   // Apply filters whenever any filter value or entries change
   useEffect(() => {
@@ -60,12 +67,13 @@ export function TransactionFilters({
           categoryFilter,
           typeFilter,
           dateFilter,
+          tagFilter,
           customDateRange: showCustomDateRange ? customDateRange : undefined,
         },
         sortBy
       )
     )
-  }, [searchQuery, categoryFilter, typeFilter, dateFilter, sortBy, customDateRange, showCustomDateRange, entries, onFilterChange])
+  }, [searchQuery, categoryFilter, typeFilter, dateFilter, tagFilter, sortBy, customDateRange, showCustomDateRange, entries, onFilterChange])
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
@@ -98,6 +106,7 @@ export function TransactionFilters({
     setCategoryFilter("all")
     setTypeFilter("all")
     setDateFilter("all")
+    setTagFilter("")
     setSortBy("date-desc")
     setCustomDateRange({ startDate: "", endDate: "" })
     setShowCustomDateRange(false)
@@ -105,10 +114,11 @@ export function TransactionFilters({
   }
 
   const hasActiveFilters =
-    searchQuery || 
-    categoryFilter !== "all" || 
-    typeFilter !== "all" || 
-    dateFilter !== "all" || 
+    searchQuery ||
+    categoryFilter !== "all" ||
+    typeFilter !== "all" ||
+    dateFilter !== "all" ||
+    tagFilter ||
     sortBy !== "date-desc" ||
     customDateRange.startDate ||
     customDateRange.endDate
@@ -159,6 +169,24 @@ export function TransactionFilters({
         {/* Advanced Filters */}
         {showFilters && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t">
+            {allTags.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tag</label>
+                <Select value={tagFilter || "all"} onValueChange={(v) => setTagFilter(v === "all" ? "" : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All tags" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tags</SelectItem>
+                    {allTags.map((tag) => (
+                      <SelectItem key={tag} value={tag}>
+                        #{tag}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium">Category</label>
               <Select value={categoryFilter} onValueChange={handleCategoryChange}>

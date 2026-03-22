@@ -32,6 +32,10 @@ const CategoryChart = dynamic(() => import("@/components/dashboard/CategoryChart
   loading: () => <div className="flex items-center justify-center h-[400px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>,
   ssr: false,
 })
+const YearOverYearChart = dynamic(() => import("@/components/dashboard/YearOverYearChart").then(mod => ({ default: mod.YearOverYearChart })), {
+  loading: () => <div className="flex items-center justify-center h-[340px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>,
+  ssr: false,
+})
 
 interface Entry {
   id: string
@@ -415,6 +419,11 @@ export default function ReportsPage() {
         {/* 4. Spending Over Time */}
         <div className="mb-8">
           <SpendingChart entries={filteredEntries} />
+        </div>
+
+        {/* 4b. Year-over-Year Comparison */}
+        <div className="mb-8">
+          <YearOverYearChart entries={entries} userCurrency={userCurrency} />
         </div>
 
         {/* 5. Category Breakdown Table */}

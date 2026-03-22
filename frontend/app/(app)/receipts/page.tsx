@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useTranslations } from "next-intl"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { getUserEntriesWithReceipts } from "@/lib/firestore-entries"
 import { formatDate } from "@/lib/date-utils"
@@ -12,15 +11,19 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Progress } from "@/components/ui/progress"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Receipt, ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Receipt, ExternalLink, ChevronLeft, ChevronRight, ScanLine } from "lucide-react"
 import type { EntryDocument } from "@/lib/firestore-types"
 import { Timestamp } from "firebase/firestore"
+import { useScanQuota } from "@/lib/hooks/useScanQuota"
+import { useSubscription } from "@/lib/hooks/useSubscription"
+import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
 type EntryWithId = EntryDocument & { id: string }
 
@@ -35,7 +38,8 @@ export default function ReceiptsPage() {
   const tCommon = useTranslations("common")
   const { user, loading } = useAuth()
   const { userCurrency } = useCurrency()
-  const router = useRouter()
+  const { remaining, limit, count } = useScanQuota()
+  const { isPro, loading: subLoading } = useSubscription()
 
   const [entries, setEntries] = useState<EntryWithId[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -94,6 +98,34 @@ export default function ReceiptsPage() {
         <p className="text-muted-foreground text-sm mt-1">{t("subtitle")}</p>
       </div>
 
+      {/* Scan quota / upgrade prompt */}
+      {!subLoading && (
+        !isPro ? (
+          <div className="mb-6">
+            <UpgradePrompt
+              feature="Receipt Scanning"
+              description="Scan and attach receipts to your transactions. Upgrade to Pro for 30 scans/month."
+            />
+          </div>
+        ) : (
+          <Card className="mb-6">
+            <CardContent className="py-4 px-5 flex items-center gap-4">
+              <ScanLine className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-medium">Receipt scans this month</span>
+                  <span className="text-sm text-muted-foreground">{count} / {limit}</span>
+                </div>
+                <Progress value={limit > 0 ? (count / limit) * 100 : 0} className="h-1.5" />
+              </div>
+              <Badge variant={remaining === 0 ? "destructive" : remaining <= 5 ? "secondary" : "outline"} className="shrink-0">
+                {remaining} left
+              </Badge>
+            </CardContent>
+          </Card>
+        )
+      )}
+
       {error && (
         <Card className="mb-6 border-destructive">
           <CardContent className="pt-4 text-destructive text-sm">{error}</CardContent>
@@ -105,12 +137,9 @@ export default function ReceiptsPage() {
           <Receipt className="h-16 w-16 text-muted-foreground/30 mb-4" />
           <h2 className="text-lg font-semibold mb-1">{t("noReceipts")}</h2>
           <p className="text-muted-foreground text-sm max-w-sm">{t("noReceiptsDescription")}</p>
-          <Button
-            className="mt-6"
-            onClick={() => router.push("/dashboard")}
-          >
-            {t("scanFirst")}
-          </Button>
+          <p className="text-muted-foreground text-xs mt-4">
+            Use the receipt scanner on the dashboard when adding a transaction.
+          </p>
         </div>
       ) : (
         <>
@@ -197,13 +226,6 @@ export default function ReceiptsPage() {
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
                     Open
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => router.push("/dashboard")}
-                  >
-                    {t("viewTransaction")}
                   </Button>
                 </div>
               </div>

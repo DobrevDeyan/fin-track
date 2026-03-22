@@ -56,7 +56,8 @@
     "menu": "Menu",
     "settings": "Settings",
     "accountSettings": "Account Settings",
-    "receipts": "Receipts"
+    "receipts": "Receipts",
+    "netWorth": "Net Worth"
   },
   "auth": {
     "login": "Login",
@@ -578,6 +579,38 @@
       "renewsOn": "Renews on {date}",
       "expiresOn": "Expires on {date}"
     }
+  },
+  "netWorth": {
+    "title": "Net Worth",
+    "subtitle": "Track your assets and liabilities to see your complete financial picture",
+    "totalNetWorth": "Total Net Worth",
+    "totalAssets": "Total Assets",
+    "totalLiabilities": "Total Liabilities",
+    "addAsset": "Add Asset",
+    "addLiability": "Add Liability",
+    "editAsset": "Edit",
+    "deleteAsset": "Delete",
+    "assetName": "Name",
+    "assetNamePlaceholder": "e.g., Savings Account, Apartment, Car",
+    "assetType": "Type",
+    "assetValue": "Value",
+    "assetNotes": "Notes",
+    "assetNotesPlaceholder": "Optional notes",
+    "isLiability": "This is a liability (debt)",
+    "typeBank": "Bank Account",
+    "typeInvestment": "Investment",
+    "typeProperty": "Property",
+    "typeVehicle": "Vehicle",
+    "typeOther": "Other",
+    "noAssets": "No assets yet",
+    "noAssetsDescription": "Add your bank accounts, investments, property, and any debts to calculate your net worth.",
+    "assets": "Assets",
+    "liabilities": "Liabilities",
+    "loading": "Loading...",
+    "createSuccess": "Asset added",
+    "updateSuccess": "Asset updated",
+    "deleteSuccess": "Asset deleted",
+    "error": "Something went wrong"
   },
   "receipts": {
     "title": "Receipts",
