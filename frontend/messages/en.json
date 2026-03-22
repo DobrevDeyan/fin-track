@@ -450,8 +450,9 @@
         "feature1": "50 transactions per month",
         "feature2": "Up to 3 budgets",
         "feature3": "Up to 2 savings goals",
-        "feature4": "Financial health score",
-        "feature5": "Spending anomaly alerts"
+        "feature4": "1 savings account · 3 recurring transactions",
+        "feature5": "Financial health score",
+        "feature6": "Spending anomaly alerts"
       },
       "pro": {
         "name": "Pro",
@@ -489,7 +490,7 @@
       "q3": "Can I use Pocket on mobile?",
       "a3": "Yes, Pocket is available as a Progressive Web App (PWA) that works on all mobile devices.",
       "q4": "What happens if I exceed my free tier limits?",
-      "a4": "The free plan includes 50 transactions per month, up to 3 budgets, and up to 2 savings goals. If you need more, you can upgrade to Pro (€7.99/month) for unlimited transactions, 30 receipt scans, all AI features, and unlimited budgets and goals."
+      "a4": "The free plan includes 50 transactions per month, up to 3 budgets, up to 2 savings goals, 1 savings account, and 3 recurring transactions. If you need more, you can upgrade to Pro (€7.99/month) for unlimited transactions, 30 receipt scans per month, all AI features, and unlimited budgets, goals, savings accounts, and recurring transactions."
     },
     "footer": {
       "tagline": "Smart financial management made easy.",

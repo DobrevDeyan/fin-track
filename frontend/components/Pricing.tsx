@@ -25,7 +25,7 @@ export const Pricing = () => {
   const plans = [
     {
       planKey: "free",
-      featureKeys: ["feature1", "feature2", "feature3", "feature4", "feature5"],
+      featureKeys: ["feature1", "feature2", "feature3", "feature4", "feature5", "feature6"],
       popular: false,
     },
     {

@@ -233,9 +233,25 @@ export default function SettingsPage() {
               )}
             </div>
             {tier !== "free" && (
-              <BillingPortalButton label={t("billing.manageBilling")} />
+              <div className="flex flex-col items-start sm:items-end gap-1">
+                <BillingPortalButton label={t("billing.manageBilling")} />
+                <p className="text-xs text-muted-foreground">Update payment, view invoices, or cancel</p>
+              </div>
             )}
           </div>
+
+          {/* Cancellation notice */}
+          {subscription?.cancelAtPeriodEnd && (
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-500">Cancellation scheduled</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Your Pro access will end on {subscription.currentPeriodEnd?.toLocaleDateString()}. Click &quot;Manage Billing&quot; to reactivate.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Scan quota for paid users */}
           {tier !== "free" && scanLimit > 0 && (
