@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { collection, addDoc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { toast } from "sonner"
+import { motion } from "framer-motion"
 
 const PRICE_IDS: Record<string, string | null> = {
   free: null,
@@ -108,12 +109,29 @@ export const Pricing = () => {
 
   return (
     <section id="pricing" className="container py-24 sm:py-32">
-      <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+      <motion.h2
+        className="text-3xl md:text-4xl font-bold text-center mb-12"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
         {t("title")} <span className="text-foreground">{t("pricing")}</span>
-      </h2>
+      </motion.h2>
       <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-        {plans.map(({ planKey, featureKeys, popular }) => (
-          <Card key={planKey} className={popular ? "border-primary" : ""}>
+        {plans.map(({ planKey, featureKeys, popular }, index) => (
+          <motion.div
+            key={planKey}
+            initial={{ opacity: 0, y: 30, scale: popular ? 0.94 : 1 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true }}
+            transition={
+              popular
+                ? { duration: 0.55, delay: index * 0.15, type: "spring", stiffness: 220, damping: 16 }
+                : { duration: 0.5, delay: index * 0.15, ease: "easeOut" }
+            }
+          >
+          <Card className={popular ? "border-primary" : ""}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 {t(`${planKey}.name`)}
@@ -156,6 +174,7 @@ export const Pricing = () => {
               </div>
             </CardFooter>
           </Card>
+          </motion.div>
         ))}
       </div>
     </section>

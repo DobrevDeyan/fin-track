@@ -5,6 +5,7 @@ import { BudgetDialog } from "./BudgetDialog"
 import { Button } from "@/components/ui/button"
 import { Plus, Wallet } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { motion } from "framer-motion"
 
 interface Budget {
   id: string
@@ -97,17 +98,23 @@ export function BudgetList({
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sortedBudgets.map((budget) => {
+        {sortedBudgets.map((budget, index) => {
           const spent = calculateBudgetSpending(budget, entries)
           return (
-            <BudgetCard
+            <motion.div
               key={budget.id}
-              budget={budget}
-              spent={spent}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onRenew={onRenew}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: index * 0.07, ease: "easeOut" }}
+            >
+              <BudgetCard
+                budget={budget}
+                spent={spent}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onRenew={onRenew}
+              />
+            </motion.div>
           )
         })}
       </div>

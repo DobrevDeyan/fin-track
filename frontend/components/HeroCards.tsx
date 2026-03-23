@@ -17,30 +17,17 @@ import Image from "next/image";
 
 export const HeroCards = () => {
   return (
-    <div className="hidden lg:flex flex-row flex-wrap gap-8 relative w-[700px] h-[500px] z-10">
-      {/* Testimonial — hidden for now */}
-      {/* <Card className="absolute w-[340px] -top-[15px] drop-shadow-xl shadow-black/10">
-        <CardHeader className="flex flex-row items-center gap-4 pb-2">
-          <Avatar>
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">MK</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <CardTitle className="text-lg">Maria K.</CardTitle>
-            <CardDescription>@mariak</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>Finally a budgeting app that keeps it simple. The expense tracking and budget alerts are exactly what I needed.</CardContent>
-      </Card> */}
+    <div className="hidden lg:flex flex-row flex-wrap gap-8 relative lg:w-[480px] xl:w-[580px] lg:h-[420px] xl:h-[480px] z-10">
 
       {/* App preview — mobile screenshot */}
-      <Card className="absolute right-[20px] top-4 w-72 drop-shadow-xl shadow-black/10 overflow-hidden p-0">
-        <div className="relative w-full h-[200px]">
+      <Card className="absolute right-0 top-2 lg:w-56 xl:w-64 drop-shadow-xl shadow-black/10 overflow-hidden p-0">
+        <div className="relative w-full lg:h-[160px] xl:h-[185px]">
           <Image
             src="/images/dashboard_mob.png"
             alt="Pocket mobile dashboard"
             fill
             className="object-cover object-top rounded-t-lg"
-            sizes="288px"
+            sizes="(min-width: 1280px) 256px, 224px"
           />
         </div>
         <CardContent className="py-3 text-center">
@@ -50,7 +37,7 @@ export const HeroCards = () => {
       </Card>
 
       {/* Pricing */}
-      <Card className="absolute top-[150px] left-[50px] w-72 drop-shadow-xl shadow-black/10">
+      <Card className="absolute lg:top-[130px] xl:top-[150px] lg:left-[10px] xl:left-[30px] lg:w-56 xl:w-64 drop-shadow-xl shadow-black/10">
         <CardHeader>
           <CardTitle>Free</CardTitle>
           <div>
@@ -84,8 +71,8 @@ export const HeroCards = () => {
         </CardFooter>
       </Card>
 
-      {/* Service */}
-      <Card className="absolute w-[350px] -right-[10px] bottom-[35px] drop-shadow-xl shadow-black/10">
+      {/* AI Insights */}
+      <Card className="absolute lg:w-[260px] xl:w-[300px] right-0 lg:bottom-[20px] xl:bottom-[30px] drop-shadow-xl shadow-black/10">
         <CardHeader className="space-y-1 flex md:flex-row justify-start items-start gap-4">
           <div className="mt-1 bg-primary/20 p-1 rounded-2xl">
             <LightBulbIcon />

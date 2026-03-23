@@ -1,11 +1,54 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingDown, TrendingUp, Wallet, ArrowUp, ArrowDown, Minus } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
+import { useInView } from "framer-motion"
+
+function useCountUp(target: number, duration = 900) {
+  const [value, setValue] = useState(0)
+  const rafRef = useRef<number | null>(null)
+  const prevTarget = useRef(0)
+
+  useEffect(() => {
+    const start = prevTarget.current
+    const startTime = performance.now()
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - startTime) / duration, 1)
+      const ease = 1 - Math.pow(1 - progress, 3)
+      setValue(start + (target - start) * ease)
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        setValue(target)
+        prevTarget.current = target
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [target, duration])
+
+  return value
+}
+
+function AnimatedCurrency({ value, format }: { value: number; format: (v: number) => string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const isInView = useInView(ref, { once: true })
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    if (isInView) setActive(true)
+  }, [isInView])
+
+  const animated = useCountUp(active ? value : 0)
+  return <span ref={ref}>{active ? format(animated) : format(0)}</span>
+}
 
 interface MetricsCardsProps {
   totalBalance: number
@@ -92,7 +135,7 @@ export const MetricsCards = memo(function MetricsCards({
                 totalBalance >= 0 ? "text-foreground" : "text-red-500"
               )}
             >
-              {fmt(totalBalance)}
+              <AnimatedCurrency value={totalBalance} format={fmt} />
             </p>
             <p className="text-[11px] text-muted-foreground mt-1">{t("allTimeNet")}</p>
           </div>
@@ -124,7 +167,7 @@ export const MetricsCards = memo(function MetricsCards({
                     stat.rawValue < 0 ? "text-red-500" : "text-foreground"
                   )}
                 >
-                  {stat.value}
+                  <AnimatedCurrency value={stat.rawValue} format={fmt} />
                 </p>
                 <TrendBadge change={stat.change.change} trend={stat.change.trend} />
               </div>

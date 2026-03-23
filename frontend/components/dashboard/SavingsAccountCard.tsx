@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { toast } from "sonner"
+import { motion, AnimatePresence } from "framer-motion"
 
 type SavingsAccount = import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
 
@@ -54,6 +55,7 @@ export function SavingsAccountCard({
   const [transactionType, setTransactionType] = useState<"add" | "withdraw">("add")
   const [amount, setAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successPulse, setSuccessPulse] = useState(false)
 
   const handleTransaction = async () => {
     const amountNum = parseFloat(amount)
@@ -75,6 +77,8 @@ export function SavingsAccountCard({
       }
       setAmount("")
       setTransactionDialogOpen(false)
+      setSuccessPulse(true)
+      setTimeout(() => setSuccessPulse(false), 700)
     } catch (error) {
       console.error("Error processing transaction:", error)
       toast.error("Failed to process transaction")
@@ -85,6 +89,10 @@ export function SavingsAccountCard({
 
   return (
     <>
+      <motion.div
+        animate={successPulse ? { scale: [1, 1.04, 1] } : { scale: 1 }}
+        transition={{ type: "spring", stiffness: 380, damping: 18, duration: 0.5 }}
+      >
       <Card className="relative">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -166,6 +174,7 @@ export function SavingsAccountCard({
           </div>
         </CardContent>
       </Card>
+      </motion.div>
 
       <Dialog open={transactionDialogOpen} onOpenChange={setTransactionDialogOpen}>
         <DialogContent>

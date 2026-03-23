@@ -6,6 +6,7 @@ import { buttonVariants } from "./ui/button";
 import { HeroCards } from "./HeroCards";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 
 export const Hero = () => {
   const { user } = useAuth();
@@ -15,27 +16,45 @@ export const Hero = () => {
     <section className="container flex flex-col justify-center min-h-[calc(100vh-4rem)] md:min-h-0 md:grid lg:grid-cols-2 md:place-items-center py-12 px-4 sm:py-16 md:py-32 gap-8 md:gap-10">
       <div className="text-center lg:text-start space-y-5 md:space-y-6 flex flex-col justify-center">
         <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight sm:leading-tight md:leading-normal tracking-tight">
-          <h1 className="block font-poppins font-bold text-foreground">
-            <span className="inline">
-              Pocket
-            </span>
-          </h1>
-          <h2 className="block font-inter font-semibold text-foreground/90">
+          <motion.h1
+            className="block font-poppins font-bold text-foreground"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          >
+            Pocket
+          </motion.h1>
+          <motion.h2
+            className="block font-inter font-semibold text-foreground/90"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+          >
             {t("tagline")}
-          </h2>
+          </motion.h2>
         </main>
 
-        <p className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed md:w-10/12 mx-auto lg:mx-0 px-2 sm:px-0 font-normal">
+        <motion.p
+          className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed md:w-10/12 mx-auto lg:mx-0 px-2 sm:px-0 font-normal"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+        >
           {t("description")}
-        </p>
+        </motion.p>
 
-        <div className="space-y-4 md:space-y-0 md:space-x-4 md:flex md:flex-row">
+        <motion.div
+          className="flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-3"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.45, ease: "easeOut" }}
+        >
           {user ? (
-            <Link href="/dashboard" className="w-full md:w-1/3">
+            <Link href="/dashboard" className="sm:w-40">
               <Button className="w-full">{t("goToDashboard")}</Button>
             </Link>
           ) : (
-            <Link href="/auth/register" className="w-full md:w-1/3">
+            <Link href="/auth/register" className="sm:w-40">
               <Button className="w-full">{t("getStarted")}</Button>
             </Link>
           )}
@@ -43,21 +62,26 @@ export const Hero = () => {
           <a
             rel="noreferrer noopener"
             href="#features"
-            className={`w-full md:w-1/3 ${buttonVariants({
+            className={`sm:w-36 ${buttonVariants({
               variant: "outline",
             })}`}
           >
             {t("learnMore")}
           </a>
-        </div>
+        </motion.div>
       </div>
 
       {/* Hero cards sections with shadow effect */}
-      <div className="relative z-10">
+      <motion.div
+        className="relative z-10"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, delay: 0.25, ease: "easeOut" }}
+      >
         {/* Shadow effect - positioned behind cards */}
         <div className="shadow"></div>
         <HeroCards />
-      </div>
+      </motion.div>
     </section>
   );
 };

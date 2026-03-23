@@ -6,6 +6,7 @@ import { SavingsAccountCard } from "./SavingsAccountCard"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/currency-utils"
 import { useTranslations } from "next-intl"
+import { motion } from "framer-motion"
 
 type SavingsAccount = import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
 
@@ -86,15 +87,21 @@ export function SavingsAccountList({
         </div>
       )}
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {activeAccounts.map((account) => (
-          <SavingsAccountCard
+        {activeAccounts.map((account, index) => (
+          <motion.div
             key={account.id}
-            account={account}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onAddMoney={onAddMoney}
-            onWithdrawMoney={onWithdrawMoney}
-          />
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: index * 0.07, ease: "easeOut" }}
+          >
+            <SavingsAccountCard
+              account={account}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onAddMoney={onAddMoney}
+              onWithdrawMoney={onWithdrawMoney}
+            />
+          </motion.div>
         ))}
       </div>
     </div>

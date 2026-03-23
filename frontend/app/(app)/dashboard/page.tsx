@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -35,7 +35,8 @@ import { useEntries } from "@/lib/hooks/dashboard";
 import { getUniqueCategories, getExpenseCategories } from "@/lib/categories";
 
 // Tabs
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatePresence, motion } from "framer-motion";
 
 // Lazy load dialogs
 const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTransactionDialog").then((mod) => ({ default: mod.AddTransactionDialog })), {
@@ -88,6 +89,20 @@ function DashboardInnerContent() {
 
     // CSV import state
     const [csvImportOpen, setCsvImportOpen] = useState(false);
+
+    // Tabs state with direction tracking
+    const TAB_ORDER = ["savings", "budgets", "recurring"] as const;
+    type TabValue = typeof TAB_ORDER[number];
+    const [activeTab, setActiveTab] = useState<TabValue>("savings");
+    const [tabDirection, setTabDirection] = useState(0);
+
+    const handleTabChange = useCallback((val: string) => {
+        const nextIndex = TAB_ORDER.indexOf(val as TabValue);
+        const currIndex = TAB_ORDER.indexOf(activeTab);
+        setTabDirection(nextIndex > currIndex ? 1 : -1);
+        setActiveTab(val as TabValue);
+        setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    }, [activeTab]);
 
     // Track if initial load has happened
     const hasLoadedRef = useRef(false);
@@ -256,36 +271,49 @@ function DashboardInnerContent() {
                 </SectionErrorBoundary>
 
                 {/* Feature Sections - Tabbed Interface */}
-                <Tabs defaultValue="savings" className="mt-8" ref={tabsRef} onValueChange={() => {
-                    setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0)
-                }}>
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
-                            {tSavings("tabLabel")} ({savingsAccounts.length})
-                        </TabsTrigger>
-                        <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
-                            {tBudgets("tabLabel")} ({budgets.length})
-                        </TabsTrigger>
-                        <TabsTrigger value="recurring" className="text-xs md:text-sm px-1 md:px-3">
-                            {tRecurring("tabLabel")} ({recurringTransactions.length})
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="savings">
-                        <SectionErrorBoundary label="Savings">
-                            <SavingsSection />
-                        </SectionErrorBoundary>
-                    </TabsContent>
-                    <TabsContent value="budgets">
-                        <SectionErrorBoundary label="Budgets">
-                            <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} />
-                        </SectionErrorBoundary>
-                    </TabsContent>
-                    <TabsContent value="recurring">
-                        <SectionErrorBoundary label="Recurring">
-                            <RecurringSection categories={categories} />
-                        </SectionErrorBoundary>
-                    </TabsContent>
-                </Tabs>
+                <div className="mt-8" ref={tabsRef}>
+                    <Tabs value={activeTab} onValueChange={handleTabChange}>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
+                                {tSavings("tabLabel")} ({savingsAccounts.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
+                                {tBudgets("tabLabel")} ({budgets.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="recurring" className="text-xs md:text-sm px-1 md:px-3">
+                                {tRecurring("tabLabel")} ({recurringTransactions.length})
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    <div className="overflow-hidden mt-2">
+                        <AnimatePresence mode="wait" custom={tabDirection}>
+                            <motion.div
+                                key={activeTab}
+                                custom={tabDirection}
+                                initial={{ opacity: 0, x: tabDirection * 40 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: tabDirection * -40 }}
+                                transition={{ duration: 0.25, ease: "easeInOut" }}
+                            >
+                                {activeTab === "savings" && (
+                                    <SectionErrorBoundary label="Savings">
+                                        <SavingsSection />
+                                    </SectionErrorBoundary>
+                                )}
+                                {activeTab === "budgets" && (
+                                    <SectionErrorBoundary label="Budgets">
+                                        <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} />
+                                    </SectionErrorBoundary>
+                                )}
+                                {activeTab === "recurring" && (
+                                    <SectionErrorBoundary label="Recurring">
+                                        <RecurringSection categories={categories} />
+                                    </SectionErrorBoundary>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+                </div>
 
                 {/* Add/Edit Entry Dialog */}
                 <AddTransactionDialog 

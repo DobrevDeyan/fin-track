@@ -6,6 +6,7 @@ import { Plus, Repeat } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { useTranslations } from "next-intl"
+import { motion } from "framer-motion"
 
 interface RecurringTransactionListProps {
   recurringTransactions: (RecurringEntryDocument & { id: string })[]
@@ -50,13 +51,19 @@ export function RecurringTransactionList({
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sortedRecurring.map((recurring) => (
-          <RecurringTransactionCard
+        {sortedRecurring.map((recurring, index) => (
+          <motion.div
             key={recurring.id}
-            recurring={recurring}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: index * 0.07, ease: "easeOut" }}
+          >
+            <RecurringTransactionCard
+              recurring={recurring}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </motion.div>
         ))}
       </div>
     </div>
