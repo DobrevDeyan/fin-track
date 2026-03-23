@@ -76,7 +76,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       }
       setDisplayName(userDoc?.displayName)
       setMonthlyBudget(userDoc?.monthlyBudget)
-      setOnboardingCompleted(userDoc?.onboardingCompleted)
+      setOnboardingCompleted(userDoc?.onboardingCompleted ?? false)
     } catch (error) {
       console.error("Error loading user currency:", error)
       setUserCurrency(DEFAULT_CURRENCY)

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
-import { deleteUserData, updateUserDisplayName } from "@/lib/firestore-users"
+import { deleteUserData, resetFinancialData, updateUserDisplayName } from "@/lib/firestore-users"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Check, CreditCard, Loader2, Pencil, Trash2, User } from "lucide-react"
+import { AlertTriangle, Check, CreditCard, Loader2, Pencil, RotateCcw, Trash2, User } from "lucide-react"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
 import { useScanQuota } from "@/lib/hooks/useScanQuota"
 import { Progress } from "@/components/ui/progress"
@@ -53,6 +53,12 @@ export default function SettingsPage() {
   // Stripe upgrade
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
+  // Reset financial data
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [resetConfirmText, setResetConfirmText] = useState("")
+  const [resetting, setResetting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
+
   // Delete account
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [confirmText, setConfirmText] = useState("")
@@ -70,6 +76,23 @@ export default function SettingsPage() {
       toast.error("Failed to update display name. Please try again.")
     } finally {
       setSavingName(false)
+    }
+  }
+
+  const handleResetFinancialData = async () => {
+    if (!user) return
+    setResetting(true)
+    setResetError(null)
+    try {
+      await resetFinancialData(user.uid)
+      setResetDialogOpen(false)
+      setResetConfirmText("")
+      toast.success("All financial data has been reset.")
+      window.location.reload()
+    } catch (err: any) {
+      console.error("Reset failed:", err)
+      setResetError("Reset failed. Please try again.")
+      setResetting(false)
     }
   }
 
@@ -308,7 +331,27 @@ export default function SettingsPage() {
             {t("dangerZone")}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Reset financial data */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-border/50">
+            <div>
+              <p className="text-sm font-medium">Reset financial data</p>
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-sm">
+                Permanently delete all transactions, budgets, goals, savings accounts, and recurring transactions. Your account and settings are kept.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setResetDialogOpen(true)}
+              className="shrink-0 flex items-center gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset data
+            </Button>
+          </div>
+
+          {/* Delete account */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-sm font-medium">{t("deleteAccount")}</p>
@@ -328,6 +371,56 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reset financial data confirmation dialog */}
+      <Dialog open={resetDialogOpen} onOpenChange={(open) => {
+        if (!resetting) {
+          setResetDialogOpen(open)
+          if (!open) { setResetConfirmText(""); setResetError(null) }
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <RotateCcw className="h-5 w-5" />
+              Reset all financial data
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete all your transactions, budgets, goals, savings accounts, recurring transactions, and AI insights. Your account, profile, and subscription are not affected. <strong>This cannot be undone.</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Type your email <span className="font-mono font-semibold text-foreground">{user.email}</span> to confirm.
+            </p>
+            <Input
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder={user.email ?? ""}
+              disabled={resetting}
+              className="font-mono"
+              autoComplete="off"
+            />
+            {resetError && <p className="text-sm text-destructive">{resetError}</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setResetDialogOpen(false); setResetConfirmText(""); setResetError(null) }}
+              disabled={resetting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleResetFinancialData}
+              disabled={resetConfirmText.trim() !== user.email || resetting}
+            >
+              {resetting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Resetting…</> : "Reset all data"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={(open) => {

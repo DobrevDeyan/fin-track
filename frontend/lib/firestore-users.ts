@@ -166,6 +166,52 @@ export async function completeOnboarding(
 }
 
 /**
+ * Reset all financial data for a user without deleting their account.
+ *
+ * Collections cleared:
+ *   entries, budgets, goals, savingsAccounts, recurringTransactions, assets
+ *   (queried by userId field, chunked into 500-doc batches)
+ *
+ * Single documents cleared:
+ *   financialSummaries/{userId}, aiInsights/{userId}
+ *
+ * Preserved:
+ *   users/{userId} (profile, currency, language, subscription flags)
+ *   scanUsage/{userId} (tied to subscription plan)
+ *   customers/ (Stripe billing data)
+ */
+export async function resetFinancialData(userId: string): Promise<void> {
+  const BATCH_SIZE = 490
+
+  const userOwnedCollections = [
+    "entries",
+    "budgets",
+    "goals",
+    "savingsAccounts",
+    "recurringTransactions",
+    "assets",
+  ]
+
+  for (const collectionName of userOwnedCollections) {
+    const colRef = collection(db, collectionName)
+    const q = query(colRef, where("userId", "==", userId))
+    const snapshot = await getDocs(q)
+
+    for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
+      const chunk = snapshot.docs.slice(i, i + BATCH_SIZE)
+      const batch = writeBatch(db)
+      chunk.forEach((d) => batch.delete(d.ref))
+      await batch.commit()
+    }
+  }
+
+  await Promise.all([
+    deleteDoc(doc(db, "financialSummaries", userId)),
+    deleteDoc(doc(db, "aiInsights", userId)),
+  ])
+}
+
+/**
  * Delete all Firestore data for a user, then delete their Firebase Auth account.
  *
  * Collections deleted:

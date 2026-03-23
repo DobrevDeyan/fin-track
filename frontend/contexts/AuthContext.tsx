@@ -61,9 +61,10 @@ const createUserDocument = async (user: User, isNewUser: boolean = false) => {
   };
 
   if (!userSnap.exists() || isNewUser) {
-    // Create new user document
+    // Create new user document — onboardingCompleted: false triggers the onboarding flow
     await setDoc(userRef, {
       ...userData,
+      onboardingCompleted: false,
       createdAt: serverTimestamp(),
     });
   } else {
@@ -106,10 +107,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user);
       setLoading(false);
       
-      // Create or update user document in Firestore when auth state changes
+      // Create or update user document in Firestore when auth state changes.
+      // Pass isNewUser=true when the doc doesn't exist yet so onboardingCompleted is initialised.
       if (user) {
         try {
-          await createUserDocument(user);
+          const { doc: _doc, getDoc: _getDoc } = await import("firebase/firestore");
+          const snap = await _getDoc(_doc(db, "users", user.uid));
+          await createUserDocument(user, !snap.exists());
         } catch (error) {
           console.error("Error creating user document:", error);
         }
