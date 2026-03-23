@@ -65,7 +65,12 @@
       "Bash(npx shadcn@latest add alert-dialog --yes)",
       "Bash(npx shadcn@latest add alert-dialog)",
       "Bash(firebase deploy:*)",
-      "Bash(npx shadcn@latest add tooltip --yes)"
+      "Bash(npx shadcn@latest add tooltip --yes)",
+      "Bash(find /d/personal/fin-track/frontend/app -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
+      "Bash(grep -v \"node_modules\\\\|0$\")",
+      "Bash(find /d/personal/fin-track/frontend/app -type d -name \"\\(app\\)\")",
+      "Bash(grep -r \"router\\\\.back\\\\|useRouter\" /d/personal/fin-track/frontend/app --include=*.tsx --include=*.ts)",
+      "Bash(grep -n \"router\\\\.\" /d/personal/fin-track/frontend/app/\\\\\\(app\\\\\\)/*/page.tsx)"
     ]
   }
 }

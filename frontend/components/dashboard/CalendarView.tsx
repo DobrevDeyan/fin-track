@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -142,6 +142,25 @@ export function CalendarView({
     setCurrentYear(now.getFullYear())
   }, [])
 
+  // Swipe left/right to navigate months
+  const swipeTouchStart = useRef<{ x: number; y: number } | null>(null)
+
+  const handleCalendarTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0]
+    swipeTouchStart.current = { x: t.clientX, y: t.clientY }
+  }, [])
+
+  const handleCalendarTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!swipeTouchStart.current) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - swipeTouchStart.current.x
+    const dy = Math.abs(t.clientY - swipeTouchStart.current.y)
+    swipeTouchStart.current = null
+    if (Math.abs(dx) < 50 || dy > Math.abs(dx)) return
+    if (dx < 0) goToNextMonth()
+    else goToPreviousMonth()
+  }, [goToNextMonth, goToPreviousMonth])
+
   // Day click handler
   const handleDayClick = useCallback((day: CalendarDay) => {
     setSelectedDay(day)
@@ -203,8 +222,12 @@ export function CalendarView({
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7">
+      {/* Calendar grid – swipe left/right to change month on mobile */}
+      <div
+        className="grid grid-cols-7"
+        onTouchStart={handleCalendarTouchStart}
+        onTouchEnd={handleCalendarTouchEnd}
+      >
         {calendarDays.map((day, index) => {
           const key = formatDateForInput(day.date)
           return (

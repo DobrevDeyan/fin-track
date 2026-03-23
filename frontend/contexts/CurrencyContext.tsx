@@ -6,10 +6,11 @@
 
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { useAuth } from "./AuthContext"
 import { getUserDocument } from "@/lib/firestore-users"
 import { type SupportedCurrency, DEFAULT_CURRENCY } from "@/lib/constants/currency.constants"
+import { fetchExchangeRates, convertAmount as _convertAmount, type ExchangeRates } from "@/lib/exchange-rate"
 
 interface CurrencyContextType {
   userCurrency: SupportedCurrency
@@ -18,6 +19,10 @@ interface CurrencyContextType {
   displayName?: string
   monthlyBudget?: number
   onboardingCompleted?: boolean
+  /** Live EUR↔USD fixings (null until loaded) */
+  exchangeRates: ExchangeRates | null
+  /** Convert an amount from one currency to another using today's fixing */
+  convertAmount: (amount: number, from: SupportedCurrency, to: SupportedCurrency) => number
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
@@ -29,6 +34,22 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [displayName, setDisplayName] = useState<string | undefined>()
   const [monthlyBudget, setMonthlyBudget] = useState<number | undefined>()
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | undefined>()
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null)
+
+  // Fetch live fixing once on mount
+  useEffect(() => {
+    fetchExchangeRates()
+      .then(setExchangeRates)
+      .catch((err) => console.warn("Exchange rate fetch failed:", err))
+  }, [])
+
+  const convertAmount = useCallback(
+    (amount: number, from: SupportedCurrency, to: SupportedCurrency) => {
+      if (!exchangeRates) return amount
+      return _convertAmount(amount, from, to, exchangeRates)
+    },
+    [exchangeRates]
+  )
 
   const loadUserCurrency = async () => {
     if (!user) {
@@ -73,7 +94,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <CurrencyContext.Provider value={{ userCurrency, loading, refreshCurrency, displayName, monthlyBudget, onboardingCompleted }}>
+    <CurrencyContext.Provider value={{ userCurrency, loading, refreshCurrency, displayName, monthlyBudget, onboardingCompleted, exchangeRates, convertAmount }}>
       {children}
     </CurrencyContext.Provider>
   )
