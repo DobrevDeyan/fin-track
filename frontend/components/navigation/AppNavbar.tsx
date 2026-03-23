@@ -9,13 +9,12 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetClose,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import {
   Menu, LogOut, X, Globe, Info, LayoutDashboard,
   Calendar as CalendarIcon, FileText, Settings, Receipt,
-  Landmark, ChevronDown, DollarSign,
+  Landmark, ChevronDown, DollarSign, Sparkles,
 } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
@@ -188,22 +187,21 @@ export const AppNavbar = () => {
             }}
           >
             {/* Decorative circles */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5" />
-            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-emerald-500/10" />
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-emerald-500/10 pointer-events-none" />
 
             <SheetHeader className="mb-0">
               <div className="flex items-center justify-between mb-5">
                 <SheetTitle className="font-bold text-lg text-white tracking-tight">
                   Pocket
                 </SheetTitle>
-                <SheetClose asChild>
                   <button
+                    onClick={() => setIsOpen(false)}
                     className="rounded-full p-1.5 hover:bg-white/15 transition-colors duration-200 focus:outline-none"
                     aria-label="Close menu"
                   >
                     <X className="h-4 w-4 text-white/70" strokeWidth={2.5} />
                   </button>
-                </SheetClose>
               </div>
             </SheetHeader>
 
@@ -318,10 +316,32 @@ export const AppNavbar = () => {
               })}
             </div>
 
+            {/* AI Coach shortcut */}
+            <motion.div
+              custom={appRoutes.length}
+              initial="hidden"
+              animate={isOpen ? "visible" : "hidden"}
+              variants={mobileNavVariants}
+              className="pt-2 border-t border-border/40"
+            >
+              <button
+                onClick={() => {
+                  setIsOpen(false)
+                  window.dispatchEvent(new Event("pocket:openAIChat"))
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium text-foreground/65 hover:bg-accent hover:text-foreground transition-all duration-150"
+              >
+                <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-purple-100 text-purple-600 shrink-0">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <span>AI Budget Coach</span>
+              </button>
+            </motion.div>
+
             {/* Bottom actions */}
             <div className="mt-auto pt-3 border-t border-border/40 space-y-0.5">
               <motion.div
-                custom={appRoutes.length}
+                custom={appRoutes.length + 1}
                 initial="hidden"
                 animate={isOpen ? "visible" : "hidden"}
                 variants={mobileNavVariants}
@@ -344,7 +364,7 @@ export const AppNavbar = () => {
               </motion.div>
 
               <motion.div
-                custom={appRoutes.length + 1}
+                custom={appRoutes.length + 2}
                 initial="hidden"
                 animate={isOpen ? "visible" : "hidden"}
                 variants={mobileNavVariants}
@@ -377,7 +397,7 @@ export const AppNavbar = () => {
           {/* Mobile hamburger */}
           <button
             className="flex md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
-            onClick={() => setIsOpen(true)}
+            onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setIsOpen(true) }}
             aria-label={t("menu")}
           >
             <Menu className="h-5 w-5" />

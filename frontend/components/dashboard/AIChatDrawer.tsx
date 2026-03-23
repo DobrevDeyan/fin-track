@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MessageCircle, Send, X, Bot, User, Sparkles } from "lucide-react"
+import { Send, X, Bot, User, Sparkles } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
@@ -75,6 +75,17 @@ export function AIChatDrawer() {
     }
   }, [open])
 
+  // Listen for global open signal (e.g. from the nav sheet on any page)
+  useEffect(() => {
+    const handler = () => {
+      if (subscriptionLoading) return
+      if (isPro) setOpen(true)
+      else setUpgradeOpen(true)
+    }
+    window.addEventListener("pocket:openAIChat", handler)
+    return () => window.removeEventListener("pocket:openAIChat", handler)
+  }, [isPro, subscriptionLoading])
+
   const handleSend = useCallback(async () => {
     const text = input.trim()
     if (!text || chatLoading) return
@@ -96,7 +107,7 @@ export function AIChatDrawer() {
     <>
       {/* Upgrade dialog for free users */}
       <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
-        <DialogContent className="max-w-xs p-0">
+        <DialogContent className="max-w-xs p-0" aria-describedby={undefined}>
           <UpgradePrompt
             mode="card"
             feature="AI Budget Coach"
@@ -105,23 +116,6 @@ export function AIChatDrawer() {
         </DialogContent>
       </Dialog>
 
-      {/* Floating button — bottom-left corner, balancing the "+" FAB on the right */}
-      <button
-        onClick={() => {
-          if (subscriptionLoading) return
-          if (isPro) setOpen(true)
-          else setUpgradeOpen(true)
-        }}
-        className="fixed bottom-6 left-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-        aria-label="Open AI Budget Coach"
-      >
-        <MessageCircle className="h-6 w-6" />
-        {chatMessages.length > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold">
-            {chatMessages.filter((m) => m.role === "assistant").length}
-          </span>
-        )}
-      </button>
 
       {/* Chat Drawer */}
       <Sheet open={open} onOpenChange={setOpen}>

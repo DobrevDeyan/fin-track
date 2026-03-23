@@ -315,7 +315,7 @@ function DashboardInnerContent() {
                   savingsAccounts={activeSavingsAccounts}
                 />
 
-                {/* AI Budget Coach Chat (floating) */}
+                {/* AI Budget Coach Chat */}
                 <AIChatDrawer />
 
                 {/* Salary Reminder Notifications */}

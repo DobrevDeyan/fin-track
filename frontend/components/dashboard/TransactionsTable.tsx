@@ -443,7 +443,7 @@ export function TransactionsTable({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null) }}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px]" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t("deleteEntryTitle")}</DialogTitle>
           </DialogHeader>
@@ -469,7 +469,7 @@ export function TransactionsTable({
 
       {/* Receipt View Dialog */}
       <Dialog open={receiptDialogOpen} onOpenChange={setReceiptDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t("receipt")}</DialogTitle>
           </DialogHeader>

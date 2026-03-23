@@ -139,28 +139,27 @@ export function SavingsAccountCard({
             </div>
             <div className="flex gap-2">
               <Button
-                variant="outline"
                 size="sm"
-                className="flex-1"
+                className="flex-1 h-10 bg-emerald-500 hover:bg-emerald-600 text-white font-medium shadow-sm"
                 onClick={() => {
                   setTransactionType("add")
                   setTransactionDialogOpen(true)
                 }}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 mr-1.5" />
                 Add
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1"
+                className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-medium"
                 onClick={() => {
                   setTransactionType("withdraw")
                   setTransactionDialogOpen(true)
                 }}
                 disabled={account.balance === 0}
               >
-                <Minus className="h-4 w-4 mr-2" />
+                <Minus className="h-4 w-4 mr-1.5" />
                 Withdraw
               </Button>
             </div>
@@ -171,16 +170,22 @@ export function SavingsAccountCard({
       <Dialog open={transactionDialogOpen} onOpenChange={setTransactionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {transactionType === "add" ? "Add Money" : "Withdraw Money"}
+            <DialogTitle className="flex items-center gap-2">
+              {transactionType === "add" ? (
+                <span className="flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-emerald-500" /> Add to {account.name}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Minus className="h-4 w-4 text-red-500" /> Withdraw from {account.name}
+                </span>
+              )}
             </DialogTitle>
             <DialogDescription>
-              {transactionType === "add"
-                ? `Add money to ${account.name}`
-                : `Withdraw money from ${account.name}`}
+              Balance: <span className="font-medium text-foreground">{formatCurrency(account.balance, { currency: account.currency })}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="amount">Amount ({account.currency})</Label>
               <Input
@@ -191,13 +196,27 @@ export function SavingsAccountCard({
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleTransaction()}
                 autoFocus
+                className="text-lg h-11"
               />
-              {transactionType === "withdraw" && account.balance > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Available: {formatCurrency(account.balance, { currency: account.currency })}
-                </p>
-              )}
+            </div>
+            {/* Quick presets */}
+            <div className="flex gap-2 flex-wrap">
+              {(transactionType === "add" ? [10, 50, 100, 500] : [
+                ...(account.balance >= 100 ? [Math.round(account.balance * 0.25)] : []),
+                ...(account.balance >= 50 ? [Math.round(account.balance * 0.5)] : []),
+                Math.round(account.balance),
+              ].filter((v, i, a) => v > 0 && a.indexOf(v) === i)).map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setAmount(String(preset))}
+                  className="px-3 py-1 rounded-full text-xs font-medium border border-border hover:bg-accent transition-colors"
+                >
+                  {formatCurrency(preset, { currency: account.currency })}
+                </button>
+              ))}
             </div>
           </div>
           <DialogFooter>
@@ -211,8 +230,14 @@ export function SavingsAccountCard({
             >
               Cancel
             </Button>
-            <Button onClick={handleTransaction} disabled={isSubmitting}>
-              {transactionType === "add" ? "Add" : "Withdraw"}
+            <Button
+              onClick={handleTransaction}
+              disabled={isSubmitting}
+              className={transactionType === "add"
+                ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"}
+            >
+              {isSubmitting ? "Processing…" : transactionType === "add" ? "Add" : "Withdraw"}
             </Button>
           </DialogFooter>
         </DialogContent>
