@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/date-utils"
 import { getTrendColor } from "@/lib/constants/ui.constants"
 import { useTranslations } from "next-intl"
+import { motion } from "framer-motion"
 
 interface Budget {
   id: string
@@ -52,6 +53,10 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
   }
 
   return (
+    <motion.div
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
     <Card className={cn("relative", isExpired && "opacity-60")}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -166,5 +171,6 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
         </div>
       </CardContent>
     </Card>
+    </motion.div>
   )
 }

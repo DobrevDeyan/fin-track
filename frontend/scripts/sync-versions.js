@@ -18,11 +18,16 @@ const VERSION_FILE = path.join(__dirname, '../version.json');
 const MANIFEST_FILE = path.join(__dirname, '../public/manifest.json');
 const SW_FILE = path.join(__dirname, '../public/sw.js');
 
-// Read version.json
+// Read version.json and auto-increment cacheVersion on every build
 const versionData = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
-const { version, cacheVersion } = versionData;
+const { version } = versionData;
+const cacheVersion = (versionData.cacheVersion || 0) + 1;
 
-console.log(`🔄 Syncing version ${version} (cache v${cacheVersion})...\n`);
+// Write incremented cacheVersion back to version.json
+versionData.cacheVersion = cacheVersion;
+fs.writeFileSync(VERSION_FILE, JSON.stringify(versionData, null, 2) + '\n');
+
+console.log(`🔄 Syncing version ${version} (cache v${cacheVersion} — auto-incremented)...\n`);
 
 // Update manifest.json
 if (fs.existsSync(MANIFEST_FILE)) {

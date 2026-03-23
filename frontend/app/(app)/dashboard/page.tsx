@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { ScanLine } from "lucide-react";
-import { MetricsCards } from "@/components/dashboard/MetricsCards";
+import { MetricsCards, MetricsCardsSkeleton } from "@/components/dashboard/MetricsCards";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
@@ -77,6 +77,7 @@ function DashboardInnerContent() {
         incomeChange,
         expensesChange,
         refreshSummary,
+        loading: summaryLoading,
     } = useFinancialSummary();
 
     // Get data from contexts
@@ -212,16 +213,20 @@ function DashboardInnerContent() {
                 {/* Metrics Cards */}
                 <div className="mb-8">
                     <SectionErrorBoundary label="Metrics">
-                        <MetricsCards
-                            totalBalance={globalBalance}
-                            monthlyIncome={currentMonthIncome}
-                            monthlySpending={Math.max(0, adjustedSpent)}
-                            monthlyCashFlow={currentMonthIncome - Math.max(0, adjustedSpent)}
-                            incomeChange={incomeChange}
-                            spendingChange={expensesChange}
-                            cashFlowChange={balanceChange}
-                            userCurrency={userCurrency}
-                        />
+                        {summaryLoading ? (
+                            <MetricsCardsSkeleton />
+                        ) : (
+                            <MetricsCards
+                                totalBalance={globalBalance}
+                                monthlyIncome={currentMonthIncome}
+                                monthlySpending={Math.max(0, adjustedSpent)}
+                                monthlyCashFlow={currentMonthIncome - Math.max(0, adjustedSpent)}
+                                incomeChange={incomeChange}
+                                spendingChange={expensesChange}
+                                cashFlowChange={balanceChange}
+                                userCurrency={userCurrency}
+                            />
+                        )}
                     </SectionErrorBoundary>
                 </div>
 

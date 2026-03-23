@@ -13,7 +13,7 @@ export const Hero = () => {
   const t = useTranslations("landing.hero");
 
   return (
-    <section className="container flex flex-col justify-center min-h-[calc(100vh-4rem)] md:min-h-0 md:grid lg:grid-cols-2 md:place-items-center py-12 px-4 sm:py-16 md:py-32 gap-8 md:gap-10">
+    <section className="container flex flex-col justify-center md:grid lg:grid-cols-2 md:place-items-center py-12 px-4 sm:py-16 md:py-24 lg:py-32 gap-6 md:gap-10">
       <div className="text-center lg:text-start space-y-5 md:space-y-6 flex flex-col justify-center">
         <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight sm:leading-tight md:leading-normal tracking-tight">
           <motion.h1

@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/currency-utils"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
 import { useTranslations } from "next-intl"
 import type { BudgetPeriod } from "@/lib/constants/budget.constants"
+import { motion } from "framer-motion"
 
 interface RecurringTransactionCardProps {
   recurring: RecurringEntryDocument & { id: string }
@@ -33,6 +34,10 @@ export function RecurringTransactionCard({
   })
 
   return (
+    <motion.div
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
     <Card className={`${!recurring.isActive ? "opacity-60" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -90,5 +95,6 @@ export function RecurringTransactionCard({
         </div>
       </CardContent>
     </Card>
+    </motion.div>
   )
 }

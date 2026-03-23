@@ -7,13 +7,17 @@ import { formatCurrency } from "@/lib/currency-utils"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { useInView } from "framer-motion"
+import { Skeleton } from "@/components/ui/skeleton"
 
 function useCountUp(target: number, duration = 900) {
   const [value, setValue] = useState(0)
   const rafRef = useRef<number | null>(null)
-  const prevTarget = useRef(0)
+  const prevTarget = useRef<number>(0)
 
   useEffect(() => {
+    // Skip animation if change is negligible (prevents re-firing on minor re-renders)
+    if (Math.abs(target - prevTarget.current) < 0.005 * Math.max(1, Math.abs(target))) return
+
     const start = prevTarget.current
     const startTime = performance.now()
 
@@ -48,6 +52,32 @@ function AnimatedCurrency({ value, format }: { value: number; format: (v: number
 
   const animated = useCountUp(active ? value : 0)
   return <span ref={ref}>{active ? format(animated) : format(0)}</span>
+}
+
+export function MetricsCardsSkeleton() {
+  return (
+    <Card className="overflow-hidden drop-shadow-xl shadow-black/10">
+      <div className="px-5 pt-5 pb-4 border-b">
+        <Skeleton className="h-3 w-24 mb-2" />
+        <Skeleton className="h-8 w-36 mb-1" />
+        <Skeleton className="h-3 w-20" />
+      </div>
+      <div className="p-0">
+        <div className="px-5 pt-3 pb-1">
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <div className="grid grid-cols-3 divide-x">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="px-4 py-3 flex flex-col gap-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-2.5 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  )
 }
 
 interface MetricsCardsProps {

@@ -7,6 +7,7 @@ import { GoalDocument } from "@/lib/firestore-types"
 import { formatCurrency } from "@/lib/currency-utils"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
 import { getBadgeStatusColor } from "@/lib/constants/ui.constants"
+import { motion } from "framer-motion"
 
 interface GoalCardProps {
   goal: GoalDocument & { id: string }
@@ -37,6 +38,10 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
     : "bg-gray-300"
 
   return (
+    <motion.div
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
     <Card className={`${!goal.isActive ? "opacity-60" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -136,6 +141,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
         </div>
       </CardContent>
     </Card>
+    </motion.div>
   )
 }
 
