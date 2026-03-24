@@ -143,7 +143,7 @@ export const Pricing = () => {
               </CardTitle>
               <div>
                 <span className="text-3xl font-bold">{t(`${planKey}.price`)}</span>
-                <span className="text-muted-foreground">{t("perMonth")}</span>
+                {planKey !== "free" && <span className="text-muted-foreground">{t("perMonth")}</span>}
               </div>
               <CardDescription>{t(`${planKey}.description`)}</CardDescription>
             </CardHeader>

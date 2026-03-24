@@ -1,7 +1,7 @@
 export const SCAN_LIMITS = {
-  free: 0,
-  pro: 30,
-  business: 150,
+  free: 3,   // teaser: 3 free scans so users experience the feature
+  pro: 10,   // 10 scans = $1.00 Doc AI cost, leaves margin at 2.99 EUR/month
+  business: 50,
 } as const
 
 export const FREE_TIER_LIMITS = {

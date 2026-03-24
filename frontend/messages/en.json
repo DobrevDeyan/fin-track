@@ -366,33 +366,33 @@
   },
   "landing": {
     "hero": {
-      "tagline": "Smart Financial Management Made Easy",
-      "description": "Track expenses, manage budgets, and unlock AI-powered insights. Free to start — upgrade for receipt scanning, AI monthly digest, and a 90-day cash flow forecast.",
+      "tagline": "Snap a receipt. Budget done.",
+      "description": "Track expenses, set budgets, and let AI do the heavy lifting. Free forever — upgrade to Pro for receipt scanning and an AI coach that knows your actual numbers.",
       "goToDashboard": "Go to Dashboard",
-      "getStarted": "Get Started",
+      "getStarted": "Get Started Free",
       "learnMore": "Learn More"
     },
     "heroCards": {
-      "testimonial": "Pocket has completely transformed how I manage my finances!",
-      "productManager": "Product Manager",
-      "buildingFuture": "Building the future of personal finance management",
-      "startFreeTrial": "Start Free Trial",
-      "smartInsights": "Smart Insights",
-      "smartInsightsDesc": "Manually track and categorize your expenses with ease.",
-      "benefit1": "Unlimited entries",
-      "benefit2": "Manual expense tracking",
+      "testimonial": "Finally a finance app I actually use every week.",
+      "productManager": "Freelance designer",
+      "buildingFuture": "Your finances, clear and under control",
+      "startFreeTrial": "Start for Free",
+      "smartInsights": "Health Score",
+      "smartInsightsDesc": "A real-time score based on your savings rate, budget adherence, and goal progress.",
+      "benefit1": "Financial health score",
+      "benefit2": "Spending anomaly alerts",
       "benefit3": "Real-time analytics",
-      "pricingDescription": "Perfect for getting started with financial tracking.",
+      "pricingDescription": "Everything you need to start — no credit card required.",
       "freePlan": "Free",
       "freePlanPrice": "€0",
       "getStartedFree": "Get Started Free",
       "freeFeature1": "50 transactions/month",
-      "freeFeature2": "Up to 3 budgets",
-      "freeFeature3": "Financial health score",
+      "freeFeature2": "Health score & anomaly alerts",
+      "freeFeature3": "3 receipt scans/month",
       "worksOnAllDevices": "Works on all devices",
       "pwaTagline": "Installable PWA — no app store needed",
-      "aiInsightsTitle": "AI-Powered Insights",
-      "aiInsightsDesc": "Monthly AI digest, budget coach chat, and 90-day cash flow forecast — available on Pro.",
+      "aiInsightsTitle": "AI Budget Coach",
+      "aiInsightsDesc": "Ask questions about your own finances and get specific answers — \"Why am I overspending on food?\" — available on Pro.",
       "netBalance": "Net Balance",
       "allTimeNet": "All-time · income minus expenses",
       "thisMonth": "This month",
@@ -403,32 +403,32 @@
     "about": {
       "title": "About",
       "pocket": "Pocket",
-      "description": "Pocket is a modern financial management platform designed to help you take control of your finances. With manual expense tracking, real-time analytics, and intuitive budgeting tools, managing your money has never been easier.",
+      "description": "Pocket is a personal finance tracker built around one idea: tracking your money should take seconds, not minutes. Snap a receipt, categorize it, and move on. No spreadsheets, no manual data entry.",
       "visualPlaceholder": "Visual content placeholder"
     },
     "howItWorks": {
       "title": "How It",
       "works": "Works",
       "step1Title": "Sign Up",
-      "step1Desc": "Create your free account in seconds",
+      "step1Desc": "Create your free account in seconds — no credit card needed",
       "step2Title": "Add Expenses",
-      "step2Desc": "Manually enter your income and expenses",
+      "step2Desc": "Type it in or snap a receipt — AI fills in the merchant, amount, and date",
       "step3Title": "Categorize",
-      "step3Desc": "Organize your entries by category for better tracking",
+      "step3Desc": "Organize entries by category — budgets and goals update automatically",
       "step4Title": "Track",
-      "step4Desc": "Monitor your spending and income in real-time",
-      "step5Title": "Analyze",
-      "step5Desc": "Get insights and optimize your spending"
+      "step4Desc": "See your health score, anomaly alerts, and spending trends in real-time",
+      "step5Title": "Ask",
+      "step5Desc": "Ask your AI coach why you're over budget — it knows your actual numbers"
     },
     "features": {
-      "title": "Powerful",
-      "features": "Features",
-      "feature1Title": "Expense Tracking & Analytics",
-      "feature1Desc": "Log income and expenses, organize by category, set budgets and savings goals, and monitor your financial health with real-time charts.",
-      "feature2Title": "AI-Powered Insights",
-      "feature2Desc": "Pro users get a Gemini-powered monthly summary, an AI Budget Coach chat, and a 90-day cash flow forecast based on recurring transactions.",
-      "feature3Title": "Receipt Scanning",
-      "feature3Desc": "Snap a photo or upload a PDF — AI extracts the merchant, amount, and date automatically. Available on Pro plan."
+      "title": "Everything You",
+      "features": "Need",
+      "feature1Title": "Budgets, Goals & Tracking",
+      "feature1Desc": "Log income and expenses, organize by category, set budgets and savings goals. Your financial health score updates in real-time as you track.",
+      "feature2Title": "Receipt Scanning",
+      "feature2Desc": "Snap a photo or upload a PDF — AI extracts merchant, amount, and date automatically. No more manual entry for receipts. Available on Pro.",
+      "feature3Title": "AI Budget Coach",
+      "feature3Desc": "Ask questions about your own finances and get specific, data-backed answers. Not generic advice — answers based on your actual spending. Available on Pro."
     },
     "services": {
       "title": "Our",
@@ -441,17 +441,17 @@
       "service3Desc": "Generate detailed reports and insights"
     },
     "cta": {
-      "title": "Ready to take control of your finances?",
-      "description": "Join thousands of users who are already managing their money smarter with Pocket.",
+      "title": "Start tracking in under a minute.",
+      "description": "Free plan. No credit card. No setup fee. Just sign up and start.",
       "button": "Get Started Free"
     },
     "testimonials": {
       "title": "What Our",
       "users": "Users",
       "say": "Say",
-      "testimonial1": "Finally a budgeting app that keeps it simple. The expense tracking and budget alerts are exactly what I needed.",
-      "testimonial2": "The AI Budget Coach is genuinely useful — it spotted that I was overspending on subscriptions before I even noticed. Worth the Pro upgrade.",
-      "testimonial3": "Receipt scanning saves me so much time for my freelance expense tracking. The AI monthly summary is brilliant."
+      "testimonial1": "Finally a budgeting app that keeps it simple. The health score alone made me rethink my spending.",
+      "testimonial2": "The AI coach spotted I was overspending on subscriptions before I noticed. At €2.99/month it's a no-brainer.",
+      "testimonial3": "Receipt scanning saves me so much time for freelance expense tracking. Snap, done."
     },
     "pricing": {
       "title": "Simple",
@@ -462,51 +462,51 @@
       "free": {
         "name": "Free",
         "price": "€0",
-        "description": "Get started with personal finance tracking",
+        "description": "Everything you need to start — no credit card",
         "feature1": "50 transactions per month",
-        "feature2": "Up to 3 budgets",
-        "feature3": "Up to 2 savings goals",
-        "feature4": "1 savings account · 3 recurring transactions",
-        "feature5": "Financial health score",
-        "feature6": "Spending anomaly alerts"
+        "feature2": "3 budgets · 2 savings goals",
+        "feature3": "Financial health score",
+        "feature4": "Spending anomaly alerts",
+        "feature5": "3 receipt scans/month",
+        "feature6": "1 savings account · 3 recurring transactions"
       },
       "pro": {
         "name": "Pro",
-        "price": "€7.99",
-        "description": "Unlock AI features and unlimited tracking",
-        "feature1": "Unlimited transactions",
-        "feature2": "30 receipt scans per month",
-        "feature3": "AI Monthly Summary & Budget Coach",
-        "feature4": "90-day Cash Flow Forecast",
-        "feature5": "PDF & CSV export",
-        "feature6": "Unlimited budgets, goals & accounts"
+        "price": "€2.99",
+        "description": "Receipt scanning + AI coach · or €24.99/year",
+        "feature1": "Everything in Free, unlimited",
+        "feature2": "10 receipt scans/month",
+        "feature3": "AI Budget Coach chat",
+        "feature4": "AI monthly digest",
+        "feature5": "90-day cash flow forecast",
+        "feature6": "PDF & CSV export"
       },
       "business": {
         "name": "Business",
         "price": "€19.99",
         "description": "Maximum scans for power users & freelancers",
         "feature1": "Everything in Pro",
-        "feature2": "150 receipt scans per month",
+        "feature2": "50 receipt scans per month",
         "feature3": "Priority support",
         "feature4": "Advanced analytics"
       }
     },
     "newsletter": {
       "title": "Start for Free Today",
-      "description": "Create your account in seconds. Free plan includes expense tracking, budgets, goals, and a financial health score — no credit card required.",
+      "description": "Create your account in seconds. Free plan includes expense tracking, budgets, goals, health score, and 3 receipt scans — no credit card required.",
       "cta": "Create Free Account"
     },
     "faq": {
       "title": "Frequently Asked",
       "questions": "Questions",
-      "q1": "What AI features does Pocket offer?",
-      "a1": "Pro subscribers get access to AI-powered features: a monthly financial summary, an AI Budget Coach powered by Gemini, a 90-day Cash Flow Forecast, and receipt scanning that automatically extracts expense details from photos and PDFs.",
+      "q1": "What does Pro include?",
+      "a1": "Pro (€2.99/month) includes 10 receipt scans per month, an AI Budget Coach you can chat with about your own spending, an AI-generated monthly digest, a 90-day cash flow forecast, and unlimited transactions, budgets, goals, and accounts.",
       "q2": "Is my financial data secure?",
-      "a2": "Yes, we use bank-level encryption to protect your data. All your entries are stored securely and encrypted in transit and at rest.",
+      "a2": "Yes. All data is stored encrypted in Firebase and transmitted over HTTPS. We never sell your data or share it with third parties.",
       "q3": "Can I use Pocket on mobile?",
-      "a3": "Yes, Pocket is available as a Progressive Web App (PWA) that works on all mobile devices.",
-      "q4": "What happens if I exceed my free tier limits?",
-      "a4": "The free plan includes 50 transactions per month, up to 3 budgets, up to 2 savings goals, 1 savings account, and 3 recurring transactions. If you need more, you can upgrade to Pro (€7.99/month) for unlimited transactions, 30 receipt scans per month, all AI features, and unlimited budgets, goals, savings accounts, and recurring transactions."
+      "a3": "Yes. Pocket is an installable PWA — add it to your home screen directly from the browser. No app store needed, works on iOS and Android.",
+      "q4": "What are the free plan limits?",
+      "a4": "Free includes 50 transactions/month, 3 budgets, 2 savings goals, 1 savings account, 3 recurring transactions, a financial health score, anomaly alerts, and 3 receipt scans/month as a teaser. Upgrade to Pro for €2.99/month to remove all limits and unlock the AI coach."
     },
     "footer": {
       "tagline": "Smart financial management made easy.",

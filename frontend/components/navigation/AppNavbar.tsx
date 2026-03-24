@@ -156,7 +156,7 @@ export const AppNavbar = () => {
       <motion.button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-2xl",
+          "fixed bottom-24 right-6 h-16 w-16 rounded-full shadow-2xl",
           "bg-[#4CAF50] overflow-hidden z-50",
           "flex items-center justify-center md:hidden",
         )}

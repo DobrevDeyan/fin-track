@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { toast } from "sonner"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 
 type SavingsAccount = import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
 
@@ -147,8 +147,9 @@ export function SavingsAccountCard({
             </div>
             <div className="flex gap-2">
               <Button
+                variant="outline"
                 size="sm"
-                className="flex-1 h-10 bg-emerald-500 hover:bg-emerald-600 text-white font-medium shadow-sm"
+                className="flex-1 h-10 font-medium"
                 onClick={() => {
                   setTransactionType("add")
                   setTransactionDialogOpen(true)

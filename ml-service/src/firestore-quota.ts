@@ -18,9 +18,9 @@ const db = admin.firestore();
 export type PlanTier = 'free' | 'pro' | 'business';
 
 export const SCAN_LIMITS: Record<PlanTier, number> = {
-  free: 0,
-  pro: 30,
-  business: 150,
+  free: 3,   // teaser: 3 free scans so users experience the feature
+  pro: 10,   // 10 scans = $1.00 Doc AI cost, leaves margin at 2.99 EUR/month
+  business: 50,
 };
 
 /**
@@ -74,7 +74,7 @@ export async function checkAndIncrementScanQuota(
   const docRef = db.collection('scanUsage').doc(uid);
   const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
-  // Free tier always blocked — no transaction needed
+  // Zero limit = fully blocked (shouldn't happen with current config, kept as safety net)
   if (limit === 0) {
     return { allowed: false, count: 0, limit: 0 };
   }

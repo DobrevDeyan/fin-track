@@ -70,7 +70,9 @@
       "Bash(grep -v \"node_modules\\\\|0$\")",
       "Bash(find /d/personal/fin-track/frontend/app -type d -name \"\\(app\\)\")",
       "Bash(grep -r \"router\\\\.back\\\\|useRouter\" /d/personal/fin-track/frontend/app --include=*.tsx --include=*.ts)",
-      "Bash(grep -n \"router\\\\.\" /d/personal/fin-track/frontend/app/\\\\\\(app\\\\\\)/*/page.tsx)"
+      "Bash(grep -n \"router\\\\.\" /d/personal/fin-track/frontend/app/\\\\\\(app\\\\\\)/*/page.tsx)",
+      "WebSearch",
+      "WebFetch(domain:docs.cloud.google.com)"
     ]
   }
 }

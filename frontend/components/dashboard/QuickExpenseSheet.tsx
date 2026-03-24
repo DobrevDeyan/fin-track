@@ -469,10 +469,11 @@ export function QuickExpenseSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="bottom" 
+      <SheetContent
+        side="bottom"
         className="!h-[95dvh] max-h-[95dvh] rounded-t-3xl flex flex-col p-0 overflow-hidden"
         style={{ height: '95dvh', maxHeight: '95dvh' }}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div
           className="px-4 pt-4 pb-2 flex-shrink-0 touch-none"
