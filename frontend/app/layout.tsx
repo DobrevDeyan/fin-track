@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeContextProvider } from "@/contexts/ThemeContext"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { CurrencyProvider } from "@/contexts/CurrencyContext"
 import { LanguageProvider } from "@/contexts/LanguageContext"
@@ -66,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang={defaultLocale} className="light" suppressHydrationWarning>
+    <html lang={defaultLocale} suppressHydrationWarning>
       <head>
         {/* Resource hints for Firebase - improve connection speed */}
         <link rel="preconnect" href="https://fin-track-adc2c.firebaseapp.com" />
@@ -100,10 +101,10 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
-          forcedTheme="light"
           enableSystem={false}
           disableTransitionOnChange
         >
+          <ThemeContextProvider>
           <AuthProvider>
             <CurrencyProvider>
               <LanguageProvider initialLocale={defaultLocale}>
@@ -115,6 +116,7 @@ export default function RootLayout({
               </LanguageProvider>
             </CurrencyProvider>
           </AuthProvider>
+          </ThemeContextProvider>
         </ThemeProvider>
       </body>
     </html>

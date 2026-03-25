@@ -38,6 +38,7 @@ import { ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
+import { ThemeControls } from "@/components/ThemeControls"
 
 export const AppNavbar = () => {
   const t = useTranslations("nav")
@@ -382,9 +383,24 @@ export const AppNavbar = () => {
               </div>
             </motion.div>
 
-            {/* Logout */}
+            {/* Preferences */}
             <motion.div
               custom={3}
+              initial="hidden"
+              animate={isOpen ? "visible" : "hidden"}
+              variants={itemVariants}
+            >
+              <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-3 px-1">
+                Preferences
+              </p>
+              <div className="rounded-2xl bg-muted/50 px-4 py-3">
+                <ThemeControls compact />
+              </div>
+            </motion.div>
+
+            {/* Logout */}
+            <motion.div
+              custom={4}
               initial="hidden"
               animate={isOpen ? "visible" : "hidden"}
               variants={itemVariants}
@@ -407,7 +423,7 @@ export const AppNavbar = () => {
       </Sheet>
 
       {/* Desktop header */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="h-14 px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
 
           {/* Logo */}
@@ -427,7 +443,7 @@ export const AppNavbar = () => {
 
           {/* Desktop nav — icon pills with tooltips */}
           <TooltipProvider delayDuration={400}>
-            <nav className="hidden md:flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+            <nav className="hidden md:flex items-center gap-1 bg-muted rounded-xl p-1">
               {appRoutes.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href
                 return (
@@ -438,8 +454,8 @@ export const AppNavbar = () => {
                         className={cn(
                           "relative flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                           isActive
-                            ? "bg-white text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground hover:bg-white/70"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-background/70"
                         )}
                       >
                         <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-emerald-600")} />

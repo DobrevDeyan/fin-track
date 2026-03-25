@@ -18,7 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Check, CreditCard, Loader2, Pencil, RotateCcw, Trash2, User } from "lucide-react"
+import { AlertTriangle, Check, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, User } from "lucide-react"
+import { ThemeControls } from "@/components/ThemeControls"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
 import { useScanQuota } from "@/lib/hooks/useScanQuota"
 import { Progress } from "@/components/ui/progress"
@@ -174,6 +175,22 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
+
+      {/* Appearance */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Appearance
+          </CardTitle>
+          <CardDescription>
+            Choose your theme and accent color. Changes apply instantly.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeControls />
+        </CardContent>
+      </Card>
 
       {/* Profile */}
       <Card className="mb-6">
