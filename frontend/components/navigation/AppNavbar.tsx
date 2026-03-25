@@ -7,14 +7,12 @@ import { useTranslations } from "next-intl"
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
 import {
   Menu, LogOut, X, Globe, Info, LayoutDashboard,
   Calendar as CalendarIcon, FileText, Settings, Receipt,
-  Landmark, ChevronDown, DollarSign, Sparkles,
+  Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight,
 } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
@@ -25,14 +23,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
 import { updateUserCurrency, updateUserLanguage } from "@/lib/firestore-users"
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { useCurrency } from "@/contexts/CurrencyContext"
@@ -141,12 +137,12 @@ export const AppNavbar = () => {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const mobileNavVariants: Variants = {
-    hidden: { opacity: 0, x: 20 },
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, x: 16 },
     visible: (i: number) => ({
       opacity: 1,
       x: 0,
-      transition: { delay: i * 0.06, duration: 0.25, ease: "easeOut" },
+      transition: { delay: i * 0.05, duration: 0.22, ease: "easeOut" },
     }),
   }
 
@@ -179,48 +175,37 @@ export const AppNavbar = () => {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Gradient header */}
-          <div
-            className="px-5 pt-6 pb-6 relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #1a4731 100%)",
-            }}
-          >
-            {/* Decorative circles */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
-            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-emerald-500/10 pointer-events-none" />
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 
-            <SheetHeader className="mb-0">
-              <div className="flex items-center justify-between mb-5">
-                <SheetTitle className="font-bold text-lg text-white tracking-tight">
-                  Pocket
-                </SheetTitle>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="rounded-full p-1.5 hover:bg-white/15 transition-colors duration-200 focus:outline-none"
-                    aria-label="Close menu"
-                  >
-                    <X className="h-4 w-4 text-white/70" strokeWidth={2.5} />
-                  </button>
-              </div>
-            </SheetHeader>
+          {/* Header */}
+          <div className="px-5 pt-6 pb-5">
+            <div className="flex items-center justify-between mb-5">
+              <span className="font-bold text-lg text-foreground tracking-tight">Pocket</span>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="rounded-full p-1.5 bg-muted hover:bg-muted/80 transition-colors focus:outline-none"
+                aria-label="Close menu"
+              >
+                <X className="h-4 w-4 text-muted-foreground" strokeWidth={2.5} />
+              </button>
+            </div>
 
             {/* User info */}
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Avatar className="h-11 w-11 ring-2 ring-emerald-400/40">
+                <Avatar className="h-12 w-12 ring-2 ring-emerald-400/30">
                   <AvatarImage src={user?.photoURL || undefined} />
-                  <AvatarFallback className="bg-emerald-500/30 text-white font-semibold text-base">
+                  <AvatarFallback className="bg-emerald-500/20 text-emerald-700 font-semibold text-base">
                     {getUserInitials(user)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-[#0f3460]" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-background" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-white font-semibold text-sm truncate leading-tight">
+                <span className="text-foreground font-semibold text-sm truncate leading-tight">
                   {displayName || user?.displayName || "User"}
                 </span>
-                <span className="text-white/50 text-xs truncate mt-0.5">
+                <span className="text-muted-foreground text-xs truncate mt-0.5">
                   {user?.email}
                 </span>
               </div>
@@ -230,10 +215,10 @@ export const AppNavbar = () => {
             <div className="flex gap-2 mt-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-xs font-medium">
-                    <DollarSign className="h-3 w-3 text-emerald-400" />
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
+                    <DollarSign className="h-3 w-3 text-emerald-600" />
                     {userCurrency}
-                    <ChevronDown className="h-3 w-3 text-white/50" />
+                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-36" align="start">
@@ -251,10 +236,10 @@ export const AppNavbar = () => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-xs font-medium">
-                    <Globe className="h-3 w-3 text-emerald-400" />
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
+                    <Globe className="h-3 w-3 text-emerald-600" />
                     {localeNames[locale as Locale] ?? locale.toUpperCase()}
-                    <ChevronDown className="h-3 w-3 text-white/50" />
+                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-36" align="start">
@@ -272,114 +257,151 @@ export const AppNavbar = () => {
             </div>
           </div>
 
-          {/* Nav links */}
-          <nav className="flex flex-col flex-1 px-3 pt-3 pb-4 overflow-y-auto">
-            <div className="flex flex-col gap-0.5">
-              {appRoutes.map(({ href, label, icon: Icon }, i) => {
-                const isActive = pathname === href
-                return (
-                  <motion.div
-                    key={href}
-                    custom={i}
-                    initial="hidden"
-                    animate={isOpen ? "visible" : "hidden"}
-                    variants={mobileNavVariants}
-                  >
-                    <Link
-                      href={href}
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-150 relative group",
-                        isActive
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "text-foreground/65 hover:bg-accent hover:text-foreground"
-                      )}
-                    >
-                      <div className={cn(
-                        "flex items-center justify-center h-8 w-8 rounded-lg transition-colors duration-150 shrink-0",
-                        isActive
-                          ? "bg-emerald-100 text-emerald-600"
-                          : "bg-muted/70 text-muted-foreground group-hover:bg-accent"
-                      )}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <span>{label}</span>
-                      {isActive && (
-                        <motion.div
-                          layoutId="mobileActiveIndicator"
-                          className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-500"
-                        />
-                      )}
-                    </Link>
-                  </motion.div>
-                )
-              })}
-            </div>
+          {/* Divider */}
+          <div className="h-px bg-border/50 mx-0" />
 
-            {/* AI Coach shortcut */}
+          {/* Nav content */}
+          <nav className="flex flex-col flex-1 px-4 py-5 overflow-y-auto gap-5">
+
+            {/* Navigate */}
             <motion.div
-              custom={appRoutes.length}
+              custom={0}
               initial="hidden"
               animate={isOpen ? "visible" : "hidden"}
-              variants={mobileNavVariants}
-              className="pt-2 border-t border-border/40"
+              variants={itemVariants}
             >
-              <button
-                onClick={() => {
-                  setIsOpen(false)
-                  window.dispatchEvent(new Event("pocket:openAIChat"))
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium text-foreground/65 hover:bg-accent hover:text-foreground transition-all duration-150"
-              >
-                <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-purple-100 text-purple-600 shrink-0">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <span>AI Budget Coach</span>
-              </button>
+              <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-2 px-1">
+                Navigate
+              </p>
+              <div className="rounded-2xl overflow-hidden bg-muted/50">
+                {appRoutes.map(({ href, label, icon: Icon }, i) => {
+                  const isActive = pathname === href
+                  return (
+                    <div key={href}>
+                      {i > 0 && <div className="h-px bg-border/60 mx-4" />}
+                      <Link
+                        href={href}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
+                          isActive ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
+                          isActive
+                            ? "bg-emerald-100 text-emerald-600"
+                            : "bg-background text-muted-foreground"
+                        )}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="flex-1">{label}</span>
+                        <ChevronRight className={cn(
+                          "h-4 w-4 shrink-0",
+                          isActive ? "text-emerald-600/40" : "text-muted-foreground/30"
+                        )} />
+                      </Link>
+                    </div>
+                  )
+                })}
+              </div>
             </motion.div>
 
-            {/* Bottom actions */}
-            <div className="mt-auto pt-3 border-t border-border/40 space-y-0.5">
-              <motion.div
-                custom={appRoutes.length + 1}
-                initial="hidden"
-                animate={isOpen ? "visible" : "hidden"}
-                variants={mobileNavVariants}
-              >
+            {/* Tools */}
+            <motion.div
+              custom={1}
+              initial="hidden"
+              animate={isOpen ? "visible" : "hidden"}
+              variants={itemVariants}
+            >
+              <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-2 px-1">
+                Tools
+              </p>
+              <div className="rounded-2xl overflow-hidden bg-muted/50">
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    window.dispatchEvent(new Event("pocket:openAIChat"))
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-purple-100 text-purple-600 shrink-0">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <span className="flex-1 text-left">AI Budget Coach</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Account */}
+            <motion.div
+              custom={2}
+              initial="hidden"
+              animate={isOpen ? "visible" : "hidden"}
+              variants={itemVariants}
+            >
+              <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-2 px-1">
+                Account
+              </p>
+              <div className="rounded-2xl overflow-hidden bg-muted/50">
                 <Link
                   href="/settings"
                   onClick={() => setIsOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-150",
-                    pathname === "/settings"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "text-foreground/65 hover:bg-accent hover:text-foreground"
+                    "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
+                    pathname === "/settings" ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
                   )}
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/70">
+                  <div className={cn(
+                    "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
+                    pathname === "/settings"
+                      ? "bg-emerald-100 text-emerald-600"
+                      : "bg-background text-muted-foreground"
+                  )}>
                     <Settings className="h-4 w-4" />
                   </div>
-                  {t("accountSettings")}
+                  <span className="flex-1">{t("accountSettings")}</span>
+                  <ChevronRight className={cn(
+                    "h-4 w-4 shrink-0",
+                    pathname === "/settings" ? "text-emerald-600/40" : "text-muted-foreground/30"
+                  )} />
                 </Link>
-              </motion.div>
+                <div className="h-px bg-border/60 mx-4" />
+                <Link
+                  href="/?landing"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-background text-muted-foreground shrink-0">
+                    <Info className="h-4 w-4" />
+                  </div>
+                  <span className="flex-1">About Pocket</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                </Link>
+              </div>
+            </motion.div>
 
-              <motion.div
-                custom={appRoutes.length + 2}
-                initial="hidden"
-                animate={isOpen ? "visible" : "hidden"}
-                variants={mobileNavVariants}
-              >
+            {/* Logout */}
+            <motion.div
+              custom={3}
+              initial="hidden"
+              animate={isOpen ? "visible" : "hidden"}
+              variants={itemVariants}
+              className="mt-auto"
+            >
+              <div className="rounded-2xl overflow-hidden bg-muted/50">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all duration-150"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-red-600 hover:text-red-700 transition-colors duration-150"
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/70">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-50 text-red-500 shrink-0">
                     <LogOut className="h-4 w-4" />
                   </div>
-                  {t("logout")}
+                  <span className="flex-1 text-left">{t("logout")}</span>
                 </button>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           </nav>
         </SheetContent>
       </Sheet>
@@ -439,9 +461,8 @@ export const AppNavbar = () => {
             </nav>
           </TooltipProvider>
 
-          {/* Desktop right — avatar dropdown (consolidates everything) */}
+          {/* Desktop right — consolidated currency/language + avatar */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Currency + Language compact badges */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-transparent hover:border-border/50">
@@ -473,7 +494,6 @@ export const AppNavbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Avatar dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">

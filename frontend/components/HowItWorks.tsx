@@ -17,7 +17,7 @@ export const HowItWorks = () => {
   return (
     <section id="how-it-works" className="container py-24 sm:py-32">
       <motion.h2
-        className="text-3xl md:text-4xl font-bold text-center mb-12"
+        className="text-2xl md:text-3xl font-bold text-center mb-12"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}

@@ -15,9 +15,9 @@ export const Hero = () => {
   return (
     <section className="container flex flex-col justify-center md:grid lg:grid-cols-2 md:place-items-center py-12 px-4 sm:py-16 md:py-24 lg:py-32 gap-6 md:gap-10">
       <div className="text-center lg:text-start space-y-5 md:space-y-6 flex flex-col justify-center">
-        <main className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight sm:leading-tight md:leading-normal tracking-tight">
+        <main className="space-y-2">
           <motion.h1
-            className="block font-poppins font-bold text-foreground"
+            className="block text-4xl sm:text-5xl md:text-6xl font-poppins font-bold text-foreground leading-tight tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -25,7 +25,7 @@ export const Hero = () => {
             Pocket
           </motion.h1>
           <motion.h2
-            className="block font-inter font-semibold text-foreground/90"
+            className="block text-lg sm:text-xl md:text-2xl font-inter font-medium text-foreground/70 leading-snug"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
@@ -35,7 +35,7 @@ export const Hero = () => {
         </main>
 
         <motion.p
-          className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed md:w-10/12 mx-auto lg:mx-0 px-2 sm:px-0 font-normal"
+          className="text-base md:text-lg text-muted-foreground leading-relaxed md:w-10/12 mx-auto lg:mx-0 px-2 sm:px-0 font-normal"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}

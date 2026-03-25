@@ -16,6 +16,9 @@ const HowItWorks = dynamic(() => import("@/components/HowItWorks").then(mod => (
 const Features = dynamic(() => import("@/components/Features").then(mod => ({ default: mod.Features })), {
   loading: () => <div className="min-h-[400px]" />,
 });
+const InstallGuide = dynamic(() => import("@/components/InstallGuide").then(mod => ({ default: mod.InstallGuide })), {
+  loading: () => <div className="min-h-[400px]" />,
+});
 const Services = dynamic(() => import("@/components/Services").then(mod => ({ default: mod.Services })), {
   loading: () => <div className="min-h-[400px]" />,
 });
@@ -122,6 +125,7 @@ export default function Home() {
       {/* <Sponsors /> */}
       <About />
       <HowItWorks />
+      <InstallGuide />
       <Features />
       <Services />
       <Cta />

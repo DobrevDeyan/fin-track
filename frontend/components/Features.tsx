@@ -27,7 +27,7 @@ export const Features = () => {
   return (
     <section id="features" className="container py-24 sm:py-32">
       <motion.h2
-        className="text-3xl md:text-4xl font-bold text-center mb-8"
+        className="text-2xl md:text-3xl font-bold text-center mb-8"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -54,7 +54,7 @@ export const Features = () => {
                   <span className="text-4xl">{icon}</span>
                   {t(titleKey)}
                 </CardTitle>
-                <CardDescription className="text-lg mt-4">
+                <CardDescription className="text-sm mt-3">
                   {t(descKey)}
                 </CardDescription>
               </CardHeader>

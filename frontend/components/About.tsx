@@ -10,10 +10,10 @@ export const About = () => {
     <section id="about" className="container py-24 sm:py-32">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">
             {t("title")} <span className="text-foreground">{t("pocket")}</span>
           </h2>
-          <p className="text-muted-foreground text-xl mt-4 mb-8">
+          <p className="text-muted-foreground text-base md:text-lg mt-4 mb-8">
             {t("description")}
           </p>
         </div>
