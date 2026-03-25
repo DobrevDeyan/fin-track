@@ -15,6 +15,7 @@ import {
   Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight,
 } from "lucide-react"
 import Image from "next/image"
+import { PocketLogo } from "@/components/PocketLogo"
 import { useAuth } from "@/contexts/AuthContext"
 import {
   DropdownMenu,
@@ -163,7 +164,7 @@ export const AppNavbar = () => {
         aria-label="Open menu"
         whileTap={{ scale: 0.9 }}
       >
-        <Image src="/icons/icon-192x192.png" alt="Menu" width={56} height={56} className="w-full h-full object-cover" />
+        <PocketLogo width={56} height={56} className="w-full h-full object-cover" />
       </motion.button>
 
       {/* Mobile Sheet */}
@@ -428,7 +429,7 @@ export const AppNavbar = () => {
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg tracking-tight shrink-0">
-            <Image src="/icons/icon-32x32.png" alt="Pocket Logo" width={28} height={28} className="w-6 h-6" priority />
+            <PocketLogo width={28} height={28} className="w-6 h-6" priority />
             <span className="text-foreground">Pocket</span>
           </Link>
 

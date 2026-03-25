@@ -57,7 +57,8 @@
     "settings": "Settings",
     "accountSettings": "Account Settings",
     "receipts": "Receipts",
-    "netWorth": "Net Worth"
+    "netWorth": "Net Worth",
+    "getStarted": "Get Started"
   },
   "auth": {
     "login": "Login",

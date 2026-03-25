@@ -4,54 +4,52 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu"
-import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
-  SheetTrigger,
-  SheetClose,
 } from "@/components/ui/sheet"
-import { buttonVariants } from "@/components/ui/button"
 import { Button } from "@/components/ui/button"
-import { Menu, X, Globe } from "lucide-react"
-import Image from "next/image"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Menu, X, Globe, ChevronDown, ChevronRight,
+  Sparkles, CreditCard, HelpCircle, MessageSquare, LogIn, UserPlus, LayoutGrid,
+} from "lucide-react"
+import Image from "next/image"
+import { PocketLogo } from "@/components/PocketLogo"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { locales, localeNames, type Locale } from "@/i18n/config"
+import { cn } from "@/lib/utils"
+import { motion, type Variants } from "framer-motion"
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, x: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: { delay: i * 0.05, duration: 0.22, ease: "easeOut" as const },
+  }),
+}
 
 export const MarketingNavbar = () => {
   const t = useTranslations("nav")
   const [isOpen, setIsOpen] = useState(false)
   const { locale, setLocale } = useLanguage()
 
-  const handleLanguageChange = async (newLocale: string) => {
-    const loc = newLocale as Locale
-    setLocale(loc)
+  const handleLanguageChange = (newLocale: string) => {
+    setLocale(newLocale as Locale)
   }
 
   const handleNavClick = (href: string, e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
     if (typeof window === "undefined") return
-
     const hash = href.replace("#", "")
-    const currentPath = window.location.pathname
-
-    if (currentPath === "/") {
-      const element = document.getElementById(hash)
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" })
-      }
+    if (window.location.pathname === "/") {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" })
     } else {
       window.location.href = `/${href}`
     }
@@ -59,152 +57,199 @@ export const MarketingNavbar = () => {
   }
 
   useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const currentPath = window.location.pathname
-    if (currentPath === "/") {
-      const hash = window.location.hash.replace("#", "")
-      if (hash) {
-        setTimeout(() => {
-          const element = document.getElementById(hash)
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth" })
-          }
-        }, 100)
-      }
+    if (typeof window === "undefined" || window.location.pathname !== "/") return
+    const hash = window.location.hash.replace("#", "")
+    if (hash) {
+      setTimeout(() => document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" }), 100)
     }
   }, [])
 
   const routeList = [
-    { href: "#features", label: t("features") },
-    { href: "#testimonials", label: t("testimonials") },
-    { href: "#pricing", label: t("pricing") },
-    { href: "#faq", label: t("faq") },
+    { href: "#features",     label: t("features"),     icon: Sparkles },
+    { href: "#testimonials", label: t("testimonials"), icon: MessageSquare },
+    { href: "#pricing",      label: t("pricing"),      icon: CreditCard },
+    { href: "#faq",          label: t("faq"),          icon: HelpCircle },
   ]
 
   return (
-    <header className="sticky border-b-[1px] top-0 z-40 w-full bg-white border-gray-200">
-      <NavigationMenu className="mx-auto">
-        <NavigationMenuList className="container h-14 px-4 flex justify-between w-full">
-          <NavigationMenuItem className="flex">
-            <Link
-              href="/"
-              className="ml-2 font-semibold text-xl tracking-tight flex items-center gap-2"
+    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="container h-14 px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 font-semibold text-lg tracking-tight shrink-0">
+          <PocketLogo width={28} height={28} className="w-6 h-6" priority />
+          <span className="text-foreground">Pocket</span>
+        </Link>
+
+        {/* Mobile hamburger */}
+        <button
+          className="flex md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+          onClick={() => setIsOpen(true)}
+          aria-label={t("menu")}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Desktop nav — pill container matching AppNavbar */}
+        <nav className="hidden md:flex items-center gap-1 bg-muted rounded-xl p-1">
+          {routeList.map((route) => (
+            <a
+              key={route.href}
+              href={route.href}
+              onClick={(e) => handleNavClick(route.href, e)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background/70 transition-all duration-200"
             >
-              <Image
-                src="/icons/icon-32x32.png"
-                alt="Pocket Logo"
-                width={32}
-                height={32}
-                className="w-6 h-6"
-                priority
-              />
-              <span className="text-foreground">Pocket</span>
-            </Link>
-          </NavigationMenuItem>
+              {route.label}
+            </a>
+          ))}
+        </nav>
 
-          {/* mobile */}
-          <span className="flex md:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger className="px-2">
-                <Menu
-                  className="flex md:hidden h-5 w-5"
-                  onClick={() => setIsOpen(true)}
+        {/* Desktop right */}
+        <div className="hidden md:flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-transparent hover:border-border/50">
+                <Globe className="h-3.5 w-3.5" />
+                <span className="text-xs font-semibold">{locale.toUpperCase()}</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              {locales.map((loc) => (
+                <DropdownMenuItem
+                  key={loc}
+                  onClick={() => handleLanguageChange(loc)}
+                  className={cn("text-sm", locale === loc && "font-semibold text-primary")}
                 >
-                  <span className="sr-only">{t("menu")}</span>
-                </Menu>
-              </SheetTrigger>
+                  {localeNames[loc]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-              <SheetContent side="right" className="w-[320px] sm:w-[380px] [&>button]:hidden">
-                <SheetHeader className="mb-6 relative">
-                  <div className="flex items-center justify-between">
-                    <SheetTitle className="font-bold text-2xl text-left">
-                      <span className="text-foreground">Pocket</span>
-                    </SheetTitle>
-                    <SheetClose asChild>
-                      <button
-                        className="rounded-full p-2 hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 -mr-2"
-                        aria-label="Close menu"
-                      >
-                        <X className="h-6 w-6 text-foreground/70 hover:text-foreground transition-colors" strokeWidth={2.5} />
-                      </button>
-                    </SheetClose>
-                  </div>
-                </SheetHeader>
-                <nav className="flex flex-col gap-2">
-                  {routeList.map(({ href, label }) => (
+          <Link href="/auth/login">
+            <Button variant="outline" size="sm">{t("login")}</Button>
+          </Link>
+          <Link href="/auth/register">
+            <Button size="sm">{t("getStarted")}</Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile sheet — matches AppNavbar style */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side="right"
+          className="w-[300px] sm:w-[340px] [&>button]:hidden p-0 flex flex-col border-l-0"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+
+          {/* Header */}
+          <div className="px-5 pt-6 pb-5">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <PocketLogo width={24} height={24} className="w-5 h-5" />
+                <span className="font-bold text-lg text-foreground tracking-tight">Pocket</span>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="rounded-full p-1.5 bg-muted hover:bg-muted/80 transition-colors focus:outline-none"
+                aria-label="Close menu"
+              >
+                <X className="h-4 w-4 text-muted-foreground" strokeWidth={2.5} />
+              </button>
+            </div>
+
+            {/* Language pill */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
+                  <Globe className="h-3 w-3 text-emerald-600" />
+                  {localeNames[locale as Locale] ?? locale.toUpperCase()}
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-36">
+                {locales.map((loc) => (
+                  <DropdownMenuItem
+                    key={loc}
+                    onClick={() => handleLanguageChange(loc)}
+                    className={cn("text-sm", locale === loc && "font-semibold text-primary")}
+                  >
+                    {localeNames[loc]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="h-px bg-border/50" />
+
+          {/* Nav content */}
+          <nav className="flex flex-col flex-1 px-4 py-5 overflow-y-auto gap-5">
+
+            {/* Explore */}
+            <motion.div custom={0} initial="hidden" animate={isOpen ? "visible" : "hidden"} variants={itemVariants}>
+              <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-2 px-1">
+                Explore
+              </p>
+              <div className="rounded-2xl overflow-hidden bg-muted/50">
+                {routeList.map(({ href, label, icon: Icon }, i) => (
+                  <div key={href}>
+                    {i > 0 && <div className="h-px bg-border/60 mx-4" />}
                     <a
-                      rel="noreferrer noopener"
-                      key={label}
                       href={href}
                       onClick={(e) => handleNavClick(href, e)}
-                      className="text-center px-4 py-3 rounded-lg text-base font-medium text-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors duration-200"
+                      className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
                     >
-                      {label}
+                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-background text-muted-foreground shrink-0">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="flex-1">{label}</span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
                     </a>
-                  ))}
-                  <div className="w-full mt-4 mb-2">
-                    <Select value={locale} onValueChange={handleLanguageChange}>
-                      <SelectTrigger className="w-full h-11 text-base font-medium border-2">
-                        <Globe className="h-4 w-4 mr-1.5" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locales.map((loc) => (
-                          <SelectItem key={loc} value={loc}>
-                            {localeNames[loc]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full h-12 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-base shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200 flex items-center justify-center"
-                  >
-                    {t("login")}
-                  </Link>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </span>
-
-          {/* desktop */}
-          <nav className="hidden md:flex gap-2">
-            {routeList.map((route, i) => (
-              <a
-                rel="noreferrer noopener"
-                href={route.href}
-                key={i}
-                onClick={(e) => handleNavClick(route.href, e)}
-                className={`text-[17px] ${buttonVariants({ variant: "ghost" })}`}
-              >
-                {route.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="hidden md:flex gap-2 items-center">
-            <Select value={locale} onValueChange={handleLanguageChange}>
-              <SelectTrigger className="w-[100px]">
-                <Globe className="h-3.5 w-3.5 mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {locales.map((loc) => (
-                  <SelectItem key={loc} value={loc}>
-                    {localeNames[loc]}
-                  </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-            <Link href="/auth/login">
-              <Button>{t("login")}</Button>
-            </Link>
-          </div>
-        </NavigationMenuList>
-      </NavigationMenu>
+              </div>
+            </motion.div>
+
+            {/* Account */}
+            <motion.div custom={1} initial="hidden" animate={isOpen ? "visible" : "hidden"} variants={itemVariants}>
+              <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-2 px-1">
+                Account
+              </p>
+              <div className="rounded-2xl overflow-hidden bg-muted/50">
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-background text-muted-foreground shrink-0">
+                    <LogIn className="h-4 w-4" />
+                  </div>
+                  <span className="flex-1">{t("login")}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                </Link>
+                <div className="h-px bg-border/60 mx-4" />
+                <Link
+                  href="/auth/register"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors duration-150"
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                    <UserPlus className="h-4 w-4" />
+                  </div>
+                  <span className="flex-1">{t("getStarted")}</span>
+                  <ChevronRight className="h-4 w-4 text-emerald-600/40 shrink-0" />
+                </Link>
+              </div>
+            </motion.div>
+
+          </nav>
+        </SheetContent>
+      </Sheet>
     </header>
   )
 }

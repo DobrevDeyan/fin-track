@@ -46,7 +46,7 @@ export function RecurringTransactionCard({
             <p className="text-sm text-muted-foreground mt-1">{recurring.category}</p>
           </div>
           {!recurring.isActive && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
               {tCommon("inactive")}
             </span>
           )}

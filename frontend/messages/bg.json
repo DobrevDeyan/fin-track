@@ -57,7 +57,8 @@
     "settings": "Настройки",
     "accountSettings": "Настройки на акаунта",
     "receipts": "Касови бележки",
-    "netWorth": "Нетна стойност"
+    "netWorth": "Нетна стойност",
+    "getStarted": "Започни"
   },
   "auth": {
     "login": "Вход",

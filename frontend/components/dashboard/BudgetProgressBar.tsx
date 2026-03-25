@@ -41,7 +41,7 @@ export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses, userCur
         {hasBudget ? (
           <Progress value={spent} max={monthlyBudget} className="h-3 mb-3" indicatorClassName={barColor} />
         ) : (
-          <div className="h-3 w-full bg-slate-100 rounded-full mb-3" />
+          <div className="h-3 w-full bg-muted rounded-full mb-3" />
         )}
 
         <div className="flex items-center justify-between text-sm">

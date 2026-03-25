@@ -41,15 +41,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/icon-32x32.png?v=2.5", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-96x96.png?v=2.5", sizes: "96x96", type: "image/png" },
-      { url: "/icons/icon-192x192.png?v=2.5", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png?v=2.5", sizes: "512x512", type: "image/png" },
+      { url: "/icons/favicon.ico", sizes: "any" },
+      { url: "/icons/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-96x96.png?v=3.0", sizes: "96x96", type: "image/png" },
+      { url: "/icons/icon-192x192.png?v=3.0", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png?v=3.0", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/icon-192x192.png?v=2.5", sizes: "192x192", type: "image/png" },
+      { url: "/icons/apple-touch-icon.png?v=3.0", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/icons/icon-32x32.png?v=2.5",
+    shortcut: "/icons/favicon.ico",
   },
 }
 
@@ -78,16 +79,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://apis.google.com" />
         {/* PWA meta tags */}
         <meta name="mobile-web-app-capable" content="yes" />
-        {/* Apple Touch Icons - iOS Safari uses these specifically */}
-        {/* Version query param forces cache refresh - synced via npm run sync-version */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png?v=2.5" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png?v=2.5" />
-        <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png?v=2.5" />
-        <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-128x128.png?v=2.5" />
-        <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-128x128.png?v=2.5" />
-        <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-96x96.png?v=2.5" />
-        <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png?v=2.5" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png?v=2.5" />
+        {/* Apple Touch Icon - iOS Safari */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=3.0" />
+        {/* SVG favicon for modern browsers */}
+        <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
       </head>
       {plausibleDomain && (
         <Script

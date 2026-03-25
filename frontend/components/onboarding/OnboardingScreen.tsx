@@ -81,11 +81,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
       <div className="w-full max-w-lg p-6 flex flex-col items-center">
         
         {phase === "greeting" && (
-          <div className="text-4xl md:text-5xl font-bold text-slate-900 text-center min-h-[4rem]">
+          <div className="text-4xl md:text-5xl font-bold text-foreground text-center min-h-[4rem]">
             <span ref={typedEl} />
           </div>
         )}
@@ -93,8 +93,8 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {phase === "form" && (
           <div className="w-full space-y-8 animate-in fade-in duration-700">
             <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">{t("title")}</h2>
-              <p className="text-slate-500">{t("subtitle")}</p>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h2>
+              <p className="text-muted-foreground">{t("subtitle")}</p>
             </div>
 
             {/* Step indicator */}
@@ -103,7 +103,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                 <div
                   key={s}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    s === step ? "w-10 bg-primary" : s < step ? "w-10 bg-primary/40" : "w-10 bg-slate-100"
+                    s === step ? "w-10 bg-primary" : s < step ? "w-10 bg-primary/40" : "w-10 bg-muted"
                   }`}
                 />
               ))}
@@ -118,13 +118,13 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-center text-slate-800">{t("nameQuestion")}</h3>
+                  <h3 className="text-xl font-semibold text-center text-foreground">{t("nameQuestion")}</h3>
                   <Input
                     placeholder={t("namePlaceholder")}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && canProceed() && handleNext()}
-                    className="h-12 text-lg text-center bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                    className="h-12 text-lg text-center bg-muted border-border focus:bg-background transition-colors"
                     autoFocus
                   />
                 </div>
@@ -134,7 +134,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             {/* Step 2: Currency */}
             {step === 2 && (
               <div className="space-y-6 py-4 animate-in slide-in-from-right duration-300">
-                <h3 className="text-xl font-semibold text-center text-slate-800">{t("currencyQuestion")}</h3>
+                <h3 className="text-xl font-semibold text-center text-foreground">{t("currencyQuestion")}</h3>
                 <div className="grid grid-cols-2 gap-6">
                   {SUPPORTED_CURRENCIES.map((curr) => (
                     <button
@@ -143,13 +143,13 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                       className={`flex flex-col items-center gap-3 p-8 rounded-2xl border-2 transition-all duration-200 ${
                         currency === curr
                           ? "border-primary bg-primary/5 shadow-lg scale-105"
-                          : "border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-200"
+                          : "border-border bg-muted hover:bg-accent hover:border-border"
                       }`}
                     >
-                      <div className={`${currency === curr ? "text-primary" : "text-slate-400"}`}>
+                      <div className={`${currency === curr ? "text-primary" : "text-muted-foreground"}`}>
                         {currencyIcon(curr)}
                       </div>
-                      <span className={`font-bold text-xl ${currency === curr ? "text-primary" : "text-slate-600"}`}>
+                      <span className={`font-bold text-xl ${currency === curr ? "text-primary" : "text-foreground/70"}`}>
                         {curr}
                       </span>
                     </button>
@@ -162,13 +162,13 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             {step === 3 && (
               <div className="space-y-6 py-4 animate-in slide-in-from-right duration-300">
                 <div className="text-center space-y-2">
-                  <h3 className="text-xl font-semibold text-slate-800">What's your expected monthly salary?</h3>
-                  <p className="text-slate-500">This helps track your budget and automate your income.</p>
+                  <h3 className="text-xl font-semibold text-foreground">What's your expected monthly salary?</h3>
+                  <p className="text-muted-foreground">This helps track your budget and automate your income.</p>
                 </div>
                 
                 <div className="space-y-4">
                   <div className="relative group">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl transition-colors group-focus-within:text-primary">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-xl transition-colors group-focus-within:text-primary">
                       {currency === "USD" ? "$" : "€"}
                     </span>
                     <Input
@@ -178,14 +178,14 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                       placeholder="2000"
                       value={monthlyBudget}
                       onChange={(e) => setMonthlyBudget(e.target.value)}
-                      className="pl-10 h-14 text-2xl font-semibold bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                      className="pl-10 h-14 text-2xl font-semibold bg-muted border-border focus:bg-background transition-colors"
                       autoFocus
                     />
                   </div>
 
                   {monthlyBudget && parseFloat(monthlyBudget) > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-4 duration-300 space-y-2 pt-2">
-                       <h4 className="text-sm font-medium text-slate-700">What day of the month do you receive it? (1-28)</h4>
+                       <h4 className="text-sm font-medium text-foreground/80">What day of the month do you receive it? (1-28)</h4>
                        <Input
                          type="number"
                          min="1"
@@ -194,7 +194,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                          value={salaryDate}
                          onChange={(e) => setSalaryDate(e.target.value)}
                          onKeyDown={(e) => e.key === "Enter" && canProceed() && handleFinish()}
-                         className="h-12 text-lg text-center bg-slate-50 border-slate-200 focus:bg-white transition-colors"
+                         className="h-12 text-lg text-center bg-muted border-border focus:bg-background transition-colors"
                        />
                        {salaryDate !== "" && (parseInt(salaryDate) < 1 || parseInt(salaryDate) > 28) && (
                          <p className="text-xs text-red-500 text-center">Please enter a day between 1 and 28.</p>

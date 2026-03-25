@@ -35,7 +35,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
     ? "bg-blue-500"
     : progress >= 50
     ? "bg-yellow-500"
-    : "bg-gray-300"
+    : "bg-muted-foreground/30"
 
   return (
     <motion.div
@@ -57,7 +57,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
             </span>
           )}
           {isComplete && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+            <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded">
               Complete!
             </span>
           )}
@@ -70,7 +70,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
               <span className="text-sm text-muted-foreground">Progress</span>
               <span className="text-sm font-semibold">{progress.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
                 className={`h-full ${progressColor} transition-all duration-300`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
