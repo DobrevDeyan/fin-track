@@ -29,7 +29,7 @@ import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
 import { formatDateForInput } from "@/lib/date-utils"
 import { Badge } from "@/components/ui/badge"
 import { X, Upload, FileImage, Trash2 } from "lucide-react"
-import { uploadReceipt, deleteReceipt, validateReceiptFile } from "@/lib/receipt-utils"
+import { uploadReceipt, deleteReceipt, validateReceiptFile, validateReceiptFileDeep } from "@/lib/receipt-utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
@@ -252,11 +252,20 @@ export function AddTransactionDialog({
     const file = e.target.files?.[0]
     if (!file) return
 
-    const error = validateReceiptFile(file)
-    if (error) {
-      toast.error(error)
+    // Quick sync check first (MIME + size), then deep magic bytes check
+    const quickError = validateReceiptFile(file)
+    if (quickError) {
+      toast.error(quickError)
       return
     }
+
+    validateReceiptFileDeep(file).then((deepError) => {
+      if (deepError) {
+        toast.error(deepError)
+        setReceiptFile(null)
+        setReceiptPreview(null)
+      }
+    })
 
     setReceiptFile(file)
     setExistingReceiptUrl(null) // Clear existing receipt when uploading new one

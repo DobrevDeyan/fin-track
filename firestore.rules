@@ -130,6 +130,16 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+
+    // Audit log — written only by Admin SDK (Cloud Functions), never by clients
+    match /auditLog/{logId} {
+      allow read, write: if false;
+    }
+
+    // Rate limits — written only by Admin SDK (Cloud Functions), never by clients
+    match /rateLimits/{limitId} {
+      allow read, write: if false;
+    }
   }
 }
 

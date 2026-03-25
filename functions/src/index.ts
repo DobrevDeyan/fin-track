@@ -7,12 +7,67 @@
 import * as admin from "firebase-admin";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onDocumentDeleted, onDocumentCreated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions";
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
 const db = admin.firestore();
+
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const RATE_LIMIT_MAX_CALLS = 3;
+
+/**
+ * Enforce per-user rate limiting for a callable function.
+ * Stores call timestamps in Firestore under rateLimits/{userId}_{fnName}.
+ * Throws resource-exhausted if the user exceeds RATE_LIMIT_MAX_CALLS
+ * within the rolling RATE_LIMIT_WINDOW_MS window.
+ */
+async function checkRateLimit(userId: string, fnName: string): Promise<void> {
+  const ref = db.collection("rateLimits").doc(`${userId}_${fnName}`);
+  const now = Date.now();
+
+  await db.runTransaction(async (txn) => {
+    const snap = await txn.get(ref);
+    const recentCalls: number[] = snap.exists
+      ? ((snap.data()!.calls as number[]) ?? []).filter(
+          (t) => now - t < RATE_LIMIT_WINDOW_MS
+        )
+      : [];
+
+    if (recentCalls.length >= RATE_LIMIT_MAX_CALLS) {
+      throw new HttpsError(
+        "resource-exhausted",
+        "Too many requests. Please wait a few minutes before trying again."
+      );
+    }
+
+    recentCalls.push(now);
+    txn.set(ref, { calls: recentCalls, userId, fnName }, { merge: true });
+  });
+}
+
+// ─── Audit Logging ────────────────────────────────────────────────────────────
+
+/**
+ * Write a structured audit log entry to the auditLog collection.
+ * This collection is admin-write only (see firestore.rules).
+ */
+async function logAuditEvent(
+  userId: string,
+  action: string,
+  details: Record<string, unknown>
+): Promise<void> {
+  await db.collection("auditLog").add({
+    userId,
+    action,
+    details,
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+  });
+}
 
 // Type definitions matching frontend types
 interface RecurringTransaction {
@@ -239,6 +294,10 @@ export const processMyRecurringTransactions = onCall(
     }
 
     const userId = request.auth.uid;
+
+    // Rate limit: max 3 calls per 5 minutes per user
+    await checkRateLimit(userId, "processMyRecurringTransactions");
+
     const now = admin.firestore.Timestamp.now();
 
     // Query only this user's active recurring transactions where nextDate <= now
@@ -277,3 +336,43 @@ export const processMyRecurringTransactions = onCall(
     };
   }
 );
+
+// ─── Audit Log Triggers ───────────────────────────────────────────────────────
+
+/**
+ * Log every entry deletion to the audit trail.
+ * Captures what was deleted, by whom, and when — for compliance and recovery.
+ */
+export const onEntryDeleted = onDocumentDeleted("entries/{entryId}", async (event) => {
+  const data = event.data?.data();
+  if (!data) return;
+
+  await logAuditEvent(data.userId as string, "entry.deleted", {
+    entryId: event.params.entryId,
+    amount: data.amount,
+    type: data.type,
+    category: data.category,
+    description: data.description,
+    date: data.date,
+  });
+});
+
+/**
+ * Log creation of high-value entries (amount >= 10,000).
+ * Unusual large transactions are worth flagging in the audit trail.
+ */
+export const onLargeEntryCreated = onDocumentCreated("entries/{entryId}", async (event) => {
+  const data = event.data?.data();
+  if (!data) return;
+
+  const LARGE_AMOUNT_THRESHOLD = 10_000;
+  if ((data.amount as number) < LARGE_AMOUNT_THRESHOLD) return;
+
+  await logAuditEvent(data.userId as string, "entry.large_amount_created", {
+    entryId: event.params.entryId,
+    amount: data.amount,
+    type: data.type,
+    category: data.category,
+    description: data.description,
+  });
+});
