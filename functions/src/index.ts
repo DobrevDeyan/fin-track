@@ -343,7 +343,7 @@ export const processMyRecurringTransactions = onCall(
  * Log every entry deletion to the audit trail.
  * Captures what was deleted, by whom, and when — for compliance and recovery.
  */
-export const onEntryDeleted = onDocumentDeleted("entries/{entryId}", async (event) => {
+export const onEntryDeleted = onDocumentDeleted({ document: "entries/{entryId}", region: "europe-west4" }, async (event) => {
   const data = event.data?.data();
   if (!data) return;
 
@@ -361,7 +361,7 @@ export const onEntryDeleted = onDocumentDeleted("entries/{entryId}", async (even
  * Log creation of high-value entries (amount >= 10,000).
  * Unusual large transactions are worth flagging in the audit trail.
  */
-export const onLargeEntryCreated = onDocumentCreated("entries/{entryId}", async (event) => {
+export const onLargeEntryCreated = onDocumentCreated({ document: "entries/{entryId}", region: "europe-west4" }, async (event) => {
   const data = event.data?.data();
   if (!data) return;
 
