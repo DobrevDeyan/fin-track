@@ -73,7 +73,7 @@ export const MarketingNavbar = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container h-14 px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
+      <div className="container h-14 flex items-center justify-between">
 
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg tracking-tight shrink-0">

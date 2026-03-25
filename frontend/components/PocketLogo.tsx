@@ -17,9 +17,8 @@ export function PocketLogo({ width = 28, height = 28, className = "w-6 h-6", pri
 
   useEffect(() => { setMounted(true) }, [])
 
-  const src = !mounted || resolvedTheme === "light"
-    ? "/icons/logo_pocket_light.svg"
-    : "/icons/logo_pocket_dark.svg"
+  const isLight = !mounted || resolvedTheme === "light"
+  const src = isLight ? "/icons/pocket_light.svg" : "/icons/pocket_dark.svg"
 
   return (
     <Image
@@ -27,7 +26,7 @@ export function PocketLogo({ width = 28, height = 28, className = "w-6 h-6", pri
       alt="Pocket Logo"
       width={width}
       height={height}
-      className={className}
+      className={`${className} rounded-md ${isLight ? "ring-1 ring-black/10" : "ring-1 ring-white/20"}`}
       priority={priority}
     />
   )

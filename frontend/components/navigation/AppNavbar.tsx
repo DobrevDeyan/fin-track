@@ -131,6 +131,38 @@ export const AppNavbar = () => {
     }
   }
 
+  // Swipe left from right edge to open menu
+  useEffect(() => {
+    const EDGE_THRESHOLD = 40 // px from right edge to start gesture
+    const SWIPE_MIN = 60      // minimum horizontal distance to trigger
+    let startX = 0
+    let startY = 0
+    let fromEdge = false
+
+    const onTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      fromEdge = startX >= window.innerWidth - EDGE_THRESHOLD
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!fromEdge) return
+      const deltaX = e.changedTouches[0].clientX - startX
+      const deltaY = Math.abs(e.changedTouches[0].clientY - startY)
+      if (deltaX < -SWIPE_MIN && deltaY < Math.abs(deltaX)) {
+        setIsOpen(true)
+      }
+      fromEdge = false
+    }
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true })
+    window.addEventListener("touchend", onTouchEnd, { passive: true })
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart)
+      window.removeEventListener("touchend", onTouchEnd)
+    }
+  }, [])
+
   useEffect(() => {
     const handleScroll = () => {
       setShowFloatingMenu(window.scrollY > 100)
@@ -154,9 +186,8 @@ export const AppNavbar = () => {
       <motion.button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-24 right-6 h-16 w-16 rounded-full shadow-2xl",
-          "bg-[#4CAF50] overflow-hidden z-50",
-          "flex items-center justify-center md:hidden",
+          "fixed bottom-24 right-6 h-16 w-16 rounded-2xl shadow-2xl",
+          "overflow-hidden z-50 md:hidden",
         )}
         animate={showFloatingMenu ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 16, scale: 0.85 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
@@ -164,7 +195,7 @@ export const AppNavbar = () => {
         aria-label="Open menu"
         whileTap={{ scale: 0.9 }}
       >
-        <PocketLogo width={56} height={56} className="w-full h-full object-cover" />
+        <PocketLogo width={64} height={64} className="w-full h-full object-cover" />
       </motion.button>
 
       {/* Mobile Sheet */}
@@ -425,7 +456,7 @@ export const AppNavbar = () => {
 
       {/* Desktop header */}
       <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="h-14 px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
+        <div className="container h-14 flex items-center justify-between">
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg tracking-tight shrink-0">

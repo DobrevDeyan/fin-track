@@ -41,16 +41,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/favicon.ico", sizes: "any" },
-      { url: "/icons/favicon.svg", type: "image/svg+xml" },
-      { url: "/icons/favicon-96x96.png?v=3.0", sizes: "96x96", type: "image/png" },
-      { url: "/icons/icon-192x192.png?v=3.0", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512x512.png?v=3.0", sizes: "512x512", type: "image/png" },
+      { url: "/icons/favicon_dark/favicon.ico", sizes: "any" },
+      { url: "/icons/favicon_dark/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon_dark/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/icons/favicon_dark/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/favicon_dark/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/apple-touch-icon.png?v=3.0", sizes: "180x180", type: "image/png" },
+      { url: "/icons/favicon_dark/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/icons/favicon.ico",
+    shortcut: "/icons/favicon_dark/favicon.ico",
   },
 }
 
@@ -80,9 +80,11 @@ export default function RootLayout({
         {/* PWA meta tags */}
         <meta name="mobile-web-app-capable" content="yes" />
         {/* Apple Touch Icon - iOS Safari */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=3.0" />
-        {/* SVG favicon for modern browsers */}
-        <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+        <link rel="apple-touch-icon" href="/icons/favicon_dark/apple-touch-icon.png" />
+        {/* Theme-aware SVG favicon for modern browsers */}
+        <link rel="icon" type="image/svg+xml" href="/icons/favicon_dark/favicon.svg" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" type="image/svg+xml" href="/icons/favicon_light/favicon.svg" media="(prefers-color-scheme: light)" />
+        <link rel="icon" href="/icons/favicon_dark/favicon.ico" sizes="any" />
       </head>
       {plausibleDomain && (
         <Script
