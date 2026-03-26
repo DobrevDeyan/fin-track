@@ -24,16 +24,27 @@ import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
 
 // Lazy load charts
+const ChartSkeleton = ({ height = 400 }: { height?: number }) => (
+  <div className="rounded-xl border bg-card p-6 space-y-4" style={{ height }}>
+    <Skeleton className="h-5 w-36" />
+    <div className="flex items-end gap-2 h-[calc(100%-52px)]">
+      {[55, 80, 45, 90, 65, 75, 50, 85, 60, 70, 40, 95].map((h, i) => (
+        <Skeleton key={i} className="flex-1 rounded-t-sm" style={{ height: `${h}%` }} />
+      ))}
+    </div>
+  </div>
+)
+
 const SpendingChart = dynamic(() => import("@/components/dashboard/SpendingChart").then(mod => ({ default: mod.SpendingChart })), {
-  loading: () => <div className="flex items-center justify-center h-[400px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>,
+  loading: () => <ChartSkeleton height={400} />,
   ssr: false,
 })
 const CategoryChart = dynamic(() => import("@/components/dashboard/CategoryChart").then(mod => ({ default: mod.CategoryChart })), {
-  loading: () => <div className="flex items-center justify-center h-[400px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>,
+  loading: () => <ChartSkeleton height={400} />,
   ssr: false,
 })
 const YearOverYearChart = dynamic(() => import("@/components/dashboard/YearOverYearChart").then(mod => ({ default: mod.YearOverYearChart })), {
-  loading: () => <div className="flex items-center justify-center h-[340px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>,
+  loading: () => <ChartSkeleton height={340} />,
   ssr: false,
 })
 
@@ -301,12 +312,17 @@ export default function ReportsPage() {
     return (
       <div className="min-h-screen bg-background">
         <div className="container py-8 px-4 sm:px-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">{t("loadingReports")}</p>
-            </div>
+          <div className="mb-8">
+            <Skeleton className="h-8 w-40 mb-2" />
+            <Skeleton className="h-4 w-72" />
           </div>
+          <Skeleton className="h-32 w-full rounded-xl mb-8" />
+          <ChartSkeleton height={400} />
+          <div className="mb-8" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
+            {[0,1,2,3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          </div>
+          <ChartSkeleton height={400} />
         </div>
       </div>
     )
@@ -463,7 +479,42 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        {/* 6. Export + Report Period (before Monthly Trends) */}
+        {/* 6. Quick presets + Export */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {[
+            {
+              label: t("thisMonth"),
+              action: () => {
+                const now = new Date()
+                setReportType("monthly")
+                setStartDate(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0])
+                setEndDate(now.toISOString().split("T")[0])
+              },
+            },
+            {
+              label: t("last3Months"),
+              action: () => {
+                const now = new Date()
+                setReportType("custom")
+                setStartDate(new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split("T")[0])
+                setEndDate(now.toISOString().split("T")[0])
+              },
+            },
+            {
+              label: t("thisYear"),
+              action: () => {
+                const now = new Date()
+                setReportType("yearly")
+                setStartDate(new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0])
+                setEndDate(now.toISOString().split("T")[0])
+              },
+            },
+          ].map(({ label, action }) => (
+            <Button key={label} variant="outline" size="sm" onClick={action}>
+              {label}
+            </Button>
+          ))}
+        </div>
         <div className="flex gap-2 w-full mb-4">
           <Button variant="outline" onClick={handleExportPDF} className="flex-1">
             <FileText className="mr-2 h-4 w-4" />

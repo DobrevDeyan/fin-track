@@ -8,7 +8,7 @@
  * Only renders when anomalies exist; invisible otherwise.
  */
 
-import { memo, useState } from "react"
+import { memo, useState, useCallback } from "react"
 import { AlertTriangle, X, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
@@ -22,9 +22,23 @@ function formatCurrency(amount: number, currency = "EUR") {
   }).format(amount)
 }
 
+const STORAGE_KEY = "pocket-anomaly-dismissed"
+
 export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR", className }: { userCurrency?: string; className?: string }) {
   const { anomalies } = useInsightsContext()
-  const [dismissed, setDismissed] = useState(false)
+
+  // Fingerprint = month + sorted anomaly categories — auto-resets each month or when anomalies change
+  const fingerprint = `${new Date().toISOString().slice(0, 7)}-${anomalies.map(a => a.category).sort().join(",")}`
+
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false
+    return localStorage.getItem(STORAGE_KEY) === fingerprint
+  })
+
+  const dismiss = useCallback(() => {
+    localStorage.setItem(STORAGE_KEY, fingerprint)
+    setDismissed(true)
+  }, [fingerprint])
 
   if (dismissed || anomalies.length === 0) return null
 
@@ -75,7 +89,7 @@ export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR", c
           variant="ghost"
           size="icon"
           className="flex-shrink-0 h-6 w-6 text-amber-600 hover:text-amber-800 hover:bg-amber-100 dark:text-amber-400"
-          onClick={() => setDismissed(true)}
+          onClick={dismiss}
           aria-label="Dismiss alert"
         >
           <X className="h-4 w-4" />

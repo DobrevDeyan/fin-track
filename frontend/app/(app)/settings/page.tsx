@@ -18,9 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Check, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, User } from "lucide-react"
+import { AlertTriangle, Check, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, User, Wand2 } from "lucide-react"
 import { ThemeControls } from "@/components/ThemeControls"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
+import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog"
+import { completeOnboarding } from "@/lib/firestore-users"
 import { useScanQuota } from "@/lib/hooks/useScanQuota"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -59,6 +61,9 @@ export default function SettingsPage() {
   const [resetConfirmText, setResetConfirmText] = useState("")
   const [resetting, setResetting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
+
+  // Setup wizard
+  const [setupWizardOpen, setSetupWizardOpen] = useState(false)
 
   // Delete account
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -189,6 +194,25 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <ThemeControls />
+        </CardContent>
+      </Card>
+
+      {/* Setup Wizard */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Wand2 className="h-4 w-4" />
+            Setup Wizard
+          </CardTitle>
+          <CardDescription>
+            Revisit your name, currency, and monthly budget at any time.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" size="sm" onClick={() => setSetupWizardOpen(true)}>
+            <Wand2 className="h-4 w-4 mr-2" />
+            Rerun setup wizard
+          </Button>
         </CardContent>
       </Card>
 
@@ -438,6 +462,17 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Setup Wizard */}
+      <OnboardingDialog
+        open={setupWizardOpen}
+        onComplete={async (data) => {
+          if (!user) return
+          await completeOnboarding(user.uid, data)
+          setSetupWizardOpen(false)
+          toast.success("Settings updated successfully.")
+        }}
+      />
 
       {/* Delete confirmation dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={(open) => {

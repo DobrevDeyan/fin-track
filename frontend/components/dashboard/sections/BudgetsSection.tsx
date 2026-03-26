@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Wallet } from "lucide-react";
 import { BudgetList } from "@/components/dashboard/BudgetList";
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
@@ -42,6 +42,18 @@ export function BudgetsSection({ entries, categories }: BudgetsSectionProps) {
                                     <Skeleton className="h-8 w-full mt-2" />
                                 </div>
                             ))}
+                        </div>
+                    ) : budgets.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="rounded-full bg-muted p-4 mb-4">
+                                <Wallet className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="font-medium text-sm mb-1">{t("emptyTitle")}</p>
+                            <p className="text-xs text-muted-foreground mb-4 max-w-xs">{t("emptyDescription")}</p>
+                            <Button size="sm" onClick={openDialog}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("createBudget")}
+                            </Button>
                         </div>
                     ) : (
                         <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />

@@ -8,6 +8,7 @@ import { CalendarView } from "@/components/dashboard/CalendarView";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
 
 import { useEntries } from "@/lib/hooks/dashboard";
@@ -53,6 +54,7 @@ function CalendarInnerContent() {
     }, []);
 
     return (
+        <PullToRefresh onRefresh={async () => { await entriesHook.loadEntries(); await loadRecurringTransactions(); }}>
         <div className="min-h-screen bg-background overflow-x-hidden">
             <div className="container py-8 px-4 sm:px-6">
                 {/* Header */}
@@ -89,6 +91,7 @@ function CalendarInnerContent() {
                 />
             </div>
         </div>
+        </PullToRefresh>
     );
 }
 

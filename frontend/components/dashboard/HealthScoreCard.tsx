@@ -31,11 +31,11 @@ const TIER_COLORS = {
 }
 
 const BREAKDOWN_LABELS = [
-  { key: "savingsRate",       label: "Savings Rate",        max: 30, icon: TrendingUp },
-  { key: "budgetAdherence",   label: "Budget Discipline",   max: 25, icon: Wallet },
-  { key: "goalProgress",      label: "Goal Progress",       max: 20, icon: Target },
-  { key: "incomeStability",   label: "Income Stability",    max: 15, icon: Shield },
-  { key: "spendingRegularity",label: "Spending Regularity", max: 10, icon: Activity },
+  { key: "savingsRate",        label: "Savings Rate",        max: 30, icon: TrendingUp, tip: "Save more than you spend. Aim for 20%+ of income." },
+  { key: "budgetAdherence",    label: "Budget Discipline",   max: 25, icon: Wallet,     tip: "Stay within your monthly budget limits." },
+  { key: "goalProgress",       label: "Goal Progress",       max: 20, icon: Target,     tip: "Add funds to your savings goals regularly." },
+  { key: "incomeStability",    label: "Income Stability",    max: 15, icon: Shield,     tip: "Consistent income each month boosts this score." },
+  { key: "spendingRegularity", label: "Spending Regularity", max: 10, icon: Activity,   tip: "Smooth, predictable spending patterns score higher." },
 ] as const
 
 function getBarColor(pct: number) {
@@ -190,7 +190,7 @@ export function HealthScoreCard() {
           </div>
 
           <div className="space-y-3">
-            {BREAKDOWN_LABELS.map(({ key, label, max, icon: Icon }) => {
+            {BREAKDOWN_LABELS.map(({ key, label, max, icon: Icon, tip }) => {
               const val = breakdown[key]
               const pct = Math.round((val / max) * 100)
               const barColor = getBarColor(pct)
@@ -209,6 +209,7 @@ export function HealthScoreCard() {
                       style={{ width: `${pct}%`, backgroundColor: barColor }}
                     />
                   </div>
+                  <p className="text-[10px] text-muted-foreground/70 leading-tight">{tip}</p>
                 </div>
               )
             })}

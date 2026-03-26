@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,12 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 import { formatCurrency, formatAmount } from "@/lib/currency-utils"
 import { formatDate, formatDateCompact } from "@/lib/date-utils"
 import { getCategoryColor } from "@/lib/constants/category.constants"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
 import type { TransactionType } from "@/lib/constants/transaction.constants"
 import { useTranslations } from "next-intl"
+import { useHaptics } from "@/lib/hooks/useHaptics"
 
 interface Entry {
   id: string
@@ -70,7 +72,21 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
   const t = useTranslations("dashboard")
   const tCommon = useTranslations("common")
+  const haptics = useHaptics()
   const [expanded, setExpanded] = useState(false)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
+  const prevLengthRef = useRef(transactions.length)
+
+  // Highlight newest row when a transaction is added
+  useEffect(() => {
+    if (transactions.length > prevLengthRef.current && transactions[0]?.id) {
+      setHighlightedId(transactions[0].id)
+      const timer = setTimeout(() => setHighlightedId(null), 2000)
+      prevLengthRef.current = transactions.length
+      return () => clearTimeout(timer)
+    }
+    prevLengthRef.current = transactions.length
+  }, [transactions])
   const [currentPage, setCurrentPage] = useState(1)
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false)
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null)
@@ -246,7 +262,13 @@ export function TransactionsTable({
                 </TableHeader>
                 <TableBody>
                   {paginatedTransactions.map((transaction) => (
-                    <TableRow key={transaction.id} className="hover:bg-muted/50">
+                    <TableRow
+                      key={transaction.id}
+                      className={cn(
+                        "hover:bg-muted/50 transition-colors duration-500",
+                        highlightedId === transaction.id && "bg-primary/10 hover:bg-primary/10"
+                      )}
+                    >
                       <TableCell className="font-medium py-2 sm:py-4">
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
@@ -457,7 +479,10 @@ export function TransactionsTable({
             <Button
               variant="destructive"
               onClick={() => {
-                if (deleteConfirmId) onDelete(deleteConfirmId)
+                if (deleteConfirmId) {
+                  haptics.delete()
+                  onDelete(deleteConfirmId)
+                }
                 setDeleteConfirmId(null)
               }}
             >

@@ -13,8 +13,9 @@ import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
-// import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast"; // temporarily disabled
+import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast"
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
@@ -195,7 +196,18 @@ function DashboardInnerContent() {
         };
     }, [monthlyBudget, currentMonthIncome, currentMonthSalary, currentMonthExpenses, activeSavingsAccounts, entriesHook.entries]);
 
+    const handleRefresh = useCallback(async () => {
+        await Promise.all([
+            entriesHook.loadEntries(),
+            refreshSummary(),
+            loadBudgets(),
+            loadSavingsAccounts(),
+            loadRecurringTransactions(),
+        ])
+    }, [entriesHook.loadEntries, refreshSummary, loadBudgets, loadSavingsAccounts, loadRecurringTransactions])
+
     return (
+        <PullToRefresh onRefresh={handleRefresh}>
         <div className="min-h-screen bg-background overflow-x-hidden">
             <div className="container py-8 px-4 sm:px-6">
                 {/* Header */}
@@ -253,12 +265,12 @@ function DashboardInnerContent() {
                     </div>
                 )}
 
-                {/* Cash Flow Forecast — temporarily disabled */}
-                {/* <div className="mb-8">
+                {/* Cash Flow Forecast */}
+                <div className="mb-8">
                     <SectionErrorBoundary label="Cash Flow Forecast">
                         <CashFlowForecast userCurrency={userCurrency} />
                     </SectionErrorBoundary>
-                </div> */}
+                </div>
 
                 {/* Transactions Table (still uses paginated entries for display) */}
                 <SectionErrorBoundary label="Transactions">
@@ -370,6 +382,7 @@ function DashboardInnerContent() {
                 )}
             </div>
         </div>
+        </PullToRefresh>
     );
 }
 

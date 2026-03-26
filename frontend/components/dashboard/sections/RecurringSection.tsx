@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Repeat } from "lucide-react";
 import { RecurringTransactionList } from "@/components/dashboard/RecurringTransactionList";
 import { RecurringTransactionDialog } from "@/components/dashboard/RecurringTransactionDialog";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
@@ -40,6 +40,18 @@ export function RecurringSection({ categories }: RecurringSectionProps) {
                                     <Skeleton className="h-4 w-16" />
                                 </div>
                             ))}
+                        </div>
+                    ) : recurringTransactions.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="rounded-full bg-muted p-4 mb-4">
+                                <Repeat className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="font-medium text-sm mb-1">{t("emptyTitle")}</p>
+                            <p className="text-xs text-muted-foreground mb-4 max-w-xs">{t("emptyDescription")}</p>
+                            <Button size="sm" onClick={openDialog}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("createRecurring")}
+                            </Button>
                         </div>
                     ) : (
                         <RecurringTransactionList recurringTransactions={recurringTransactions} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} />

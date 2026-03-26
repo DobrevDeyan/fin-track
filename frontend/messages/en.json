@@ -229,7 +229,9 @@
     "approachingLimit": "Approaching budget limit ({threshold}%)",
     "onTrack": "On track",
     "expired": "Expired — period ended",
-    "renew": "Renew"
+    "renew": "Renew",
+    "emptyTitle": "No budgets yet",
+    "emptyDescription": "Create your first budget to track spending limits and stay on top of your finances."
   },
   "savings": {
     "title": "Savings Accounts",
@@ -249,7 +251,9 @@
     "withdraw": "Withdraw",
     "emptyDesc": "No savings accounts yet. Create one to start tracking your savings separately.",
     "createFirst": "Create Your First Savings Account",
-    "totalSavings": "Total Savings"
+    "totalSavings": "Total Savings",
+    "emptyTitle": "No savings accounts yet",
+    "emptyDescription": "Create a savings account to track your savings separately from your spending."
   },
   "recurring": {
     "title": "Recurring Transactions",
@@ -277,7 +281,9 @@
     "next": "Next",
     "noTransactions": "No Recurring Transactions Yet",
     "noTransactionsDesc": "Set up recurring bills and subscriptions to automatically create transactions. Perfect for monthly subscriptions, bills, or regular income.",
-    "createFirst": "Create Your First Recurring Transaction"
+    "createFirst": "Create Your First Recurring Transaction",
+    "emptyTitle": "No recurring transactions yet",
+    "emptyDescription": "Set up recurring bills or subscriptions to automatically track regular payments."
   },
   "goals": {
     "title": "Financial Goals",
@@ -311,7 +317,9 @@
     "addFunds": "Add Funds",
     "addFundsTitle": "Add Funds to Goal",
     "addFundsDesc": "This amount will be deducted from your balance and added to the goal.",
-    "addAmount": "Amount to Add"
+    "addAmount": "Amount to Add",
+    "emptyTitle": "No goals yet",
+    "emptyDescription": "Set a savings goal to track your progress toward something that matters."
   },
   "calendar": {
     "title": "Calendar",
@@ -336,6 +344,7 @@
     "reportType": "Report Type",
     "thisYear": "This Year",
     "thisMonth": "This Month",
+    "last3Months": "Last 3 Months",
     "customRange": "Custom Range",
     "startDate": "Start Date",
     "endDate": "End Date",

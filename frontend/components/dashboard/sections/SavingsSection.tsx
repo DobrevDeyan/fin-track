@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, PiggyBank } from "lucide-react";
 import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList";
 import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog";
 import { formatCurrency } from "@/lib/currency-utils";
@@ -41,6 +41,18 @@ export function SavingsSection() {
                                     <Skeleton className="h-8 w-full mt-2" />
                                 </div>
                             ))}
+                        </div>
+                    ) : savingsAccounts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="rounded-full bg-muted p-4 mb-4">
+                                <PiggyBank className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="font-medium text-sm mb-1">{t("emptyTitle")}</p>
+                            <p className="text-xs text-muted-foreground mb-4 max-w-xs">{t("emptyDescription")}</p>
+                            <Button size="sm" onClick={openDialog}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("createAccount")}
+                            </Button>
                         </div>
                     ) : (
                         <SavingsAccountList accounts={savingsAccounts} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddMoney={handleAddMoney} onWithdrawMoney={handleWithdrawMoney} defaultCurrency={userCurrency} hideHeader={true} />
