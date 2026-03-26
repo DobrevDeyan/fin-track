@@ -115,6 +115,22 @@ export const AppNavbar = () => {
 
   const [showFloatingMenu, setShowFloatingMenu] = useState(false)
 
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    const html = document.documentElement
+    if (isOpen) {
+      html.style.overflow = "hidden"
+      document.body.style.overflow = "hidden"
+    } else {
+      html.style.overflow = ""
+      document.body.style.overflow = ""
+    }
+    return () => {
+      html.style.overflow = ""
+      document.body.style.overflow = ""
+    }
+  }, [isOpen])
+
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
 
@@ -182,20 +198,36 @@ export const AppNavbar = () => {
 
   return (
     <>
-      {/* Floating FAB - mobile only */}
+      {/* Floating side tab - mobile only */}
       <motion.button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-24 right-6 h-16 w-16 rounded-2xl shadow-2xl",
-          "overflow-hidden z-50 md:hidden",
+          "fixed top-1/2 right-0 z-50 md:hidden",
+          "flex items-center justify-center",
+          "h-16 w-16 rounded-l-2xl",
+          "bg-[#141414] shadow-xl shadow-black/30 overflow-hidden",
         )}
-        animate={showFloatingMenu ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 16, scale: 0.85 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        style={{ pointerEvents: showFloatingMenu ? "auto" : "none" }}
+        initial={{ x: 60, opacity: 0 }}
+        animate={showFloatingMenu
+          ? { x: 0, opacity: 1 }
+          : { x: 60, opacity: 0 }
+        }
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        style={{
+          pointerEvents: showFloatingMenu ? "auto" : "none",
+          translateY: "-50%",
+        }}
+        whileTap={{ scale: 0.92 }}
         aria-label="Open menu"
-        whileTap={{ scale: 0.9 }}
       >
-        <PocketLogo width={64} height={64} className="w-full h-full object-cover" />
+        {/* Idle nudge animation */}
+        <motion.div
+          className="w-10 h-10"
+          animate={{ x: [0, -5, 0] }}
+          transition={{ repeat: Infinity, repeatDelay: 2.5, duration: 0.45, ease: "easeInOut" }}
+        >
+          <PocketLogo width={40} height={40} className="w-full h-full rounded-lg" />
+        </motion.div>
       </motion.button>
 
       {/* Mobile Sheet */}
@@ -294,7 +326,7 @@ export const AppNavbar = () => {
           <div className="h-px bg-border/50 mx-0" />
 
           {/* Nav content */}
-          <nav className="flex flex-col flex-1 px-4 py-5 overflow-y-auto gap-5">
+          <nav className="flex flex-col flex-1 px-4 py-5 overflow-y-auto gap-5 bg-muted/40">
 
             {/* Navigate */}
             <motion.div

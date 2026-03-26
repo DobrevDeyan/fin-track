@@ -26,7 +26,7 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden flex justify-center px-4"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}
     >
-      <div className="flex items-center bg-background/95 backdrop-blur-md border border-border/60 shadow-xl shadow-black/10 rounded-2xl px-1.5 py-1.5 gap-0.5">
+      <div className="flex items-center bg-background/95 backdrop-blur-md border border-border/60 shadow-xl shadow-black/10 rounded-2xl px-1 py-1.5 gap-0">
         {tabs.map(({ href, icon: Icon, labelKey }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/")
           return (
@@ -34,7 +34,7 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all duration-200 min-w-0",
+                "flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 min-w-0",
                 isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -48,14 +48,17 @@ export function BottomNav() {
           )
         })}
 
-        {/* Quick add button — matches other nav tabs */}
+        {/* Divider */}
+        <div className="w-px h-6 bg-border/50 mx-1 shrink-0" />
+
+        {/* Quick add button */}
         <button
           onClick={openQuickAdd}
-          className="flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted/60 min-w-0"
+          className="flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 bg-primary/10 text-primary hover:bg-primary/20 min-w-0"
           aria-label="Add transaction"
         >
-          <Plus className="h-5 w-5 shrink-0" strokeWidth={1.8} />
-          <span className="text-[10px] font-medium truncate">Add</span>
+          <Plus className="h-5 w-5 shrink-0" strokeWidth={2} />
+          <span className="text-[10px] font-semibold truncate">Add</span>
         </button>
       </div>
     </nav>
