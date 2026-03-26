@@ -23,6 +23,7 @@ Managed via the [Firebase Console](https://console.firebase.google.com/project/f
 | **Cloud Functions (v2)** | Backend logic — 5 custom functions (see below) | 2M invocations/month, 400k GB-sec, 200k GHz-sec (Blaze required*) | [Functions Console](https://console.firebase.google.com/project/fin-track-adc2c/functions/list) |
 | **Eventarc** | Event routing for Firestore-triggered functions | 2.5M events/month free | [Eventarc Console](https://console.cloud.google.com/eventarc/triggers?project=fin-track-adc2c) |
 | **Firebase Extensions** | Stripe payments integration (6 managed functions) | Billed per invocation same as Cloud Functions | [Extensions Console](https://console.firebase.google.com/project/fin-track-adc2c/extensions) |
+| **Firebase Cloud Messaging (FCM)** | Push notifications — budget alerts, goal milestones | **Free, unlimited** — no pricing tier exists | [FCM Console](https://console.firebase.google.com/project/fin-track-adc2c/messaging) |
 
 *\*Note: Cloud Functions requires the Blaze (Pay-as-you-go) plan to deploy, but usually stays within the free tier for small projects.*
 
@@ -33,6 +34,7 @@ Managed via the [Firebase Console](https://console.firebase.google.com/project/f
 ### Custom Functions
 | Function | Region | Trigger | Schedule | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
+| `checkBudgetOnEntry` | `europe-west4` | `document.created` (entries) | On every entry creation | Checks if any monthly budget crossed 80%/100% threshold → sends FCM push notification |
 | `onEntryDeleted` | `europe-west4` | `document.deleted` (entries) | On every entry deletion | Audit log — writes to `auditLog` collection |
 | `onLargeEntryCreated` | `europe-west4` | `document.created` (entries) | On every entry creation | Flags transactions ≥ €10,000 in `auditLog` |
 | `processMyRecurringTransactions` | `us-central1` | HTTP (callable) | On-demand | User-triggered recurring transaction processing. Rate limited: 3 calls / 5 min |
@@ -73,7 +75,7 @@ Managed via the [Google Cloud Console](https://console.cloud.google.com/).
 
 | Collection | Purpose | Access |
 | :--- | :--- | :--- |
-| `users` | User profiles | Owner only |
+| `users` | User profiles + `fcmTokens[]` array for push notifications | Owner only |
 | `entries` | Financial transactions | Owner only |
 | `budgets` | Monthly budgets | Owner only |
 | `savingsAccounts` | Savings accounts | Owner only |
@@ -121,6 +123,7 @@ Managed via the [Google Cloud Console](https://console.cloud.google.com/).
 ## 7. Other Integrations
 - **Google Fonts:** Used for *Inter* and *Poppins* via `next/font/google`. No cost or usage limits.
 - **Google Analytics (GA4):** Measurement ID `G-YRYCTR1THT`. Initialized in `frontend/lib/firebase.ts` with deferred loading (3s delay). Track at [Google Analytics Console](https://analytics.google.com/).
+- **Firebase Cloud Messaging (FCM):** VAPID key pair generated 26 Mar 2026. Public key stored in `NEXT_PUBLIC_FCM_VAPID_KEY`. Background push handled in `sw.js` via `firebase-messaging-compat` SDK. Foreground messages shown as toasts. Tokens stored in `users/{uid}.fcmTokens[]`, auto-cleaned on invalidation by `sendPushToUser()` in Functions.
 
 ---
 
