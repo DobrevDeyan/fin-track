@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { Plus } from "lucide-react"
 import { QuickExpenseSheet } from "./QuickExpenseSheet"
 import { cn } from "@/lib/utils"
@@ -21,36 +21,31 @@ interface QuickExpenseFABProps {
 
 export function QuickExpenseFAB({ onSubmit, savingsAccounts = [] }: QuickExpenseFABProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const haptics = useHaptics()
+
+  useEffect(() => { setMounted(true) }, [])
 
   const handleSubmit = async (data: Parameters<typeof onSubmit>[0]) => {
     await onSubmit(data)
     haptics.success()
   }
 
-  return (
+  const fab = (
     <>
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
           "fixed bottom-24 right-6 h-16 w-16 rounded-full shadow-2xl",
-          "bg-black",
-          "hover:bg-gray-900",
-          "border-0",
-          "z-50",
-          "transition-all duration-300",
-          "hover:scale-110 active:scale-95",
+          "bg-black hover:bg-gray-900 border-0 z-50",
+          "transition-all duration-300 hover:scale-110 active:scale-95",
           "md:bottom-8 md:right-8 md:h-14 md:w-14",
           "flex items-center justify-center",
           "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
         )}
         aria-label="Add quick expense"
       >
-        <Plus 
-          className="h-8 w-8 md:h-6 md:w-6 text-white"
-          strokeWidth={3}
-          fill="none"
-        />
+        <Plus className="h-8 w-8 md:h-6 md:w-6 text-white" strokeWidth={3} fill="none" />
       </button>
       <QuickExpenseSheet
         open={isOpen}
@@ -60,5 +55,9 @@ export function QuickExpenseFAB({ onSubmit, savingsAccounts = [] }: QuickExpense
       />
     </>
   )
+
+  // Portal to document.body bypasses framer-motion transform on parent,
+  // which otherwise breaks CSS fixed positioning
+  return mounted ? createPortal(fab, document.body) : null
 }
 
