@@ -48,16 +48,14 @@ export function BottomNav() {
           )
         })}
 
-        {/* Quick add button — black pill, always visible */}
+        {/* Quick add button — matches other nav tabs */}
         <button
           onClick={openQuickAdd}
-          className="flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 active:scale-90"
+          className="flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted/60 min-w-0"
           aria-label="Add transaction"
         >
-          <div className="h-7 w-7 rounded-full bg-foreground flex items-center justify-center">
-            <Plus className="h-4 w-4 text-background" strokeWidth={2.5} />
-          </div>
-          <span className="text-[10px] font-medium text-muted-foreground">Add</span>
+          <Plus className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+          <span className="text-[10px] font-medium truncate">Add</span>
         </button>
       </div>
     </nav>
