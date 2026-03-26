@@ -18,12 +18,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Check, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, User, Wand2 } from "lucide-react"
+import { AlertTriangle, Bell, BellOff, Check, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, User, Wand2 } from "lucide-react"
 import { ThemeControls } from "@/components/ThemeControls"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
 import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog"
 import { completeOnboarding } from "@/lib/firestore-users"
 import { useScanQuota } from "@/lib/hooks/useScanQuota"
+import { useNotifications } from "@/lib/hooks/useNotifications"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { collection, addDoc, onSnapshot } from "firebase/firestore"
@@ -64,6 +65,8 @@ export default function SettingsPage() {
 
   // Setup wizard
   const [setupWizardOpen, setSetupWizardOpen] = useState(false)
+  const { permission: notifPermission, enable: enableNotifications, isSupported: notifSupported } = useNotifications()
+  const [notifLoading, setNotifLoading] = useState(false)
 
   // Delete account
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -215,6 +218,53 @@ export default function SettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Push Notifications */}
+      {notifSupported && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="h-4 w-4" />
+              Push Notifications
+            </CardTitle>
+            <CardDescription>
+              Get alerted when you exceed a budget, reach a savings goal, or have important updates.
+              {" "}Works on Android and on iOS when the app is added to your home screen.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {notifPermission === "granted" ? (
+              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <Check className="h-4 w-4" />
+                Notifications are enabled
+              </div>
+            ) : notifPermission === "denied" ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BellOff className="h-4 w-4" />
+                Blocked by browser — enable them in your browser site settings, then reload.
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={notifLoading}
+                onClick={async () => {
+                  setNotifLoading(true)
+                  await enableNotifications()
+                  setNotifLoading(false)
+                }}
+              >
+                {notifLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Bell className="h-4 w-4 mr-2" />
+                )}
+                Enable notifications
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Profile */}
       <Card className="mb-6">

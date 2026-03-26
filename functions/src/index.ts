@@ -337,6 +337,131 @@ export const processMyRecurringTransactions = onCall(
   }
 );
 
+// ─── Push Notification Helpers ────────────────────────────────────────────────
+
+/**
+ * Send a push notification to all FCM tokens stored on a user document.
+ * Silently removes stale tokens (FCM returns "registration-token-not-registered").
+ */
+async function sendPushToUser(
+  userId: string,
+  notification: { title: string; body: string; url?: string; tag?: string }
+): Promise<void> {
+  const userSnap = await db.collection("users").doc(userId).get();
+  const tokens: string[] = userSnap.data()?.fcmTokens ?? [];
+  if (tokens.length === 0) return;
+
+  const staleTokens: string[] = [];
+
+  await Promise.all(
+    tokens.map(async (token) => {
+      try {
+        await admin.messaging().send({
+          token,
+          notification: {
+            title: notification.title,
+            body: notification.body,
+          },
+          webpush: {
+            notification: {
+              icon: "https://fin-track-adc2c.firebaseapp.com/icons/icon-192x192.png",
+              badge: "https://fin-track-adc2c.firebaseapp.com/icons/icon-96x96.png",
+              tag: notification.tag ?? "pocket",
+              renotify: true,
+            },
+            fcmOptions: {
+              link: `https://fin-track-adc2c.firebaseapp.com${notification.url ?? "/dashboard/"}`,
+            },
+          },
+        });
+      } catch (err: any) {
+        if (err?.errorInfo?.code === "messaging/registration-token-not-registered") {
+          staleTokens.push(token);
+        } else {
+          logger.warn(`FCM send failed for token`, { token: token.slice(0, 20), err });
+        }
+      }
+    })
+  );
+
+  // Clean up invalidated tokens
+  if (staleTokens.length > 0) {
+    await db.collection("users").doc(userId).update({
+      fcmTokens: admin.firestore.FieldValue.arrayRemove(...staleTokens),
+    });
+  }
+}
+
+// ─── Budget Alert Trigger ─────────────────────────────────────────────────────
+
+/**
+ * Fires whenever a new expense entry is created.
+ * Checks if any of the user's active budgets has crossed the 80% or 100% threshold
+ * for the current month and sends a push notification if so.
+ */
+export const checkBudgetOnEntry = onDocumentCreated(
+  { document: "entries/{entryId}", region: "europe-west4" },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data || data.type !== "expense") return;
+
+    const userId = data.userId as string;
+    const entryDate: admin.firestore.Timestamp = data.date;
+    const entryMonth = entryDate.toDate().toISOString().slice(0, 7); // "YYYY-MM"
+
+    // Fetch user's active monthly budgets
+    const budgetsSnap = await db
+      .collection("budgets")
+      .where("userId", "==", userId)
+      .where("isActive", "==", true)
+      .where("period", "==", "monthly")
+      .get();
+
+    if (budgetsSnap.empty) return;
+
+    // Sum expenses per category for the current month
+    const monthStart = new Date(`${entryMonth}-01T00:00:00Z`);
+    const monthEnd = new Date(monthStart);
+    monthEnd.setMonth(monthEnd.getMonth() + 1);
+
+    const expensesSnap = await db
+      .collection("entries")
+      .where("userId", "==", userId)
+      .where("type", "==", "expense")
+      .where("date", ">=", admin.firestore.Timestamp.fromDate(monthStart))
+      .where("date", "<", admin.firestore.Timestamp.fromDate(monthEnd))
+      .get();
+
+    // Group spending by category
+    const spendByCategory: Record<string, number> = {};
+    for (const e of expensesSnap.docs) {
+      const d = e.data();
+      const cat = (d.category as string) ?? "Other";
+      spendByCategory[cat] = (spendByCategory[cat] ?? 0) + (d.amount as number);
+    }
+
+    // Check each budget
+    for (const budgetDoc of budgetsSnap.docs) {
+      const budget = budgetDoc.data();
+      const spent = spendByCategory[budget.category] ?? 0;
+      const pct = Math.round((spent / budget.amount) * 100);
+      const threshold = budget.alertThreshold ?? 80;
+
+      if (pct < threshold) continue;
+
+      const isOver = pct >= 100;
+      const title = isOver
+        ? `🚨 Budget exceeded: ${budget.name}`
+        : `⚠️ Budget alert: ${budget.name}`;
+      const body = isOver
+        ? `You've spent ${pct}% of your ${budget.name} budget this month.`
+        : `You've used ${pct}% of your ${budget.name} budget this month.`;
+
+      await sendPushToUser(userId, { title, body, url: "/dashboard/", tag: `budget-${budgetDoc.id}` });
+    }
+  }
+);
+
 // ─── Audit Log Triggers ───────────────────────────────────────────────────────
 
 /**

@@ -16,6 +16,8 @@ import {
   getDocs,
   writeBatch,
   serverTimestamp,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { UserDocument } from "./firestore-types"
@@ -264,5 +266,28 @@ export async function deleteUserData(userId: string): Promise<void> {
   if (currentUser) {
     await deleteUser(currentUser)
   }
+}
+
+/**
+ * Save an FCM token to the user's document (appends to array, deduped by arrayUnion).
+ * Called after notification permission is granted.
+ */
+export async function saveFcmToken(userId: string, token: string): Promise<void> {
+  const userRef = doc(db, "users", userId)
+  await updateDoc(userRef, {
+    fcmTokens: arrayUnion(token),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/**
+ * Remove a stale FCM token (e.g., on logout or when FCM invalidates it).
+ */
+export async function removeFcmToken(userId: string, token: string): Promise<void> {
+  const userRef = doc(db, "users", userId)
+  await updateDoc(userRef, {
+    fcmTokens: arrayRemove(token),
+    updatedAt: serverTimestamp(),
+  })
 }
 

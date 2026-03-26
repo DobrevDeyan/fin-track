@@ -1,7 +1,41 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v24'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v25'; // Increment this when deploying new version
+
+// ─── Firebase Messaging (background push notifications) ───────────────────────
+// Uses Firebase compat SDK so we can handle background messages in this SW.
+// The config values are public — security is enforced by Firestore rules & Auth.
+importScripts("https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey: "AIzaSyAj_TioYX7kZsDm9uuKPVrf8BwuOmaN1hA",
+  authDomain: "fin-track-adc2c.firebaseapp.com",
+  projectId: "fin-track-adc2c",
+  storageBucket: "fin-track-adc2c.firebasestorage.app",
+  messagingSenderId: "185936461123",
+  appId: "1:185936461123:web:90b48701c1a520457383f6",
+  measurementId: "G-YRYCTR1THT",
+});
+
+const firebaseMessaging = firebase.messaging();
+
+// Background messages — app is closed or in a background tab
+firebaseMessaging.onBackgroundMessage((payload) => {
+  const title = payload.notification?.title ?? "Pocket";
+  const body  = payload.notification?.body  ?? "";
+  const url   = payload.data?.url           ?? "/dashboard";
+
+  self.registration.showNotification(title, {
+    body,
+    icon:  "/icons/icon-192x192.png",
+    badge: "/icons/icon-96x96.png",
+    tag:   payload.data?.tag ?? "pocket",
+    renotify: true,
+    data: { url },
+  });
+});
 const CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Critical app shell URLs to pre-cache on install.
@@ -29,6 +63,28 @@ self.addEventListener('install', (event) => {
   );
   // Don't skip waiting automatically - let user decide when to update
   // self.skipWaiting(); // Commented out to show update notification
+});
+
+// ─── Push notification click ──────────────────────────────────────────────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data?.url) ?? '/dashboard/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Focus existing tab if already open
+      const existing = windowClients.find(
+        (c) => c.url.startsWith(self.registration.scope)
+      );
+      if (existing) {
+        existing.focus();
+        existing.navigate(url);
+        return;
+      }
+      // Otherwise open a new window
+      clients.openWindow(url);
+    })
+  );
 });
 
 // Listen for skip waiting message from client

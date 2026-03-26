@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Calendar, FileText, Settings } from "lucide-react"
+import { LayoutDashboard, Calendar, FileText, Settings, Plus } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +16,10 @@ const tabs = [
 export function BottomNav() {
   const pathname = usePathname()
   const t = useTranslations("nav")
+
+  const openQuickAdd = () => {
+    window.dispatchEvent(new CustomEvent("pocket:openQuickAdd"))
+  }
 
   return (
     <nav
@@ -43,6 +47,18 @@ export function BottomNav() {
             </Link>
           )
         })}
+
+        {/* Quick add button — black pill, always visible */}
+        <button
+          onClick={openQuickAdd}
+          className="flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 active:scale-90"
+          aria-label="Add transaction"
+        >
+          <div className="h-7 w-7 rounded-full bg-foreground flex items-center justify-center">
+            <Plus className="h-4 w-4 text-background" strokeWidth={2.5} />
+          </div>
+          <span className="text-[10px] font-medium text-muted-foreground">Add</span>
+        </button>
       </div>
     </nav>
   )

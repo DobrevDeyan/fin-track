@@ -19,7 +19,7 @@ const CashFlowForecast = dynamic(
 )
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { PullToRefresh } from "@/components/PullToRefresh";
-import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"
+import { QuickExpenseSheet } from "@/components/dashboard/QuickExpenseSheet"
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
 import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
@@ -88,6 +88,15 @@ function DashboardInnerContent() {
     const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
     const { budgets, loadBudgets } = useBudgetsContext();
     const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
+
+    // Quick add sheet state (opened from BottomNav + button)
+    const [quickAddOpen, setQuickAddOpen] = useState(false);
+
+    useEffect(() => {
+      const handler = () => setQuickAddOpen(true)
+      window.addEventListener("pocket:openQuickAdd", handler)
+      return () => window.removeEventListener("pocket:openQuickAdd", handler)
+    }, [])
 
     // Receipt scanner state
     const [scannerDialogOpen, setScannerDialogOpen] = useState(false);
@@ -357,8 +366,10 @@ function DashboardInnerContent() {
                     }}
                 />
 
-                {/* Quick Expense FAB */}
-                <QuickExpenseFAB
+                {/* Quick Add Sheet — triggered by BottomNav + button */}
+                <QuickExpenseSheet
+                  open={quickAddOpen}
+                  onOpenChange={setQuickAddOpen}
                   onSubmit={entriesHook.handleAdd}
                   savingsAccounts={activeSavingsAccounts}
                 />
