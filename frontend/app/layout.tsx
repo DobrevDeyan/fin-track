@@ -74,9 +74,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fin-track-adc2c.firebaseapp.com" />
         <link rel="preconnect" href="https://firestore.googleapis.com" />
         <link rel="preconnect" href="https://identitytoolkit.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
-        <link rel="preconnect" href="https://apis.google.com" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://apis.google.com" />
         {/* PWA meta tags */}
         <meta name="mobile-web-app-capable" content="yes" />
         {/* Apple Touch Icon - iOS Safari */}

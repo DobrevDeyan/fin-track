@@ -13,7 +13,10 @@ import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
-import { CashFlowForecast } from "@/components/dashboard/CashFlowForecast"
+const CashFlowForecast = dynamic(
+  () => import("@/components/dashboard/CashFlowForecast").then(m => ({ default: m.CashFlowForecast })),
+  { ssr: false, loading: () => <div className="h-[180px] w-full rounded-xl border bg-card animate-pulse" /> }
+)
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { QuickExpenseFAB } from "@/components/dashboard/QuickExpenseFAB"

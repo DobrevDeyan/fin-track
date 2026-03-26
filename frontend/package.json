@@ -75,5 +75,11 @@
     },
     "overrides": {
         "undici": "^6.22.1"
-    }
+    },
+    "browserslist": [
+        "chrome >= 90",
+        "firefox >= 90",
+        "safari >= 14",
+        "edge >= 90"
+    ]
 }
