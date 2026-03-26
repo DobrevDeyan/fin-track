@@ -5,9 +5,9 @@ export const SCAN_LIMITS = {
 } as const
 
 export const FREE_TIER_LIMITS = {
-  transactions: 50, // per month
-  budgets: 3,
-  goals: 2,
-  savingsAccounts: 1,
-  recurringTransactions: 3,
+  transactions: 100, // raised to 100 for beta (was 50)
+  budgets: 5,
+  goals: 3,
+  savingsAccounts: 2,
+  recurringTransactions: 5,
 } as const

@@ -12,7 +12,7 @@ import {
 import {
   Menu, LogOut, X, Globe, Info, LayoutDashboard,
   Calendar as CalendarIcon, FileText, Settings, Receipt,
-  Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight,
+  Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight, MessageSquare,
 } from "lucide-react"
 import Image from "next/image"
 import { PocketLogo } from "@/components/PocketLogo"
@@ -364,6 +364,20 @@ export const AppNavbar = () => {
                   <span className="flex-1 text-left">AI Budget Coach</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
                 </button>
+                <div className="h-px bg-border/60 mx-4" />
+                <a
+                  href={process.env.NEXT_PUBLIC_FEEDBACK_URL ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
+                >
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                    <MessageSquare className="h-4 w-4" />
+                  </div>
+                  <span className="flex-1">Send Feedback</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />
+                </a>
               </div>
             </motion.div>
 
@@ -580,6 +594,17 @@ export const AppNavbar = () => {
                     <Info className="mr-2 h-4 w-4" />
                     <span>{t("aboutPocket")}</span>
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={process.env.NEXT_PUBLIC_FEEDBACK_URL ?? "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cursor-pointer"
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <span>Send Feedback</span>
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">

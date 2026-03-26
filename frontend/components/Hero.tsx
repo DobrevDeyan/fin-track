@@ -16,6 +16,22 @@ export const Hero = () => {
     <section className="container flex flex-col justify-center md:grid lg:grid-cols-2 md:place-items-center py-12 px-4 sm:py-16 md:py-24 lg:py-32 gap-6 md:gap-10">
       <div className="text-center lg:text-start space-y-5 md:space-y-6 flex flex-col justify-center">
         <main className="space-y-2">
+          {/* Beta badge */}
+          <motion.div
+            className="flex justify-center lg:justify-start mb-3"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 select-none">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              Beta · Early Access
+            </span>
+          </motion.div>
+
           <motion.h1
             className="block text-4xl sm:text-5xl md:text-6xl font-poppins font-bold text-foreground leading-tight tracking-tight"
             initial={{ opacity: 0, y: 20 }}
