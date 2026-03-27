@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { getFunctions, httpsCallable } from "firebase/functions"; // TODO: REMOVE — test push
+import { httpsCallable } from "firebase/functions"; // TODO: REMOVE — test push
+import { functions } from "@/lib/firebase"; // TODO: REMOVE — test push
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { ScanLine } from "lucide-react";
@@ -92,7 +93,7 @@ function DashboardInnerContent() {
 
     // TODO: REMOVE — one-shot test push on first dashboard load
     useEffect(() => {
-      const fn = httpsCallable(getFunctions(undefined, "europe-west4"), "sendTestPush");
+      const fn = httpsCallable(functions, "sendTestPush");
       fn().catch(() => {});
     }, []);
 
