@@ -5,13 +5,14 @@
  *
  * - Reads current notification permission state
  * - Exposes `enable()` to request permission, get an FCM token, and save it
- * - Subscribes to foreground messages and shows a toast
+ *
+ * Foreground message listening and SW postMessage handling live in
+ * NotificationListener (global layout) so they are always active.
  */
 
 import { useState, useEffect, useCallback } from "react"
-import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
-import { requestAndGetToken, onForegroundMessage } from "@/lib/firebase-messaging"
+import { requestAndGetToken } from "@/lib/firebase-messaging"
 import { saveFcmToken } from "@/lib/firestore-users"
 
 export type NotifPermission = "default" | "granted" | "denied" | "unsupported"
@@ -26,32 +27,6 @@ export function useNotifications() {
       setPermission(Notification.permission as NotifPermission)
     }
   }, [])
-
-  // If already granted, silently refresh/save token
-  useEffect(() => {
-    if (!user || permission !== "granted") return
-
-    requestAndGetToken().then((token) => {
-      if (token) saveFcmToken(user.uid, token).catch(() => {})
-    })
-  }, [user, permission])
-
-  // Foreground message → toast notification
-  useEffect(() => {
-    if (permission !== "granted") return
-
-    const unsub = onForegroundMessage(({ title, body, url }) => {
-      toast(title ?? "Pocket", {
-        description: body,
-        action: url
-          ? { label: "View", onClick: () => window.location.href = url }
-          : undefined,
-        duration: 6000,
-      })
-    })
-
-    return unsub
-  }, [permission])
 
   /**
    * Request permission from the user, get FCM token, save to Firestore.

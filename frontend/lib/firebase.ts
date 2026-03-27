@@ -57,7 +57,7 @@ if (typeof window !== "undefined") {
   }
 
   storage = getStorage(app);
-  functions = getFunctions(app);
+  functions = getFunctions(app, "europe-west4");
   
   // Defer Analytics initialization - load after page becomes interactive
   setTimeout(async () => {

@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v29'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v32'; // Increment this when deploying new version
 
 // ─── Firebase Messaging (background push notifications) ───────────────────────
 // Uses Firebase compat SDK so we can handle background messages in this SW.
@@ -68,21 +68,24 @@ self.addEventListener('install', (event) => {
 // ─── Push notification click ──────────────────────────────────────────────────
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data?.url) ?? '/dashboard/';
+  // Always use absolute URL — required for iOS PWA and openWindow()
+  const rawUrl = event.notification.data?.url ?? '/dashboard/';
+  const absUrl = rawUrl.startsWith('http')
+    ? rawUrl
+    : self.registration.scope.replace(/\/$/, '') + rawUrl;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Focus existing tab if already open
       const existing = windowClients.find(
         (c) => c.url.startsWith(self.registration.scope)
       );
       if (existing) {
         existing.focus();
-        existing.navigate(url);
+        // navigate() not reliable on iOS — postMessage instead
+        existing.postMessage({ type: 'NOTIFICATION_CLICK', url: absUrl });
         return;
       }
-      // Otherwise open a new window
-      clients.openWindow(url);
+      clients.openWindow(absUrl);
     })
   );
 });

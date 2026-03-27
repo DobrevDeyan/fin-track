@@ -356,11 +356,15 @@ async function sendPushToUser(
   await Promise.all(
     tokens.map(async (token) => {
       try {
+        const absUrl = `https://fin-track-adc2c.firebaseapp.com${notification.url ?? "/dashboard/"}`;
         await admin.messaging().send({
           token,
           notification: {
             title: notification.title,
             body: notification.body,
+          },
+          data: {
+            url: absUrl,
           },
           webpush: {
             notification: {
@@ -370,7 +374,7 @@ async function sendPushToUser(
               renotify: true,
             },
             fcmOptions: {
-              link: `https://fin-track-adc2c.firebaseapp.com${notification.url ?? "/dashboard/"}`,
+              link: absUrl,
             },
           },
         });

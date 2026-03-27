@@ -6,12 +6,14 @@ import { AppNavbar } from "@/components/navigation/AppNavbar"
 import { BottomNav } from "@/components/navigation/BottomNav"
 import { AuthGuard } from "@/components/auth/AuthGuard"
 import { SwipeBackNavigator } from "@/components/navigation/SwipeBackNavigator"
+import { NotificationListener } from "@/components/NotificationListener"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   return (
     <AuthGuard>
+      <NotificationListener />
       <SwipeBackNavigator>
         <AppNavbar />
         {/* pb-24 on mobile gives space above the floating BottomNav pill; none on desktop */}
