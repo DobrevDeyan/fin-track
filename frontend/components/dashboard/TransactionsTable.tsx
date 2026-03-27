@@ -75,17 +75,17 @@ export function TransactionsTable({
   const haptics = useHaptics()
   const [expanded, setExpanded] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
-  const prevLengthRef = useRef(transactions.length)
+  const prevIdsRef = useRef<Set<string>>(new Set(transactions.map(t => t.id)))
 
-  // Highlight newest row when a transaction is added
+  // Detect truly new entry by diffing IDs, not relying on array position
   useEffect(() => {
-    if (transactions.length > prevLengthRef.current && transactions[0]?.id) {
-      setHighlightedId(transactions[0].id)
+    const newEntry = transactions.find(t => !prevIdsRef.current.has(t.id))
+    prevIdsRef.current = new Set(transactions.map(t => t.id))
+    if (newEntry) {
+      setHighlightedId(newEntry.id)
       const timer = setTimeout(() => setHighlightedId(null), 2000)
-      prevLengthRef.current = transactions.length
       return () => clearTimeout(timer)
     }
-    prevLengthRef.current = transactions.length
   }, [transactions])
   const [currentPage, setCurrentPage] = useState(1)
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false)
@@ -266,7 +266,7 @@ export function TransactionsTable({
                       key={transaction.id}
                       className={cn(
                         "hover:bg-muted/50 transition-colors duration-500",
-                        highlightedId === transaction.id && "bg-primary/10 hover:bg-primary/10"
+                        highlightedId === transaction.id && "animate-row-in bg-primary/10 hover:bg-primary/10"
                       )}
                     >
                       <TableCell className="font-medium py-2 sm:py-4">

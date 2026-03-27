@@ -201,33 +201,29 @@ export const AppNavbar = () => {
       {/* Floating side tab - mobile only */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className={cn(
-          "fixed top-1/2 right-0 z-50 md:hidden",
-          "flex items-center justify-center",
-          "h-16 w-16 rounded-l-2xl",
-          "bg-[#141414] shadow-xl shadow-black/30 overflow-hidden",
-        )}
-        initial={{ x: 60, opacity: 0 }}
-        animate={showFloatingMenu
-          ? { x: 0, opacity: 1 }
-          : { x: 60, opacity: 0 }
-        }
+        className="fixed top-1/2 right-0 z-50 md:hidden"
+        initial={{ x: 14, opacity: 0 }}
+        animate={showFloatingMenu ? { x: 0, opacity: 1 } : { x: 14, opacity: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         style={{
           pointerEvents: showFloatingMenu ? "auto" : "none",
           translateY: "-50%",
+          padding: "28px 0 28px 14px",
         }}
-        whileTap={{ scale: 0.92 }}
+        whileTap={{ x: -6 }}
         aria-label="Open menu"
       >
-        {/* Idle nudge animation */}
-        <motion.div
-          className="w-10 h-10"
-          animate={{ x: [0, -5, 0] }}
-          transition={{ repeat: Infinity, repeatDelay: 2.5, duration: 0.45, ease: "easeInOut" }}
+        <svg
+          width="14" height="72" viewBox="0 0 14 72" fill="none"
+          className="text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.5)]"
         >
-          <PocketLogo width={40} height={40} className="w-full h-full rounded-lg" />
-        </motion.div>
+          {/* Trapezoid body */}
+          <path d="M0 9 L14 0 L14 72 L0 63 Z" fill="currentColor" fillOpacity="0.65" />
+          {/* Top end cap */}
+          <line x1="0" y1="9" x2="14" y2="0" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          {/* Bottom end cap */}
+          <line x1="0" y1="63" x2="14" y2="72" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        </svg>
       </motion.button>
 
       {/* Mobile Sheet */}

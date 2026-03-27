@@ -407,43 +407,40 @@ export const checkBudgetOnEntry = onDocumentCreated(
 
     const userId = data.userId as string;
     const entryDate: admin.firestore.Timestamp = data.date;
-    const entryMonth = entryDate.toDate().toISOString().slice(0, 7); // "YYYY-MM"
+    const entryTs = entryDate.toDate();
 
-    // Fetch user's active monthly budgets
+    // Fetch all active budgets for this user
     const budgetsSnap = await db
       .collection("budgets")
       .where("userId", "==", userId)
       .where("isActive", "==", true)
-      .where("period", "==", "monthly")
       .get();
 
     if (budgetsSnap.empty) return;
 
-    // Sum expenses per category for the current month
-    const monthStart = new Date(`${entryMonth}-01T00:00:00Z`);
-    const monthEnd = new Date(monthStart);
-    monthEnd.setMonth(monthEnd.getMonth() + 1);
-
-    const expensesSnap = await db
-      .collection("entries")
-      .where("userId", "==", userId)
-      .where("type", "==", "expense")
-      .where("date", ">=", admin.firestore.Timestamp.fromDate(monthStart))
-      .where("date", "<", admin.firestore.Timestamp.fromDate(monthEnd))
-      .get();
-
-    // Group spending by category
-    const spendByCategory: Record<string, number> = {};
-    for (const e of expensesSnap.docs) {
-      const d = e.data();
-      const cat = (d.category as string) ?? "Other";
-      spendByCategory[cat] = (spendByCategory[cat] ?? 0) + (d.amount as number);
-    }
-
-    // Check each budget
     for (const budgetDoc of budgetsSnap.docs) {
       const budget = budgetDoc.data();
-      const spent = spendByCategory[budget.category] ?? 0;
+
+      const budgetStart: admin.firestore.Timestamp = budget.startDate;
+      const budgetEnd: admin.firestore.Timestamp = budget.endDate;
+
+      // Skip if the triggering entry falls outside this budget's period
+      if (entryTs < budgetStart.toDate() || entryTs > budgetEnd.toDate()) continue;
+
+      // Query all expenses within this budget's exact date range
+      const expensesSnap = await db
+        .collection("entries")
+        .where("userId", "==", userId)
+        .where("type", "==", "expense")
+        .where("date", ">=", budgetStart)
+        .where("date", "<=", budgetEnd)
+        .get();
+
+      // Sum only expenses matching this budget's category
+      const spent = expensesSnap.docs
+        .filter((e) => e.data().category === budget.category)
+        .reduce((sum, e) => sum + (e.data().amount as number), 0);
+
       const pct = Math.round((spent / budget.amount) * 100);
       const threshold = budget.alertThreshold ?? 80;
 
@@ -454,8 +451,8 @@ export const checkBudgetOnEntry = onDocumentCreated(
         ? `🚨 Budget exceeded: ${budget.name}`
         : `⚠️ Budget alert: ${budget.name}`;
       const body = isOver
-        ? `You've spent ${pct}% of your ${budget.name} budget this month.`
-        : `You've used ${pct}% of your ${budget.name} budget this month.`;
+        ? `You've spent ${pct}% of your ${budget.name} budget.`
+        : `You've used ${pct}% of your ${budget.name} budget.`;
 
       await sendPushToUser(userId, { title, body, url: "/dashboard/", tag: `budget-${budgetDoc.id}` });
     }
