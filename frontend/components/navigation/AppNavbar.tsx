@@ -13,7 +13,11 @@ import {
   Menu, LogOut, X, Globe, Info, LayoutDashboard,
   Calendar as CalendarIcon, FileText, Settings, Receipt,
   Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight, MessageSquare,
+  ChevronLeft,
 } from "lucide-react"
+import { useInAppNotifications } from "@/lib/hooks/useInAppNotifications"
+import { MobileBell, NotificationBell } from "@/components/notifications/NotificationBell"
+import { NotificationPanel } from "@/components/notifications/NotificationPanel"
 import Image from "next/image"
 import { PocketLogo } from "@/components/PocketLogo"
 import { useAuth } from "@/contexts/AuthContext"
@@ -114,6 +118,13 @@ export const AppNavbar = () => {
   }
 
   const [showFloatingMenu, setShowFloatingMenu] = useState(false)
+  const [showNotifs, setShowNotifs] = useState(false)
+  const { notifications, unreadCount, loading: notifsLoading, markAllRead } = useInAppNotifications()
+
+  const handleOpenNotifs = () => {
+    setShowNotifs(true)
+    if (unreadCount > 0) markAllRead()
+  }
 
   // Lock body scroll when sheet is open
   useEffect(() => {
@@ -227,7 +238,7 @@ export const AppNavbar = () => {
       </motion.button>
 
       {/* Mobile Sheet */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={isOpen} onOpenChange={(v) => { setIsOpen(v); if (!v) setShowNotifs(false) }}>
         <SheetContent
           side="right"
           className="w-[300px] sm:w-[340px] [&>button]:hidden p-0 flex flex-col border-l-0"
@@ -241,14 +252,29 @@ export const AppNavbar = () => {
           {/* Header */}
           <div className="px-5 pt-6 pb-5">
             <div className="flex items-center justify-between mb-5">
-              <span className="font-bold text-lg text-foreground tracking-tight">Pocket</span>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="rounded-full p-1.5 bg-muted hover:bg-muted/80 transition-colors focus:outline-none"
-                aria-label="Close menu"
-              >
-                <X className="h-4 w-4 text-muted-foreground" strokeWidth={2.5} />
-              </button>
+              {showNotifs ? (
+                <button
+                  onClick={() => setShowNotifs(false)}
+                  className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </button>
+              ) : (
+                <span className="font-bold text-lg text-foreground tracking-tight">Pocket</span>
+              )}
+              <div className="flex items-center gap-1">
+                {!showNotifs && (
+                  <MobileBell unreadCount={unreadCount} onClick={handleOpenNotifs} />
+                )}
+                <button
+                  onClick={() => { setIsOpen(false); setShowNotifs(false) }}
+                  className="rounded-full p-1.5 bg-muted hover:bg-muted/80 transition-colors focus:outline-none"
+                  aria-label="Close menu"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" strokeWidth={2.5} />
+                </button>
+              </div>
             </div>
 
             {/* User info */}
@@ -321,8 +347,21 @@ export const AppNavbar = () => {
           {/* Divider */}
           <div className="h-px bg-border/50 mx-0" />
 
+          {/* Notification panel view */}
+          {showNotifs && (
+            <div className="flex-1 overflow-hidden bg-muted/40">
+              <NotificationPanel
+                notifications={notifications}
+                unreadCount={unreadCount}
+                loading={notifsLoading}
+                onMarkAllRead={markAllRead}
+                onClose={() => { setIsOpen(false); setShowNotifs(false) }}
+              />
+            </div>
+          )}
+
           {/* Nav content */}
-          <nav className="flex flex-col flex-1 px-4 py-5 overflow-y-auto gap-5 bg-muted/40">
+          <nav className={`flex flex-col flex-1 px-4 py-5 overflow-y-auto gap-5 bg-muted/40 ${showNotifs ? "hidden" : ""}`}>
 
             {/* Navigate */}
             <motion.div
@@ -553,6 +592,7 @@ export const AppNavbar = () => {
 
           {/* Desktop right — consolidated currency/language + avatar */}
           <div className="hidden md:flex items-center gap-2">
+            <NotificationBell variant="desktop" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-transparent hover:border-border/50">

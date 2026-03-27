@@ -5,8 +5,6 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { httpsCallable } from "firebase/functions"; // TODO: REMOVE — test push
-import { functions } from "@/lib/firebase"; // TODO: REMOVE — test push
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Button } from "@/components/ui/button";
 import { ScanLine } from "lucide-react";
@@ -90,12 +88,6 @@ function DashboardInnerContent() {
     const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
     const { budgets, loadBudgets } = useBudgetsContext();
     const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
-
-    // TODO: REMOVE — one-shot test push on first dashboard load
-    useEffect(() => {
-      const fn = httpsCallable(functions, "sendTestPush");
-      fn().catch(() => {});
-    }, []);
 
     // Quick add sheet state (opened from BottomNav + button)
     const [quickAddOpen, setQuickAddOpen] = useState(false);
