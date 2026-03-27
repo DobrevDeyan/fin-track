@@ -340,12 +340,34 @@ export const processMyRecurringTransactions = onCall(
 // ─── Push Notification Helpers ────────────────────────────────────────────────
 
 /**
+ * Persist a notification to the user's in-app notification inbox.
+ * Always called alongside sendPushToUser so the record survives even if push fails.
+ */
+async function saveNotification(
+  userId: string,
+  notification: { title: string; body: string; url?: string; type?: string }
+): Promise<void> {
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("notifications")
+    .add({
+      title: notification.title,
+      body: notification.body,
+      url: notification.url ?? "/dashboard/",
+      type: notification.type ?? "system",
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+}
+
+/**
  * Send a push notification to all FCM tokens stored on a user document.
  * Silently removes stale tokens (FCM returns "registration-token-not-registered").
  */
 async function sendPushToUser(
   userId: string,
-  notification: { title: string; body: string; url?: string; tag?: string }
+  notification: { title: string; body: string; url?: string; tag?: string; type?: string }
 ): Promise<void> {
   const userSnap = await db.collection("users").doc(userId).get();
   const tokens: string[] = userSnap.data()?.fcmTokens ?? [];
@@ -417,6 +439,9 @@ async function sendPushToUser(
       fcmTokens: admin.firestore.FieldValue.arrayRemove(...staleTokens),
     });
   }
+
+  // Persist to in-app inbox regardless of push delivery
+  await saveNotification(userId, notification);
 }
 
 // ─── TODO: REMOVE — Test push notification ────────────────────────────────────
@@ -430,6 +455,7 @@ export const sendTestPush = onCall(
       body: "Push notifications are working correctly!",
       url: "/dashboard/",
       tag: "test-push",
+      type: "test",
     });
     return { ok: true };
   }
@@ -497,7 +523,7 @@ export const checkBudgetOnEntry = onDocumentCreated(
         ? `You've spent ${pct}% of your ${budget.name} budget.`
         : `You've used ${pct}% of your ${budget.name} budget.`;
 
-      await sendPushToUser(userId, { title, body, url: "/dashboard/", tag: `budget-${budgetDoc.id}` });
+      await sendPushToUser(userId, { title, body, url: "/dashboard/", tag: `budget-${budgetDoc.id}`, type: "budget" });
     }
   }
 );

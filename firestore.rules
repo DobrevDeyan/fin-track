@@ -4,6 +4,15 @@ service cloud.firestore {
     // Users can only access their own data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // In-app notification inbox — written by Cloud Functions (Admin SDK), read/update by owner
+      match /notifications/{notifId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // Allow client to mark notifications as read (update only)
+        allow update: if request.auth != null && request.auth.uid == userId;
+        // Only Admin SDK (Cloud Functions) may create or delete
+        allow create, delete: if false;
+      }
     }
     
     // Entries - users can only access their own entries
