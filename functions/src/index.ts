@@ -392,6 +392,22 @@ async function sendPushToUser(
   }
 }
 
+// ─── TODO: REMOVE — Test push notification ────────────────────────────────────
+export const sendTestPush = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+    await sendPushToUser(userId, {
+      title: "🧪 Test notification",
+      body: "Push notifications are working correctly!",
+      url: "/dashboard/",
+      tag: "test-push",
+    });
+    return { ok: true };
+  }
+);
+
 // ─── Budget Alert Trigger ─────────────────────────────────────────────────────
 
 /**
