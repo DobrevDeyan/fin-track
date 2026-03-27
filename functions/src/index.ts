@@ -368,13 +368,36 @@ async function sendPushToUser(
           },
           webpush: {
             notification: {
-              icon: "https://fin-track-adc2c.firebaseapp.com/icons/icon-192x192.png",
-              badge: "https://fin-track-adc2c.firebaseapp.com/icons/icon-96x96.png",
+              icon: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/web-app-manifest-192x192.png",
+              badge: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/favicon-96x96.png",
               tag: notification.tag ?? "pocket",
               renotify: true,
             },
             fcmOptions: {
               link: absUrl,
+            },
+          },
+          android: {
+            priority: "high",
+            notification: {
+              icon: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/web-app-manifest-192x192.png",
+              tag: notification.tag ?? "pocket",
+              clickAction: absUrl,
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                alert: {
+                  title: notification.title,
+                  body: notification.body,
+                },
+                sound: "default",
+                badge: 1,
+              },
+            },
+            fcmOptions: {
+              imageUrl: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/web-app-manifest-192x192.png",
             },
           },
         });

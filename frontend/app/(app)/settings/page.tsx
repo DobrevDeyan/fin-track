@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
@@ -67,6 +67,14 @@ export default function SettingsPage() {
   const [setupWizardOpen, setSetupWizardOpen] = useState(false)
   const { permission: notifPermission, enable: enableNotifications, isSupported: notifSupported } = useNotifications()
   const [notifLoading, setNotifLoading] = useState(false)
+  const [isIos, setIsIos] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
+  useEffect(() => {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true
+    setIsIos(ios)
+    setIsStandalone(standalone)
+  }, [])
 
   // Delete account
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -229,7 +237,7 @@ export default function SettingsPage() {
             </CardTitle>
             <CardDescription>
               Get alerted when you exceed a budget, reach a savings goal, or have important updates.
-              {" "}Works on Android and on iOS when the app is added to your home screen.
+              {" "}Works on Android and on iOS 16.4+ when the app is added to your home screen.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -242,6 +250,16 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <BellOff className="h-4 w-4" />
                 Blocked by browser — enable them in your browser site settings, then reload.
+              </div>
+            ) : isIos && !isStandalone ? (
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Bell className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>
+                    On iPhone/iPad, push notifications only work when the app is installed.
+                    Tap <strong>Share → Add to Home Screen</strong> in Safari, then open the app from your home screen and enable notifications here.
+                  </span>
+                </div>
               </div>
             ) : (
               <Button

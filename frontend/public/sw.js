@@ -29,8 +29,8 @@ firebaseMessaging.onBackgroundMessage((payload) => {
 
   self.registration.showNotification(title, {
     body,
-    icon:  "/icons/icon-192x192.png",
-    badge: "/icons/icon-96x96.png",
+    icon:  "/icons/favicon_dark/web-app-manifest-192x192.png",
+    badge: "/icons/favicon_dark/favicon-96x96.png",
     tag:   payload.data?.tag ?? "pocket",
     renotify: true,
     data: { url },
