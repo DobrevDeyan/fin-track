@@ -513,6 +513,8 @@ export const checkBudgetOnEntry = onDocumentCreated(
       const pct = Math.round((spent / budget.amount) * 100);
       const threshold = budget.alertThreshold ?? 80;
 
+      console.log(`Budget alert: ${budget.name} - ${pct}% - threshold: ${threshold}% - spent: ${spent} - budget: ${budget.amount}`);
+
       if (pct < threshold) continue;
 
       const isOver = pct >= 100;
@@ -525,6 +527,33 @@ export const checkBudgetOnEntry = onDocumentCreated(
 
       await sendPushToUser(userId, { title, body, url: "/dashboard/", tag: `budget-${budgetDoc.id}`, type: "budget" });
     }
+  }
+);
+
+// ─── Reset User Notifications ────────────────────────────────────────────────
+
+/**
+ * Callable function to delete all notifications for the authenticated user.
+ * Uses Admin SDK so it bypasses Firestore security rules (which only allow
+ * Cloud Functions to delete notifications).
+ */
+export const deleteMyNotifications = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const BATCH_SIZE = 490;
+    const notificationsRef = db.collection("users").doc(userId).collection("notifications");
+    const snap = await notificationsRef.get();
+
+    for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
+      const batch = db.batch();
+      snap.docs.slice(i, i + BATCH_SIZE).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+
+    return { deleted: snap.size };
   }
 );
 

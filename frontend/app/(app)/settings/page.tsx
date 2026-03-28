@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { deleteUserData, resetFinancialData, updateUserDisplayName } from "@/lib/firestore-users"
+import { httpsCallable } from "firebase/functions"
+import { functions } from "@/lib/firebase"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -102,6 +104,7 @@ export default function SettingsPage() {
     setResetError(null)
     try {
       await resetFinancialData(user.uid)
+      await httpsCallable(functions, "deleteMyNotifications")()
       setResetDialogOpen(false)
       setResetConfirmText("")
       toast.success("All financial data has been reset.")

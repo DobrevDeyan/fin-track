@@ -207,6 +207,7 @@ export async function resetFinancialData(userId: string): Promise<void> {
     }
   }
 
+
   await Promise.all([
     deleteDoc(doc(db, "financialSummaries", userId)),
     deleteDoc(doc(db, "aiInsights", userId)),
