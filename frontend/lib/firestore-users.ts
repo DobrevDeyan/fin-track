@@ -117,22 +117,41 @@ export async function completeOnboarding(
       updatedAt: serverTimestamp(),
     })
 
+    // Keep Firebase Auth profile in sync so all UI sources agree
+    const { auth } = await import("./firebase")
+    const { updateProfile } = await import("firebase/auth")
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, { displayName: data.displayName })
+    }
+
     // Auto-create Recurring Salary Transaction if they set a budget and a date
     if (data.monthlyBudget > 0 && data.salaryDate) {
       const now = new Date()
-      const currentMonthTemp = new Date(now.getFullYear(), now.getMonth(), data.salaryDate)
-      
-      let nextDate = currentMonthTemp
-      let shouldCreateImmediateEntry = false
-      
-      // If the date has already passed this month, schedule for next month
-      if (currentMonthTemp <= now) {
-        shouldCreateImmediateEntry = true
-        // Handle Dec -> Jan rollover automatically via Date
-        nextDate = new Date(now.getFullYear(), now.getMonth() + 1, data.salaryDate)
-      }
+      const thisMonthDate = new Date(now.getFullYear(), now.getMonth(), data.salaryDate)
+
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const salaryIsToday = thisMonthDate.getTime() === today.getTime()
+
+      // If salary day is in the future this month, schedule for then.
+      // If it's today, create an immediate entry and schedule next month.
+      // If it already passed (but not today), just schedule next month — don't backdate.
+      const nextDate = thisMonthDate > now
+        ? thisMonthDate
+        : new Date(now.getFullYear(), now.getMonth() + 1, data.salaryDate)
 
       const { Timestamp } = await import("firebase/firestore")
+
+      // Delete any existing "Monthly Salary" recurring transactions for this user
+      // so re-running the wizard never creates duplicates.
+      // Query by userId only (single-field index, always available), filter name in JS.
+      const existingSnap = await getDocs(
+        query(collection(db, "recurringTransactions"), where("userId", "==", userId))
+      )
+      await Promise.all(
+        existingSnap.docs
+          .filter((d) => d.data().name === "Monthly Salary")
+          .map((d) => deleteDoc(d.ref))
+      )
 
       const recurringRef = doc(collection(db, "recurringTransactions"))
       await setDoc(recurringRef, {
@@ -147,18 +166,18 @@ export async function completeOnboarding(
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
-      
-      if (shouldCreateImmediateEntry) {
-         await createEntry(userId, {
-           type: "income",
-           amount: data.monthlyBudget,
-           currency: data.currency,
-           category: "Salary",
-           description: "Monthly Salary generated from onboarding",
-           date: currentMonthTemp,
-           recurringId: recurringRef.id,
-           recurring: true,
-         })
+
+      if (salaryIsToday) {
+        await createEntry(userId, {
+          type: "income",
+          amount: data.monthlyBudget,
+          currency: data.currency,
+          category: "Salary",
+          description: "Monthly Salary",
+          date: today,
+          recurringId: recurringRef.id,
+          recurring: true,
+        })
       }
     }
   } catch (error) {

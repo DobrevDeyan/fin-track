@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoalDocument } from "@/lib/firestore-types"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 
 interface AddFundsDialogProps {
   goal: (GoalDocument & { id: string }) | null
@@ -72,6 +73,7 @@ export function AddFundsDialog({
                   type="number"
                   step="0.01"
                   min="0.01"
+                  max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   className="pl-12"
                   value={amount}

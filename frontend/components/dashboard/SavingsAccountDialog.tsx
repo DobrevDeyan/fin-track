@@ -21,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SUPPORTED_CURRENCIES, CURRENCY_DISPLAY_NAMES } from "@/lib/constants/currency.constants"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 
 const currencies = SUPPORTED_CURRENCIES
 
@@ -175,6 +176,7 @@ export function SavingsAccountDialog({
                   type="number"
                   step="0.01"
                   min="0"
+                  max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   value={balance}
                   onChange={(e) => setBalance(e.target.value)}

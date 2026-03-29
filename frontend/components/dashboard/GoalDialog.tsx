@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { GoalDocument } from "@/lib/firestore-types"
 import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 
 interface GoalData {
   name: string
@@ -171,6 +172,8 @@ export function GoalDialog({
                   id="targetAmount"
                   type="number"
                   step="0.01"
+                  min="0.01"
+                  max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
@@ -200,6 +203,8 @@ export function GoalDialog({
                 id="currentAmount"
                 type="number"
                 step="0.01"
+                min="0"
+                max={AMOUNT_RULES.MAX}
                 placeholder="0.00"
                 value={currentAmount}
                 onChange={(e) => setCurrentAmount(e.target.value)}

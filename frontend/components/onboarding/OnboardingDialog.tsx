@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import {
   Dialog,
@@ -16,16 +16,29 @@ import { User, DollarSign, Euro, ArrowRight, Check } from "lucide-react"
 
 interface OnboardingDialogProps {
   open: boolean
-  onComplete: (data: { displayName: string; currency: string; monthlyBudget: number }) => Promise<void>
+  onClose?: () => void
+  onComplete: (data: { displayName: string; currency: string; monthlyBudget: number; salaryDate?: number }) => Promise<void>
 }
 
-export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
+export function OnboardingDialog({ open, onClose, onComplete }: OnboardingDialogProps) {
   const t = useTranslations("onboarding")
   const [step, setStep] = useState(1)
   const [displayName, setDisplayName] = useState("")
   const [currency, setCurrency] = useState("")
   const [monthlyBudget, setMonthlyBudget] = useState("")
+  const [salaryDate, setSalaryDate] = useState("")
   const [loading, setLoading] = useState(false)
+
+  // Reset state each time the dialog opens
+  useEffect(() => {
+    if (open) {
+      setStep(1)
+      setDisplayName("")
+      setCurrency("")
+      setMonthlyBudget("")
+      setSalaryDate("")
+    }
+  }, [open])
 
   const handleNext = () => {
     if (step < 3) setStep(step + 1)
@@ -38,6 +51,7 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
         displayName: displayName.trim(),
         currency,
         monthlyBudget: parseFloat(monthlyBudget) || 0,
+        salaryDate: salaryDate ? parseInt(salaryDate) : undefined,
       })
     } finally {
       setLoading(false)
@@ -47,7 +61,12 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
   const canProceed = () => {
     if (step === 1) return displayName.trim().length > 0
     if (step === 2) return currency !== ""
-    if (step === 3) return parseFloat(monthlyBudget) > 0
+    if (step === 3) {
+      if (!monthlyBudget || parseFloat(monthlyBudget) <= 0) return true // allow skip
+      if (!salaryDate) return false
+      const day = parseInt(salaryDate)
+      return !isNaN(day) && day >= 1 && day <= 28
+    }
     return false
   }
 
@@ -57,7 +76,7 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
   }
 
   return (
-    <Dialog open={open}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o && !loading) onClose?.() }}>
       <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
@@ -118,11 +137,11 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
           </div>
         )}
 
-        {/* Step 3: Monthly Budget */}
+        {/* Step 3: Monthly Salary & Date */}
         {step === 3 && (
           <div className="space-y-4 py-4">
-            <h3 className="text-lg font-semibold text-center">{t("budgetQuestion")}</h3>
-            <p className="text-sm text-muted-foreground text-center">{t("budgetHint")}</p>
+            <h3 className="text-lg font-semibold text-center">What's your expected monthly salary?</h3>
+            <p className="text-sm text-muted-foreground text-center">This helps track your budget and automate your income.</p>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">
                 {currency === "USD" ? "$" : "€"}
@@ -130,15 +149,33 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
               <Input
                 type="number"
                 min="0"
+                max="1000000"
                 step="100"
                 placeholder="2000"
                 value={monthlyBudget}
                 onChange={(e) => setMonthlyBudget(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && canProceed() && handleFinish()}
                 className="pl-8 text-lg"
                 autoFocus
               />
             </div>
+            {monthlyBudget && parseFloat(monthlyBudget) > 0 && (
+              <div className="space-y-2 pt-1">
+                <p className="text-sm font-medium">What day of the month do you receive it? (1–28)</p>
+                <Input
+                  type="number"
+                  min="1"
+                  max="28"
+                  placeholder="15"
+                  value={salaryDate}
+                  onChange={(e) => setSalaryDate(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && canProceed() && handleFinish()}
+                  className="text-lg text-center"
+                />
+                {salaryDate !== "" && (parseInt(salaryDate) < 1 || parseInt(salaryDate) > 28) && (
+                  <p className="text-xs text-red-500 text-center">Please enter a day between 1 and 28.</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -151,7 +188,7 @@ export function OnboardingDialog({ open, onComplete }: OnboardingDialogProps) {
             </Button>
           ) : (
             <Button onClick={handleFinish} disabled={!canProceed() || loading} className="gap-2">
-              {loading ? t("saving") : t("finish")}
+              {loading ? t("saving") : (monthlyBudget ? t("finish") : "Skip & Finish")}
               {!loading && <Check className="h-4 w-4" />}
             </Button>
           )}

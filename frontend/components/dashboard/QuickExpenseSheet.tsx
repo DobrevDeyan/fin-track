@@ -17,6 +17,7 @@ import {
   UtensilsCrossed,
   Zap,
   X,
+  Delete,
   Check,
   Smile,
   CircleDot,
@@ -33,6 +34,7 @@ import {
   Plane,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { QUICK_EXPENSE_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
@@ -411,8 +413,13 @@ export function QuickExpenseSheet({
       return
     }
     setAmount((prev) => {
-      if (prev === "0" && value !== ".") return value
-      return prev + value
+      const next = prev === "0" && value !== "." ? value : prev + value
+      // Enforce max 2 decimal places
+      const decimalIndex = next.indexOf(".")
+      if (decimalIndex !== -1 && next.length - decimalIndex - 1 > 2) return prev
+      // Enforce max amount
+      if (parseFloat(next) > AMOUNT_RULES.MAX) return prev
+      return next
     })
   }
 
@@ -788,7 +795,7 @@ export function QuickExpenseSheet({
                     )}
                   >
                     {key === "backspace" ? (
-                      <X className="h-4 w-4" />
+                      <Delete className="h-4 w-4" />
                     ) : (
                       key
                     )}

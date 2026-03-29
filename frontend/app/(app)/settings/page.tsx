@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCurrency } from "@/contexts/CurrencyContext"
 import { deleteUserData, resetFinancialData, updateUserDisplayName } from "@/lib/firestore-users"
 import { httpsCallable } from "firebase/functions"
 import { functions } from "@/lib/firebase"
@@ -49,12 +50,18 @@ export default function SettingsPage() {
   const { user } = useAuth()
   const router = useRouter()
   const { tier, subscription, loading: subscriptionLoading } = useSubscription()
+  const { refreshCurrency } = useCurrency()
   const { count: scanCount, limit: scanLimit, resetAt: scanResetAt } = useScanQuota()
 
   // Display name editing
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(user?.displayName ?? "")
   const [savingName, setSavingName] = useState(false)
+
+  // Keep nameValue in sync when Firebase Auth user object updates (e.g. after setup wizard)
+  useEffect(() => {
+    if (!editingName) setNameValue(user?.displayName ?? "")
+  }, [user?.displayName, editingName])
 
   // Stripe upgrade
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -537,9 +544,11 @@ export default function SettingsPage() {
       {/* Setup Wizard */}
       <OnboardingDialog
         open={setupWizardOpen}
+        onClose={() => setSetupWizardOpen(false)}
         onComplete={async (data) => {
           if (!user) return
           await completeOnboarding(user.uid, data)
+          await refreshCurrency()
           setSetupWizardOpen(false)
           toast.success("Settings updated successfully.")
         }}

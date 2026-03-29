@@ -21,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { calculateNextDate } from "@/lib/firestore-recurring"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 
 interface RecurringTransactionData {
   name: string
@@ -192,6 +193,8 @@ export function RecurringTransactionDialog({
                 id="amount"
                 type="number"
                 step="0.01"
+                min="0.01"
+                max={AMOUNT_RULES.MAX}
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

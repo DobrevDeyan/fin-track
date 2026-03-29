@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Plus, Minus } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import {
   Dialog,
   DialogContent,
@@ -203,6 +204,7 @@ export function SavingsAccountCard({
                 type="number"
                 step="0.01"
                 min="0"
+                max={AMOUNT_RULES.MAX}
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

@@ -31,7 +31,7 @@ export const PASSWORD_SPECIAL_CHARS_PATTERN = /[!@#$%^&*(),.?":{}|<>]/;
  */
 export const AMOUNT_RULES = {
   MIN: 0.01, // Minimum amount (greater than 0)
-  MAX: 999999999.99, // Maximum amount (practical limit)
+  MAX: 1_000_000, // Maximum amount for personal finance
   DECIMAL_PLACES: 2, // Maximum decimal places
 } as const;
 

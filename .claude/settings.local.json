@@ -72,7 +72,9 @@
       "Bash(grep -r \"router\\\\.back\\\\|useRouter\" /d/personal/fin-track/frontend/app --include=*.tsx --include=*.ts)",
       "Bash(grep -n \"router\\\\.\" /d/personal/fin-track/frontend/app/\\\\\\(app\\\\\\)/*/page.tsx)",
       "WebSearch",
-      "WebFetch(domain:docs.cloud.google.com)"
+      "WebFetch(domain:docs.cloud.google.com)",
+      "Bash(grep -n \"TODO\\\\|FIXME\\\\|BUG\\\\|HACK\" /Users/deyandobrev/Development/Repositories/fin-track/frontend/components/onboarding/*.tsx /Users/deyandobrev/Development/Repositories/fin-track/frontend/lib/firestore-users.ts /Users/deyandobrev/Development/Repositories/fin-track/frontend/contexts/CurrencyContext.tsx)",
+      "Bash(grep -n \"initializeFinancialSummary\" /Users/deyandobrev/Development/Repositories/fin-track/frontend/lib/*.ts)"
     ]
   }
 }

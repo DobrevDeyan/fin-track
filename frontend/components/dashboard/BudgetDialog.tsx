@@ -58,6 +58,7 @@ interface BudgetDialogProps {
 
 import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
 import { BUDGET_PERIODS } from "@/lib/constants/budget.constants"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 
 const currencies = SUPPORTED_CURRENCIES
 
@@ -206,6 +207,8 @@ export function BudgetDialog({
                   id="amount"
                   type="number"
                   step="0.01"
+                  min="0.01"
+                  max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}

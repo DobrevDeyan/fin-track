@@ -34,11 +34,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import { updateUserCurrency, updateUserLanguage } from "@/lib/firestore-users"
+import { updateUserCurrency } from "@/lib/firestore-users"
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { useLanguage } from "@/contexts/LanguageContext"
-import { locales, localeNames, type Locale } from "@/i18n/config"
+// import { locales, localeNames, type Locale } from "@/i18n/config" // disabled
 import { ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -52,14 +52,14 @@ export const AppNavbar = () => {
   const [currencyLoading, setCurrencyLoading] = useState(false)
   const { user, logout } = useAuth()
   const { userCurrency, refreshCurrency, displayName } = useCurrency()
-  const { locale, setLocale } = useLanguage()
+  // const { locale, setLocale } = useLanguage() // disabled
 
   const appRoutes = [
     { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
     { href: "/calendar", label: t("calendar"), icon: CalendarIcon },
     { href: "/reports", label: t("reports"), icon: FileText },
     { href: "/receipts", label: t("receipts"), icon: Receipt },
-    { href: "/net-worth", label: t("netWorth"), icon: Landmark },
+    // { href: "/net-worth", label: t("netWorth"), icon: Landmark }, // disabled
   ]
 
   const handleCurrencyChange = async (currency: SupportedCurrency) => {
@@ -79,17 +79,18 @@ export const AppNavbar = () => {
     }
   }
 
-  const handleLanguageChange = async (newLocale: string) => {
-    const loc = newLocale as Locale
-    setLocale(loc)
-    if (user) {
-      try {
-        await updateUserLanguage(user.uid, loc)
-      } catch (error) {
-        console.error("Error saving language:", error)
-      }
-    }
-  }
+  // Language change disabled
+  // const handleLanguageChange = async (newLocale: string) => {
+  //   const loc = newLocale as Locale
+  //   setLocale(loc)
+  //   if (user) {
+  //     try {
+  //       await updateUserLanguage(user.uid, loc)
+  //     } catch (error) {
+  //       console.error("Error saving language:", error)
+  //     }
+  //   }
+  // }
 
   const handleLogout = async () => {
     try {
@@ -321,6 +322,7 @@ export const AppNavbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Language picker disabled
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
@@ -341,6 +343,7 @@ export const AppNavbar = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              */}
             </div>
           </div>
 
@@ -597,9 +600,7 @@ export const AppNavbar = () => {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-transparent hover:border-border/50">
                   <span className="text-xs font-semibold">{userCurrency}</span>
-                  <span className="text-border">·</span>
-                  <Globe className="h-3.5 w-3.5" />
-                  <span className="text-xs font-semibold">{locale.toUpperCase()}</span>
+                  {/* Language indicator disabled */}
                   <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
                 </button>
               </DropdownMenuTrigger>
@@ -612,6 +613,7 @@ export const AppNavbar = () => {
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
+                {/* Language section disabled
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal pb-1">Language</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
@@ -621,6 +623,7 @@ export const AppNavbar = () => {
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
+                */}
               </DropdownMenuContent>
             </DropdownMenu>
 

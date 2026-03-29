@@ -174,6 +174,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                     <Input
                       type="number"
                       min="0"
+                      max="1000000"
                       step="100"
                       placeholder="2000"
                       value={monthlyBudget}

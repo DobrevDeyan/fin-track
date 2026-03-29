@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
+import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { formatDateForInput } from "@/lib/date-utils"
 import { Upload, FileImage, Loader2, AlertCircle, Check, X, Camera } from "lucide-react"
 import { scanReceipt, validateMagicBytes, ExtractedReceiptData } from "@/lib/receipt-scanner-api"
@@ -587,6 +588,8 @@ export function ReceiptScannerDialog({
                     id="amount"
                     type="number"
                     step="0.01"
+                    min="0.01"
+                    max={AMOUNT_RULES.MAX}
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
