@@ -214,29 +214,17 @@ export const AppNavbar = () => {
       {/* Floating side tab - mobile only */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="fixed top-1/2 right-0 z-50 md:hidden"
-        initial={{ x: 14, opacity: 0 }}
-        animate={showFloatingMenu ? { x: 0, opacity: 1 } : { x: 14, opacity: 0 }}
+        className="fixed top-1/2 right-0 z-50 md:hidden flex items-center justify-center"
+        initial={{ x: 28, opacity: 0 }}
+        animate={showFloatingMenu ? { x: 0, opacity: 1 } : { x: 28, opacity: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        style={{
-          pointerEvents: showFloatingMenu ? "auto" : "none",
-          translateY: "-50%",
-          padding: "28px 0 28px 14px",
-        }}
-        whileTap={{ x: -6 }}
+        style={{ pointerEvents: showFloatingMenu ? "auto" : "none", translateY: "-50%" }}
+        whileTap={{ scale: 0.9 }}
         aria-label="Open menu"
       >
-        <svg
-          width="14" height="72" viewBox="0 0 14 72" fill="none"
-          className="text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.5)]"
-        >
-          {/* Trapezoid body */}
-          <path d="M0 9 L14 0 L14 72 L0 63 Z" fill="currentColor" fillOpacity="0.65" />
-          {/* Top end cap */}
-          <line x1="0" y1="9" x2="14" y2="0" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-          {/* Bottom end cap */}
-          <line x1="0" y1="63" x2="14" y2="72" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-        </svg>
+        <div className="flex items-center justify-center w-6 h-14 rounded-l-2xl bg-background/80 backdrop-blur-md border border-border/50 border-r-0 shadow-lg shadow-black/20">
+          <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
       </motion.button>
 
       {/* Mobile Sheet */}

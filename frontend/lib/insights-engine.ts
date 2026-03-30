@@ -307,6 +307,14 @@ export function generateCashFlowForecast(
 
   const DAYS = 90
 
+  // Require at least 1 active recurring transaction AND 2+ months of history
+  const activeCheck = recurringTransactions.filter((r) => r.isActive)
+  const currentKeyCheck = getCurrentMonthKey()
+  const pastKeysCheck = summary?.months
+    ? getLastNMonthKeys(summary.months, 3, currentKeyCheck)
+    : []
+  if (activeCheck.length === 0 || pastKeysCheck.length < 2) return []
+
   // Average daily spend from last 3 months
   let avgDailySpend = 0
   let sdDailySpend = 0

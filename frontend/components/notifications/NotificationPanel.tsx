@@ -47,10 +47,9 @@ export function NotificationPanel({ notifications, unreadCount, loading, onMarkA
   const pathname = usePathname()
   const isOnPage = pathname === "/notifications"
 
-  const handleClick = (n: AppNotification) => {
+  const handleClick = (_n: AppNotification) => {
     onClose?.()
-    const path = n.url.startsWith("http") ? new URL(n.url).pathname : n.url
-    router.push(path)
+    router.push("/notifications")
   }
 
   return (

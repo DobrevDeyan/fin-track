@@ -68,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang={defaultLocale} suppressHydrationWarning>
+    <html lang={defaultLocale} suppressHydrationWarning translate="no">
       <head>
         {/* Resource hints for Firebase - improve connection speed */}
         <link rel="preconnect" href="https://fin-track-adc2c.firebaseapp.com" />

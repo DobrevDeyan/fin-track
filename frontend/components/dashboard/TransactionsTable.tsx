@@ -249,7 +249,7 @@ export function TransactionsTable({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
               <Table>
                 <TableHeader>
                   <TableRow>

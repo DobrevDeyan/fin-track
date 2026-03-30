@@ -112,19 +112,16 @@ export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = 
     )
   }
 
-  if (cashFlowData.length < 3) {
+  if (cashFlowData.length === 0) {
     return (
-      <Card className="drop-shadow-xl shadow-black/10">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            Cash Flow Forecast — Next 90 Days
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
-            <Info className="h-4 w-4" />
-            Add recurring transactions to enable the 90-day forecast.
+      <Card className="drop-shadow-xl shadow-black/10 border-dashed">
+        <CardContent className="flex items-center gap-3 py-4 px-4">
+          <TrendingUp className="h-5 w-5 text-muted-foreground/50 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-foreground/70">90-Day Cash Flow Forecast</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Add a recurring transaction and 2+ months of history to unlock your forecast.
+            </p>
           </div>
         </CardContent>
       </Card>

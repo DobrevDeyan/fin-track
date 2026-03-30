@@ -355,7 +355,7 @@ async function saveNotification(
     .add({
       title: notification.title,
       body: notification.body,
-      url: notification.url ?? "/dashboard/",
+      url: notification.url ?? "/notifications",
       type: notification.type ?? "system",
       read: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -526,7 +526,7 @@ export const checkBudgetOnEntry = onDocumentCreated(
         ? `You've spent ${pct}% of your ${budget.name} budget.`
         : `You've used ${pct}% of your ${budget.name} budget.`;
 
-      await sendPushToUser(userId, { title, body, url: "/dashboard/", tag: `budget-${budgetDoc.id}`, type: "budget" });
+      await sendPushToUser(userId, { title, body, url: "/notifications", tag: `budget-${budgetDoc.id}`, type: "budget" });
     }
   }
 );
