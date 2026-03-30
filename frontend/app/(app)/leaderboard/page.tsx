@@ -332,7 +332,7 @@ export default function LeaderboardPage() {
           </Button>
           {optedIn && (
             <p className="text-xs text-muted-foreground mt-2">
-              Your score will appear in the next monthly aggregation (2nd of each month).
+              Your score will appear in the next daily aggregation (runs at 03:00 UTC).
             </p>
           )}
         </CardContent>
