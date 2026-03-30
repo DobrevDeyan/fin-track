@@ -107,8 +107,7 @@ export default function LeaderboardPage() {
     setRefreshing(true)
     try {
       await httpsCallable(functions, "triggerLeaderboardAggregation")()
-      const fresh = await getLeaderboardStats()
-      setStats(fresh)
+      // onSnapshot fires automatically when stats doc is written — no manual re-fetch needed
       if (user) {
         const p = await getMyLeaderboardProfile(user.uid)
         setProfile(p)
@@ -118,17 +117,21 @@ export default function LeaderboardPage() {
     }
   }
 
-  // Load leaderboard stats — wait for auth to fully resolve first
+  // Live listener on leaderboardStats/current — auto-updates when aggregation runs
   useEffect(() => {
     if (authLoading || !user) return
-    getLeaderboardStats()
-      .then((s) => {
-        setStats(s)
+    const unsub = onSnapshot(
+      doc(db, "leaderboardStats", "current"),
+      (snap) => {
+        const data = snap.exists() ? (snap.data() as LeaderboardStats) : null
+        setStats(data)
+        setLoading(false)
         // Auto-bootstrap if no stats exist yet
-        if (!s) runAggregation()
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+        if (!data) runAggregation()
+      },
+      () => setLoading(false)
+    )
+    return unsub
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading])
 

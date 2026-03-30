@@ -5,17 +5,19 @@
  * leaderboardProfiles/{uid} — owner-read only
  */
 
-import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, getDocFromServer, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { LeaderboardStats, LeaderboardProfile } from "@/lib/firestore-types"
 
-export async function getLeaderboardStats(): Promise<LeaderboardStats | null> {
-  const snap = await getDoc(doc(db, "leaderboardStats", "current"))
+export async function getLeaderboardStats(bypassCache = false): Promise<LeaderboardStats | null> {
+  const snap = bypassCache
+    ? await getDocFromServer(doc(db, "leaderboardStats", "current"))
+    : await getDoc(doc(db, "leaderboardStats", "current"))
   return snap.exists() ? (snap.data() as LeaderboardStats) : null
 }
 
 export async function getMyLeaderboardProfile(userId: string): Promise<LeaderboardProfile | null> {
-  const snap = await getDoc(doc(db, "leaderboardProfiles", userId))
+  const snap = await getDocFromServer(doc(db, "leaderboardProfiles", userId))
   return snap.exists() ? (snap.data() as LeaderboardProfile) : null
 }
 
