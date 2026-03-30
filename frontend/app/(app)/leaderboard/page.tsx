@@ -200,7 +200,7 @@ export default function LeaderboardPage() {
     : null
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-6 space-y-4">
+    <div className="container py-8 px-4 sm:px-6 space-y-4">
 
       {/* Header */}
       <div className="flex items-center gap-3">

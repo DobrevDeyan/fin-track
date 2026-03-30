@@ -159,7 +159,7 @@ export default function NetWorthPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   if (authLoading || isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container py-8 px-4 sm:px-6">
         <Skeleton className="h-8 w-40 mb-2" />
         <Skeleton className="h-4 w-72 mb-8" />
         <div className="grid grid-cols-3 gap-4 mb-8">
@@ -174,7 +174,7 @@ export default function NetWorthPage() {
   const liabilityList = assets.filter((a) => a.isLiability)
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container py-8 px-4 sm:px-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>

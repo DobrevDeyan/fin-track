@@ -34,11 +34,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import { updateUserCurrency } from "@/lib/firestore-users"
+import { updateUserCurrency, updateUserLanguage } from "@/lib/firestore-users"
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { useLanguage } from "@/contexts/LanguageContext"
-// import { locales, localeNames, type Locale } from "@/i18n/config" // disabled
+import { locales, localeNames, type Locale } from "@/i18n/config"
 import { ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -52,7 +52,7 @@ export const AppNavbar = () => {
   const [currencyLoading, setCurrencyLoading] = useState(false)
   const { user, logout } = useAuth()
   const { userCurrency, refreshCurrency, displayName } = useCurrency()
-  // const { locale, setLocale } = useLanguage() // disabled
+  const { locale, setLocale } = useLanguage()
 
   const appRoutes = [
     { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
@@ -80,18 +80,17 @@ export const AppNavbar = () => {
     }
   }
 
-  // Language change disabled
-  // const handleLanguageChange = async (newLocale: string) => {
-  //   const loc = newLocale as Locale
-  //   setLocale(loc)
-  //   if (user) {
-  //     try {
-  //       await updateUserLanguage(user.uid, loc)
-  //     } catch (error) {
-  //       console.error("Error saving language:", error)
-  //     }
-  //   }
-  // }
+  const handleLanguageChange = async (newLocale: string) => {
+    const loc = newLocale as Locale
+    setLocale(loc)
+    if (user) {
+      try {
+        await updateUserLanguage(user.uid, loc)
+      } catch (error) {
+        console.error("Error saving language:", error)
+      }
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -311,7 +310,6 @@ export const AppNavbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Language picker disabled
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
@@ -332,7 +330,6 @@ export const AppNavbar = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              */}
             </div>
           </div>
 
@@ -602,7 +599,6 @@ export const AppNavbar = () => {
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
-                {/* Language section disabled
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal pb-1">Language</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
@@ -612,7 +608,6 @@ export const AppNavbar = () => {
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
-                */}
               </DropdownMenuContent>
             </DropdownMenu>
 

@@ -74,7 +74,7 @@ export default function ReceiptsPage() {
 
   if (loading || isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container py-8 px-4 sm:px-6">
         <div className="mb-6">
           <Skeleton className="h-8 w-40 mb-2" />
           <Skeleton className="h-4 w-64" />
@@ -91,7 +91,7 @@ export default function ReceiptsPage() {
   const activeLightboxEntry = lightboxIndex !== null ? entries[lightboxIndex] : null
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container py-8 px-4 sm:px-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
