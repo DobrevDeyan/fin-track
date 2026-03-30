@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v40'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v41'; // Increment this when deploying new version
 
 // ─── Firebase Messaging (background push notifications) ───────────────────────
 // Uses Firebase compat SDK so we can handle background messages in this SW.
@@ -25,7 +25,7 @@ const firebaseMessaging = firebase.messaging();
 firebaseMessaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title ?? "Pocket";
   const body  = payload.notification?.body  ?? "";
-  const url   = payload.data?.url           ?? "/dashboard";
+  const url   = payload.data?.url           ?? "/notifications";
 
   self.registration.showNotification(title, {
     body,
@@ -69,7 +69,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   // Always use absolute URL — required for iOS PWA and openWindow()
-  const rawUrl = event.notification.data?.url ?? '/dashboard/';
+  const rawUrl = event.notification.data?.url ?? '/notifications';
   const absUrl = rawUrl.startsWith('http')
     ? rawUrl
     : self.registration.scope.replace(/\/$/, '') + rawUrl;

@@ -41,7 +41,7 @@ export function NotificationListener() {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return
     const handler = (event: MessageEvent) => {
       if (event.data?.type !== "NOTIFICATION_CLICK") return
-      const url: string = event.data.url ?? "/dashboard/"
+      const url: string = event.data.url ?? "/notifications"
       const path = url.startsWith("http") ? new URL(url).pathname : url
       router.push(path)
     }

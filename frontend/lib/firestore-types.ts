@@ -20,8 +20,44 @@ export interface UserDocument {
   providerId: string // password, google.com, etc.
   monthlyBudget?: number
   onboardingCompleted?: boolean
+  leaderboardOptIn?: boolean       // User consents to anonymous aggregation
+  leaderboardOptInAt?: Timestamp
   createdAt: Timestamp
   updatedAt: Timestamp
+}
+
+// ─── Leaderboard Types ────────────────────────────────────────────────────────
+
+export type HealthTier = "critical" | "needs-work" | "good" | "excellent" | "outstanding"
+
+/** leaderboardProfiles/{userId} — written by Admin SDK, owner-read only */
+export interface LeaderboardProfile {
+  score: number
+  tier: HealthTier
+  anonymousHandle: string   // e.g. "Saver #2841" — stable, hash-derived
+  monthsOfData: number
+  computedAt: Timestamp
+  optedIn: boolean
+}
+
+/** leaderboardStats/current — any authenticated user can read, Admin SDK writes */
+export interface LeaderboardStats {
+  totalParticipants: number
+  medianScore: number
+  meanScore: number
+  tierDistribution: Record<HealthTier, number>  // count per tier
+  scorePercentileBands: {
+    top10: number   // minimum score to be in top 10%
+    top25: number
+    top50: number
+  }
+  topScores: Array<{
+    anonymousHandle: string
+    score: number
+    tier: HealthTier
+  }>
+  generatedAt: Timestamp
+  monthKey: string  // "YYYY-MM"
 }
 
 // Entry Document (manual expense/income entries)

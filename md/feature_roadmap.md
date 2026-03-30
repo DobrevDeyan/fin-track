@@ -305,6 +305,53 @@ Gallery page: /frontend/app/(app)/receipts/page.tsx
 
 ---
 
-**Document Version**: 4.0
-**Last Updated**: March 22, 2026
+---
+
+## Community Leaderboard — Financial Health Scores
+
+**Status**: Implemented (March 2026)
+
+An anonymous, opt-in community leaderboard that aggregates financial health scores across all members for entertainment and benchmarking.
+
+### What is shared
+- A numerical health score (0–100) derived from savings rate, budget adherence, goal progress, income stability, and spending regularity
+- A score tier: Critical / Needs Work / Good / Excellent / Outstanding
+- A stable anonymous handle (e.g. `#04821`) — hash-derived from user ID, never reversible
+- Your rank/percentile among opted-in participants
+
+### What is NEVER shared
+- Name, email, or any personally identifiable information
+- Raw income or expense amounts
+- Category-level spending breakdown
+- Any value that could identify or be attributed to a specific person
+
+### Privacy design
+- **Opt-in only** (default: off) — users explicitly consent in Settings → Community Leaderboard or on the `/leaderboard` page
+- **Instant opt-out** — opting out immediately deletes the user's `leaderboardProfiles/{uid}` document via Cloud Function
+- GDPR-aligned: the aggregation function skips users who have not opted in
+
+### Architecture
+| Layer | Detail |
+|-------|--------|
+| Firestore | `leaderboardProfiles/{uid}` (owner-read, Admin SDK write), `leaderboardStats/current` (auth-read, Admin SDK write) |
+| Cloud Function | `aggregateLeaderboard` — scheduled 2nd of each month at 02:00 UTC |
+| Opt-out cleanup | `updateLeaderboardOptIn` callable function purges profile on opt-out |
+| Score algorithm | Server-side port of `calculateHealthScore()` from `insights-engine.ts`; requires ≥ 2 months of data |
+| Frontend | `/leaderboard` page with stat cards, score ring, distribution chart, top-10 table |
+| Navigation | Desktop nav (`AppNavbar`) + mobile sheet nav; Trophy icon |
+
+### Files added / modified
+- `frontend/lib/firestore-types.ts` — `LeaderboardProfile`, `LeaderboardStats`, `HealthTier` types; `leaderboardOptIn` field on `UserDocument`
+- `frontend/lib/firestore-leaderboard.ts` — client-side read/write helpers
+- `frontend/app/(app)/leaderboard/page.tsx` — leaderboard page
+- `frontend/components/leaderboard/DistributionChart.tsx` — Recharts tier distribution bar chart
+- `frontend/components/navigation/AppNavbar.tsx` — Trophy nav entry
+- `frontend/app/(app)/settings/page.tsx` — opt-in toggle card
+- `functions/src/index.ts` — `aggregateLeaderboard` scheduled function + `updateLeaderboardOptIn` callable
+- `firestore.rules` — rules for `leaderboardProfiles` and `leaderboardStats`
+
+---
+
+**Document Version**: 4.1
+**Last Updated**: March 30, 2026
 **Next Review**: Monthly

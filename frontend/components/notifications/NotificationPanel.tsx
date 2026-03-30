@@ -1,6 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
+import Link from "next/link"
 import { Bell, TriangleAlert, FlaskConical, CheckCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -43,6 +44,8 @@ function TypeIcon({ type }: { type: AppNotification["type"] }) {
 
 export function NotificationPanel({ notifications, unreadCount, loading, onMarkAllRead, onClose }: Props) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isOnPage = pathname === "/notifications"
 
   const handleClick = (n: AppNotification) => {
     onClose?.()
@@ -54,7 +57,18 @@ export function NotificationPanel({ notifications, unreadCount, loading, onMarkA
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 shrink-0">
-        <span className="text-sm font-semibold text-foreground">Notifications</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">Notifications</span>
+          {!isOnPage && (
+            <Link
+              href="/notifications"
+              onClick={onClose}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View all
+            </Link>
+          )}
+        </div>
         {unreadCount > 0 && (
           <Button
             variant="ghost"

@@ -19,11 +19,15 @@ export interface AppNotification {
 }
 
 export function useInAppNotifications() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Wait for auth to fully resolve before opening the Firestore subscription.
+    // Starting onSnapshot while the auth token is still refreshing causes a
+    // transient permission-denied error even though the rules are correct.
+    if (authLoading) return
     if (!user) { setLoading(false); return }
 
     const q = query(
@@ -37,10 +41,14 @@ export function useInAppNotifications() {
         snap.docs.map((d) => ({ id: d.id, ...d.data() } as AppNotification))
       )
       setLoading(false)
-    }, () => setLoading(false))
+    }, (err) => {
+      // Swallow transient permission errors during auth token refresh — listener retries automatically
+      if (err.code !== "permission-denied") console.error("Notifications listener error:", err)
+      setLoading(false)
+    })
 
     return unsub
-  }, [user])
+  }, [user, authLoading])
 
   const unreadCount = notifications.filter((n) => !n.read).length
 

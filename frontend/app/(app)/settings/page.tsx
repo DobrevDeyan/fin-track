@@ -21,7 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Bell, BellOff, Check, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, User, Wand2 } from "lucide-react"
+import { AlertTriangle, Bell, BellOff, Check, CheckCircle2, Circle, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, Trophy, User, Wand2 } from "lucide-react"
+import { setLeaderboardOptIn } from "@/lib/firestore-leaderboard"
+import { collection, addDoc, doc, onSnapshot } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 import { ThemeControls } from "@/components/ThemeControls"
 import { BillingPortalButton } from "@/components/BillingPortalButton"
 import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog"
@@ -30,8 +33,6 @@ import { useScanQuota } from "@/lib/hooks/useScanQuota"
 import { useNotifications } from "@/lib/hooks/useNotifications"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { collection, addDoc, onSnapshot } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { toast } from "sonner"
 
 const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? null
@@ -84,6 +85,29 @@ export default function SettingsPage() {
     setIsIos(ios)
     setIsStandalone(standalone)
   }, [])
+
+  // Leaderboard opt-in
+  const [leaderboardOptIn, setLeaderboardOptInState] = useState(false)
+  const [leaderboardToggling, setLeaderboardToggling] = useState(false)
+  useEffect(() => {
+    if (!user) return
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      setLeaderboardOptInState(snap.data()?.leaderboardOptIn === true)
+    })
+    return unsub
+  }, [user])
+
+  const handleLeaderboardToggle = async () => {
+    if (!user || leaderboardToggling) return
+    setLeaderboardToggling(true)
+    try {
+      await setLeaderboardOptIn(user.uid, !leaderboardOptIn)
+    } catch {
+      toast.error("Failed to update leaderboard preference.")
+    } finally {
+      setLeaderboardToggling(false)
+    }
+  }
 
   // Delete account
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -293,6 +317,43 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Community Leaderboard */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trophy className="h-4 w-4" />
+            Community Leaderboard
+          </CardTitle>
+          <CardDescription>
+            Opt in to share your anonymous financial health score with the community.
+            Your name, email, income, and spending details are <strong>never shared</strong> — only an opaque score and a random handle.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            size="sm"
+            variant={leaderboardOptIn ? "outline" : "default"}
+            disabled={leaderboardToggling}
+            onClick={handleLeaderboardToggle}
+            className="gap-2"
+          >
+            {leaderboardToggling ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : leaderboardOptIn ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <Circle className="h-4 w-4" />
+            )}
+            {leaderboardOptIn ? "Opted in — click to opt out" : "Include my score in community stats"}
+          </Button>
+          {leaderboardOptIn && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Your score is included in the monthly aggregation. Opt out anytime to delete it immediately.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Profile */}
       <Card className="mb-6">

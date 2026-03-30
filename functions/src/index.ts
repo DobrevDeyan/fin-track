@@ -5,6 +5,7 @@
  */
 
 import * as admin from "firebase-admin";
+import * as crypto from "crypto";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentDeleted, onDocumentCreated } from "firebase-functions/v2/firestore";
@@ -596,3 +597,260 @@ export const onLargeEntryCreated = onDocumentCreated({ document: "entries/{entry
     description: data.description,
   });
 });
+
+// ─── Financial Health Leaderboard ─────────────────────────────────────────────
+
+type HealthTier = "critical" | "needs-work" | "good" | "excellent" | "outstanding";
+
+interface MonthlyData {
+  income: number;
+  expenses: number;
+  expensesByCategory: Record<string, number>;
+}
+
+function lbMean(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function lbStdDev(values: number[]): number {
+  if (values.length < 2) return 0;
+  const avg = lbMean(values);
+  return Math.sqrt(values.reduce((sum, v) => sum + (v - avg) ** 2, 0) / values.length);
+}
+
+function lbClamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v));
+}
+
+function lbGetSortedKeys(months: Record<string, MonthlyData>): string[] {
+  return Object.keys(months).sort();
+}
+
+function lbGetLastN(months: Record<string, MonthlyData>, n: number, before: string): string[] {
+  return lbGetSortedKeys(months).filter((k) => k < before).slice(-n);
+}
+
+/**
+ * Server-side port of calculateHealthScore from insights-engine.ts.
+ * Operates on raw Firestore data — no client SDK imports.
+ */
+function computeHealthScore(
+  months: Record<string, MonthlyData>,
+  budgets: Array<{ category: string; amount: number; period: string; isActive: boolean }>,
+  goals: Array<{ targetAmount: number; currentAmount: number; isActive: boolean }>
+): { score: number; tier: HealthTier } {
+  const now = new Date();
+  const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const recent3 = lbGetLastN(months, 3, currentKey);
+  const past6 = lbGetLastN(months, 6, currentKey);
+
+  // 1. Savings Rate (max 30)
+  let savingsScore = 0;
+  const rateKeys = recent3.length > 0 ? recent3 : (months[currentKey] ? [currentKey] : []);
+  if (rateKeys.length > 0) {
+    const rates = rateKeys.map((k) => {
+      const m = months[k];
+      return m.income > 0 ? (m.income - m.expenses) / m.income : 0;
+    });
+    savingsScore = lbClamp((lbMean(rates) / 0.2) * 30, 0, 30);
+  }
+
+  // 2. Budget Adherence (max 25)
+  let budgetScore = 12.5;
+  const activeBudgets = budgets.filter((b) => b.isActive);
+  if (activeBudgets.length > 0) {
+    const curData = months[currentKey];
+    const catExpenses = curData?.expensesByCategory ?? {};
+    const withinLimit = activeBudgets.filter((b) => {
+      const spent = catExpenses[b.category] ?? 0;
+      const equiv = b.period === "yearly" ? b.amount / 12 : b.period === "weekly" ? b.amount * 4.33 : b.amount;
+      return spent <= equiv;
+    }).length;
+    budgetScore = (withinLimit / activeBudgets.length) * 25;
+  }
+
+  // 3. Goal Progress (max 20)
+  let goalScore = 10;
+  const activeGoals = goals.filter((g) => g.isActive);
+  if (activeGoals.length > 0) {
+    goalScore = lbMean(activeGoals.map((g) => g.targetAmount > 0 ? lbClamp(g.currentAmount / g.targetAmount, 0, 1) : 0)) * 20;
+  }
+
+  // 4. Income Stability (max 15)
+  let incomeScore = 15;
+  if (past6.length >= 3) {
+    const incomes = past6.map((k) => months[k].income);
+    const incMean = lbMean(incomes);
+    incomeScore = 15 * (1 - lbClamp(incMean > 0 ? lbStdDev(incomes) / incMean : 0, 0, 1));
+  }
+
+  // 5. Spending Regularity (max 10)
+  let spendingScore = 10;
+  if (past6.length >= 3) {
+    const expenses = past6.map((k) => months[k].expenses);
+    const expMean = lbMean(expenses);
+    spendingScore = 10 * (1 - lbClamp((expMean > 0 ? lbStdDev(expenses) / expMean : 0) * 0.5, 0, 1));
+  }
+
+  const raw = savingsScore + budgetScore + goalScore + incomeScore + spendingScore;
+  const score = lbClamp(Math.round(isNaN(raw) ? 0 : raw), 0, 100);
+  const tier: HealthTier =
+    score < 40 ? "critical" :
+    score < 55 ? "needs-work" :
+    score < 70 ? "good" :
+    score < 85 ? "excellent" : "outstanding";
+
+  return { score, tier };
+}
+
+/** Derive a stable, anonymous display handle from a userId via SHA-256 hash. */
+function deriveHandle(userId: string): string {
+  const hash = crypto.createHash("sha256").update(userId).digest("hex");
+  const num = parseInt(hash.slice(0, 5), 16) % 100000;
+  return `#${String(num).padStart(5, "0")}`;
+}
+
+function lbMedian(sorted: number[]): number {
+  if (sorted.length === 0) return 0;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+function lbPercentile(sorted: number[], pct: number): number {
+  if (sorted.length === 0) return 0;
+  const idx = Math.ceil((pct / 100) * sorted.length) - 1;
+  return sorted[Math.max(0, idx)];
+}
+
+/**
+ * Scheduled leaderboard aggregation.
+ * Runs on the 2nd of each month at 02:00 UTC, after monthly resets settle.
+ * Only includes users who have opted in (leaderboardOptIn: true).
+ * Produces leaderboardProfiles/{userId} (owner-read) and leaderboardStats/current (public read).
+ */
+export const aggregateLeaderboard = onSchedule(
+  {
+    schedule: "0 2 2 * *",
+    timeZone: "UTC",
+    retryCount: 2,
+    region: "europe-west4",
+  },
+  async () => {
+    logger.info("Starting leaderboard aggregation");
+
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    // 1. Fetch all opted-in users
+    const usersSnap = await db.collection("users").where("leaderboardOptIn", "==", true).get();
+    logger.info(`Found ${usersSnap.size} opted-in users`);
+
+    const profiles: Array<{ userId: string; score: number; tier: HealthTier; handle: string; months: number }> = [];
+
+    // 2. Score each user (batch fetches to avoid overwhelming Firestore)
+    const BATCH = 50;
+    for (let i = 0; i < usersSnap.docs.length; i += BATCH) {
+      const chunk = usersSnap.docs.slice(i, i + BATCH);
+      await Promise.all(chunk.map(async (userDoc) => {
+        const userId = userDoc.id;
+        try {
+          const [summarySnap, budgetsSnap, goalsSnap] = await Promise.all([
+            db.collection("financialSummaries").doc(userId).get(),
+            db.collection("budgets").where("userId", "==", userId).where("isActive", "==", true).get(),
+            db.collection("goals").where("userId", "==", userId).where("isActive", "==", true).get(),
+          ]);
+
+          if (!summarySnap.exists) return;
+          const months = (summarySnap.data()?.months ?? {}) as Record<string, MonthlyData>;
+          const monthCount = Object.keys(months).length;
+          if (monthCount < 2) return; // Insufficient history
+
+          const budgets = budgetsSnap.docs.map((d) => d.data() as { category: string; amount: number; period: string; isActive: boolean });
+          const goals = goalsSnap.docs.map((d) => d.data() as { targetAmount: number; currentAmount: number; isActive: boolean });
+
+          const { score, tier } = computeHealthScore(months, budgets, goals);
+          const handle = deriveHandle(userId);
+
+          // Write individual profile (owner-read)
+          await db.collection("leaderboardProfiles").doc(userId).set({
+            score,
+            tier,
+            anonymousHandle: handle,
+            monthsOfData: monthCount,
+            computedAt: admin.firestore.FieldValue.serverTimestamp(),
+            optedIn: true,
+          });
+
+          profiles.push({ userId, score, tier, handle, months: monthCount });
+        } catch (err) {
+          logger.warn(`Skipped user ${userId} during leaderboard aggregation`, { err });
+        }
+      }));
+    }
+
+    if (profiles.length === 0) {
+      logger.info("No profiles scored — skipping leaderboardStats write");
+      return;
+    }
+
+    // 3. Compute aggregate stats
+    const scores = profiles.map((p) => p.score).sort((a, b) => a - b);
+    const tierDist: Record<HealthTier, number> = { critical: 0, "needs-work": 0, good: 0, excellent: 0, outstanding: 0 };
+    profiles.forEach((p) => { tierDist[p.tier]++; });
+
+    const top10 = [...profiles].sort((a, b) => b.score - a.score).slice(0, 10).map((p) => ({
+      anonymousHandle: p.handle,
+      score: p.score,
+      tier: p.tier,
+    }));
+
+    // top10/25/50 percentile = minimum score to be in that band
+    const top10Score = lbPercentile([...scores].reverse(), 10);
+    const top25Score = lbPercentile([...scores].reverse(), 25);
+    const top50Score = lbPercentile([...scores].reverse(), 50);
+
+    await db.collection("leaderboardStats").doc("current").set({
+      totalParticipants: profiles.length,
+      medianScore: lbMedian(scores),
+      meanScore: Math.round(lbMean(scores)),
+      tierDistribution: tierDist,
+      scorePercentileBands: { top10: top10Score, top25: top25Score, top50: top50Score },
+      topScores: top10,
+      generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      monthKey,
+    });
+
+    logger.info("Leaderboard aggregation complete", { participants: profiles.length, monthKey });
+    await logAuditEvent("system", "leaderboard.aggregated", { participants: profiles.length, monthKey });
+  }
+);
+
+/**
+ * Callable: opt the current user in or out of the leaderboard.
+ * On opt-out, immediately deletes their leaderboardProfile.
+ */
+export const updateLeaderboardOptIn = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    await checkRateLimit(userId, "updateLeaderboardOptIn");
+
+    const optIn = request.data?.optIn as boolean;
+    if (typeof optIn !== "boolean") throw new HttpsError("invalid-argument", "optIn must be a boolean");
+
+    await db.collection("users").doc(userId).update({
+      leaderboardOptIn: optIn,
+      leaderboardOptInAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Immediately purge profile on opt-out (GDPR)
+    if (!optIn) {
+      await db.collection("leaderboardProfiles").doc(userId).delete();
+    }
+
+    return { ok: true, optIn };
+  }
+);

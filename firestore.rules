@@ -149,6 +149,20 @@ service cloud.firestore {
     match /rateLimits/{limitId} {
       allow read, write: if false;
     }
+
+    // ===== Leaderboard =====
+
+    // Per-user profile: owner can read their own score; only Admin SDK writes
+    match /leaderboardProfiles/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Aggregate stats: any authenticated user can read; only Admin SDK writes
+    match /leaderboardStats/{statId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }
 
