@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { Trophy, Users, TrendingUp, ShieldCheck, Lock, CheckCircle2, Circle } from "lucide-react"
+import { Trophy, Users, TrendingUp, ShieldCheck, Lock, CheckCircle2, Circle, RefreshCw } from "lucide-react"
 import { doc, onSnapshot } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { db, functions } from "@/lib/firebase"
+import { httpsCallable } from "firebase/functions"
 import type { LeaderboardStats, LeaderboardProfile, HealthTier } from "@/lib/firestore-types"
 import dynamic from "next/dynamic"
 import { Skeleton as ChartSkeleton2 } from "@/components/ui/skeleton"
@@ -96,30 +97,58 @@ export default function LeaderboardPage() {
   const [optedIn, setOptedIn] = useState<boolean>(false)
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/auth/login")
   }, [user, authLoading, router])
 
-  // Load leaderboard stats
-  useEffect(() => {
-    if (!user) return
-    getLeaderboardStats().then(setStats).finally(() => setLoading(false))
-  }, [user])
+  const runAggregation = async () => {
+    setRefreshing(true)
+    try {
+      await httpsCallable(functions, "triggerLeaderboardAggregation")()
+      const fresh = await getLeaderboardStats()
+      setStats(fresh)
+      if (user) {
+        const p = await getMyLeaderboardProfile(user.uid)
+        setProfile(p)
+      }
+    } catch { /* rate limited or network error — ignore */ } finally {
+      setRefreshing(false)
+    }
+  }
 
-  // Real-time listener on own profile + opt-in preference
+  // Load leaderboard stats — wait for auth to fully resolve first
   useEffect(() => {
-    if (!user) return
-    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      setOptedIn(snap.data()?.leaderboardOptIn === true)
-    })
+    if (authLoading || !user) return
+    getLeaderboardStats()
+      .then((s) => {
+        setStats(s)
+        // Auto-bootstrap if no stats exist yet
+        if (!s) runAggregation()
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading])
+
+  // Real-time listener on user doc for opt-in preference
+  useEffect(() => {
+    if (authLoading || !user) return
+    const unsub = onSnapshot(
+      doc(db, "users", user.uid),
+      (snap) => { setOptedIn(snap.data()?.leaderboardOptIn === true) },
+      () => { /* suppress transient permission errors */ }
+    )
     return unsub
-  }, [user])
+  }, [user, authLoading])
 
   useEffect(() => {
-    if (!user || !optedIn) { setProfile(null); return }
-    getMyLeaderboardProfile(user.uid).then(setProfile)
-  }, [user, optedIn])
+    if (authLoading || !user || !optedIn) { setProfile(null); return }
+    getMyLeaderboardProfile(user.uid)
+      .then(setProfile)
+      .catch(() => {})
+  }, [user, authLoading, optedIn])
 
   const handleToggleOptIn = async () => {
     if (!user || toggling) return
@@ -148,10 +177,18 @@ export default function LeaderboardPage() {
         <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-amber-100 text-amber-600 shrink-0">
           <Trophy className="h-5 w-5" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold text-foreground leading-tight">Community Stats</h1>
           <p className="text-xs text-muted-foreground">Anonymous financial health scores across all members</p>
         </div>
+        <button
+          onClick={runAggregation}
+          disabled={refreshing || loading}
+          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-40"
+          title="Refresh scores"
+        >
+          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+        </button>
       </div>
 
       {/* Platform summary cards */}

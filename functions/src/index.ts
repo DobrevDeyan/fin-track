@@ -731,7 +731,7 @@ function lbPercentile(sorted: number[], pct: number): number {
  */
 export const aggregateLeaderboard = onSchedule(
   {
-    schedule: "0 2 2 * *",
+    schedule: "0 3 * * *", // Every day at 03:00 UTC
     timeZone: "UTC",
     retryCount: 2,
     region: "europe-west4",
@@ -764,7 +764,6 @@ export const aggregateLeaderboard = onSchedule(
           if (!summarySnap.exists) return;
           const months = (summarySnap.data()?.months ?? {}) as Record<string, MonthlyData>;
           const monthCount = Object.keys(months).length;
-          if (monthCount < 2) return; // Insufficient history
 
           const budgets = budgetsSnap.docs.map((d) => d.data() as { category: string; amount: number; period: string; isActive: boolean });
           const goals = goalsSnap.docs.map((d) => d.data() as { targetAmount: number; currentAmount: number; isActive: boolean });
@@ -852,5 +851,77 @@ export const updateLeaderboardOptIn = onCall(
     }
 
     return { ok: true, optIn };
+  }
+);
+
+/**
+ * Callable: any authenticated user can trigger a leaderboard aggregation on demand.
+ * Rate-limited to 1 call per 5 min per user to prevent abuse.
+ * Useful for bootstrapping and for users who want fresh data.
+ */
+export const triggerLeaderboardAggregation = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+    await checkRateLimit(userId, "triggerLeaderboardAggregation");
+
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const usersSnap = await db.collection("users").where("leaderboardOptIn", "==", true).get();
+    const profiles: Array<{ userId: string; score: number; tier: HealthTier; handle: string; months: number }> = [];
+
+    const BATCH = 50;
+    for (let i = 0; i < usersSnap.docs.length; i += BATCH) {
+      const chunk = usersSnap.docs.slice(i, i + BATCH);
+      await Promise.all(chunk.map(async (userDoc) => {
+        const uid = userDoc.id;
+        try {
+          const [summarySnap, budgetsSnap, goalsSnap] = await Promise.all([
+            db.collection("financialSummaries").doc(uid).get(),
+            db.collection("budgets").where("userId", "==", uid).where("isActive", "==", true).get(),
+            db.collection("goals").where("userId", "==", uid).where("isActive", "==", true).get(),
+          ]);
+          if (!summarySnap.exists) return;
+          const months = (summarySnap.data()?.months ?? {}) as Record<string, MonthlyData>;
+          const budgets = budgetsSnap.docs.map((d) => d.data() as { category: string; amount: number; period: string; isActive: boolean });
+          const goals = goalsSnap.docs.map((d) => d.data() as { targetAmount: number; currentAmount: number; isActive: boolean });
+          const { score, tier } = computeHealthScore(months, budgets, goals);
+          const handle = deriveHandle(uid);
+          await db.collection("leaderboardProfiles").doc(uid).set({
+            score, tier, anonymousHandle: handle,
+            monthsOfData: Object.keys(months).length,
+            computedAt: admin.firestore.FieldValue.serverTimestamp(),
+            optedIn: true,
+          });
+          profiles.push({ userId: uid, score, tier, handle, months: Object.keys(months).length });
+        } catch { /* skip user on error */ }
+      }));
+    }
+
+    if (profiles.length === 0) return { ok: true, participants: 0 };
+
+    const scores = profiles.map((p) => p.score).sort((a, b) => a - b);
+    const tierDist: Record<HealthTier, number> = { critical: 0, "needs-work": 0, good: 0, excellent: 0, outstanding: 0 };
+    profiles.forEach((p) => { tierDist[p.tier]++; });
+    const top10 = [...profiles].sort((a, b) => b.score - a.score).slice(0, 10).map((p) => ({ anonymousHandle: p.handle, score: p.score, tier: p.tier }));
+
+    await db.collection("leaderboardStats").doc("current").set({
+      totalParticipants: profiles.length,
+      medianScore: lbMedian(scores),
+      meanScore: Math.round(lbMean(scores)),
+      tierDistribution: tierDist,
+      scorePercentileBands: {
+        top10: lbPercentile([...scores].reverse(), 10),
+        top25: lbPercentile([...scores].reverse(), 25),
+        top50: lbPercentile([...scores].reverse(), 50),
+      },
+      topScores: top10,
+      generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      monthKey,
+    });
+
+    return { ok: true, participants: profiles.length };
   }
 );
