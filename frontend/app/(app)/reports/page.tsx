@@ -349,8 +349,8 @@ export default function ReportsPage() {
         {/* 1. Controls — date filter + presets + export */}
         <Card className="mb-6">
           <CardContent className="pt-5 pb-5">
-            <div className="grid gap-4 md:grid-cols-4 mb-4">
-              <div className="space-y-2">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-4">
+              <div className="col-span-2 md:col-span-1 space-y-2">
                 <Label>{t("reportType")}</Label>
                 <select
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -383,7 +383,7 @@ export default function ReportsPage() {
                   className="[color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
-              <div className="flex items-end">
+              <div className="col-span-2 md:col-span-1 flex items-end">
                 <Button
                   variant="outline"
                   className="w-full"
