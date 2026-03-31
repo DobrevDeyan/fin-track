@@ -7,7 +7,7 @@
  * Eliminates prop drilling for savings-related data
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import {
@@ -44,6 +44,7 @@ interface SavingsContextValue {
 
   // Actions
   loadSavingsAccounts: () => Promise<void>
+  ensureSavingsLoaded: () => Promise<void>
   handleSubmit: (data: SavingsAccountFormData) => Promise<void>
   handleEdit: (account: SavingsAccount) => void
   handleDelete: (accountId: string) => Promise<void>
@@ -66,11 +67,13 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<SavingsAccount | null>(null)
+  const hasLoadedRef = useRef(false)
 
   useEffect(() => {
     if (!userId) {
       setSavingsAccounts([])
       setLoading(false)
+      hasLoadedRef.current = false
     }
   }, [userId])
 
@@ -81,6 +84,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
       setLoading(true)
       const accounts = await getUserSavingsAccounts(userId)
       setSavingsAccounts(accounts)
+      hasLoadedRef.current = true
     } catch (error) {
       console.error(t(ERROR_MESSAGES.LOAD_FAILED) + ":", error) // Use translated error
       setSavingsAccounts([])
@@ -88,6 +92,11 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
       setLoading(false)
     }
   }, [userId, t]) // Add t to dependencies
+
+  const ensureSavingsLoaded = useCallback(async () => {
+    if (hasLoadedRef.current) return
+    await loadSavingsAccounts()
+  }, [loadSavingsAccounts])
 
   const handleCreate = useCallback(
     async (data: SavingsAccountFormData) => {
@@ -217,6 +226,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
     dialogOpen,
     editingAccount,
     loadSavingsAccounts,
+    ensureSavingsLoaded,
     handleSubmit,
     handleEdit,
     handleDelete,

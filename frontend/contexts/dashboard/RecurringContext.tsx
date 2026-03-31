@@ -7,7 +7,7 @@
  * Eliminates prop drilling for recurring transaction-related data
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { Timestamp } from "firebase/firestore"
 import {
@@ -42,6 +42,7 @@ interface RecurringContextValue {
 
   // Actions
   loadRecurringTransactions: () => Promise<void>
+  ensureRecurringLoaded: () => Promise<void>
   handleSubmit: (data: RecurringFormData) => Promise<void>
   handleEdit: (recurring: RecurringTransaction) => void
   handleDelete: (recurringId: string) => Promise<void>
@@ -61,11 +62,13 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null)
+  const hasLoadedRef = useRef(false)
 
   useEffect(() => {
     if (!userId) {
       setRecurringTransactions([])
       setLoading(false)
+      hasLoadedRef.current = false
     }
   }, [userId])
 
@@ -76,6 +79,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
       setLoading(true)
       const firestoreRecurring = await getUserRecurringTransactions(userId)
       setRecurringTransactions(firestoreRecurring)
+      hasLoadedRef.current = true
     } catch (error) {
       console.error("Error loading recurring transactions:", error)
       setRecurringTransactions([])
@@ -83,6 +87,11 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
       setLoading(false)
     }
   }, [userId])
+
+  const ensureRecurringLoaded = useCallback(async () => {
+    if (hasLoadedRef.current) return
+    await loadRecurringTransactions()
+  }, [loadRecurringTransactions])
 
   const handleSubmit = useCallback(
     async (data: RecurringFormData) => {
@@ -176,6 +185,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
     dialogOpen,
     editingRecurring,
     loadRecurringTransactions,
+    ensureRecurringLoaded,
     handleSubmit,
     handleEdit,
     handleDelete,

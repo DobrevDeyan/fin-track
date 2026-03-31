@@ -19,7 +19,7 @@ function CalendarInnerContent() {
     const t = useTranslations("calendar");
     const { user } = useAuth();
     const { userCurrency } = useCurrency();
-    const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
+    const { recurringTransactions, loadRecurringTransactions, ensureRecurringLoaded } = useRecurringContext();
 
     const hasLoadedRef = useRef(false);
 
@@ -36,9 +36,9 @@ function CalendarInnerContent() {
         if (user && !hasLoadedRef.current) {
             hasLoadedRef.current = true;
             entriesHook.loadEntries();
-            loadRecurringTransactions();
+            ensureRecurringLoaded();
         }
-    }, [user, entriesHook.loadEntries, loadRecurringTransactions]);
+    }, [user, entriesHook.loadEntries, ensureRecurringLoaded]);
 
     const handleAddTransaction = useCallback((dateStr: string) => {
         setPrefilledDate(dateStr);

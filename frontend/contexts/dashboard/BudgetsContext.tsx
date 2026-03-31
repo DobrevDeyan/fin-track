@@ -7,7 +7,7 @@
  * Eliminates prop drilling for budget-related data
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { Timestamp } from "firebase/firestore"
 import {
@@ -55,6 +55,7 @@ interface BudgetsContextValue {
 
   // Actions
   loadBudgets: () => Promise<void>
+  ensureBudgetsLoaded: () => Promise<void>
   handleSubmit: (data: BudgetFormData) => Promise<void>
   handleEdit: (budget: Budget) => void
   handleDelete: (budgetId: string) => Promise<void>
@@ -75,11 +76,13 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
+  const hasLoadedRef = useRef(false)
 
   useEffect(() => {
     if (!userId) {
       setBudgets([])
       setLoading(false)
+      hasLoadedRef.current = false
     }
   }, [userId])
 
@@ -104,6 +107,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
       }))
 
       setBudgets(convertedBudgets)
+      hasLoadedRef.current = true
     } catch (error) {
       console.error("Error loading budgets:", error)
       setBudgets([])
@@ -111,6 +115,11 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
       setLoading(false)
     }
   }, [userId])
+
+  const ensureBudgetsLoaded = useCallback(async () => {
+    if (hasLoadedRef.current) return
+    await loadBudgets()
+  }, [loadBudgets])
 
   const handleSubmit = useCallback(
     async (data: BudgetFormData) => {
@@ -222,6 +231,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
     dialogOpen,
     editingBudget,
     loadBudgets,
+    ensureBudgetsLoaded,
     handleSubmit,
     handleEdit,
     handleDelete,

@@ -369,6 +369,7 @@ export default function ReportsPage() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="[color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="space-y-2">
@@ -379,6 +380,7 @@ export default function ReportsPage() {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   min={startDate}
+                  className="[color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="flex items-end">

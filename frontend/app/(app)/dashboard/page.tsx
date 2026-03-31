@@ -84,9 +84,9 @@ function DashboardInnerContent() {
     } = useFinancialSummary();
 
     // Get data from contexts
-    const { savingsAccounts, loadSavingsAccounts } = useSavingsContext();
-    const { budgets, loadBudgets } = useBudgetsContext();
-    const { recurringTransactions, loadRecurringTransactions } = useRecurringContext();
+    const { savingsAccounts, loadSavingsAccounts, ensureSavingsLoaded } = useSavingsContext();
+    const { budgets, loadBudgets, ensureBudgetsLoaded } = useBudgetsContext();
+    const { recurringTransactions, loadRecurringTransactions, ensureRecurringLoaded } = useRecurringContext();
 
     // Quick add sheet state (opened from BottomNav + button)
     const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -134,12 +134,12 @@ function DashboardInnerContent() {
         if (user && !hasLoadedRef.current) {
             hasLoadedRef.current = true;
             entriesHook.loadEntries();
-            loadBudgets();
-            loadRecurringTransactions();
-            loadSavingsAccounts();
+            ensureBudgetsLoaded();
+            ensureRecurringLoaded();
+            ensureSavingsLoaded();
             refreshSummary();
         }
-    }, [user, entriesHook.loadEntries, loadBudgets, loadRecurringTransactions, loadSavingsAccounts, refreshSummary]);
+    }, [user, entriesHook.loadEntries, ensureBudgetsLoaded, ensureRecurringLoaded, ensureSavingsLoaded, refreshSummary]);
 
     // Handle checkout success redirect from Stripe
     useEffect(() => {
