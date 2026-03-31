@@ -26,7 +26,6 @@ import { SalaryReminderNotification } from "@/components/SalaryReminderNotificat
 import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
 import { completeOnboarding } from "@/lib/firestore-users";
 // Dashboard contexts
-import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
 import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
@@ -401,22 +400,5 @@ function DashboardInnerContent() {
 }
 
 export default function DashboardPage() {
-    const { user, loading } = useAuth();
-
-    if (loading || !user) {
-        return (
-            <div className="container flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-                    <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <DashboardProvider userId={user.uid}>
-            <DashboardInnerContent />
-        </DashboardProvider>
-    );
+    return <DashboardInnerContent />;
 }

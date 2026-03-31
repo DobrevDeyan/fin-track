@@ -7,7 +7,6 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 
-import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
 
@@ -96,15 +95,5 @@ function CalendarInnerContent() {
 }
 
 export default function CalendarPage() {
-    const { user } = useAuth();
-
-    if (!user) {
-        return null;
-    }
-
-    return (
-        <DashboardProvider userId={user.uid}>
-            <CalendarInnerContent />
-        </DashboardProvider>
-    );
+    return <CalendarInnerContent />;
 }

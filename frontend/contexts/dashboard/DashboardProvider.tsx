@@ -8,6 +8,7 @@
  */
 
 import { ReactNode } from "react"
+import { useAuth } from "@/contexts/AuthContext"
 import { FinancialSummaryProvider } from "./FinancialSummaryContext"
 import { SavingsProvider } from "./SavingsContext"
 import { BudgetsProvider } from "./BudgetsContext"
@@ -17,21 +18,12 @@ import { InsightsProvider } from "./InsightsContext"
 
 interface DashboardProviderProps {
   children: ReactNode
-  userId: string | undefined
 }
 
-/**
- * DashboardProvider wraps all feature-specific contexts
- *
- * This eliminates the need to manually nest providers and ensures
- * all dashboard features have access to their respective contexts.
- *
- * @example
- * <DashboardProvider userId={user?.uid}>
- *   <DashboardContent />
- * </DashboardProvider>
- */
-export function DashboardProvider({ children, userId }: DashboardProviderProps) {
+export function DashboardProvider({ children }: DashboardProviderProps) {
+  const { user } = useAuth()
+  const userId = user?.uid
+
   return (
     <FinancialSummaryProvider userId={userId}>
       <SavingsProvider userId={userId}>

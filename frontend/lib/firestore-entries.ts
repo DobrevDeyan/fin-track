@@ -283,6 +283,40 @@ export async function getUserEntries(
 }
 
 /**
+ * Get entries for a user within a date range (for reports).
+ * Queries Firestore server-side — only loads docs in the selected range.
+ */
+export async function getUserEntriesByDateRange(
+  userId: string,
+  startDate: string, // YYYY-MM-DD
+  endDate: string    // YYYY-MM-DD
+): Promise<(EntryDocument & { id: string })[]> {
+  try {
+    const entriesRef = collection(db, "entries")
+    const start = Timestamp.fromDate(new Date(startDate + "T00:00:00"))
+    const end = Timestamp.fromDate(new Date(endDate + "T23:59:59"))
+
+    const q = query(
+      entriesRef,
+      where("userId", "==", userId),
+      where("date", ">=", start),
+      where("date", "<=", end),
+      orderBy("date", "desc")
+    )
+
+    const querySnapshot = await getDocs(q)
+    const entries: (EntryDocument & { id: string })[] = []
+    querySnapshot.forEach((docSnap) => {
+      entries.push({ ...(docSnap.data() as EntryDocument), id: docSnap.id })
+    })
+    return entries
+  } catch (error) {
+    console.error("Error fetching entries by date range:", error)
+    throw error
+  }
+}
+
+/**
  * Get all entries for a user that have a receipt attached
  */
 export async function getUserEntriesWithReceipts(

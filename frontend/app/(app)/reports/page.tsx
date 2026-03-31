@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getUserEntries } from "@/lib/firestore-entries"
+import { getUserEntriesByDateRange } from "@/lib/firestore-entries"
 import { formatCurrency } from "@/lib/currency-utils"
-import { getCustomDateRange } from "@/lib/date-utils"
+import { formatDateForInput } from "@/lib/date-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
 import { fetchAIDigest } from "@/lib/insights-api"
@@ -63,6 +63,7 @@ export default function ReportsPage() {
   const { isPro } = useSubscription()
   const { userCurrency } = useCurrency()
   const [entries, setEntries] = useState<Entry[]>([])
+  const [yoyEntries, setYoyEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(true)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -70,10 +71,42 @@ export default function ReportsPage() {
   const [digestText, setDigestText] = useState<string | null>(null)
   const [digestLoading, setDigestLoading] = useState(false)
 
-  // Load entries
+  // Debounce date range — prevents a Firestore fetch on every keystroke
+  // when the user types manually into the date inputs
+  const [debouncedDates, setDebouncedDates] = useState({ start: "", end: "" })
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedDates({ start: startDate, end: endDate })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [startDate, endDate])
+
+  // Load filtered entries whenever debounced dates change
+  useEffect(() => {
+    if (!loading && user && debouncedDates.start && debouncedDates.end) {
+      loadEntries(debouncedDates.start, debouncedDates.end)
+    }
+  }, [user, loading, debouncedDates])
+
+  // Load 2-year entries for YearOverYearChart once on mount (independent of filter)
   useEffect(() => {
     if (!loading && user) {
-      loadEntries()
+      const now = new Date()
+      const twoYearStart = formatDateForInput(new Date(now.getFullYear() - 1, 0, 1))
+      const today = formatDateForInput(now)
+      getUserEntriesByDateRange(user.uid, twoYearStart, today).then((firestoreEntries) => {
+        setYoyEntries(firestoreEntries.map((entry) => ({
+          id: entry.id,
+          description: entry.description,
+          amount: entry.amount,
+          category: entry.category,
+          date: entry.date instanceof Date
+            ? entry.date.toISOString()
+            : entry.date.toDate().toISOString(),
+          type: entry.type,
+          notes: entry.notes,
+        })))
+      })
     }
   }, [user, loading])
 
@@ -157,13 +190,12 @@ export default function ReportsPage() {
     }
   }
 
-  const loadEntries = async () => {
+  const loadEntries = async (start: string, end: string) => {
     if (!user) return
 
     try {
       setEntriesLoading(true)
-      // Fetch more entries for reports (limit 1000)
-      const { entries: firestoreEntries } = await getUserEntries(user.uid, null, 1000)
+      const firestoreEntries = await getUserEntriesByDateRange(user.uid, start, end)
 
       const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
         id: entry.id,
@@ -191,49 +223,36 @@ export default function ReportsPage() {
     const now = new Date()
     if (reportType === "yearly") {
       const start = new Date(now.getFullYear(), 0, 1)
-      setStartDate(start.toISOString().split("T")[0])
-      setEndDate(now.toISOString().split("T")[0])
+      setStartDate(formatDateForInput(start))
+      setEndDate(formatDateForInput(now))
     } else if (reportType === "monthly") {
       const start = new Date(now.getFullYear(), now.getMonth(), 1)
-      setStartDate(start.toISOString().split("T")[0])
-      setEndDate(now.toISOString().split("T")[0])
+      setStartDate(formatDateForInput(start))
+      setEndDate(formatDateForInput(now))
     }
   }, [reportType])
 
-  // Filter entries by date range
-  const filteredEntries = useMemo(() => {
-    if (!startDate || !endDate) return entries
-
-    const range = getCustomDateRange(startDate, endDate)
-    if (!range) return entries
-
-    return entries.filter((entry) => {
-      const entryDate = new Date(entry.date)
-      return entryDate >= range.start && entryDate <= range.end
-    })
-  }, [entries, startDate, endDate])
-
   // Calculate report metrics
   const metrics = useMemo(() => {
-    const income = filteredEntries
+    const income = entries
       .filter((e) => e.type === "income")
       .reduce((sum, e) => sum + e.amount, 0)
 
-    const expenses = filteredEntries
+    const expenses = entries
       .filter((e) => e.type === "expense")
       .reduce((sum, e) => sum + e.amount, 0)
 
     const balance = income - expenses
     const savingsRate = income > 0 ? (balance / income) * 100 : 0
 
-    const categoryBreakdown = filteredEntries
+    const categoryBreakdown = entries
       .filter((e) => e.type === "expense")
       .reduce<Record<string, number>>((acc, e) => {
         acc[e.category] = (acc[e.category] ?? 0) + e.amount
         return acc
       }, {})
 
-    const monthlyBreakdown = filteredEntries.reduce<Record<string, { income: number; expenses: number }>>((acc, e) => {
+    const monthlyBreakdown = entries.reduce<Record<string, { income: number; expenses: number }>>((acc, e) => {
       const month = e.date.slice(0, 7) // "YYYY-MM"
       if (!acc[month]) acc[month] = { income: 0, expenses: 0 }
       if (e.type === "income") acc[month].income += e.amount
@@ -246,11 +265,11 @@ export default function ReportsPage() {
       expenses,
       balance,
       savingsRate,
-      totalTransactions: filteredEntries.length,
+      totalTransactions: entries.length,
       categoryBreakdown,
       monthlyBreakdown,
     }
-  }, [filteredEntries])
+  }, [entries])
 
   const handleExportPDF = async () => {
     if (!isPro) {
@@ -265,7 +284,7 @@ export default function ReportsPage() {
 
       const { exportReportToPDF } = await import("@/lib/pdf-export")
       await exportReportToPDF({
-        entries: filteredEntries,
+        entries: entries,
         metrics,
         startDate,
         endDate,
@@ -290,7 +309,7 @@ export default function ReportsPage() {
       }
 
       const filename = `fintrack-report-${startDate}-to-${endDate}.csv`
-      exportEntriesToCSV(filteredEntries, filename)
+      exportEntriesToCSV(entries, filename)
     } catch (error) {
       console.error("Error exporting CSV:", error)
       toast.error(t("exportCSVFailed"))
@@ -370,8 +389,8 @@ export default function ReportsPage() {
                     const now = new Date()
                     const start = new Date(now.getFullYear(), 0, 1)
                     setReportType("yearly")
-                    setStartDate(start.toISOString().split("T")[0])
-                    setEndDate(now.toISOString().split("T")[0])
+                    setStartDate(formatDateForInput(start))
+                    setEndDate(formatDateForInput(now))
                   }}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
@@ -387,8 +406,8 @@ export default function ReportsPage() {
                     action: () => {
                       const now = new Date()
                       setReportType("monthly")
-                      setStartDate(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0])
-                      setEndDate(now.toISOString().split("T")[0])
+                      setStartDate(formatDateForInput(new Date(now.getFullYear(), now.getMonth(), 1)))
+                      setEndDate(formatDateForInput(now))
                     },
                   },
                   {
@@ -396,8 +415,8 @@ export default function ReportsPage() {
                     action: () => {
                       const now = new Date()
                       setReportType("custom")
-                      setStartDate(new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString().split("T")[0])
-                      setEndDate(now.toISOString().split("T")[0])
+                      setStartDate(formatDateForInput(new Date(now.getFullYear(), now.getMonth() - 2, 1)))
+                      setEndDate(formatDateForInput(now))
                     },
                   },
                   {
@@ -405,8 +424,8 @@ export default function ReportsPage() {
                     action: () => {
                       const now = new Date()
                       setReportType("yearly")
-                      setStartDate(new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0])
-                      setEndDate(now.toISOString().split("T")[0])
+                      setStartDate(formatDateForInput(new Date(now.getFullYear(), 0, 1)))
+                      setEndDate(formatDateForInput(now))
                     },
                   },
                 ].map(({ label, action }) => (
@@ -520,17 +539,17 @@ export default function ReportsPage() {
 
         {/* 4. Spending Over Time */}
         <div className="mb-6">
-          <SpendingChart entries={filteredEntries} />
+          <SpendingChart entries={entries} />
         </div>
 
         {/* 5. Spending by Category */}
         <div className="mb-6">
-          <CategoryChart entries={filteredEntries} userCurrency={userCurrency} />
+          <CategoryChart entries={entries} userCurrency={userCurrency} />
         </div>
 
         {/* 6. Year-over-Year Comparison */}
         <div className="mb-2">
-          <YearOverYearChart entries={entries} userCurrency={userCurrency} />
+          <YearOverYearChart entries={yoyEntries} userCurrency={userCurrency} />
         </div>
 
       </div>
