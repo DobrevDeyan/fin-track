@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bell, BellOff, X } from "lucide-react"
@@ -47,14 +47,14 @@ export function SalaryReminderNotification({ entries }: SalaryReminderNotificati
     }
   }, [])
 
+  const entriesRef = useRef(entries)
+  entriesRef.current = entries
+
   useEffect(() => {
-    // Schedule salary reminders if permission granted
-    if (hasPermission && entries.length >= 0) {
-      scheduleSalaryReminder(() => {
-        return shouldRemindAboutSalary(entries)
-      })
-    }
-  }, [hasPermission, entries])
+    if (!hasPermission) return
+    const cleanup = scheduleSalaryReminder(() => shouldRemindAboutSalary(entriesRef.current))
+    return cleanup
+  }, [hasPermission])
 
   const handleRequestPermission = async () => {
     const granted = await requestNotificationPermission()
@@ -62,10 +62,7 @@ export function SalaryReminderNotification({ entries }: SalaryReminderNotificati
     setShowPermissionPrompt(false)
     
     if (granted) {
-      // Schedule reminders immediately
-      scheduleSalaryReminder(() => {
-        return shouldRemindAboutSalary(entries)
-      })
+      // Effect will pick this up via hasPermission state change
     } else {
       setPermissionDenied(true)
     }

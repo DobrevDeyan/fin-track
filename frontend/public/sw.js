@@ -32,7 +32,7 @@ firebaseMessaging.onBackgroundMessage((payload) => {
     icon:  "/icons/favicon_dark/web-app-manifest-192x192.png",
     badge: "/icons/favicon_dark/favicon-96x96.png",
     tag:   payload.data?.tag ?? "pocket",
-    renotify: true,
+    renotify: false,
     data: { url },
   });
 });

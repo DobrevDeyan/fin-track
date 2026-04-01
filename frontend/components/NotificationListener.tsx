@@ -24,10 +24,24 @@ export function NotificationListener() {
     })
   }, [user])
 
-  // Foreground FCM message → toast
+  // Foreground FCM message → system notification + in-app toast
   useEffect(() => {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return
     return onForegroundMessage(({ title, body, url }) => {
+      // 1. System notification (persists in notification shade)
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(title ?? "Pocket", {
+            body: body ?? "",
+            icon: "/icons/favicon_dark/web-app-manifest-192x192.png",
+            badge: "/icons/favicon_dark/favicon-96x96.png",
+            tag: "pocket-foreground",
+            data: { url: url ?? "/dashboard" },
+          })
+        })
+      }
+
+      // 2. In-app toast (immediate visual feedback while inside the app)
       toast(title ?? "Pocket", {
         description: body,
         action: url ? { label: "View", onClick: () => { window.location.href = url } } : undefined,

@@ -95,31 +95,42 @@ export function sendSalaryReminder(monthName: string): void {
 
 /**
  * Schedule monthly salary reminder
- * This checks daily and sends notification on the 1st of each month
+ * This checks daily and sends notification on the 1st of each month.
+ * Returns a cleanup function to clear the interval.
  */
 export function scheduleSalaryReminder(
   checkCallback: () => { shouldNotify: boolean; monthName: string }
-): void {
-  // Check once per day
-  const checkInterval = 24 * 60 * 60 * 1000 // 24 hours
+): () => void {
+  // Deduplicate: only send once per calendar day per session
+  const STORAGE_KEY = "salaryReminderLastSent"
+  const today = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD"
+  const lastSent = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
 
   const checkAndNotify = () => {
-    if (!canSendNotifications()) {
-      return
-    }
+    if (!canSendNotifications()) return
+
+    const sentToday = typeof localStorage !== "undefined" && localStorage.getItem(STORAGE_KEY) === today
+    if (sentToday) return
 
     const { shouldNotify, monthName } = checkCallback()
-    
     if (shouldNotify) {
       sendSalaryReminder(monthName)
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, today)
+      }
     }
   }
 
-  // Check immediately
-  checkAndNotify()
+  // Fire once on first setup if not already sent today
+  if (lastSent !== today) {
+    checkAndNotify()
+  }
 
   // Then check daily
-  setInterval(checkAndNotify, checkInterval)
+  const checkInterval = 24 * 60 * 60 * 1000 // 24 hours
+  const intervalId = setInterval(checkAndNotify, checkInterval)
+
+  return () => clearInterval(intervalId)
 }
 
 /**
