@@ -22,6 +22,24 @@ import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
 
+// ─── Module-level cache ────────────────────────────────────────────────────────
+// Survives bottom-nav navigation (component unmount/remount), cleared on hard refresh.
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+interface CacheEntry<T> { data: T; ts: number }
+const entryCache = new Map<string, CacheEntry<Entry[]>>()
+const yoyCache   = new Map<string, CacheEntry<Entry[]>>()
+
+function getCached<T>(map: Map<string, CacheEntry<T>>, key: string): T | null {
+  const hit = map.get(key)
+  if (!hit) return null
+  if (Date.now() - hit.ts > CACHE_TTL) { map.delete(key); return null }
+  return hit.data
+}
+function setCached<T>(map: Map<string, CacheEntry<T>>, key: string, data: T) {
+  map.set(key, { data, ts: Date.now() })
+}
+
 // Lazy load charts
 const ChartSkeleton = ({ height = 400 }: { height?: number }) => (
   <div className="rounded-xl border bg-card p-6 space-y-4" style={{ height }}>
@@ -64,7 +82,7 @@ export default function ReportsPage() {
   const { userCurrency } = useCurrency()
   const [entries, setEntries] = useState<Entry[]>([])
   const [yoyEntries, setYoyEntries] = useState<Entry[]>([])
-  const [entriesLoading, setEntriesLoading] = useState(true)
+  const [entriesLoading, setEntriesLoading] = useState(false)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [reportType, setReportType] = useState<"yearly" | "monthly" | "custom">("yearly")
@@ -94,8 +112,12 @@ export default function ReportsPage() {
       const now = new Date()
       const twoYearStart = formatDateForInput(new Date(now.getFullYear() - 1, 0, 1))
       const today = formatDateForInput(now)
+      const cacheKey = `${user.uid}:yoy:${today}`
+      const cached = getCached(yoyCache, cacheKey)
+      if (cached) { setYoyEntries(cached); return }
+
       getUserEntriesByDateRange(user.uid, twoYearStart, today).then((firestoreEntries) => {
-        setYoyEntries(firestoreEntries.map((entry) => ({
+        const converted = firestoreEntries.map((entry) => ({
           id: entry.id,
           description: entry.description,
           amount: entry.amount,
@@ -105,7 +127,9 @@ export default function ReportsPage() {
             : entry.date.toDate().toISOString(),
           type: entry.type,
           notes: entry.notes,
-        })))
+        }))
+        setCached(yoyCache, cacheKey, converted)
+        setYoyEntries(converted)
       })
     }
   }, [user, loading])
@@ -192,6 +216,9 @@ export default function ReportsPage() {
 
   const loadEntries = async (start: string, end: string) => {
     if (!user) return
+    const cacheKey = `${user.uid}:${start}:${end}`
+    const cached = getCached(entryCache, cacheKey)
+    if (cached) { setEntries(cached); return }
 
     try {
       setEntriesLoading(true)
@@ -209,6 +236,7 @@ export default function ReportsPage() {
         notes: entry.notes,
       }))
 
+      setCached(entryCache, cacheKey, convertedEntries)
       setEntries(convertedEntries)
     } catch (error) {
       console.error("Error loading entries:", error)
@@ -314,26 +342,6 @@ export default function ReportsPage() {
       console.error("Error exporting CSV:", error)
       toast.error(t("exportCSVFailed"))
     }
-  }
-
-  if (loading || entriesLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container py-8 px-4 sm:px-6">
-          <div className="mb-8">
-            <Skeleton className="h-8 w-40 mb-2" />
-            <Skeleton className="h-4 w-72" />
-          </div>
-          <Skeleton className="h-32 w-full rounded-xl mb-8" />
-          <ChartSkeleton height={400} />
-          <div className="mb-8" />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
-            {[0,1,2,3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
-          </div>
-          <ChartSkeleton height={400} />
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -453,32 +461,38 @@ export default function ReportsPage() {
         {/* 2. Summary Metrics */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalIncome")}</p>
-                <p className="text-xl font-bold text-green-600">
-                  {formatCurrency(metrics.income, { currency: userCurrency })}
-                </p>
+            {entriesLoading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {[0,1,2,3].map(i => <Skeleton key={i} className="h-12 rounded-lg" />)}
               </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalExpenses")}</p>
-                <p className="text-xl font-bold text-red-600">
-                  {formatCurrency(metrics.expenses, { currency: userCurrency })}
-                </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalIncome")}</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {formatCurrency(metrics.income, { currency: userCurrency })}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalExpenses")}</p>
+                  <p className="text-xl font-bold text-red-600">
+                    {formatCurrency(metrics.expenses, { currency: userCurrency })}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("netBalance")}</p>
+                  <p className={`text-xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    {formatCurrency(metrics.balance, { currency: userCurrency })}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("savingsRate")}</p>
+                  <p className="text-xl font-bold">
+                    {metrics.savingsRate.toFixed(1)}%
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("netBalance")}</p>
-                <p className={`text-xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                  {formatCurrency(metrics.balance, { currency: userCurrency })}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("savingsRate")}</p>
-                <p className="text-xl font-bold">
-                  {metrics.savingsRate.toFixed(1)}%
-                </p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 

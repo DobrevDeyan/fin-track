@@ -118,61 +118,71 @@ async function processRecurringTransaction(
   recurringId: string,
   recurring: RecurringTransaction
 ): Promise<void> {
-  // Idempotency guard: check if we already created an entry for this
-  // recurringId + date combination to prevent duplicates on retries or
-  // concurrent function executions.
-  const existingSnapshot = await db
-    .collection("entries")
-    .where("recurringId", "==", recurringId)
-    .where("date", "==", recurring.nextDate)
-    .limit(1)
-    .get();
-
-  if (!existingSnapshot.empty) {
-    logger.info(`Skipping duplicate recurring transaction: ${recurring.name}`, {
-      recurringId,
-      nextDate: recurring.nextDate.toDate().toISOString(),
-    });
-    return;
-  }
-
-  const batch = db.batch();
-
-  // 1. Create the entry
-  const entryRef = db.collection("entries").doc();
-  const entryData = {
-    userId: recurring.userId,
-    type: recurring.type,
-    amount: recurring.amount,
-    currency: "EUR", // Default currency - could be extended to store in recurring
-    description: recurring.name,
-    category: recurring.category,
-    date: recurring.nextDate,
-    recurring: true,
-    recurringId: recurringId,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  };
-  batch.set(entryRef, entryData);
-
-  // 2. Calculate and update the next date
-  const currentNextDate = recurring.nextDate.toDate();
-  const newNextDate = calculateNextDate(currentNextDate, recurring.frequency);
-
+  // Use a deterministic entry ID so concurrent executions target the same
+  // document. Firestore transactions detect the write conflict and abort one,
+  // which then retries, sees the entry already exists, and exits cleanly.
+  // This replaces the old getDocs idempotency check which had a read-then-write
+  // gap where two executions could both pass the check before either committed.
+  const dateStr = recurring.nextDate.toDate().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const entryId = `rec_${recurringId}_${dateStr}`;
+  const entryRef  = db.collection("entries").doc(entryId);
   const recurringRef = db.collection("recurringTransactions").doc(recurringId);
-  batch.update(recurringRef, {
-    nextDate: admin.firestore.Timestamp.fromDate(newNextDate),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
 
-  await batch.commit();
+  await db.runTransaction(async (txn) => {
+    const [entrySnap, recurringSnap] = await Promise.all([
+      txn.get(entryRef),
+      txn.get(recurringRef),
+    ]);
 
-  logger.info(`Processed recurring transaction: ${recurring.name}`, {
-    recurringId,
-    userId: recurring.userId,
-    amount: recurring.amount,
-    type: recurring.type,
-    newNextDate: newNextDate.toISOString(),
+    // Already created by a concurrent or previous execution — nothing to do.
+    if (entrySnap.exists) {
+      logger.info(`Skipping duplicate recurring transaction: ${recurring.name}`, {
+        recurringId,
+        entryId,
+      });
+      return;
+    }
+
+    // Guard against stale data: verify nextDate hasn't already been advanced by
+    // another execution that completed between when we queried and now.
+    const latestRecurring = recurringSnap.data() as RecurringTransaction | undefined;
+    if (!latestRecurring?.isActive) return;
+    if (latestRecurring.nextDate.toDate().getTime() !== recurring.nextDate.toDate().getTime()) {
+      logger.info(`Skipping stale recurring transaction: ${recurring.name} — nextDate already advanced`, {
+        recurringId,
+      });
+      return;
+    }
+
+    const newNextDate = calculateNextDate(recurring.nextDate.toDate(), recurring.frequency);
+
+    txn.set(entryRef, {
+      userId: recurring.userId,
+      type: recurring.type,
+      amount: recurring.amount,
+      currency: "EUR",
+      description: recurring.name,
+      category: recurring.category,
+      date: recurring.nextDate,
+      recurring: true,
+      recurringId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    txn.update(recurringRef, {
+      nextDate: admin.firestore.Timestamp.fromDate(newNextDate),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    logger.info(`Processed recurring transaction: ${recurring.name}`, {
+      recurringId,
+      entryId,
+      userId: recurring.userId,
+      amount: recurring.amount,
+      type: recurring.type,
+      newNextDate: newNextDate.toISOString(),
+    });
   });
 }
 
@@ -467,6 +477,8 @@ export const checkBudgetOnEntry = onDocumentCreated(
     const userId = data.userId as string;
     const entryDate: admin.firestore.Timestamp = data.date;
     const entryTs = entryDate.toDate();
+    // "YYYY-MM" key used to track which alerts have already been sent this period
+    const monthKey = `${entryTs.getFullYear()}-${String(entryTs.getMonth() + 1).padStart(2, "0")}`;
 
     // Fetch all active budgets for this user
     const budgetsSnap = await db
@@ -478,44 +490,61 @@ export const checkBudgetOnEntry = onDocumentCreated(
     if (budgetsSnap.empty) return;
 
     for (const budgetDoc of budgetsSnap.docs) {
-      const budget = budgetDoc.data();
+      try {
+        const budget = budgetDoc.data();
 
-      const budgetStart: admin.firestore.Timestamp = budget.startDate;
-      const budgetEnd: admin.firestore.Timestamp = budget.endDate;
+        const budgetStart: admin.firestore.Timestamp = budget.startDate;
+        const budgetEnd: admin.firestore.Timestamp = budget.endDate;
 
-      // Skip if the triggering entry falls outside this budget's period
-      if (entryTs < budgetStart.toDate() || entryTs > budgetEnd.toDate()) continue;
+        // Skip if the triggering entry falls outside this budget's period
+        if (entryTs < budgetStart.toDate() || entryTs > budgetEnd.toDate()) continue;
 
-      // Query all expenses within this budget's exact date range
-      const expensesSnap = await db
-        .collection("entries")
-        .where("userId", "==", userId)
-        .where("type", "==", "expense")
-        .where("date", ">=", budgetStart)
-        .where("date", "<=", budgetEnd)
-        .get();
+        // Query all expenses within this budget's exact date range
+        const expensesSnap = await db
+          .collection("entries")
+          .where("userId", "==", userId)
+          .where("type", "==", "expense")
+          .where("date", ">=", budgetStart)
+          .where("date", "<=", budgetEnd)
+          .get();
 
-      // Sum only expenses matching this budget's category
-      const spent = expensesSnap.docs
-        .filter((e) => e.data().category === budget.category)
-        .reduce((sum, e) => sum + (e.data().amount as number), 0);
+        // Sum only expenses matching this budget's category
+        const spent = expensesSnap.docs
+          .filter((e) => e.data().category === budget.category)
+          .reduce((sum, e) => sum + (e.data().amount as number), 0);
 
-      const pct = Math.round((spent / budget.amount) * 100);
-      const threshold = budget.alertThreshold ?? 80;
+        const pct = Math.round((spent / budget.amount) * 100);
+        const threshold = budget.alertThreshold ?? 80;
 
-      console.log(`Budget alert: ${budget.name} - ${pct}% - threshold: ${threshold}% - spent: ${spent} - budget: ${budget.amount}`);
+        if (pct < threshold) continue;
 
-      if (pct < threshold) continue;
+        const isOver = pct >= 100;
+        const alertLevel = isOver ? 100 : threshold;
 
-      const isOver = pct >= 100;
-      const title = isOver
-        ? `🚨 Budget exceeded: ${budget.name}`
-        : `⚠️ Budget alert: ${budget.name}`;
-      const body = isOver
-        ? `You've spent ${pct}% of your ${budget.name} budget.`
-        : `You've used ${pct}% of your ${budget.name} budget.`;
+        // Dedup: skip if we already sent an alert at this level (or higher) this month.
+        // lastAlertedMonthKey / lastAlertedLevel are written below when we send.
+        if (
+          budget.lastAlertedMonthKey === monthKey &&
+          (budget.lastAlertedLevel ?? 0) >= alertLevel
+        ) continue;
 
-      await sendPushToUser(userId, { title, body, url: "/notifications", tag: `budget-${budgetDoc.id}`, type: "budget" });
+        const title = isOver
+          ? `🚨 Budget exceeded: ${budget.name}`
+          : `⚠️ Budget alert: ${budget.name}`;
+        const body = isOver
+          ? `You've spent ${pct}% of your ${budget.name} budget.`
+          : `You've used ${pct}% of your ${budget.name} budget.`;
+
+        await sendPushToUser(userId, { title, body, url: "/notifications", tag: `budget-${budgetDoc.id}`, type: "budget" });
+
+        // Mark this alert level as sent so the next expense doesn't re-notify
+        await budgetDoc.ref.update({
+          lastAlertedMonthKey: monthKey,
+          lastAlertedLevel: alertLevel,
+        });
+      } catch (err) {
+        logger.error(`checkBudgetOnEntry: failed processing budget ${budgetDoc.id}`, { err });
+      }
     }
   }
 );

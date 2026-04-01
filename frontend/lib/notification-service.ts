@@ -99,20 +99,20 @@ export function sendSalaryReminder(monthName: string): void {
  * Returns a cleanup function to clear the interval.
  */
 export function scheduleSalaryReminder(
-  checkCallback: () => { shouldNotify: boolean; monthName: string }
+  checkCallback: () => Promise<{ shouldNotify: boolean; monthName: string }>
 ): () => void {
   // Deduplicate: only send once per calendar day per session
   const STORAGE_KEY = "salaryReminderLastSent"
   const today = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD"
   const lastSent = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
 
-  const checkAndNotify = () => {
+  const checkAndNotify = async () => {
     if (!canSendNotifications()) return
 
     const sentToday = typeof localStorage !== "undefined" && localStorage.getItem(STORAGE_KEY) === today
     if (sentToday) return
 
-    const { shouldNotify, monthName } = checkCallback()
+    const { shouldNotify, monthName } = await checkCallback()
     if (shouldNotify) {
       sendSalaryReminder(monthName)
       if (typeof localStorage !== "undefined") {

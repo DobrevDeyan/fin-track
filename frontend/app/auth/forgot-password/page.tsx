@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
       return false;
     }
     if (!emailRegex.test(value)) {
-      setEmailError(t("emailInvalid"));
+      setEmailError(t("emailInvalid"));2
       return false;
     }
     setEmailError("");

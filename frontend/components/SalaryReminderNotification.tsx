@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bell, BellOff, X } from "lucide-react"
@@ -8,38 +8,40 @@ import {
   requestNotificationPermission,
   canSendNotifications,
   scheduleSalaryReminder,
-  shouldRemindAboutSalary,
 } from "@/lib/notification-service"
-
-interface Entry {
-  id: string
-  description: string
-  amount: number
-  category: string
-  date: string
-  type: "income" | "expense"
-  notes?: string
-}
+import { useRecurringContext } from "@/contexts/dashboard"
+import { useAuth } from "@/contexts/AuthContext"
+import { hasSalaryEntryThisMonth } from "@/lib/firestore-entries"
 
 interface SalaryReminderNotificationProps {
-  entries: Entry[]
+  entries?: unknown[]
 }
 
 /**
  * Component to handle salary reminder notifications
  * Requests permission and schedules monthly reminders
  */
-export function SalaryReminderNotification({ entries }: SalaryReminderNotificationProps) {
+export function SalaryReminderNotification(_props: SalaryReminderNotificationProps) {
   const [hasPermission, setHasPermission] = useState(false)
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false)
   const [permissionDenied, setPermissionDenied] = useState(false)
+  const { recurringTransactions } = useRecurringContext()
+  const { user } = useAuth()
+
+  // If the user has an active salary recurring transaction, skip the reminder entirely
+  const hasSalaryRecurring = recurringTransactions.some(
+    (r) =>
+      r.isActive &&
+      r.type === "income" &&
+      (r.category?.toLowerCase() === "salary" || r.name?.toLowerCase().includes("salary"))
+  )
 
   useEffect(() => {
     // Check current permission status
     if ("Notification" in window) {
       setHasPermission(canSendNotifications())
       setPermissionDenied(Notification.permission === "denied")
-      
+
       // Show prompt if permission not yet requested
       if (Notification.permission === "default") {
         setShowPermissionPrompt(true)
@@ -47,14 +49,21 @@ export function SalaryReminderNotification({ entries }: SalaryReminderNotificati
     }
   }, [])
 
-  const entriesRef = useRef(entries)
-  entriesRef.current = entries
-
   useEffect(() => {
     if (!hasPermission) return
-    const cleanup = scheduleSalaryReminder(() => shouldRemindAboutSalary(entriesRef.current))
+    if (hasSalaryRecurring) return
+
+    const cleanup = scheduleSalaryReminder(async () => {
+      const today = new Date()
+      const day = today.getDate()
+      if (day < 1 || day > 3) return { shouldNotify: false, monthName: "" }
+      if (!user) return { shouldNotify: false, monthName: "" }
+      const hasSalary = await hasSalaryEntryThisMonth(user.uid)
+      const monthName = today.toLocaleString("en-US", { month: "long" })
+      return { shouldNotify: !hasSalary, monthName }
+    })
     return cleanup
-  }, [hasPermission])
+  }, [hasPermission, hasSalaryRecurring])
 
   const handleRequestPermission = async () => {
     const granted = await requestNotificationPermission()

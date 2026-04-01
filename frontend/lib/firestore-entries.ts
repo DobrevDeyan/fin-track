@@ -525,6 +525,28 @@ export async function deleteEntry(
 }
 
 /**
+ * Check if the user has any salary income entry for the current calendar month.
+ * Uses a direct Firestore query — not affected by the 20-entry pagination limit.
+ */
+export async function hasSalaryEntryThisMonth(userId: string): Promise<boolean> {
+  const now = new Date()
+  const monthStart = Timestamp.fromDate(new Date(now.getFullYear(), now.getMonth(), 1))
+  const monthEnd = Timestamp.fromDate(new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59))
+  const { limit } = await import("firebase/firestore")
+  const q = query(
+    collection(db, "entries"),
+    where("userId", "==", userId),
+    where("type", "==", "income"),
+    where("category", "==", "Salary"),
+    where("date", ">=", monthStart),
+    where("date", "<=", monthEnd),
+    limit(1)
+  )
+  const snap = await getDocs(q)
+  return !snap.empty
+}
+
+/**
  * Get a single entry by ID
  */
 export async function getEntry(

@@ -167,12 +167,6 @@ export default function SettingsPage() {
         allow_promotion_codes: true,
       })
 
-      const timeout = setTimeout(() => {
-        unsubscribe()
-        setCheckoutLoading(false)
-        toast.error("Checkout is taking too long. Please try again.")
-      }, 30_000)
-
       const unsubscribe = onSnapshot(docRef, (snap) => {
         const data = snap.data()
         if (data?.error) {
@@ -188,6 +182,12 @@ export default function SettingsPage() {
           unsubscribe()
         }
       })
+
+      const timeout = setTimeout(() => {
+        unsubscribe()
+        setCheckoutLoading(false)
+        toast.error("Checkout is taking too long. Please try again.")
+      }, 30_000)
     } catch {
       toast.error("Could not create checkout session. Please try again.")
       setCheckoutLoading(false)

@@ -24,29 +24,38 @@ export function NotificationListener() {
     })
   }, [user])
 
-  // Foreground FCM message → system notification + in-app toast
+  // Foreground FCM message — behaviour differs by platform:
+  //   Mobile  → system notification only (native banner, no duplicate toast)
+  //   Desktop → in-app toast only (system banners are intrusive on desktop)
+  // Background messages are always handled by the SW regardless of this.
   useEffect(() => {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return
     return onForegroundMessage(({ title, body, url }) => {
-      // 1. System notification (persists in notification shade)
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.ready.then((reg) => {
-          reg.showNotification(title ?? "Pocket", {
-            body: body ?? "",
-            icon: "/icons/favicon_dark/web-app-manifest-192x192.png",
-            badge: "/icons/favicon_dark/favicon-96x96.png",
-            tag: "pocket-foreground",
-            data: { url: url ?? "/dashboard" },
+      const isMobile =
+        (navigator as any).userAgentData?.mobile ??
+        /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+
+      if (isMobile) {
+        // System notification — shows as a native banner and persists in the shade
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(title ?? "Pocket", {
+              body: body ?? "",
+              icon: "/icons/favicon_dark/web-app-manifest-192x192.png",
+              badge: "/icons/favicon_dark/favicon-96x96.png",
+              tag: "pocket-foreground",
+              data: { url: url ?? "/dashboard" },
+            })
           })
+        }
+      } else {
+        // In-app toast — less intrusive for desktop users already looking at the screen
+        toast(title ?? "Pocket", {
+          description: body,
+          action: url ? { label: "View", onClick: () => { window.location.href = url } } : undefined,
+          duration: 8000,
         })
       }
-
-      // 2. In-app toast (immediate visual feedback while inside the app)
-      toast(title ?? "Pocket", {
-        description: body,
-        action: url ? { label: "View", onClick: () => { window.location.href = url } } : undefined,
-        duration: 6000,
-      })
     })
   }, [])
 

@@ -54,7 +54,18 @@ const nextConfig = {
 
   // Experimental features for better performance
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'firebase/firestore', 'firebase/auth', 'recharts', 'framer-motion'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'recharts',
+      'framer-motion',
+      'firebase/firestore',
+      'firebase/auth',
+      'firebase/messaging',
+      'firebase/functions',
+      'firebase/storage',
+      'firebase/analytics',
+    ],
   },
 }
 
