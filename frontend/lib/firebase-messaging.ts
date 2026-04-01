@@ -67,10 +67,12 @@ export function onForegroundMessage(
   if (!m) return () => {}
 
   return onMessage(m, (payload) => {
+    // Data-only messages: all fields live in payload.data
+    const d = payload.data ?? {}
     handler({
-      title: payload.notification?.title,
-      body: payload.notification?.body,
-      url: (payload.data?.url as string | undefined) ?? "/dashboard",
+      title: d.title ?? payload.notification?.title,
+      body: d.body ?? payload.notification?.body,
+      url: d.url ?? "/dashboard",
     })
   })
 }

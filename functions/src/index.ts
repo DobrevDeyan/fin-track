@@ -380,37 +380,29 @@ async function sendPushToUser(
     tokens.map(async (token) => {
       try {
         const absUrl = `https://fin-track-adc2c.firebaseapp.com${notification.url ?? "/dashboard/"}`;
+        // Data-only message — no top-level `notification` field.
+        // This prevents the Firebase SDK from auto-displaying a bare notification
+        // and lets our SW / foreground handler render the full title + body.
         await admin.messaging().send({
           token,
-          notification: {
+          data: {
             title: notification.title,
             body: notification.body,
-          },
-          data: {
             url: absUrl,
+            tag: notification.tag ?? "pocket",
           },
           webpush: {
-            notification: {
-              icon: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/web-app-manifest-192x192.png",
-              badge: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/favicon-96x96.png",
-              tag: notification.tag ?? "pocket",
-              renotify: true,
-            },
             fcmOptions: {
               link: absUrl,
             },
           },
           android: {
             priority: "high",
-            notification: {
-              icon: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/web-app-manifest-192x192.png",
-              tag: notification.tag ?? "pocket",
-              clickAction: absUrl,
-            },
           },
           apns: {
             payload: {
               aps: {
+                "content-available": 1,
                 alert: {
                   title: notification.title,
                   body: notification.body,
@@ -418,9 +410,6 @@ async function sendPushToUser(
                 sound: "default",
                 badge: 1,
               },
-            },
-            fcmOptions: {
-              imageUrl: "https://fin-track-adc2c.firebaseapp.com/icons/favicon_dark/web-app-manifest-192x192.png",
             },
           },
         });

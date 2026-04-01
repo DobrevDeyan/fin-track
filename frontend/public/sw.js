@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v49'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v50'; // Increment this when deploying new version
 
 // ─── Firebase Messaging (background push notifications) ───────────────────────
 // Uses Firebase compat SDK so we can handle background messages in this SW.
@@ -21,18 +21,21 @@ firebase.initializeApp({
 
 const firebaseMessaging = firebase.messaging();
 
-// Background messages — app is closed or in a background tab
+// Background messages — app is closed or in a background tab.
+// We use data-only FCM messages so the SDK never auto-displays.
+// All display fields live in payload.data.
 firebaseMessaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title ?? "Pocket";
-  const body  = payload.notification?.body  ?? "";
-  const url   = payload.data?.url           ?? "/notifications";
+  const d     = payload.data || {};
+  const title = d.title || "Pocket";
+  const body  = d.body  || "";
+  const url   = d.url   || "/notifications";
+  const tag   = d.tag   || "pocket";
 
   self.registration.showNotification(title, {
     body,
     icon:  "/icons/favicon_dark/web-app-manifest-192x192.png",
     badge: "/icons/favicon_dark/favicon-96x96.png",
-    tag:   payload.data?.tag ?? "pocket",
-    renotify: false,
+    tag,
     data: { url },
   });
 });
