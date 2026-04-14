@@ -17,7 +17,7 @@ import React, {
   useCallback,
   useRef,
 } from "react"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDocFromServer } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/AuthContext"
 import {
@@ -69,7 +69,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
 
-    getDoc(doc(db, "users", user.uid))
+    getDocFromServer(doc(db, "users", user.uid))
       .then((snap) => {
         const hid = snap.data()?.householdId as string | undefined
         setHouseholdId(hid ?? null)

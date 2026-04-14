@@ -32,3 +32,19 @@ Honest Assessment
 The app is technically solid and has features (AI digest, receipt scanning, health score) that more established apps don't. The problem is time-to-value is too long because everything is manual entry. Bank connectivity would do more for acquisition than any other single feature. The second-best lever is the shared budgeting viral loop.
 
 If you want I can dig into a specific one of these and map out what implementation would actually look like given the existing data model.
+
+
+What was implemented
+8 files created or modified:
+
+File	Change
+firestore-types.ts	Added HouseholdDocument, HouseholdMember, HouseholdInviteDocument types
+firestore.rules	Added households and householdInvites collection rules
+functions/src/index.ts	5 new Cloud Functions: createHousehold, sendHouseholdInvite, acceptHouseholdInvite, getHouseholdEntries, leaveHousehold
+firestore-household.ts	New — client callable wrappers + subscribeToHousehold listener
+HouseholdContext.tsx	New — React context managing household state and mode toggle
+layout.tsx	Wrapped app in HouseholdProvider
+settings/page.tsx	Household card: create, invite by email, copy invite link, leave
+household/accept/page.tsx	New public page — validates token, joins household
+dashboard/page.tsx	Personal/Family toggle in header + merged family transactions view
+One thing to be aware of before deploying: the getHouseholdEntries function queries entries with where("userId", "in", [...]) + orderBy("date", "desc"). Firestore will prompt you to create a composite index the first time it runs — follow the Firebase Console link it provides in the error message.
