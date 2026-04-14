@@ -1,78 +1,111 @@
-Here's my assessment after reviewing the full codebase. I'll rank by acquisition impact, not technical complexity.
+# Pocket — Product Plan & Implementation Log
 
-Top Features for User Acquisition
-1. Bank Connectivity (Open Banking / Plaid)
+## Feature Priority Assessment
+
+Ranked by user acquisition impact, not technical complexity.
+
+### 1. Bank Connectivity (Open Banking / Plaid) — NOT YET BUILT
 Highest single impact. Manual entry is the primary reason people abandon personal finance apps before they see value. Every competitor that added automatic import saw massive conversion lift.
+- EU: GoCardless (formerly Nordigen) — free tier, PSD2 bank feeds
+- US: Plaid
+- Collapses time-to-value from weeks to minutes
+- **Status**: Deferred — awaiting API keys from user
 
-EU: Nordigen (now GoCardless) has a free tier with PSD2 bank feeds
-US: Plaid
-This collapses the time-to-value from weeks to minutes
-2. Shared / Family Budgeting
-Built-in viral loop — one user invites their partner. You currently have no household/shared mode. This is the fastest path to organic acquisition because every new user drags in at least one more.
+### 2. Shared / Family Budgeting — ✅ IMPLEMENTED
+Built-in viral loop: one user invites their partner. Fastest path to organic acquisition.
 
-Minimal MVP: shared workspace with separate auth, merged transaction view, per-person income tracking.
+**What's built:**
+- `HouseholdDocument`, `HouseholdMember`, `HouseholdInviteDocument` types in `firestore-types.ts`
+- Firestore rules: `households` (read by `memberUids` flat array), `householdInvites` (owner-only read)
+- Cloud Functions (`europe-west4`):
+  - `createHousehold` — creates household, sets owner as first member (email from auth token, lowercased)
+  - `sendHouseholdInvite` — creates 7-day invite token, expires old pending invites for same email
+  - `acceptHouseholdInvite` — validates token + email match, adds member via `arrayUnion`, sets `householdId` on user doc
+  - `getHouseholdEntries` — returns merged entries for all household members
+  - `leaveHousehold` — removes member, transfers ownership if owner leaves, deletes household if last member
+  - `getMyHousehold` — Admin SDK lookup by user doc pointer → ownerUid fallback → members fallback; backfills `memberUids` if missing
+- `firestore-household.ts` — callable wrappers + `subscribeToHousehold` listener
+- `HouseholdContext.tsx` — loads via `getMyHousehold` CF on mount; `onSnapshot` for live member updates; exposes `refreshHousehold()` for manual refresh
+- `settings/page.tsx` — household card: create, invite by email, copy link, send via email app, leave; "↻ Refresh" button to pull latest members
+- `household/accept/page.tsx` — public page (outside `(app)` auth group), handles unauthenticated users with login redirect using `?returnUrl=` param
+- `dashboard/page.tsx` — Personal / Family toggle in header; merged family transactions view
 
-3. Subscription Tracker (Dedicated Page)
-High virality. People post "I found €X/month in forgotten subscriptions" on social media. You already have recurring transactions — a dedicated subscriptions page with "you're paying X for Y, cancel?"-style nudges costs little to build and drives word-of-mouth.
+**Known gotcha:** `getHouseholdEntries` uses `where("userId", "in", [...]) + orderBy("date", "desc")` — Firestore will prompt for a composite index the first time it runs. Follow the Firebase Console link in the error.
 
-4. Shareable Achievement Cards
-You have a health score, savings goals, and a leaderboard. You're not letting users share these outside the app. A "I saved 25% of my income this month" card (PNG export, ready for Instagram/Twitter) is free advertising. Finance content performs strongly on social.
+**Bugs fixed post-launch:**
+- `onSnapshot` error callback was clearing household state on permission errors → changed to no-op; CF-loaded data preserved
+- `createHousehold` stored email from user doc (could be empty) → now uses `request.auth?.token?.email` (verified auth token)
+- `AcceptInviteContent` redirect used `?redirect=` param but login page reads `?returnUrl=` → invite token was silently lost after login
+- Firestore rules used `members.map(m, m.uid)` (CLI warnings) → replaced with flat `memberUids` string array
 
-5. App Store Listing (TWA / Capacitor)
-You're already a PWA. Submitting a Trusted Web Activity (TWA) to the Google Play Store is low effort and unlocks a completely different discovery channel. App Store (iOS) requires more work (Capacitor wrapper) but the addressable audience is large.
+### 3. Subscription Tracker (/subscriptions) — ✅ IMPLEMENTED
 
-6. Debt Payoff Planner
-Debt is emotionally urgent. People in debt search for tools actively. Snowball/avalanche calculators with a "you'll be debt-free by [date]" output convert strongly because the value is immediately tangible. You have nothing for this segment right now.
+**What's built** (`frontend/app/(app)/subscriptions/page.tsx`):
+- Loads all recurring transactions, filters to expenses only
+- Monthly + annual cost summary cards
+- Category breakdown with progress bars (proportional to total monthly spend)
+- Sort by cost / name / next charge date
+- Pause/resume any subscription with one tap (calls `updateRecurringTransaction`)
+- ⚠ Flags subscriptions taking >30% of total spend (AlertTriangle icon)
+- Savings tip: shows how much you'd save cancelling the top active item
+- Navigation entry added to AppNavbar (desktop + mobile)
 
-What I'd Deprioritize
-Tax export — important for retention, not acquisition
-Investment portfolio tracking — high complexity, niche at your scale
-Advanced custom reports — power user feature, won't move the acquisition needle
-Honest Assessment
-The app is technically solid and has features (AI digest, receipt scanning, health score) that more established apps don't. The problem is time-to-value is too long because everything is manual entry. Bank connectivity would do more for acquisition than any other single feature. The second-best lever is the shared budgeting viral loop.
+### 4. Shareable Achievement Cards — ✅ IMPLEMENTED
 
-If you want I can dig into a specific one of these and map out what implementation would actually look like given the existing data model.
+**What's built** (`frontend/components/dashboard/AchievementCard.tsx`):
+- Share icon overlaid on the Health Score card on the dashboard
+- Opens a dialog with a gradient card (color-coded by health tier) showing: health score + tier label, income, expenses, savings rate %, net savings
+- Download as PNG — `html2canvas` at 3× resolution for crisp social sharing
+- Native Share Sheet on mobile (`navigator.share`) — falls back to download on desktop
+- Background decoration circles, Pocket branding, and current month in the card
 
+### 5. App Store Listing (TWA) — NOT YET BUILT
+Already a PWA. TWA submission to Google Play is low effort; iOS (Capacitor) requires more work.
+- **Status**: Deferred — non-code task
 
-What was implemented
-8 files created or modified:
+### 6. Debt Payoff Planner (/debt) — ✅ IMPLEMENTED
 
-File	Change
-firestore-types.ts	Added HouseholdDocument, HouseholdMember, HouseholdInviteDocument types
-firestore.rules	Added households and householdInvites collection rules
-functions/src/index.ts	5 new Cloud Functions: createHousehold, sendHouseholdInvite, acceptHouseholdInvite, getHouseholdEntries, leaveHousehold
-firestore-household.ts	New — client callable wrappers + subscribeToHousehold listener
-HouseholdContext.tsx	New — React context managing household state and mode toggle
-layout.tsx	Wrapped app in HouseholdProvider
-settings/page.tsx	Household card: create, invite by email, copy invite link, leave
-household/accept/page.tsx	New public page — validates token, joins household
-dashboard/page.tsx	Personal/Family toggle in header + merged family transactions view
-One thing to be aware of before deploying: the getHouseholdEntries function queries entries with where("userId", "in", [...]) + orderBy("date", "desc"). Firestore will prompt you to create a composite index the first time it runs — follow the Firebase Console link it provides in the error message.
+**What's built** (`frontend/app/(app)/debt/page.tsx`):
+- Add any number of debts: credit card, personal loan, mortgage, student loan, other
+- Debts persist to Firestore at `userDebts/{userId}` via `getUserDebts` / `saveUserDebts`
+- Snowball vs Avalanche strategy toggle with explanations
+- Extra monthly payment input (on top of minimums)
+- "Debt-free by [Month Year]" headline card
+- Total interest to pay summary
+- Recharts `AreaChart` showing balance declining over time (quarterly data points, 50-year cap)
+- Side-by-side strategy comparison: which is faster / cheaper
+- Add/Edit/Delete debts via Dialog forms
+- Saving indicator (bottom-right toast-style indicator while persisting)
+- Firestore rule: `userDebts/{userId}` read/write by owner only
+- Navigation entry added to AppNavbar (desktop + mobile)
+- `DebtItem`, `DebtType`, `UserDebtsDocument` types added to `firestore-types.ts`
 
+---
 
+## What to Deprioritize
+- **Tax export** — important for retention, not acquisition
+- **Investment portfolio tracking** — high complexity, niche at this scale
+- **Advanced custom reports** — power user feature, won't move the acquisition needle
 
+---
 
-Subscription Tracker (/subscriptions)
+## Architecture Notes
 
-Loads all your recurring expenses
-Monthly + annual cost summary cards
-Category breakdown with progress bars
-Sort by cost / name / next charge date
-Pause/resume any subscription with one click
-Flags subscriptions taking >30% of your total spend
-Savings tip showing how much you'd save cancelling the top item
-Debt Payoff Planner (/debt)
+### Security
+- All Firestore writes for household data go through Cloud Functions (Admin SDK) — client never writes directly
+- `memberUids` flat string array used for Firestore `in` checks (nested object `.map()` queries had CLI warnings and reliability issues)
+- ML service endpoints protected by Firebase Auth token verification + `express-rate-limit`
+- All user-originated strings sanitized (`sanitizeInput`/`sanitizeLabel`) before Gemini prompts
 
-Add any number of debts (credit cards, loans, mortgage, etc.)
-Snowball vs Avalanche strategy toggle with explanation
-Extra monthly payment input
-"Debt-free by [Month Year]" headline
-Recharts area chart showing balance declining over time
-Side-by-side strategy comparison (months + interest saved)
-Debts persist to Firestore (userDebts/{userId})
-Shareable Achievement Cards
+### Currency Formatting
+- Use `formatCurrency(amount, { currency: userCurrency })` from `@/lib/currency-utils`
+- Do NOT destructure `formatAmount` or `fmt` from `useCurrency()` — those don't exist
+- Pattern: `const { userCurrency } = useCurrency(); const fmt = (n: number) => formatCurrency(n, { currency: userCurrency })`
 
-Share icon on the Health Score card on the dashboard
-Opens a dialog with a gradient card showing: health score + tier, income, expenses, savings rate
-Download as PNG (html2canvas, 3× resolution for crisp social sharing)
-Native Share Sheet on mobile (falls back to download on desktop)
+### Exchange Rates
+- Frankfurter API is proxied through `/api/exchange-rate` (Next.js API route) to avoid CORS
+- `frontend/lib/exchange-rate.ts` calls `/api/exchange-rate` not the external URL directly
+
+### Recurring Transactions
+- `nextDate` is a Firestore `Timestamp` — call `.toDate()` before date math
+- `updateRecurringTransaction(id, patch)` for partial updates (used by subscription pause/resume)

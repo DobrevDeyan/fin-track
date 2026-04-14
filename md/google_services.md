@@ -38,8 +38,14 @@ Managed via the [Firebase Console](https://console.firebase.google.com/project/f
 | `onEntryDeleted` | `europe-west4` | `document.deleted` (entries) | On every entry deletion | Audit log — writes to `auditLog` collection |
 | `onLargeEntryCreated` | `europe-west4` | `document.created` (entries) | On every entry creation | Flags transactions ≥ €10,000 in `auditLog` |
 | `processMyRecurringTransactions` | `us-central1` | HTTP (callable) | On-demand | User-triggered recurring transaction processing. Rate limited: 3 calls / 5 min |
-| `processRecurringTransactionsScheduled` | `us-central1` | Cloud Scheduler | Daily at 01:00 UTC | Auto-processes all due recurring transactions. Last run: ✅ 25 Mar 2026 |
-| `resetMonthlyScanCounts` | `us-central1` | Cloud Scheduler | 1st of month at 00:05 UTC | Resets OCR scan quota for all users. Next run: 1 Apr 2026 |
+| `processRecurringTransactionsScheduled` | `us-central1` | Cloud Scheduler | Daily at 01:00 UTC | Auto-processes all due recurring transactions |
+| `resetMonthlyScanCounts` | `us-central1` | Cloud Scheduler | 1st of month at 00:05 UTC | Resets OCR scan quota for all users |
+| `getMyHousehold` | `europe-west4` | HTTP (callable) | On-demand | Returns household data via Admin SDK (bypasses rules/cache). Backfills `memberUids` if missing |
+| `createHousehold` | `europe-west4` | HTTP (callable) | On-demand | Creates household, sets owner as first member (email from auth token, lowercased) |
+| `sendHouseholdInvite` | `europe-west4` | HTTP (callable) | On-demand | Creates 7-day invite token; expires existing pending invites for same email+household |
+| `acceptHouseholdInvite` | `europe-west4` | HTTP (callable) | On-demand | Validates token + email; adds member via `arrayUnion`; sets `householdId` on user doc |
+| `getHouseholdEntries` | `europe-west4` | HTTP (callable) | On-demand | Returns merged entries for all household members |
+| `leaveHousehold` | `europe-west4` | HTTP (callable) | On-demand | Removes member; transfers ownership if owner; deletes household if last member |
 
 ### Stripe Extension Functions (v1, managed by Firebase Extension)
 | Function | Region | Trigger | Purpose |
@@ -75,7 +81,7 @@ Managed via the [Google Cloud Console](https://console.cloud.google.com/).
 
 | Collection | Purpose | Access |
 | :--- | :--- | :--- |
-| `users` | User profiles + `fcmTokens[]` array for push notifications | Owner only |
+| `users` | User profiles + `fcmTokens[]` + `householdId` pointer | Owner only |
 | `entries` | Financial transactions | Owner only |
 | `budgets` | Monthly budgets | Owner only |
 | `savingsAccounts` | Savings accounts | Owner only |
@@ -85,6 +91,9 @@ Managed via the [Google Cloud Console](https://console.cloud.google.com/).
 | `aiInsights` | AI-generated monthly digest cache | Owner only (doc ID = userId) |
 | `scanUsage` | OCR scan quota per user | Read only (written by Admin SDK) |
 | `assets` | Net worth assets tracking | Owner only |
+| `households` | Household name, ownerUid, members[], memberUids[] | Members (`uid in memberUids`) — read only; all writes via CF |
+| `householdInvites` | 7-day email invite tokens | Owner/inviter only (written by CF) |
+| `userDebts` | Debt Payoff Planner items | Owner only (doc ID = userId) |
 | `auditLog` | Security audit trail (deletions, large transactions) | Admin SDK only — no client access |
 | `rateLimits` | Per-user rate limit tracking for callable functions | Admin SDK only — no client access |
 | `customers` | Stripe customer data (managed by extension) | Owner only |

@@ -1,7 +1,7 @@
 # Pocket — Technical Documentation
 
-**Version:** 1.0
-**Last Updated:** March 2026
+**Version:** 2.0
+**Last Updated:** April 2026
 **Framework:** Next.js 14 (App Router)
 
 ---
@@ -96,8 +96,14 @@ fin-track/
 │   │   ├── (app)/                  # Authenticated routes (auth-gated)
 │   │   │   ├── dashboard/          # Main dashboard
 │   │   │   ├── reports/            # Reports & AI digest
-│   │   │   ├── calendar/           # Calendar view
-│   │   │   └── settings/           # Account & subscription settings
+│   │   │   ├── subscriptions/      # Subscription Tracker
+│   │   │   ├── debt/               # Debt Payoff Planner
+│   │   │   ├── leaderboard/        # Community Health Score leaderboard
+│   │   │   ├── net-worth/          # Net Worth page (nav link disabled)
+│   │   │   ├── receipts/           # Receipt gallery
+│   │   │   └── settings/           # Account, subscription, household settings
+│   │   ├── household/
+│   │   │   └── accept/             # Public invite acceptance page (outside auth gate)
 │   │   ├── auth/                   # Login / register / forgot-password
 │   │   └── page.tsx                # Landing page
 │   ├── components/
@@ -111,6 +117,7 @@ fin-track/
 │   │   ├── landing/                # Marketing / landing page
 │   │   └── ui/                     # shadcn/ui base components
 │   ├── contexts/
+│   │   ├── HouseholdContext.tsx        # Family Budgeting state
 │   │   └── dashboard/
 │   │       ├── DashboardProvider.tsx   # Nested provider wrapper
 │   │       ├── FinancialSummaryContext.tsx
@@ -125,6 +132,8 @@ fin-track/
 │   │   ├── utils/                  # logger, timestamp, formatting
 │   │   ├── firebase.ts             # Firebase initialization
 │   │   ├── firestore-*.ts          # Firestore CRUD per collection
+│   │   ├── firestore-household.ts  # Callable CF wrappers + household listener
+│   │   ├── firestore-debt.ts       # getUserDebts / saveUserDebts
 │   │   ├── insights-engine.ts      # Algorithmic AI (client-side)
 │   │   ├── insights-api.ts         # ML service HTTP client
 │   │   ├── firestore-insights.ts   # AI digest Firestore cache
@@ -399,7 +408,7 @@ db = initializeFirestore(app, {
 
 | Collection | Document ID | Description |
 |-----------|------------|-------------|
-| `users` | Firebase UID | User profile (name, email, currency, language) |
+| `users` | Firebase UID | User profile (name, email, currency, language, `householdId`) |
 | `entries` | Auto | Transactions (flat, not subcollection) |
 | `budgets` | Auto | Budget limits per category |
 | `goals` | Auto | Savings goals |
@@ -407,6 +416,9 @@ db = initializeFirestore(app, {
 | `recurringTransactions` | Auto | Recurring transaction templates |
 | `financialSummaries` | Firebase UID | Aggregated monthly data (single doc per user) |
 | `aiInsights` | Firebase UID | Cached AI-generated monthly digests |
+| `households` | Auto | Household doc: name, ownerUid, members[], memberUids[] |
+| `householdInvites` | Auto | 7-day email invite tokens |
+| `userDebts` | Firebase UID | Debt Payoff Planner items array (single doc per user) |
 | `customers` | Firebase UID | Stripe customer data (managed by extension) |
 | `products` | Stripe product ID | Stripe products with `firebaseRole` metadata |
 
@@ -424,6 +436,18 @@ match /financialSummaries/{userId} {
   allow read, write: if request.auth.uid == userId;
 }
 match /aiInsights/{userId} {
+  allow read, write: if request.auth.uid == userId;
+}
+
+// Households — members check via flat memberUids array
+// (nested object map() queries have CLI warnings; flat array is reliable)
+match /households/{householdId} {
+  allow read: if request.auth != null && request.auth.uid in resource.data.memberUids;
+  allow write: if false;  // All writes via Cloud Functions (Admin SDK)
+}
+
+// Debt planner (one doc per user)
+match /userDebts/{userId} {
   allow read, write: if request.auth.uid == userId;
 }
 

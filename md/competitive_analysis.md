@@ -1,7 +1,7 @@
 # Pocket — Competitive Analysis
 
 **Analysis Date**: March 2026
-**Last Updated**: March 2026
+**Last Updated**: April 2026
 
 ---
 
@@ -100,13 +100,16 @@ Pocket is a **privacy-first, manual-entry financial management PWA** competing a
 | Feature | Pocket | Monarch | Simplifi | Rocket Money |
 |---------|--------|---------|----------|--------------|
 | Recurring Templates | ✅ | ✅ | ✅ | ✅ |
-| Subscription Tracking | ✅ | ✅ | ✅ | ✅ |
+| Subscription Tracker Page | ✅ | ✅ | ✅ | ✅ |
 | Auto-Creation (Cloud Function) | ✅ | ✅ | ✅ | ✅ |
 | Frequency Options | ✅ | ✅ | ✅ | ✅ |
 | Active / Inactive Toggle | ✅ | ✅ | ✅ | ✅ |
+| Category Breakdown + % Share | ✅ | ❌ | ❌ | ❌ |
+| High-spend Warning (>30%) | ✅ | ❌ | ❌ | ❌ |
+| Annual Cost View | ✅ | ✅ | ❌ | ✅ |
 | Cancellation Help | ❌ | ❌ | ✅ | ✅ |
 
-**Verdict**: ✅ **Complete** — Cloud Function processes daily at 1:00 AM UTC
+**Verdict**: ✅ **Complete** — Dedicated `/subscriptions` page with sort, pause/resume, category breakdown, and spend warnings. Cloud Function processes daily at 1:00 AM UTC.
 
 ---
 
@@ -162,11 +165,14 @@ Pocket is a **privacy-first, manual-entry financial management PWA** competing a
 
 | Feature | Pocket | Monarch |
 |---------|--------|---------|
-| Separate Logins | ❌ | ✅ |
+| Separate Logins | ✅ | ✅ |
+| Household Invite (email link) | ✅ | ✅ |
+| Shared / Merged Expenses View | ✅ | ✅ |
+| Per-Person Income Tracking | ✅ | ✅ |
 | Shared Budgets | ❌ | ✅ |
-| Joint Expenses | ❌ | ✅ |
+| Joint Expense Splitting | ❌ | ✅ |
 
-**Verdict**: ❌ **Gap** — Planned for a future quarter
+**Verdict**: ✅ **Competitive** — Household invite flow, merged family view, Personal/Family toggle fully implemented (April 2026). Shared budgets and expense splitting are future work.
 
 ---
 
@@ -188,9 +194,8 @@ Pocket is a **privacy-first, manual-entry financial management PWA** competing a
 
 ### Gaps to Address (0–5/10)
 11. **Investment Tracking** — 0/10
-12. **Net Worth** — 0/10
-13. **Advanced Analytics** — 5/10
-14. **Multi-User Support** — 0/10
+12. **Advanced Analytics (Sankey)** — 5/10
+13. **Shared Budgets / Expense Splitting** — 4/10 (household merging done; per-budget sharing planned)
 
 ---
 
@@ -281,14 +286,13 @@ Pocket's freemium tiers:
 
 ### Where We Need Work
 1. Investment Tracking — **Major Gap**
-2. Advanced Analytics (YoY, Sankey) — **Minor Gap**
-3. Net Worth — **Missing**
-4. Multi-User — **Missing**
+2. Advanced Analytics (Sankey) — **Minor Gap** (YoY now implemented)
+3. Shared Budgets / Expense Splitting — **Minor Gap** (household merging implemented, shared budgets planned)
 
-### Overall Score: **9/10**
+### Overall Score: **9.5/10**
 
 ---
 
-**Document Version**: 3.0
-**Last Updated**: March 2026
-**Next Review**: June 2026
+**Document Version**: 4.0
+**Last Updated**: April 2026
+**Next Review**: July 2026

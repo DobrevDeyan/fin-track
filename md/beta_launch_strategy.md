@@ -207,6 +207,10 @@ Post to YouTube (searchable), include on Product Hunt page and landing page.
 | 🔴 Critical | Set up Plausible/Umami analytics | ✅ Done (opt-in via env var) | — | Understand your funnel |
 | 🟠 High | Enable cash flow forecast | ⏸ Built, temporarily disabled | 5 min | Justifies Pro upgrade |
 | 🟠 High | Raise free tier to 100 tx for beta | ⬜ Pending | 5 min | Better first impression |
+| 🟠 High | **Family Budgeting invite flow** | ✅ Done (April 2026) | — | Viral loop — each user drags in a partner |
+| 🟠 High | **Subscription Tracker** | ✅ Done (April 2026) | — | "I found €X in forgotten subscriptions" virality |
+| 🟠 High | **Shareable Achievement Cards** | ✅ Done (April 2026) | — | Social sharing — free advertising |
+| 🟠 High | **Debt Payoff Planner** | ✅ Done (April 2026) | — | High-intent SEO target |
 | 🟠 High | Post on Reddit r/personalfinance | ⬜ Pending | 1 hour | First wave of real users |
 | 🟠 High | DM 10 people personally for feedback | ⬜ Pending | 2 hours | Highest quality early feedback |
 | 🟡 Medium | Product Hunt Ship page (waitlist) | ⬜ Pending | 1 hour | Build audience before launch day |
@@ -216,7 +220,7 @@ Post to YouTube (searchable), include on Product Hunt page and landing page.
 | 🟢 Later | 3 SEO blog posts | ⬜ Pending | 6 hours | Long-term organic traffic |
 | 🟢 Later | 3-minute YouTube demo video | ⬜ Pending | 3 hours | Product Hunt + landing page asset |
 
-### Pre-Launch Must-Fix — Status Update (March 22, 2026)
+### Pre-Launch Must-Fix — Status Update (April 15, 2026)
 
 **A. ~~Enable the Cash Flow Forecast~~** — Built and functional. Temporarily disabled on dashboard while UX is reviewed. Re-enable: uncomment `CashFlowForecast` in `frontend/app/(app)/dashboard/page.tsx`.
 
