@@ -48,3 +48,31 @@ settings/page.tsx	Household card: create, invite by email, copy invite link, lea
 household/accept/page.tsx	New public page — validates token, joins household
 dashboard/page.tsx	Personal/Family toggle in header + merged family transactions view
 One thing to be aware of before deploying: the getHouseholdEntries function queries entries with where("userId", "in", [...]) + orderBy("date", "desc"). Firestore will prompt you to create a composite index the first time it runs — follow the Firebase Console link it provides in the error message.
+
+
+
+
+Subscription Tracker (/subscriptions)
+
+Loads all your recurring expenses
+Monthly + annual cost summary cards
+Category breakdown with progress bars
+Sort by cost / name / next charge date
+Pause/resume any subscription with one click
+Flags subscriptions taking >30% of your total spend
+Savings tip showing how much you'd save cancelling the top item
+Debt Payoff Planner (/debt)
+
+Add any number of debts (credit cards, loans, mortgage, etc.)
+Snowball vs Avalanche strategy toggle with explanation
+Extra monthly payment input
+"Debt-free by [Month Year]" headline
+Recharts area chart showing balance declining over time
+Side-by-side strategy comparison (months + interest saved)
+Debts persist to Firestore (userDebts/{userId})
+Shareable Achievement Cards
+
+Share icon on the Health Score card on the dashboard
+Opens a dialog with a gradient card showing: health score + tier, income, expenses, savings rate
+Download as PNG (html2canvas, 3× resolution for crisp social sharing)
+Native Share Sheet on mobile (falls back to download on desktop)

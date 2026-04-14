@@ -962,6 +962,72 @@ interface HouseholdDocument {
 }
 
 /**
+ * Look up the caller's household (by ownerUid or members array) and repair
+ * the householdId pointer on their user doc if it is missing.
+ * Returns { householdId, name } or { householdId: null }.
+ */
+export const getMyHousehold = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const buildPayload = async (hdoc: FirebaseFirestore.DocumentSnapshot) => {
+      const data = hdoc.data()!;
+      // Backfill memberUids if missing
+      if (!data.memberUids) {
+        const uids = (data.members as HouseholdMember[]).map((m) => m.uid);
+        await hdoc.ref.update({ memberUids: uids });
+        data.memberUids = uids;
+      }
+      await db.collection("users").doc(userId).update({ householdId: hdoc.id });
+      return {
+        householdId: hdoc.id,
+        household: {
+          name: data.name as string,
+          ownerUid: data.ownerUid as string,
+          members: data.members as HouseholdMember[],
+          memberUids: data.memberUids as string[],
+        },
+      };
+    };
+
+    const userSnap = await db.collection("users").doc(userId).get();
+    const existingId = userSnap.data()?.householdId as string | undefined;
+    if (existingId) {
+      const hSnap = await db.collection("households").doc(existingId).get();
+      if (hSnap.exists) {
+        return buildPayload(hSnap);
+      }
+    }
+
+    // Not on user doc — search by ownerUid
+    const ownerSnap = await db
+      .collection("households")
+      .where("ownerUid", "==", userId)
+      .limit(1)
+      .get();
+
+    if (!ownerSnap.empty) {
+      return buildPayload(ownerSnap.docs[0]);
+    }
+
+    // Not owner — check member array
+    const memberSnap = await db
+      .collection("households")
+      .where("members", "array-contains", { uid: userId } as any)
+      .limit(1)
+      .get();
+
+    if (!memberSnap.empty) {
+      return buildPayload(memberSnap.docs[0]);
+    }
+
+    return { householdId: null, household: null };
+  }
+);
+
+/**
  * Create a new household. The caller becomes the owner and first member.
  * Returns { householdId }.
  */
@@ -995,7 +1061,8 @@ export const createHousehold = onCall(
     const userSnap = await db.collection("users").doc(userId).get();
     const userData = userSnap.data();
     const displayName = userData?.displayName || userData?.username || userData?.email || "Unknown";
-    const email = userData?.email || "";
+    // Prefer the verified email from the auth token over the user doc (doc email may be empty)
+    const email = (request.auth?.token?.email || userData?.email || "").toLowerCase();
 
     const member: HouseholdMember = {
       uid: userId,
@@ -1009,6 +1076,7 @@ export const createHousehold = onCall(
       name,
       ownerUid: userId,
       members: [member],
+      memberUids: [userId],
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -1169,6 +1237,7 @@ export const acceptHouseholdInvite = onCall(
     const batch = db.batch();
     batch.update(householdRef, {
       members: admin.firestore.FieldValue.arrayUnion(newMember),
+      memberUids: admin.firestore.FieldValue.arrayUnion(userId),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     batch.update(inviteDoc.ref, { status: "accepted" });
@@ -1295,9 +1364,10 @@ export const leaveHousehold = onCall(
       // Last member leaving — delete the household
       batch.delete(householdRef);
     } else {
-      const updates: Partial<HouseholdDocument & { updatedAt: unknown }> = {
+      const updates: Record<string, unknown> = {
         members: remainingMembers,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp() as unknown as admin.firestore.Timestamp,
+        memberUids: admin.firestore.FieldValue.arrayRemove(userId),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       // Transfer ownership if needed
       if (household.ownerUid === userId) {

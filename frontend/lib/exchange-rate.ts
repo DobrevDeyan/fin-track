@@ -8,7 +8,8 @@
 import type { SupportedCurrency } from "@/lib/constants/currency.constants"
 
 const CACHE_KEY = "fin_track_exchange_rate"
-const FRANKFURTER_URL = "https://api.frankfurter.app/latest"
+// Proxied through our own API route to avoid CORS issues with direct browser requests
+const FRANKFURTER_URL = "/api/exchange-rate"
 
 interface RateCache {
   date: string
@@ -48,7 +49,7 @@ export async function fetchExchangeRates(): Promise<ExchangeRates> {
   const cached = getCachedRates()
   if (cached) return cached
 
-  const res = await fetch(`${FRANKFURTER_URL}?from=EUR&to=USD`)
+  const res = await fetch(FRANKFURTER_URL)
   if (!res.ok) throw new Error(`Exchange rate fetch failed: ${res.status}`)
 
   const data = (await res.json()) as { date: string; rates: { USD: number } }

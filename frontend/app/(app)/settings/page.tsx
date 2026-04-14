@@ -121,6 +121,7 @@ export default function SettingsPage() {
     householdId,
     loading: householdLoading,
     refreshHouseholdEntries,
+    refreshHousehold,
   } = useHousehold()
   const [householdName, setHouseholdName] = useState("")
   const [creatingHousehold, setCreatingHousehold] = useState(false)
@@ -152,6 +153,7 @@ export default function SettingsPage() {
     setInviteLink(null)
     try {
       const result = await callSendHouseholdInvite(householdId, inviteEmail.trim())
+      console.log(result, 21321323)
       const link = `${window.location.origin}/household/accept?token=${result.data.token}`
       setInviteLink(link)
       setInviteEmail("")
@@ -442,7 +444,16 @@ export default function SettingsPage() {
             <>
               {/* Existing household */}
               <div className="rounded-md bg-muted/50 p-3 space-y-1">
-                <p className="text-sm font-medium">{household.name}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{household.name}</p>
+                  <button
+                    onClick={() => refreshHousehold()}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    title="Refresh member list"
+                  >
+                    ↻ Refresh
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {household.members.length} member{household.members.length !== 1 ? "s" : ""}
                 </p>
@@ -458,13 +469,17 @@ export default function SettingsPage() {
 
               {/* Invite form */}
               <div className="space-y-2">
-                <Label className="text-xs">Invite a family member by email</Label>
+                <Label className="text-xs">Invite a family member</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enter their email, generate an invite link, then send it to them however you like.
+                </p>
                 <div className="flex gap-2">
                   <Input
                     type="email"
                     placeholder="partner@email.com"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSendInvite() }}
                     className="h-8 text-sm"
                   />
                   <Button
@@ -474,24 +489,36 @@ export default function SettingsPage() {
                     onClick={handleSendInvite}
                   >
                     {sendingInvite ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
                     ) : (
-                      <UserPlus className="h-4 w-4" />
+                      <UserPlus className="h-4 w-4 mr-1" />
                     )}
+                    Generate link
                   </Button>
                 </div>
                 {inviteLink && (
-                  <div className="flex items-center gap-2 rounded-md border p-2 text-xs bg-muted">
-                    <span className="truncate flex-1 text-muted-foreground">{inviteLink}</span>
-                    <button
-                      className="shrink-0 hover:text-foreground"
-                      onClick={() => {
-                        navigator.clipboard.writeText(inviteLink)
-                        toast.success("Link copied!")
-                      }}
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Share this link with your family member:</p>
+                    <div className="flex items-center gap-2 rounded-md border p-2 text-xs bg-muted">
+                      <span className="truncate flex-1 text-muted-foreground">{inviteLink}</span>
+                      <button
+                        className="shrink-0 hover:text-foreground"
+                        title="Copy link"
+                        onClick={() => {
+                          navigator.clipboard.writeText(inviteLink)
+                          toast.success("Link copied!")
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <a
+                      href={`mailto:?subject=Join my household on Pocket&body=Hi! I'd like to invite you to join my household on Pocket. Click this link to accept: ${encodeURIComponent(inviteLink)}`}
+                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
                     >
-                      <Copy className="h-3.5 w-3.5" />
-                    </button>
+                      <UserPlus className="h-3 w-3" />
+                      Send via email app
+                    </a>
                   </div>
                 )}
               </div>

@@ -9,11 +9,12 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useHousehold } from "@/contexts/HouseholdContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScanLine, Users, User } from "lucide-react";
+import { ScanLine, Users, User, Share2 } from "lucide-react";
 import { MetricsCards, MetricsCardsSkeleton } from "@/components/dashboard/MetricsCards";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
+const AchievementCard = dynamic(() => import("@/components/dashboard/AchievementCard").then(m => ({ default: m.AchievementCard })), { ssr: false });
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
 const CashFlowForecast = dynamic(
   () => import("@/components/dashboard/CashFlowForecast").then(m => ({ default: m.CashFlowForecast })),
@@ -105,6 +106,9 @@ function DashboardInnerContent() {
 
     // CSV import state
     const [csvImportOpen, setCsvImportOpen] = useState(false);
+
+    // Achievement card share
+    const [shareCardOpen, setShareCardOpen] = useState(false);
 
     // Tabs state with direction tracking
     const TAB_ORDER = ["savings", "budgets", "recurring"] as const;
@@ -287,7 +291,16 @@ function DashboardInnerContent() {
                 {/* Health Score + Anomaly Alert */}
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <SectionErrorBoundary label="Health Score">
-                        <HealthScoreCard />
+                        <div className="relative">
+                            <HealthScoreCard />
+                            <button
+                                onClick={() => setShareCardOpen(true)}
+                                className="absolute top-2 right-2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                                title="Share your stats"
+                            >
+                                <Share2 className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
                     </SectionErrorBoundary>
                     <SectionErrorBoundary label="Anomaly Alert">
                         <AnomalyAlert userCurrency={userCurrency} className="flex-1" />
@@ -486,6 +499,9 @@ function DashboardInnerContent() {
 
                 {/* AI Budget Coach Chat */}
                 <AIChatDrawer />
+
+                {/* Achievement / Share card */}
+                <AchievementCard open={shareCardOpen} onClose={() => setShareCardOpen(false)} />
 
                 {/* Salary Reminder Notifications */}
                 <SalaryReminderNotification entries={entriesHook.entries} />

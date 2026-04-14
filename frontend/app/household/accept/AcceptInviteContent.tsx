@@ -58,7 +58,7 @@ export function AcceptInviteContent() {
             className="w-full"
             onClick={() =>
               router.push(
-                `/auth/login?redirect=${encodeURIComponent(`/household/accept?token=${token}`)}`
+                `/auth/login?returnUrl=${encodeURIComponent(`/household/accept?token=${token}`)}`
               )
             }
           >
@@ -69,7 +69,7 @@ export function AcceptInviteContent() {
             className="w-full"
             onClick={() =>
               router.push(
-                `/auth/register?redirect=${encodeURIComponent(`/household/accept?token=${token}`)}`
+                `/auth/login?returnUrl=${encodeURIComponent(`/household/accept?token=${token}`)}`
               )
             }
           >
