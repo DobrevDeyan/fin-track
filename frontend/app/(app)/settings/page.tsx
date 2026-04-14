@@ -21,7 +21,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Bell, BellOff, Check, CheckCircle2, Circle, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, Trophy, User, Wand2 } from "lucide-react"
+import { AlertTriangle, Bell, BellOff, Check, CheckCircle2, Circle, Copy, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, Trophy, User, UserPlus, Users, Wand2 } from "lucide-react"
+import { useHousehold } from "@/contexts/HouseholdContext"
+import {
+  callCreateHousehold,
+  callSendHouseholdInvite,
+  callLeaveHousehold,
+} from "@/lib/firestore-household"
 import { setLeaderboardOptIn } from "@/lib/firestore-leaderboard"
 import { collection, addDoc, doc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
@@ -106,6 +112,69 @@ export default function SettingsPage() {
       toast.error("Failed to update leaderboard preference.")
     } finally {
       setLeaderboardToggling(false)
+    }
+  }
+
+  // Household
+  const {
+    household,
+    householdId,
+    loading: householdLoading,
+    refreshHouseholdEntries,
+  } = useHousehold()
+  const [householdName, setHouseholdName] = useState("")
+  const [creatingHousehold, setCreatingHousehold] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [leavingHousehold, setLeavingHousehold] = useState(false)
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
+
+  const handleCreateHousehold = async () => {
+    if (!user) return
+    setCreatingHousehold(true)
+    try {
+      await callCreateHousehold(householdName.trim() || "My Family")
+      toast.success("Household created!")
+      setHouseholdName("")
+      // Force a page reload so HouseholdContext re-reads the user doc
+      window.location.reload()
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to create household.")
+    } finally {
+      setCreatingHousehold(false)
+    }
+  }
+
+  const handleSendInvite = async () => {
+    if (!user || !householdId || !inviteEmail.trim()) return
+    setSendingInvite(true)
+    setInviteLink(null)
+    try {
+      const result = await callSendHouseholdInvite(householdId, inviteEmail.trim())
+      const link = `${window.location.origin}/household/accept?token=${result.data.token}`
+      setInviteLink(link)
+      setInviteEmail("")
+      toast.success("Invite link generated — copy and share it.")
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to generate invite.")
+    } finally {
+      setSendingInvite(false)
+    }
+  }
+
+  const handleLeaveHousehold = async () => {
+    if (!user || !householdId) return
+    setLeavingHousehold(true)
+    try {
+      await callLeaveHousehold(householdId)
+      toast.success("You left the household.")
+      setLeaveDialogOpen(false)
+      window.location.reload()
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to leave household.")
+    } finally {
+      setLeavingHousehold(false)
     }
   }
 
@@ -354,6 +423,146 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Family / Household */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4" />
+            Family Budgeting
+          </CardTitle>
+          <CardDescription>
+            Share your financial view with a partner or family member. Each person keeps their own account — you just see a merged view.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {householdLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : household ? (
+            <>
+              {/* Existing household */}
+              <div className="rounded-md bg-muted/50 p-3 space-y-1">
+                <p className="text-sm font-medium">{household.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {household.members.length} member{household.members.length !== 1 ? "s" : ""}
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                  {household.members.map((m) => (
+                    <li key={m.uid} className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                      {m.displayName} {m.uid === user?.uid ? "(you)" : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Invite form */}
+              <div className="space-y-2">
+                <Label className="text-xs">Invite a family member by email</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="partner@email.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={sendingInvite || !inviteEmail.trim()}
+                    onClick={handleSendInvite}
+                  >
+                    {sendingInvite ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {inviteLink && (
+                  <div className="flex items-center gap-2 rounded-md border p-2 text-xs bg-muted">
+                    <span className="truncate flex-1 text-muted-foreground">{inviteLink}</span>
+                    <button
+                      className="shrink-0 hover:text-foreground"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inviteLink)
+                        toast.success("Link copied!")
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Leave household */}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={() => setLeaveDialogOpen(true)}
+              >
+                Leave household
+              </Button>
+            </>
+          ) : (
+            /* No household yet — create one */
+            <div className="space-y-2">
+              <Label className="text-xs">Household name (optional)</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="My Family"
+                  value={householdName}
+                  onChange={(e) => setHouseholdName(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <Button
+                  size="sm"
+                  disabled={creatingHousehold}
+                  onClick={handleCreateHousehold}
+                >
+                  {creatingHousehold ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Create"
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Or accept an invite link from a family member to join their household.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Leave household confirmation dialog */}
+      <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave household?</DialogTitle>
+            <DialogDescription>
+              You will lose access to the Family view. Your personal transactions are not affected.
+              {household?.ownerUid === user?.uid && household && household.members.length > 1 && (
+                <span className="block mt-1 text-amber-600">
+                  Ownership will transfer to another member.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLeaveDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={leavingHousehold}
+              onClick={handleLeaveHousehold}
+            >
+              {leavingHousehold ? <Loader2 className="h-4 w-4 animate-spin" /> : "Leave"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Profile */}
       <Card className="mb-6">

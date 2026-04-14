@@ -1,7 +1,7 @@
 // Service Worker for FinTrack PWA
 // Increment version to force cache refresh when needed
 // IMPORTANT: Version is synced from version.json. Run: npm run sync-version
-const CACHE_NAME = 'fintrack-v51'; // Increment this when deploying new version
+const CACHE_NAME = 'fintrack-v53'; // Increment this when deploying new version
 
 // ─── Firebase Messaging (background push notifications) ───────────────────────
 // Uses Firebase compat SDK so we can handle background messages in this SW.

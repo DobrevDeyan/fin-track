@@ -198,6 +198,37 @@ export const DEFAULT_INCOME_CATEGORIES = [
   "Other",
 ]
 
+// ─── Household / Family Budgeting ────────────────────────────────────────────
+
+export interface HouseholdMember {
+  uid: string
+  displayName: string
+  email: string
+  joinedAt: Timestamp
+}
+
+/** households/{householdId} — written by Cloud Functions (Admin SDK) */
+export interface HouseholdDocument {
+  name: string
+  ownerUid: string
+  members: HouseholdMember[]
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+/** householdInvites/{inviteId} — written by Cloud Functions (Admin SDK) */
+export interface HouseholdInviteDocument {
+  householdId: string
+  householdName: string
+  invitedEmail: string
+  invitedBy: string       // uid of the sender
+  inviterName: string
+  token: string           // secure random token sent in the invite link
+  status: "pending" | "accepted" | "expired"
+  expiresAt: Timestamp
+  createdAt: Timestamp
+}
+
 // Helper type for creating new documents (without timestamps)
 export type CreateEntryInput = Omit<
   EntryDocument,

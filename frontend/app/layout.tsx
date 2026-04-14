@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
 import { SentryProvider } from "@/components/SentryProvider"
+import { HouseholdProvider } from "@/contexts/HouseholdContext"
 import { defaultLocale } from "@/i18n/config"
 import { Toaster } from "sonner"
 
@@ -103,6 +104,7 @@ export default function RootLayout({
         >
           <ThemeContextProvider>
           <AuthProvider>
+            <HouseholdProvider>
             <CurrencyProvider>
               <LanguageProvider initialLocale={defaultLocale}>
                 {children}
@@ -112,6 +114,7 @@ export default function RootLayout({
                 <Toaster richColors position="top-right" />
               </LanguageProvider>
             </CurrencyProvider>
+            </HouseholdProvider>
           </AuthProvider>
           </ThemeContextProvider>
         </ThemeProvider>

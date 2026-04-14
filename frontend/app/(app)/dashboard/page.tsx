@@ -6,8 +6,10 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useHousehold } from "@/contexts/HouseholdContext";
 import { Button } from "@/components/ui/button";
-import { ScanLine } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ScanLine, Users, User } from "lucide-react";
 import { MetricsCards, MetricsCardsSkeleton } from "@/components/dashboard/MetricsCards";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
@@ -69,6 +71,7 @@ function DashboardInnerContent() {
     const tRecurring = useTranslations("recurring");
     const { user } = useAuth();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
+    const { householdId, household, isHouseholdMode, setIsHouseholdMode, householdEntries, householdEntriesLoading, refreshHouseholdEntries } = useHousehold();
 
     // Financial summary (single source of truth for metrics)
     const {
@@ -227,10 +230,38 @@ function DashboardInnerContent() {
                         <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
                         <p className="text-muted-foreground mt-2">{t("welcome", { name: displayName || user?.email?.split("@")[0] || "" })}</p>
                     </div>
-                    <Button onClick={() => setScannerDialogOpen(true)}>
-                        <ScanLine className="mr-2 h-4 w-4" />
-                        {t("scanReceipt")}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {householdId && (
+                            <div className="flex items-center rounded-lg border bg-muted p-0.5 gap-0.5">
+                                <button
+                                    onClick={() => setIsHouseholdMode(false)}
+                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        !isHouseholdMode
+                                            ? "bg-background shadow-sm text-foreground"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <User className="h-3.5 w-3.5" />
+                                    Personal
+                                </button>
+                                <button
+                                    onClick={() => setIsHouseholdMode(true)}
+                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        isHouseholdMode
+                                            ? "bg-background shadow-sm text-foreground"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <Users className="h-3.5 w-3.5" />
+                                    Family
+                                </button>
+                            </div>
+                        )}
+                        <Button onClick={() => setScannerDialogOpen(true)}>
+                            <ScanLine className="mr-2 h-4 w-4" />
+                            {t("scanReceipt")}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Metrics Cards */}
@@ -283,7 +314,86 @@ function DashboardInnerContent() {
                     </SectionErrorBoundary>
                 </div>
 
-                {/* Transactions Table (still uses paginated entries for display) */}
+                {/* Transactions — Personal or Family view */}
+                {isHouseholdMode && householdId ? (
+                    <SectionErrorBoundary label="Family Transactions">
+                        <div className="rounded-xl border bg-card">
+                            <div className="flex items-center justify-between px-4 py-3 border-b">
+                                <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-medium text-sm">Family Transactions</span>
+                                    {household && (
+                                        <span className="text-xs text-muted-foreground">— {household.name}</span>
+                                    )}
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 text-xs"
+                                    onClick={refreshHouseholdEntries}
+                                    disabled={householdEntriesLoading}
+                                >
+                                    {householdEntriesLoading ? "Loading…" : "Refresh"}
+                                </Button>
+                            </div>
+
+                            {householdEntriesLoading ? (
+                                <div className="divide-y">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <div key={i} className="px-4 py-3 flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                                            <div className="flex-1 space-y-1.5">
+                                                <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+                                                <div className="h-2.5 w-20 bg-muted animate-pulse rounded" />
+                                            </div>
+                                            <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : householdEntries.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-sm">
+                                    <Users className="h-8 w-8 mb-2 opacity-40" />
+                                    No transactions yet from family members.
+                                </div>
+                            ) : (
+                                <div className="divide-y max-h-[520px] overflow-y-auto">
+                                    {householdEntries.map((entry) => (
+                                        <div key={entry.id} className="flex items-center gap-3 px-4 py-3">
+                                            <div className={`flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold shrink-0 ${
+                                                entry.type === "income"
+                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                                    : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                                            }`}>
+                                                {entry.type === "income" ? "+" : "−"}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate">{entry.description}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-xs text-muted-foreground">{entry.category}</span>
+                                                    <span className="text-xs text-muted-foreground">·</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {new Date(entry.date).toLocaleDateString()}
+                                                    </span>
+                                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                                                        {entry.memberDisplayName}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <span className={`text-sm font-semibold shrink-0 ${
+                                                entry.type === "income"
+                                                    ? "text-emerald-600 dark:text-emerald-400"
+                                                    : "text-rose-600 dark:text-rose-400"
+                                            }`}>
+                                                {entry.type === "income" ? "+" : "−"}
+                                                {userCurrency} {entry.amount.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </SectionErrorBoundary>
+                ) : (
                 <SectionErrorBoundary label="Transactions">
                     <TransactionsTable
                         transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries}
@@ -297,6 +407,7 @@ function DashboardInnerContent() {
                         isLoadingMore={entriesHook.isLoadingMore}
                     />
                 </SectionErrorBoundary>
+                )}
 
                 {/* Feature Sections - Tabbed Interface */}
                 <div className="mt-8" ref={tabsRef}>
