@@ -943,3 +943,378 @@ export const triggerLeaderboardAggregation = onCall(
     return { ok: true, participants: profiles.length };
   }
 );
+
+// ─── Household / Family Budgeting ─────────────────────────────────────────────
+
+interface HouseholdMember {
+  uid: string;
+  displayName: string;
+  email: string;
+  joinedAt: admin.firestore.Timestamp;
+}
+
+interface HouseholdDocument {
+  name: string;
+  ownerUid: string;
+  members: HouseholdMember[];
+  createdAt: admin.firestore.Timestamp;
+  updatedAt: admin.firestore.Timestamp;
+}
+
+/**
+ * Create a new household. The caller becomes the owner and first member.
+ * Returns { householdId }.
+ */
+export const createHousehold = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    await checkRateLimit(userId, "createHousehold");
+
+    // A user can only belong to one household
+    const existing = await db
+      .collection("households")
+      .where("members", "array-contains", { uid: userId } as any)
+      .limit(1)
+      .get();
+
+    // array-contains on nested objects is unreliable; query by ownerUid as a guard
+    const ownedSnap = await db
+      .collection("households")
+      .where("ownerUid", "==", userId)
+      .limit(1)
+      .get();
+
+    if (!ownedSnap.empty || !existing.empty) {
+      throw new HttpsError("already-exists", "You are already in a household. Leave it before creating a new one.");
+    }
+
+    const name = (request.data?.name as string | undefined)?.trim() || "My Family";
+    const userSnap = await db.collection("users").doc(userId).get();
+    const userData = userSnap.data();
+    const displayName = userData?.displayName || userData?.username || userData?.email || "Unknown";
+    const email = userData?.email || "";
+
+    const member: HouseholdMember = {
+      uid: userId,
+      displayName,
+      email,
+      joinedAt: admin.firestore.Timestamp.now(),
+    };
+
+    const householdRef = db.collection("households").doc();
+    await householdRef.set({
+      name,
+      ownerUid: userId,
+      members: [member],
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Store household membership on user doc for quick lookup
+    await db.collection("users").doc(userId).update({
+      householdId: householdRef.id,
+    });
+
+    await logAuditEvent(userId, "household.created", { householdId: householdRef.id, name });
+
+    return { householdId: householdRef.id, name };
+  }
+);
+
+/**
+ * Generate an invite link token for a given household.
+ * Caller must be a member of the household.
+ * Returns { token, inviteUrl } — the frontend copies the URL to clipboard.
+ * Token expires in 7 days.
+ */
+export const sendHouseholdInvite = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    await checkRateLimit(userId, "sendHouseholdInvite");
+
+    const { householdId, invitedEmail } = request.data as { householdId: string; invitedEmail: string };
+    if (!householdId || !invitedEmail) {
+      throw new HttpsError("invalid-argument", "householdId and invitedEmail are required");
+    }
+
+    const householdRef = db.collection("households").doc(householdId);
+    const householdSnap = await householdRef.get();
+    if (!householdSnap.exists) throw new HttpsError("not-found", "Household not found");
+
+    const household = householdSnap.data() as HouseholdDocument;
+    const isMember = household.members.some((m) => m.uid === userId);
+    if (!isMember) throw new HttpsError("permission-denied", "You are not a member of this household");
+
+    // Check invitee isn't already a member
+    const alreadyMember = household.members.some((m) => m.email === invitedEmail.toLowerCase());
+    if (alreadyMember) throw new HttpsError("already-exists", "That person is already in this household");
+
+    const userSnap = await db.collection("users").doc(userId).get();
+    const inviterName = userSnap.data()?.displayName || userSnap.data()?.username || "A family member";
+
+    // Expire any existing pending invites for the same email+household
+    const staleSnap = await db
+      .collection("householdInvites")
+      .where("householdId", "==", householdId)
+      .where("invitedEmail", "==", invitedEmail.toLowerCase())
+      .where("status", "==", "pending")
+      .get();
+
+    const batch = db.batch();
+    staleSnap.docs.forEach((d) => batch.update(d.ref, { status: "expired" }));
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const inviteRef = db.collection("householdInvites").doc();
+    batch.set(inviteRef, {
+      householdId,
+      householdName: household.name,
+      invitedEmail: invitedEmail.toLowerCase(),
+      invitedBy: userId,
+      inviterName,
+      token,
+      status: "pending",
+      expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+
+    await logAuditEvent(userId, "household.invite_sent", {
+      householdId,
+      invitedEmail,
+      inviteId: inviteRef.id,
+    });
+
+    return { inviteId: inviteRef.id, token };
+  }
+);
+
+/**
+ * Accept a household invite using its token.
+ * Caller must be authenticated. Their email is validated against the invite.
+ * Adds the caller to the household's members array.
+ */
+export const acceptHouseholdInvite = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    const callerEmail = request.auth?.token?.email;
+    if (!userId || !callerEmail) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const { token } = request.data as { token: string };
+    if (!token) throw new HttpsError("invalid-argument", "token is required");
+
+    // Find the invite by token
+    const inviteSnap = await db
+      .collection("householdInvites")
+      .where("token", "==", token)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+
+    if (inviteSnap.empty) {
+      throw new HttpsError("not-found", "Invite not found or already used");
+    }
+
+    const inviteDoc = inviteSnap.docs[0];
+    const invite = inviteDoc.data();
+
+    // Validate expiry
+    if (invite.expiresAt.toDate() < new Date()) {
+      await inviteDoc.ref.update({ status: "expired" });
+      throw new HttpsError("deadline-exceeded", "This invite link has expired");
+    }
+
+    // Validate the caller's email matches the invite
+    if (callerEmail.toLowerCase() !== invite.invitedEmail) {
+      throw new HttpsError(
+        "permission-denied",
+        `This invite was sent to ${invite.invitedEmail}. Please log in with that email address.`
+      );
+    }
+
+    const householdRef = db.collection("households").doc(invite.householdId);
+    const householdSnap = await householdRef.get();
+    if (!householdSnap.exists) {
+      throw new HttpsError("not-found", "Household no longer exists");
+    }
+
+    const household = householdSnap.data() as HouseholdDocument;
+    const alreadyMember = household.members.some((m) => m.uid === userId);
+    if (alreadyMember) {
+      await inviteDoc.ref.update({ status: "accepted" });
+      return { householdId: invite.householdId, householdName: invite.householdName };
+    }
+
+    const userSnap = await db.collection("users").doc(userId).get();
+    const userData = userSnap.data();
+    const displayName = userData?.displayName || userData?.username || callerEmail;
+
+    const newMember: HouseholdMember = {
+      uid: userId,
+      displayName,
+      email: callerEmail.toLowerCase(),
+      joinedAt: admin.firestore.Timestamp.now(),
+    };
+
+    const batch = db.batch();
+    batch.update(householdRef, {
+      members: admin.firestore.FieldValue.arrayUnion(newMember),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    batch.update(inviteDoc.ref, { status: "accepted" });
+    // Store householdId on the user for quick lookup
+    batch.update(db.collection("users").doc(userId), { householdId: invite.householdId });
+
+    await batch.commit();
+
+    await logAuditEvent(userId, "household.invite_accepted", {
+      householdId: invite.householdId,
+      inviteId: inviteDoc.id,
+    });
+
+    return { householdId: invite.householdId, householdName: invite.householdName };
+  }
+);
+
+/**
+ * Fetch merged entries for all members of a household.
+ * Caller must be a member of the household.
+ * Supports optional date range (startDate / endDate as ISO strings).
+ * Returns entries sorted by date descending, each annotated with memberDisplayName.
+ */
+export const getHouseholdEntries = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const { householdId, startDate, endDate, limit: limitArg } = request.data as {
+      householdId: string;
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+    };
+
+    if (!householdId) throw new HttpsError("invalid-argument", "householdId is required");
+
+    const householdSnap = await db.collection("households").doc(householdId).get();
+    if (!householdSnap.exists) throw new HttpsError("not-found", "Household not found");
+
+    const household = householdSnap.data() as HouseholdDocument;
+    const isMember = household.members.some((m) => m.uid === userId);
+    if (!isMember) throw new HttpsError("permission-denied", "Not a member of this household");
+
+    const memberUids = household.members.map((m) => m.uid);
+    const memberNameMap: Record<string, string> = {};
+    household.members.forEach((m) => { memberNameMap[m.uid] = m.displayName; });
+
+    const maxEntries = Math.min(limitArg ?? 200, 500);
+
+    // Fetch entries for all members in parallel (up to 10 members, Firestore in-query limit is 30)
+    const startTs = startDate ? admin.firestore.Timestamp.fromDate(new Date(startDate)) : null;
+    const endTs = endDate ? admin.firestore.Timestamp.fromDate(new Date(endDate)) : null;
+
+    const CHUNK = 10; // Firestore `in` limit is 30; keep chunks small
+    const allEntries: Array<Record<string, unknown>> = [];
+
+    for (let i = 0; i < memberUids.length; i += CHUNK) {
+      const uidChunk = memberUids.slice(i, i + CHUNK);
+      let q = db
+        .collection("entries")
+        .where("userId", "in", uidChunk)
+        .orderBy("date", "desc");
+
+      if (startTs) q = q.where("date", ">=", startTs) as typeof q;
+      if (endTs) q = q.where("date", "<=", endTs) as typeof q;
+
+      const snap = await q.limit(maxEntries).get();
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        allEntries.push({
+          id: d.id,
+          ...data,
+          memberDisplayName: memberNameMap[data.userId as string] ?? "Unknown",
+          date: (data.date as admin.firestore.Timestamp).toDate().toISOString(),
+          createdAt: (data.createdAt as admin.firestore.Timestamp)?.toDate().toISOString(),
+          updatedAt: (data.updatedAt as admin.firestore.Timestamp)?.toDate().toISOString(),
+        });
+      });
+    }
+
+    // Sort merged result by date descending and cap at maxEntries
+    allEntries.sort((a, b) =>
+      new Date(b.date as string).getTime() - new Date(a.date as string).getTime()
+    );
+
+    return {
+      entries: allEntries.slice(0, maxEntries),
+      members: household.members.map((m) => ({ uid: m.uid, displayName: m.displayName, email: m.email })),
+    };
+  }
+);
+
+/**
+ * Leave the current household.
+ * If the caller is the owner and the only member, the household is deleted.
+ * If the caller is the owner but others remain, ownership transfers to the next member.
+ */
+export const leaveHousehold = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    await checkRateLimit(userId, "leaveHousehold");
+
+    const { householdId } = request.data as { householdId: string };
+    if (!householdId) throw new HttpsError("invalid-argument", "householdId is required");
+
+    const householdRef = db.collection("households").doc(householdId);
+    const householdSnap = await householdRef.get();
+    if (!householdSnap.exists) throw new HttpsError("not-found", "Household not found");
+
+    const household = householdSnap.data() as HouseholdDocument;
+    const isMember = household.members.some((m) => m.uid === userId);
+    if (!isMember) throw new HttpsError("permission-denied", "You are not in this household");
+
+    const remainingMembers = household.members.filter((m) => m.uid !== userId);
+
+    const batch = db.batch();
+
+    if (remainingMembers.length === 0) {
+      // Last member leaving — delete the household
+      batch.delete(householdRef);
+    } else {
+      const updates: Partial<HouseholdDocument & { updatedAt: unknown }> = {
+        members: remainingMembers,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp() as unknown as admin.firestore.Timestamp,
+      };
+      // Transfer ownership if needed
+      if (household.ownerUid === userId) {
+        updates.ownerUid = remainingMembers[0].uid;
+      }
+      batch.update(householdRef, updates);
+    }
+
+    // Clear householdId from the leaving user's document
+    batch.update(db.collection("users").doc(userId), {
+      householdId: admin.firestore.FieldValue.delete(),
+    });
+
+    await batch.commit();
+
+    await logAuditEvent(userId, "household.left", { householdId, remainingCount: remainingMembers.length });
+
+    return { ok: true };
+  }
+);

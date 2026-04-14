@@ -140,6 +140,23 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
+    // ===== Household / Family Budgeting =====
+
+    // Household document — members can read, only Admin SDK writes
+    match /households/{householdId} {
+      allow read: if request.auth != null
+                  && request.auth.uid in resource.data.members.map(m, m.uid);
+      allow write: if false;
+    }
+
+    // Invite documents — invitee (by email) and sender can read; only Admin SDK writes
+    match /householdInvites/{inviteId} {
+      allow read: if request.auth != null
+                  && (request.auth.uid == resource.data.invitedBy
+                      || request.auth.token.email == resource.data.invitedEmail);
+      allow write: if false;
+    }
+
     // Audit log — written only by Admin SDK (Cloud Functions), never by clients
     match /auditLog/{logId} {
       allow read, write: if false;
