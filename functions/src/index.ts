@@ -1360,11 +1360,7 @@ export const leaveHousehold = onCall(
     } else {
       const updates: Record<string, unknown> = {
         members: remainingMembers,
-<<<<<<< HEAD
         memberUids: remainingMembers.map((m) => m.uid),
-=======
-        memberUids: admin.firestore.FieldValue.arrayRemove(userId),
->>>>>>> 9b1d59cde9b2a874b24a400cedf5af0ab7ba9e21
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       // Transfer ownership if needed

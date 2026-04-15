@@ -69,11 +69,7 @@ export function AcceptInviteContent() {
             className="w-full"
             onClick={() =>
               router.push(
-<<<<<<< HEAD
                 `/auth/register?returnUrl=${encodeURIComponent(`/household/accept?token=${token}`)}`
-=======
-                `/auth/login?returnUrl=${encodeURIComponent(`/household/accept?token=${token}`)}`
->>>>>>> 9b1d59cde9b2a874b24a400cedf5af0ab7ba9e21
               )
             }
           >
