@@ -79,7 +79,9 @@
       "Bash(grep -l '\"use client\"' app/**/*.tsx app/**/**/*.tsx)",
       "Bash(grep -A3 \"onSnapshot.*docRef\" app/**/*.tsx)",
       "Bash(grep -rn \"use client\" app/**/*.tsx)",
-      "Bash(grep -n \"await.*\\\\\\(\\)\" app/**/*.tsx)"
+      "Bash(grep -n \"await.*\\\\\\(\\)\" app/**/*.tsx)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
     ]
   }
 }

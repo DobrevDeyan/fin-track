@@ -198,6 +198,27 @@ export const DEFAULT_INCOME_CATEGORIES = [
   "Other",
 ]
 
+// ─── Debt Payoff Planner ─────────────────────────────────────────────────────
+
+export type DebtType = "credit_card" | "loan" | "mortgage" | "student_loan" | "other"
+
+export interface DebtItem {
+  id: string
+  name: string
+  balance: number
+  interestRate: number  // APR as a percentage, e.g. 19.9
+  minPayment: number
+  type: DebtType
+  currency: string
+}
+
+/** userDebts/{userId} — client read/write, owner only */
+export interface UserDebtsDocument {
+  userId: string
+  debts: DebtItem[]
+  updatedAt: Timestamp
+}
+
 // ─── Household / Family Budgeting ────────────────────────────────────────────
 
 export interface HouseholdMember {

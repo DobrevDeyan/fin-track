@@ -1,7 +1,7 @@
 # Pocket — User Guide
 
-**Version:** 1.0
-**Last Updated:** March 2026
+**Version:** 2.0
+**Last Updated:** April 2026
 
 ---
 
@@ -14,13 +14,17 @@
 5. [Savings Goals](#savings-goals)
 6. [Recurring Transactions](#recurring-transactions)
 7. [Savings Accounts](#savings-accounts)
-8. [Reports & Analytics](#reports--analytics)
-9. [AI Features](#ai-features)
-10. [Settings & Preferences](#settings--preferences)
-11. [Installing as a PWA](#installing-as-a-pwa)
-12. [Tips & Best Practices](#tips--best-practices)
-13. [FAQ](#faq)
-14. [Troubleshooting](#troubleshooting)
+8. [Subscription Tracker](#subscription-tracker)
+9. [Debt Payoff Planner](#debt-payoff-planner)
+10. [Family Budgeting](#family-budgeting)
+11. [Reports & Analytics](#reports--analytics)
+12. [AI Features](#ai-features)
+13. [Shareable Achievement Cards](#shareable-achievement-cards)
+14. [Settings & Preferences](#settings--preferences)
+15. [Installing as a PWA](#installing-as-a-pwa)
+16. [Tips & Best Practices](#tips--best-practices)
+17. [FAQ](#faq)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -62,9 +66,12 @@ The dashboard is your financial command center. Sections are **collapsible** —
 ### Navigation
 
 - **Dashboard** — main view
+- **Subscriptions** — recurring expense tracker
+- **Debt** — debt payoff planner
 - **Calendar** — month-view of all transactions
 - **Reports** — charts, analytics, and AI digest
-- **Settings** — account preferences and data management
+- **Leaderboard** — community health score (opt-in)
+- **Settings** — account preferences, household, and data management
 
 ---
 
@@ -228,6 +235,103 @@ Each account shows its current balance in real time.
 
 ---
 
+## Subscription Tracker
+
+Navigate to **Subscriptions** in the sidebar to see all your recurring expenses in one place.
+
+### What You'll See
+
+- **Monthly cost** — total of all active subscriptions
+- **Annual cost** — what you're committing to per year
+- **By category** — progress bars showing which categories eat the most (Entertainment, Bills, etc.)
+- **Each subscription card** — shows amount, billing period, equivalent monthly cost, and days until next charge
+
+### Pausing a Subscription
+
+Click the pause icon on any subscription card to stop it from generating new entries. The entry won't be created until you resume it. Nothing is deleted — resume any time.
+
+### Sorting
+
+Sort by **Cost** (default), **Name**, or **Next charge** using the sort buttons above the list. The ⚠ warning icon means a single subscription accounts for more than 30% of your total subscription spend.
+
+---
+
+## Debt Payoff Planner
+
+Navigate to **Debt** in the sidebar to track and optimise your path to being debt-free.
+
+### Adding a Debt
+
+1. Click **"Add a debt"**
+2. Fill in: name, type (credit card / loan / mortgage / etc.), current balance, APR (%), and minimum monthly payment
+3. Click **Save**
+
+Repeat for each debt you want to track.
+
+### Choosing a Strategy
+
+| Strategy | How It Works | Best For |
+|----------|-------------|----------|
+| **Avalanche** | Pays highest-interest debt first | Saves the most money overall |
+| **Snowball** | Pays lowest-balance debt first | Psychological momentum |
+
+Pocket calculates both and shows you the difference in months and total interest — pick whichever motivates you.
+
+### Extra Payment
+
+Enter an amount above your minimums in the **Extra monthly payment** field. Even €50/month extra can shave years off a large debt.
+
+### Reading the Results
+
+- **"Debt-free by [Month Year]"** — your projected payoff date
+- **Balance chart** — shows your total debt declining over time
+- **Strategy comparison** — side-by-side avalanche vs snowball (months + total interest)
+
+Your debts are saved automatically to your account.
+
+---
+
+## Family Budgeting
+
+Pocket supports shared households — each person keeps their own account, but you can view a merged transaction history together.
+
+### Creating a Household
+
+1. Go to **Settings → Family Budgeting**
+2. Enter a household name (e.g. "Dobrevi Family")
+3. Click **"Create household"**
+
+### Inviting a Family Member
+
+1. In the Family Budgeting card, enter the email address of the person you want to invite
+2. Click **"Generate link"**
+3. Copy the link and send it however you like (the **"Send via email app"** button pre-fills a mailto for you)
+
+The link expires after 7 days. You can generate a new one at any time.
+
+**Important:** The person accepting must log in (or sign up) with the **exact email address** you invited. The system validates this for security.
+
+### Accepting an Invite
+
+1. Open the invite link in your browser
+2. If not logged in, sign in (or create an account) with the invited email — you'll be automatically returned to the accept page
+3. Click through — you'll see "Joined [Household Name]"
+4. Go to the dashboard; toggle to **Family** view in the header
+
+### Viewing Family Transactions
+
+On the dashboard, use the **Personal / Family** toggle at the top to switch views:
+- **Personal** — your own transactions only (default)
+- **Family** — merged view of all household members' transactions
+
+### Managing Members
+
+In Settings → Family Budgeting, the household card shows all current members. If someone recently accepted and isn't showing, click **"↻ Refresh"** to pull the latest member list.
+
+To leave a household, click **"Leave household"**. If you're the owner and others are in the household, ownership transfers to another member.
+
+---
+
 ## Reports & Analytics
 
 Navigate to **Reports** in the top navigation.
@@ -296,6 +400,20 @@ A floating chat button (bottom-left of the dashboard) opens a conversation with 
 - *"Why did my health score drop?"*
 
 The coach only sees aggregated spending totals — never individual transaction descriptions.
+
+---
+
+## Shareable Achievement Cards
+
+Share your financial progress with friends on social media.
+
+1. On the **Dashboard**, look for the share icon (↗) overlaid on your Health Score card
+2. Click it to open the Share Stats dialog
+3. A gradient card is generated showing your **health score**, **income**, **expenses**, and **savings rate** for the current month
+4. Click **"Download PNG"** to save a high-resolution image (3× resolution — crisp on any screen)
+5. On mobile, tap the share icon to open the native share sheet and send it directly to any app
+
+The card color matches your health tier (green for Excellent, blue for Outstanding, etc.).
 
 ---
 

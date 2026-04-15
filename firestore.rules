@@ -97,6 +97,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Debt Payoff Planner — one document per user, owner-only access
+    match /userDebts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // ===== Stripe Extension Collections =====
 
     // Products and prices — synced from Stripe, read-only for authenticated users
@@ -142,7 +147,8 @@ service cloud.firestore {
 
     // ===== Household / Family Budgeting =====
 
-    // Household document — members can read, only Admin SDK writes
+    // Household document — members can read/list; only Admin SDK writes.
+    // memberUids is a flat string[] kept in sync with the members array by Cloud Functions.
     match /households/{householdId} {
       allow read: if request.auth != null
                   && request.auth.uid in resource.data.memberUids;

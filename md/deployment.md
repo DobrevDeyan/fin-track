@@ -91,10 +91,24 @@ This deploys:
 
 ### Step 2: Deploy Firebase Functions
 
-Three functions are deployed:
-- `processRecurringTransactionsScheduled` — Runs daily at 1:00 AM UTC, processes recurring transactions
-- `processMyRecurringTransactions` — HTTPS callable, lets a user manually trigger their recurring transactions
-- `resetMonthlyScanCounts` — Runs on the 1st of each month at 00:05 UTC, resets receipt scan quotas to 0 for all users
+Functions deployed include:
+
+**Scheduled:**
+- `processRecurringTransactionsScheduled` — Daily at 1:00 AM UTC, processes recurring transactions
+- `resetMonthlyScanCounts` — 1st of each month at 00:05 UTC, resets receipt scan quotas
+
+**Callable (HTTPS):**
+- `processMyRecurringTransactions` — User-triggered recurring transaction processing
+- `createHousehold` — Creates a household; caller becomes owner
+- `sendHouseholdInvite` — Generates a 7-day invite token
+- `acceptHouseholdInvite` — Validates token + email, adds caller to household
+- `getHouseholdEntries` — Returns merged entries for all household members
+- `leaveHousehold` — Removes caller from household; transfers ownership if needed
+- `getMyHousehold` — Returns household data via Admin SDK (bypasses Firestore cache/rules)
+
+**Firestore-triggered:**
+- `checkBudgetOnEntry` — Sends FCM push notification when a budget crosses 80%/100%
+- `onEntryDeleted` / `onLargeEntryCreated` — Audit log entries
 
 ```bash
 # Install dependencies (if not done)
@@ -436,3 +450,17 @@ The `assets` collection query no longer uses `orderBy` (sorting is done client-s
 ```bash
 firebase deploy --only firestore:rules
 ```
+
+### Household Settings Shows "Create" Form After Household Exists
+The household is loaded via the `getMyHousehold` Cloud Function (Admin SDK). If the function is not deployed or the user's `users/{uid}.householdId` field is missing, `getMyHousehold` falls back to querying by `ownerUid`. Make sure all household functions are deployed:
+```bash
+firebase deploy --only functions:getMyHousehold,functions:createHousehold,functions:acceptHouseholdInvite
+```
+
+### Invite Accepted but New Member Not Appearing in Settings
+1. Click "↻ Refresh" in the household card — this re-calls `getMyHousehold`
+2. If the `onSnapshot` listener silently died due to a Firestore permission error, the refresh button calls the CF directly and updates state
+3. Verify `firestore.rules` is deployed (households rule uses `memberUids` flat array)
+
+### Invite Link Redirects to Dashboard Instead of Accepting
+The `AcceptInviteContent` page redirects unauthenticated users to `/auth/login?returnUrl=...`. If the user sees the login page but ends up on the dashboard after signing in (invite not accepted), check that the `returnUrl` parameter (not `redirect`) is being passed. This was a known bug fixed April 2026.

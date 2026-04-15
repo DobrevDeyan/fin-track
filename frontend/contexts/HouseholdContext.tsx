@@ -3,10 +3,9 @@
 /**
  * HouseholdContext
  *
- * Tracks whether the current user belongs to a household and provides:
- * - household metadata (name, members)
- * - isHouseholdMode toggle (Personal vs Family view)
- * - household entries loaded via Cloud Function
+ * Loads household data via the getMyHousehold Cloud Function (Admin SDK —
+ * bypasses Firestore rules and cache). The onSnapshot listener provides
+ * live updates for member joins/leaves AFTER the initial load.
  */
 
 import React, {
@@ -17,28 +16,25 @@ import React, {
   useCallback,
   useRef,
 } from "react"
-import { doc, getDocFromServer } from "firebase/firestore"
+import { doc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/AuthContext"
 import {
-  subscribeToHousehold,
+  callGetMyHousehold,
   callGetHouseholdEntries,
   type HouseholdEntry,
 } from "@/lib/firestore-household"
 import type { HouseholdDocument } from "@/lib/firestore-types"
 
 interface HouseholdContextType {
-  /** The household the user belongs to, or null if none */
   household: HouseholdDocument | null
   householdId: string | null
-  /** True when the user has switched to Family view */
   isHouseholdMode: boolean
   setIsHouseholdMode: (v: boolean) => void
-  /** Merged entries from all household members */
   householdEntries: HouseholdEntry[]
   householdEntriesLoading: boolean
-  /** Reload household entries (call after adding a new personal entry) */
   refreshHouseholdEntries: () => void
+  refreshHousehold: () => Promise<void>
   loading: boolean
 }
 
@@ -57,7 +53,8 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
 
   const unsubHouseholdRef = useRef<(() => void) | null>(null)
 
-  // 1. When user changes, look up their householdId from their user document
+  // 1. Load household via Cloud Function — returns both ID and document data,
+  //    so we never depend on the Firestore client cache to resolve the household.
   useEffect(() => {
     if (!user) {
       setHouseholdId(null)
@@ -69,29 +66,48 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true)
 
-    getDocFromServer(doc(db, "users", user.uid))
-      .then((snap) => {
-        const hid = snap.data()?.householdId as string | undefined
+    callGetMyHousehold()
+      .then((result) => {
+        const { householdId: hid, household: hdata } = result.data
         setHouseholdId(hid ?? null)
+        if (hdata) {
+          // Cast to HouseholdDocument — Timestamps aren't needed here
+          // (members list uses displayName/email/uid which are plain strings)
+          setHousehold(hdata as unknown as HouseholdDocument)
+        } else {
+          setHousehold(null)
+        }
       })
-      .catch(() => setHouseholdId(null))
+      .catch(() => {
+        setHouseholdId(null)
+        setHousehold(null)
+      })
       .finally(() => setLoading(false))
   }, [user])
 
-  // 2. Subscribe to the household document for real-time member/name updates
+  // 2. Once we have the householdId, set up a live listener for member changes.
+  //    We never clear `household` on listener error — the CF-loaded value stays.
   useEffect(() => {
     unsubHouseholdRef.current?.()
     unsubHouseholdRef.current = null
 
-    if (!householdId) {
-      setHousehold(null)
-      return
-    }
+    if (!householdId) return
 
-    unsubHouseholdRef.current = subscribeToHousehold(
-      householdId,
-      (data) => setHousehold(data),
-      () => setHousehold(null)
+    const ref = doc(db, "households", householdId)
+    unsubHouseholdRef.current = onSnapshot(
+      ref,
+      (snap) => {
+        if (snap.exists()) {
+          setHousehold(snap.data() as HouseholdDocument)
+        }
+        // If doc disappears (household deleted), clear it
+        else {
+          setHousehold(null)
+          setHouseholdId(null)
+        }
+      },
+      // On permission error: keep the CF-loaded value — don't clear household
+      () => {}
     )
 
     return () => {
@@ -125,6 +141,18 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     if (!householdId) setIsHouseholdMode(false)
   }, [householdId])
 
+  const refreshHousehold = useCallback(async () => {
+    if (!user) return
+    try {
+      const result = await callGetMyHousehold()
+      const { householdId: hid, household: hdata } = result.data
+      setHouseholdId(hid ?? null)
+      setHousehold(hdata ? (hdata as unknown as HouseholdDocument) : null)
+    } catch {
+      // keep existing state on error
+    }
+  }, [user])
+
   const value: HouseholdContextType = {
     household,
     householdId,
@@ -133,6 +161,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     householdEntries,
     householdEntriesLoading,
     refreshHouseholdEntries: fetchHouseholdEntries,
+    refreshHousehold,
     loading,
   }
 

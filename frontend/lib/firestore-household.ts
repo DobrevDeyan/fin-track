@@ -10,6 +10,17 @@ import type { HouseholdDocument } from "@/lib/firestore-types"
 
 // ─── Callable wrappers ────────────────────────────────────────────────────────
 
+export const callGetMyHousehold = () =>
+  httpsCallable<void, {
+    householdId: string | null
+    household: {
+      name: string
+      ownerUid: string
+      members: Array<{ uid: string; displayName: string; email: string }>
+      memberUids: string[]
+    } | null
+  }>(functions, "getMyHousehold")()
+
 export const callCreateHousehold = (name: string) =>
   httpsCallable<{ name: string }, { householdId: string; name: string }>(
     functions,

@@ -973,6 +973,121 @@ onSnapshot(entriesRef, (snapshot) => {
 
 ---
 
-**Last Updated:** March 2026
-**Version:** 2.5
+---
+
+## Household / Family Budgeting
+
+### useHousehold()
+
+Household state and operations.
+
+**Location:** `contexts/HouseholdContext.tsx`
+
+```typescript
+const {
+  household,              // HouseholdDocument | null
+  householdId,            // string | null
+  isHouseholdMode,        // boolean — true = showing family view
+  setIsHouseholdMode,     // (v: boolean) => void
+  householdEntries,       // HouseholdEntry[] — loaded when isHouseholdMode = true
+  householdEntriesLoading,// boolean
+  refreshHouseholdEntries,// () => void — re-fetches entries
+  refreshHousehold,       // () => Promise<void> — re-calls getMyHousehold CF
+  loading,                // boolean — initial CF load
+} = useHousehold()
+```
+
+**Types:**
+```typescript
+interface HouseholdDocument {
+  name: string
+  ownerUid: string
+  members: HouseholdMember[]
+  memberUids: string[]
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+interface HouseholdMember {
+  uid: string
+  displayName: string
+  email: string
+  joinedAt: Timestamp
+}
+```
+
+**Important:** Always call `refreshHousehold()` after a member accepts an invite if the owner's member list doesn't update automatically. The `onSnapshot` listener handles live updates, but `refreshHousehold` is the reliable fallback.
+
+---
+
+### Callable Wrappers (firestore-household.ts)
+
+```typescript
+// Returns household data (always uses Admin SDK — bypasses rules/cache)
+callGetMyHousehold(): Promise<{ householdId, household }>
+
+// Creates a new household; caller becomes owner
+callCreateHousehold(name: string): Promise<{ householdId, name }>
+
+// Generates a 7-day invite token for the given email
+callSendHouseholdInvite(householdId, invitedEmail): Promise<{ inviteId, token }>
+
+// Accepts an invite — validates email + token, adds caller to household
+callAcceptHouseholdInvite(token): Promise<{ householdId, householdName }>
+
+// Returns merged entries for all household members
+callGetHouseholdEntries(householdId, opts?): Promise<{ entries, members }>
+
+// Removes caller from household; transfers ownership if owner
+callLeaveHousehold(householdId): Promise<{ ok: boolean }>
+```
+
+---
+
+## Debt Payoff Planner
+
+### getUserDebts / saveUserDebts
+
+**Location:** `lib/firestore-debt.ts`
+
+```typescript
+getUserDebts(userId: string): Promise<DebtItem[]>
+saveUserDebts(userId: string, debts: DebtItem[]): Promise<void>
+```
+
+**Types:**
+```typescript
+type DebtType = "credit_card" | "loan" | "mortgage" | "student_loan" | "other"
+
+interface DebtItem {
+  id: string
+  name: string
+  balance: number
+  interestRate: number   // APR as percentage (e.g. 19.9 for 19.9%)
+  minPayment: number
+  type: DebtType
+  currency: string
+}
+```
+
+Data is stored as a single document at `userDebts/{userId}` with a `debts` array field.
+
+---
+
+## Currency Formatting — Critical Pattern
+
+`useCurrency()` does **NOT** expose `formatAmount` or `fmt`. Always use:
+
+```typescript
+import { formatCurrency } from "@/lib/currency-utils"
+const { userCurrency } = useCurrency()
+const fmt = (amount: number) => formatCurrency(amount, { currency: userCurrency })
+```
+
+Never destructure `formatAmount` from `useCurrency()` — it will throw a runtime TypeError.
+
+---
+
+**Last Updated:** April 2026
+**Version:** 3.0
 **For:** Developers

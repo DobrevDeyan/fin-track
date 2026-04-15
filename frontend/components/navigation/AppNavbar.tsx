@@ -13,7 +13,7 @@ import {
   Menu, LogOut, X, Globe, Info, LayoutDashboard,
   Calendar as CalendarIcon, FileText, Settings, Receipt,
   Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight, MessageSquare,
-  ChevronLeft, Trophy,
+  ChevronLeft, Trophy, Repeat, TrendingDown,
 } from "lucide-react"
 import { useInAppNotifications } from "@/lib/hooks/useInAppNotifications"
 import { MobileBell, NotificationBell } from "@/components/notifications/NotificationBell"
@@ -59,6 +59,8 @@ export const AppNavbar = () => {
     { href: "/calendar", label: t("calendar"), icon: CalendarIcon },
     { href: "/reports", label: t("reports"), icon: FileText },
     { href: "/receipts", label: t("receipts"), icon: Receipt },
+    { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
+    { href: "/debt", label: "Debt Planner", icon: TrendingDown },
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     // { href: "/net-worth", label: t("netWorth"), icon: Landmark }, // disabled
   ]
