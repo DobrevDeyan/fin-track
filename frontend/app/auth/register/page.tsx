@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,14 +21,17 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading, signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("auth");
 
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      router.push("/dashboard");
+      const returnUrl = searchParams.get("returnUrl");
+      const destination = returnUrl ? decodeURIComponent(returnUrl) : "/dashboard";
+      router.push(destination);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, searchParams]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

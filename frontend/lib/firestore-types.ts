@@ -212,6 +212,7 @@ export interface HouseholdDocument {
   name: string
   ownerUid: string
   members: HouseholdMember[]
+  memberUids: string[]   // flat UID list — used by Firestore Security Rules
   createdAt: Timestamp
   updatedAt: Timestamp
 }

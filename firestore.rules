@@ -145,7 +145,7 @@ service cloud.firestore {
     // Household document — members can read, only Admin SDK writes
     match /households/{householdId} {
       allow read: if request.auth != null
-                  && request.auth.uid in resource.data.members.map(m, m.uid);
+                  && request.auth.uid in resource.data.memberUids;
       allow write: if false;
     }
 

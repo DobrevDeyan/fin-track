@@ -957,6 +957,7 @@ interface HouseholdDocument {
   name: string;
   ownerUid: string;
   members: HouseholdMember[];
+  memberUids: string[];
   createdAt: admin.firestore.Timestamp;
   updatedAt: admin.firestore.Timestamp;
 }
@@ -973,21 +974,14 @@ export const createHousehold = onCall(
 
     await checkRateLimit(userId, "createHousehold");
 
-    // A user can only belong to one household
+    // A user can only belong to one household — check the flat memberUids array
     const existing = await db
       .collection("households")
-      .where("members", "array-contains", { uid: userId } as any)
+      .where("memberUids", "array-contains", userId)
       .limit(1)
       .get();
 
-    // array-contains on nested objects is unreliable; query by ownerUid as a guard
-    const ownedSnap = await db
-      .collection("households")
-      .where("ownerUid", "==", userId)
-      .limit(1)
-      .get();
-
-    if (!ownedSnap.empty || !existing.empty) {
+    if (!existing.empty) {
       throw new HttpsError("already-exists", "You are already in a household. Leave it before creating a new one.");
     }
 
@@ -1009,6 +1003,7 @@ export const createHousehold = onCall(
       name,
       ownerUid: userId,
       members: [member],
+      memberUids: [userId],
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -1169,6 +1164,7 @@ export const acceptHouseholdInvite = onCall(
     const batch = db.batch();
     batch.update(householdRef, {
       members: admin.firestore.FieldValue.arrayUnion(newMember),
+      memberUids: admin.firestore.FieldValue.arrayUnion(userId),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     batch.update(inviteDoc.ref, { status: "accepted" });
@@ -1295,9 +1291,10 @@ export const leaveHousehold = onCall(
       // Last member leaving — delete the household
       batch.delete(householdRef);
     } else {
-      const updates: Partial<HouseholdDocument & { updatedAt: unknown }> = {
+      const updates: Record<string, unknown> = {
         members: remainingMembers,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp() as unknown as admin.firestore.Timestamp,
+        memberUids: remainingMembers.map((m) => m.uid),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       // Transfer ownership if needed
       if (household.ownerUid === userId) {
