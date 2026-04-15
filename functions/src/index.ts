@@ -1405,3 +1405,38 @@ export const leaveHousehold = onCall(
     return { ok: true };
   }
 );
+
+/**
+ * Update the caller's displayName inside their household members array.
+ * Called automatically when a user renames themselves in Settings.
+ */
+export const updateHouseholdMemberName = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const { displayName } = request.data as { displayName?: string };
+    if (!displayName?.trim()) throw new HttpsError("invalid-argument", "displayName is required");
+
+    const userSnap = await db.collection("users").doc(userId).get();
+    const householdId = userSnap.data()?.householdId as string | undefined;
+    if (!householdId) return { ok: true }; // not in a household — nothing to do
+
+    const householdRef = db.collection("households").doc(householdId);
+    const householdSnap = await householdRef.get();
+    if (!householdSnap.exists) return { ok: true };
+
+    const household = householdSnap.data() as HouseholdDocument;
+    const updatedMembers = household.members.map((m) =>
+      m.uid === userId ? { ...m, displayName: displayName.trim() } : m
+    );
+
+    await householdRef.update({
+      members: updatedMembers,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { ok: true };
+  }
+);

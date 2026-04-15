@@ -57,6 +57,12 @@ export const callLeaveHousehold = (householdId: string) =>
     "leaveHousehold"
   )({ householdId })
 
+export const callUpdateHouseholdMemberName = (displayName: string) =>
+  httpsCallable<{ displayName: string }, { ok: boolean }>(
+    functions,
+    "updateHouseholdMemberName"
+  )({ displayName })
+
 // ─── Real-time household listener ────────────────────────────────────────────
 
 /**

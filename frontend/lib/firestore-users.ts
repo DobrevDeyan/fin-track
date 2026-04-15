@@ -59,6 +59,14 @@ export async function updateUserDisplayName(userId: string, displayName: string)
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, { displayName })
     }
+
+    // Keep the household members array in sync (fire-and-forget — non-fatal)
+    try {
+      const { callUpdateHouseholdMemberName } = await import("./firestore-household")
+      await callUpdateHouseholdMemberName(displayName)
+    } catch (err) {
+      console.warn("Could not sync display name to household:", err)
+    }
   } catch (error) {
     console.error("Error updating display name:", error)
     throw error
