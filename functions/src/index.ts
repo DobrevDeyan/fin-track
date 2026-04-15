@@ -27,7 +27,7 @@ const RATE_LIMIT_MAX_CALLS = 3;
  * Throws resource-exhausted if the user exceeds RATE_LIMIT_MAX_CALLS
  * within the rolling RATE_LIMIT_WINDOW_MS window.
  */
-async function checkRateLimit(userId: string, fnName: string): Promise<void> {
+async function checkRateLimit(userId: string, fnName: string, maxCalls = RATE_LIMIT_MAX_CALLS): Promise<void> {
   const ref = db.collection("rateLimits").doc(`${userId}_${fnName}`);
   const now = Date.now();
 
@@ -39,7 +39,7 @@ async function checkRateLimit(userId: string, fnName: string): Promise<void> {
         )
       : [];
 
-    if (recentCalls.length >= RATE_LIMIT_MAX_CALLS) {
+    if (recentCalls.length >= maxCalls) {
       throw new HttpsError(
         "resource-exhausted",
         "Too many requests. Please wait a few minutes before trying again."
@@ -1098,7 +1098,7 @@ export const sendHouseholdInvite = onCall(
     const userId = request.auth?.uid;
     if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
 
-    await checkRateLimit(userId, "sendHouseholdInvite");
+    await checkRateLimit(userId, "sendHouseholdInvite", 10);
 
     const { householdId, invitedEmail } = request.data as { householdId: string; invitedEmail: string };
     if (!householdId || !invitedEmail) {
@@ -1288,19 +1288,26 @@ export const getHouseholdEntries = onCall(
     const endTs = endDate ? admin.firestore.Timestamp.fromDate(new Date(endDate)) : null;
 
     const CHUNK = 10; // Firestore `in` limit is 30; keep chunks small
-    const allEntries: Array<Record<string, unknown>> = [];
 
+    const chunks: string[][] = [];
     for (let i = 0; i < memberUids.length; i += CHUNK) {
-      const uidChunk = memberUids.slice(i, i + CHUNK);
-      let q = db
-        .collection("entries")
-        .where("userId", "in", uidChunk)
-        .orderBy("date", "desc");
+      chunks.push(memberUids.slice(i, i + CHUNK));
+    }
 
-      if (startTs) q = q.where("date", ">=", startTs) as typeof q;
-      if (endTs) q = q.where("date", "<=", endTs) as typeof q;
+    const chunkSnaps = await Promise.all(
+      chunks.map((uidChunk) => {
+        let q = db
+          .collection("entries")
+          .where("userId", "in", uidChunk)
+          .orderBy("date", "desc");
+        if (startTs) q = q.where("date", ">=", startTs) as typeof q;
+        if (endTs) q = q.where("date", "<=", endTs) as typeof q;
+        return q.limit(maxEntries).get();
+      })
+    );
 
-      const snap = await q.limit(maxEntries).get();
+    const allEntries: Array<Record<string, unknown>> = [];
+    chunkSnaps.forEach((snap) => {
       snap.docs.forEach((d) => {
         const data = d.data();
         allEntries.push({
@@ -1312,7 +1319,7 @@ export const getHouseholdEntries = onCall(
           updatedAt: (data.updatedAt as admin.firestore.Timestamp)?.toDate().toISOString(),
         });
       });
-    }
+    });
 
     // Sort merged result by date descending and cap at maxEntries
     allEntries.sort((a, b) =>

@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AlertTriangle, Bell, BellOff, Check, CheckCircle2, Circle, Copy, CreditCard, Loader2, Palette, Pencil, RotateCcw, Trash2, Trophy, User, UserPlus, Users, Wand2 } from "lucide-react"
+import { AlertTriangle, Bell, BellOff, Check, CheckCircle2, Circle, Copy, CreditCard, Loader2, Palette, Pencil, RotateCcw, Share2, Trash2, Trophy, User, UserPlus, Users, Wand2 } from "lucide-react"
 import { useHousehold } from "@/contexts/HouseholdContext"
 import {
   callCreateHousehold,
@@ -153,7 +153,6 @@ export default function SettingsPage() {
     setInviteLink(null)
     try {
       const result = await callSendHouseholdInvite(householdId, inviteEmail.trim())
-      console.log(result, 21321323)
       const link = `${window.location.origin}/household/accept?token=${result.data.token}`
       setInviteLink(link)
       setInviteEmail("")
@@ -497,7 +496,7 @@ export default function SettingsPage() {
                   </Button>
                 </div>
                 {inviteLink && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">Share this link with your family member:</p>
                     <div className="flex items-center gap-2 rounded-md border p-2 text-xs bg-muted">
                       <span className="truncate flex-1 text-muted-foreground">{inviteLink}</span>
@@ -512,13 +511,37 @@ export default function SettingsPage() {
                         <Copy className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <a
-                      href={`mailto:?subject=Join my household on Pocket&body=Hi! I'd like to invite you to join my household on Pocket. Click this link to accept: ${encodeURIComponent(inviteLink)}`}
-                      className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-                    >
-                      <UserPlus className="h-3 w-3" />
-                      Send via email app
-                    </a>
+                    <div className="flex gap-2">
+                      {typeof navigator !== "undefined" && !!navigator.share && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="flex-1"
+                          onClick={() =>
+                            navigator.share({
+                              title: `Join ${household?.name ?? "my household"}`,
+                              text: `You've been invited to join my household on Pocket. Tap the link to accept.`,
+                              url: inviteLink,
+                            }).catch(() => {/* user cancelled — no-op */})
+                          }
+                        >
+                          <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                          Share via…
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          navigator.clipboard.writeText(inviteLink)
+                          toast.success("Link copied!")
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1.5" />
+                        Copy link
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

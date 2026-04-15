@@ -72,7 +72,7 @@ function DashboardInnerContent() {
     const tRecurring = useTranslations("recurring");
     const { user } = useAuth();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
-    const { householdId, household, isHouseholdMode, setIsHouseholdMode, householdEntries, householdEntriesLoading, refreshHouseholdEntries } = useHousehold();
+    const { householdId, household, isHouseholdMode, setIsHouseholdMode, householdEntries, householdEntriesLoading, householdEntriesError, refreshHouseholdEntries } = useHousehold();
 
     // Financial summary (single source of truth for metrics)
     const {
@@ -362,6 +362,16 @@ function DashboardInnerContent() {
                                             <div className="h-3 w-16 bg-muted animate-pulse rounded" />
                                         </div>
                                     ))}
+                                </div>
+                            ) : householdEntriesError ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-sm text-destructive gap-2">
+                                    <p>{householdEntriesError}</p>
+                                    <button
+                                        className="text-xs underline text-muted-foreground hover:text-foreground"
+                                        onClick={() => refreshHouseholdEntries()}
+                                    >
+                                        Try again
+                                    </button>
                                 </div>
                             ) : householdEntries.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-sm">

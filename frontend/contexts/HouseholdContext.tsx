@@ -33,7 +33,8 @@ interface HouseholdContextType {
   setIsHouseholdMode: (v: boolean) => void
   householdEntries: HouseholdEntry[]
   householdEntriesLoading: boolean
-  refreshHouseholdEntries: () => void
+  householdEntriesError: string | null
+  refreshHouseholdEntries: () => Promise<void>
   refreshHousehold: () => Promise<void>
   loading: boolean
 }
@@ -50,6 +51,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   const [isHouseholdMode, setIsHouseholdMode] = useState(false)
   const [householdEntries, setHouseholdEntries] = useState<HouseholdEntry[]>([])
   const [householdEntriesLoading, setHouseholdEntriesLoading] = useState(false)
+  const [householdEntriesError, setHouseholdEntriesError] = useState<string | null>(null)
 
   const unsubHouseholdRef = useRef<(() => void) | null>(null)
 
@@ -120,11 +122,14 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   const fetchHouseholdEntries = useCallback(async () => {
     if (!householdId) return
     setHouseholdEntriesLoading(true)
+    setHouseholdEntriesError(null)
     try {
       const result = await callGetHouseholdEntries(householdId, { limit: 200 })
       setHouseholdEntries(result.data.entries)
-    } catch {
+    } catch (err: unknown) {
       setHouseholdEntries([])
+      const msg = err instanceof Error ? err.message : "Failed to load family transactions."
+      setHouseholdEntriesError(msg)
     } finally {
       setHouseholdEntriesLoading(false)
     }
@@ -160,6 +165,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     setIsHouseholdMode,
     householdEntries,
     householdEntriesLoading,
+    householdEntriesError,
     refreshHouseholdEntries: fetchHouseholdEntries,
     refreshHousehold,
     loading,
