@@ -20,6 +20,7 @@ import {
   FieldValue,
   writeBatch,
   increment,
+  setDoc,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { EntryDocument, CreateEntryInput } from "./firestore-types"
@@ -183,16 +184,15 @@ export async function createEntry(
 
     batch.set(entryRef, newEntry)
 
-    // 2. Update financial summary atomically
-    // 2. Update financial summary atomically
-    //    We use update() because it correctly treats dots in keys as map paths.
-    //    If the document doesn't exist, we must initialize it first.
+    // 2. Update financial summary atomically.
+    //    Use setDoc+merge so the batch succeeds even if the summary doc is missing
+    //    (e.g. first entry for a new user, or summary was deleted).
+    //    If the doc is genuinely absent we initialize it first so all historical
+    //    totals are correct before the new entry's increment lands.
     const summaryRef = doc(db, "financialSummaries", userId)
     const summarySnap = await getDoc(summaryRef)
 
     if (!summarySnap.exists()) {
-      // Re-initialize from scratch if summary is missing
-      // This is less common because dashboard loads first, but good for robustness
       const { initializeFinancialSummary } = await import("./firestore-summary")
       await initializeFinancialSummary(userId)
     }
@@ -203,7 +203,8 @@ export async function createEntry(
       entryData.category,
       entryDate
     )
-    batch.update(summaryRef, summaryUpdates)
+    // setDoc+merge lets increment() work regardless of whether the doc existed
+    batch.set(summaryRef, summaryUpdates, { merge: true })
 
     // 3. Commit both operations atomically
     await batch.commit()
@@ -501,16 +502,20 @@ export async function deleteEntry(
       const batch = writeBatch(db)
       batch.delete(entryRef)
 
-      // Reverse the entry's effect on the summary
+      // Reverse the entry's effect on the summary.
+      // Guard with setDoc+merge so we don't crash if the summary was deleted.
       const summaryRef = doc(db, "financialSummaries", entryData.userId)
-      const reverseUpdates = buildSummaryIncrements(
-        entryData.type,
-        entryData.amount,
-        entryData.category,
-        entryData.date,
-        -1
-      )
-      batch.update(summaryRef, reverseUpdates)
+      const summarySnap = await getDoc(summaryRef)
+      if (summarySnap.exists()) {
+        const reverseUpdates = buildSummaryIncrements(
+          entryData.type,
+          entryData.amount,
+          entryData.category,
+          entryData.date,
+          -1
+        )
+        batch.update(summaryRef, reverseUpdates)
+      }
 
       await batch.commit()
     } else {

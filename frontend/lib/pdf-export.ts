@@ -31,6 +31,7 @@ interface PDFExportOptions {
   endDate: string
   reportType: 'yearly' | 'monthly' | 'custom'
   userEmail?: string
+  currency?: string
 }
 
 /**
@@ -56,7 +57,7 @@ function formatDateRange(startDate: string, endDate: string): string {
  * Export report to PDF
  */
 export async function exportReportToPDF(options: PDFExportOptions): Promise<void> {
-  const { entries, metrics, startDate, endDate, reportType, userEmail } = options
+  const { entries, metrics, startDate, endDate, reportType, userEmail, currency = 'EUR' } = options
 
   // Dynamically import heavy PDF libraries only when needed
   const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
@@ -133,11 +134,11 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   const metricsData: Array<[string, string, [number, number, number]]> = [
-    ['Total Income', formatCurrency(metrics.income, { currency: 'EUR' }), successColor],
-    ['Total Expenses', formatCurrency(metrics.expenses, { currency: 'EUR' }), dangerColor],
+    ['Total Income', formatCurrency(metrics.income, { currency }), successColor],
+    ['Total Expenses', formatCurrency(metrics.expenses, { currency }), dangerColor],
     [
       'Net Balance',
-      formatCurrency(metrics.balance, { currency: 'EUR' }),
+      formatCurrency(metrics.balance, { currency }),
       metrics.balance >= 0 ? successColor : dangerColor,
     ],
     ['Savings Rate', `${metrics.savingsRate.toFixed(1)}%`, textColor],
@@ -171,7 +172,7 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
       .sort(([, a], [, b]) => b - a)
       .map(([category, amount]) => {
         const percentage = ((amount / metrics.expenses) * 100).toFixed(1)
-        return [category, formatCurrency(amount, { currency: 'EUR' }), `${percentage}%`]
+        return [category, formatCurrency(amount, { currency }), `${percentage}%`]
       })
 
     autoTable(doc, {
@@ -219,9 +220,9 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
         const net = data.income - data.expenses
         return [
           monthName,
-          formatCurrency(data.income, { currency: 'EUR' }),
-          formatCurrency(data.expenses, { currency: 'EUR' }),
-          formatCurrency(net, { currency: 'EUR' }),
+          formatCurrency(data.income, { currency }),
+          formatCurrency(data.expenses, { currency }),
+          formatCurrency(net, { currency }),
         ]
       })
 
@@ -270,7 +271,7 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
           day: 'numeric',
           year: 'numeric',
         })
-        const amount = formatCurrency(entry.amount, { currency: 'EUR' })
+        const amount = formatCurrency(entry.amount, { currency })
         const type = entry.type === 'income' ? 'Income' : 'Expense'
         const description = entry.description.length > 30 ? entry.description.substring(0, 30) + '...' : entry.description
         return [date, type, description, entry.category, amount]

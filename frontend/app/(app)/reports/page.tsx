@@ -318,6 +318,7 @@ export default function ReportsPage() {
         endDate,
         reportType,
         userEmail: user?.email || undefined,
+        currency: userCurrency,
       })
     } catch (error) {
       console.error("Error exporting PDF:", error)

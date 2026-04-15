@@ -22,6 +22,8 @@ export interface UserDocument {
   onboardingCompleted?: boolean
   leaderboardOptIn?: boolean       // User consents to anonymous aggregation
   leaderboardOptInAt?: Timestamp
+  householdId?: string             // Set by Cloud Function when user joins a household
+  fcmTokens?: string[]             // Push notification tokens
   createdAt: Timestamp
   updatedAt: Timestamp
 }

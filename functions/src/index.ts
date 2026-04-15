@@ -97,12 +97,23 @@ function calculateNextDate(
     case "weekly":
       nextDate.setDate(nextDate.getDate() + 7);
       break;
-    case "monthly":
+    case "monthly": {
+      const day = nextDate.getDate();
+      nextDate.setDate(1); // prevent month-end overflow (e.g. Jan 31 → Mar 2)
       nextDate.setMonth(nextDate.getMonth() + 1);
+      const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      nextDate.setDate(Math.min(day, maxDay));
       break;
-    case "yearly":
+    }
+    case "yearly": {
+      const month = nextDate.getMonth();
       nextDate.setFullYear(nextDate.getFullYear() + 1);
+      // Feb 29 on a non-leap year rolls to Mar 1 — clamp back to Feb 28
+      if (nextDate.getMonth() !== month) {
+        nextDate.setDate(0);
+      }
       break;
+    }
   }
 
   return nextDate;
@@ -973,6 +984,9 @@ export const getMyHousehold = onCall(
     const userId = request.auth?.uid;
     if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
 
+    const userSnap = await db.collection("users").doc(userId).get();
+    const existingId = userSnap.data()?.householdId as string | undefined;
+
     const buildPayload = async (hdoc: FirebaseFirestore.DocumentSnapshot) => {
       const data = hdoc.data()!;
       // Backfill memberUids if missing
@@ -981,7 +995,10 @@ export const getMyHousehold = onCall(
         await hdoc.ref.update({ memberUids: uids });
         data.memberUids = uids;
       }
-      await db.collection("users").doc(userId).update({ householdId: hdoc.id });
+      // Only write householdId pointer if it's missing or stale
+      if (existingId !== hdoc.id) {
+        await db.collection("users").doc(userId).update({ householdId: hdoc.id });
+      }
       return {
         householdId: hdoc.id,
         household: {
@@ -992,9 +1009,6 @@ export const getMyHousehold = onCall(
         },
       };
     };
-
-    const userSnap = await db.collection("users").doc(userId).get();
-    const existingId = userSnap.data()?.householdId as string | undefined;
     if (existingId) {
       const hSnap = await db.collection("households").doc(existingId).get();
       if (hSnap.exists) {
@@ -1171,6 +1185,8 @@ export const acceptHouseholdInvite = onCall(
     const userId = request.auth?.uid;
     const callerEmail = request.auth?.token?.email;
     if (!userId || !callerEmail) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    await checkRateLimit(userId, "acceptHouseholdInvite");
 
     const { token } = request.data as { token: string };
     if (!token) throw new HttpsError("invalid-argument", "token is required");

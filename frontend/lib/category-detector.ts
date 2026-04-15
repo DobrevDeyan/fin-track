@@ -17,9 +17,9 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'diner', 'eatery', 'bakery', 'pizzeria', 'sushi', 'chinese', 'thai',
     'indian', 'mexican', 'italian', 'food', 'kitchen', 'tavern', 'pub',
     // Grocery Stores
-    'grocery', 'supermarket', 'market', 'lidl', 'aldi', 'walmart', 'tesco',
+    'grocery', 'supermarket', 'market', 'lidl', 'aldi', 'tesco',
     'sainsbury', 'waitrose', 'morrisons', 'asda', 'whole foods', 'trader joe',
-    'kaufland', 'billa', 'carrefour', 'metro', 'fresh', 'organic',
+    'kaufland', 'billa', 'carrefour', 'fresh', 'organic',
     // Delivery
     'uber eats', 'deliveroo', 'just eat', 'doordash', 'grubhub', 'foodpanda',
   ],

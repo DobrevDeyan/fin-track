@@ -63,10 +63,12 @@ export function useSubscription(): UseSubscriptionReturn {
     setLoading(true)
     setError(null)
 
+    const GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
     const subscriptionsRef = collection(db, "customers", user.uid, "subscriptions")
     const activeQuery = query(
       subscriptionsRef,
-      where("status", "in", ["active", "trialing"])
+      where("status", "in", ["active", "trialing", "past_due"])
     )
 
     const unsubscribe = onSnapshot(
@@ -90,8 +92,14 @@ export function useSubscription(): UseSubscriptionReturn {
         const priceId = data.items?.[0]?.price?.id ?? data.price?.id ?? null
         const role = data.role ?? null
 
+        // past_due retains Pro access for 7 days after period end to allow payment retry
+        const gracePeriodExpired =
+          data.status === "past_due" &&
+          currentPeriodEnd !== null &&
+          currentPeriodEnd.getTime() + GRACE_PERIOD_MS < Date.now()
+
         setSubscription({
-          tier: resolveTier(role),
+          tier: gracePeriodExpired ? "free" : resolveTier(role),
           status: data.status as SubscriptionStatus,
           currentPeriodEnd,
           priceId,

@@ -237,30 +237,66 @@ export async function resetFinancialData(userId: string): Promise<void> {
  * Delete all Firestore data for a user, then delete their Firebase Auth account.
  *
  * Collections deleted:
- *   entries, budgets, goals, savingsAccounts, recurringTransactions
+ *   entries, budgets, goals, savingsAccounts, recurringTransactions, assets
  *   (queried by userId field, chunked into 500-doc batches)
  *
  * Single documents deleted:
- *   financialSummaries/{userId}, aiInsights/{userId}, users/{userId}
+ *   financialSummaries/{userId}, aiInsights/{userId}, scanUsage/{userId},
+ *   leaderboardProfiles/{userId}, users/{userId}
+ *
+ * Side-effects:
+ *   - Firebase Storage receipts under receipts/{userId}/ are deleted
+ *   - User is removed from their household (owner transfer or dissolution via CF)
  */
 export async function deleteUserData(userId: string): Promise<void> {
   const BATCH_SIZE = 490 // safely under the 500-write Firestore batch limit
 
+  // 1. Fetch user doc before we delete it — needed for householdId
+  const userDoc = await getUserDocument(userId)
+
+  // 2. Leave household via CF (handles ownership transfer + dissolution)
+  if (userDoc?.householdId) {
+    try {
+      const { callLeaveHousehold } = await import("./firestore-household")
+      await callLeaveHousehold(userDoc.householdId)
+    } catch (err) {
+      console.error("Error leaving household during account deletion:", err)
+      // Non-fatal — continue deletion
+    }
+  }
+
+  // 3. Delete Firebase Storage receipts before removing Firestore entries
+  try {
+    const { deleteReceipt } = await import("./receipt-utils")
+    const entriesRef = collection(db, "entries")
+    const receiptSnap = await getDocs(
+      query(entriesRef, where("userId", "==", userId), where("receiptUrl", "!=", null))
+    )
+    const receiptUrls = receiptSnap.docs
+      .map((d) => d.data().receiptUrl as string | undefined)
+      .filter((url): url is string => !!url)
+    // allSettled — a missing file must not block the rest of the deletion
+    await Promise.allSettled(receiptUrls.map((url) => deleteReceipt(url)))
+  } catch (err) {
+    console.error("Error deleting Storage receipts during account deletion:", err)
+    // Non-fatal — continue deletion
+  }
+
+  // 4. Delete all documents in each collection that belong to this user
   const userOwnedCollections = [
     "entries",
     "budgets",
     "goals",
     "savingsAccounts",
     "recurringTransactions",
+    "assets",
   ]
 
-  // Delete all documents in each collection that belong to this user
   for (const collectionName of userOwnedCollections) {
     const colRef = collection(db, collectionName)
     const q = query(colRef, where("userId", "==", userId))
     const snapshot = await getDocs(q)
 
-    // Process in chunks to stay within batch size
     for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
       const chunk = snapshot.docs.slice(i, i + BATCH_SIZE)
       const batch = writeBatch(db)
@@ -269,17 +305,16 @@ export async function deleteUserData(userId: string): Promise<void> {
     }
   }
 
-  // Delete single-document records keyed by userId
+  // 5. Delete single-document records keyed by userId
   await Promise.all([
     deleteDoc(doc(db, "financialSummaries", userId)),
     deleteDoc(doc(db, "aiInsights", userId)),
     deleteDoc(doc(db, "scanUsage", userId)),
+    deleteDoc(doc(db, "leaderboardProfiles", userId)),
     deleteDoc(doc(db, "users", userId)),
   ])
 
-  // Finally delete the Firebase Auth account.
-  // Dynamic imports avoid importing browser-only firebase/auth at module level,
-  // which would break server-side evaluation of this shared utility file.
+  // 6. Delete the Firebase Auth account last — once gone, no more authenticated calls
   const { auth } = await import("./firebase")
   const { deleteUser } = await import("firebase/auth")
   const currentUser = auth.currentUser

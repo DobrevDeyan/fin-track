@@ -276,12 +276,23 @@ export function calculateNextDate(
     case "weekly":
       nextDate.setDate(nextDate.getDate() + 7)
       break
-    case "monthly":
+    case "monthly": {
+      const day = nextDate.getDate()
+      nextDate.setDate(1) // prevent month-end overflow (e.g. Jan 31 → Mar 2)
       nextDate.setMonth(nextDate.getMonth() + 1)
+      const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate()
+      nextDate.setDate(Math.min(day, maxDay))
       break
-    case "yearly":
+    }
+    case "yearly": {
+      const month = nextDate.getMonth()
       nextDate.setFullYear(nextDate.getFullYear() + 1)
+      // Feb 29 on a non-leap year rolls to Mar 1 — clamp back to Feb 28
+      if (nextDate.getMonth() !== month) {
+        nextDate.setDate(0)
+      }
       break
+    }
   }
 
   return nextDate
