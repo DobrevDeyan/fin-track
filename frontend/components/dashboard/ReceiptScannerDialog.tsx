@@ -476,7 +476,7 @@ export function ReceiptScannerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden overscroll-none">
         <DialogHeader>
           <DialogTitle>Scan Receipt</DialogTitle>
           <DialogDescription>

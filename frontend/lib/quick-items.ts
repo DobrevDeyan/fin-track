@@ -36,8 +36,8 @@ export const QUICK_ITEMS_BY_CATEGORY: CategoryQuickItems[] = [
   {
     categoryId: "Transportation",
     items: [
-      { id: "gas_20", label: "Gas (20€)", amount: 20.00, emoji: "⛽" },
-      { id: "gas_50", label: "Gas (50€)", amount: 50.00, emoji: "⛽" },
+      { id: "gas_small", label: "Gas – Partial", amount: 20.00, emoji: "⛽" },
+      { id: "gas_full", label: "Gas – Full Tank", amount: 50.00, emoji: "⛽" },
       { id: "parking", label: "Parking", amount: 3.00, emoji: "🅿️" },
       { id: "public_transport", label: "Public Transport", amount: 2.50, emoji: "🚇" },
       { id: "taxi", label: "Taxi", amount: 15.00, emoji: "🚕" },

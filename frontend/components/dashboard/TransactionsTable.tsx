@@ -1,10 +1,15 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp, Receipt, Zap, FileUp } from "lucide-react"
+import {
+  Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp,
+  Receipt, Zap, FileUp,
+  UtensilsCrossed, ShoppingCart, Car, Calculator, Smile, Heart,
+  GraduationCap, Plane, Gift, CircleDot, Briefcase, Wallet,
+} from "lucide-react"
 import { VirtualizedTransactionTable } from "./VirtualizedTransactionTable"
 import {
   Dialog,
@@ -28,6 +33,22 @@ import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
 import type { TransactionType } from "@/lib/constants/transaction.constants"
 import { useTranslations } from "next-intl"
 import { useHaptics } from "@/lib/hooks/useHaptics"
+
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  "Food & Dining":    UtensilsCrossed,
+  "Shopping":         ShoppingCart,
+  "Transportation":   Car,
+  "Bills & Utilities": Zap,
+  "Taxes & Insurance": Calculator,
+  "Entertainment":    Smile,
+  "Health & Pharmacy": Heart,
+  "Education":        GraduationCap,
+  "Travel & Vacation": Plane,
+  "Gifts & Donations": Gift,
+  "Salary":           Briefcase,
+  "Goal Contribution": Wallet,
+  "Other":            CircleDot,
+}
 
 interface Entry {
   id: string
@@ -307,9 +328,23 @@ export function TransactionsTable({
                         </div>
                       </TableCell>
                       <TableCell className="py-2 sm:py-4">
+                        {/* Mobile: icon-only pill to save horizontal space */}
+                        <span
+                          className={cn(
+                            "sm:hidden inline-flex items-center justify-center w-7 h-7 rounded-full",
+                            getCategoryColor(transaction.category)
+                          )}
+                          title={transaction.category}
+                        >
+                          {(() => {
+                            const Icon = CATEGORY_ICONS[transaction.category] ?? CircleDot
+                            return <Icon className="h-3.5 w-3.5" />
+                          })()}
+                        </span>
+                        {/* Desktop: full text badge */}
                         <Badge
                           variant="secondary"
-                          className={getCategoryColor(transaction.category)}
+                          className={cn("hidden sm:inline-flex", getCategoryColor(transaction.category))}
                         >
                           {transaction.category}
                         </Badge>

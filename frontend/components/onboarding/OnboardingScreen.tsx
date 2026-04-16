@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
 import { useTranslations } from "next-intl"
 import Typed from "typed.js"
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,9 @@ interface OnboardingScreenProps {
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const t = useTranslations("onboarding")
   const typedEl = useRef<HTMLSpanElement>(null)
-  
+  // Portal needs a mounted guard — document is not available during SSR
+  const [mounted, setMounted] = useState(false)
+
   const [phase, setPhase] = useState<"greeting" | "form">("greeting")
   const [step, setStep] = useState(1)
   const [displayName, setDisplayName] = useState("")
@@ -23,6 +26,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [monthlyBudget, setMonthlyBudget] = useState("")
   const [salaryDate, setSalaryDate] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Typing effect
   useEffect(() => {
@@ -80,8 +87,21 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     return <Euro className="h-6 w-6" />
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+  if (!mounted) return null
+
+  // Portal to document.body escapes any ancestor CSS transform/opacity stacking
+  // context (framer-motion page transitions) that would break position:fixed on
+  // iOS Safari, causing the overlay to appear off-screen until the user scrolls.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] bg-background overflow-y-auto"
+      style={{
+        // Safe-area insets for notch / Dynamic Island and home indicator
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+    >
+      <div className="flex min-h-full items-center justify-center">
       <div className="w-full max-w-lg p-6 flex flex-col items-center">
         
         {phase === "greeting" && (
@@ -231,6 +251,8 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body
   )
 }

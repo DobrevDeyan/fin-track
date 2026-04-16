@@ -206,11 +206,32 @@ html {
   display: none;
 }
 
-/* But allow scrolling functionality */
+/* Allow scrolling on the page itself */
 html,
 body {
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+}
+
+/* When Radix UI opens a modal/dialog/sheet it sets data-scroll-locked on <body>.
+   iOS Safari ignores overflow:hidden on body, so we need touch-action:none to
+   actually stop the background from scrolling under the overlay. */
+body[data-scroll-locked] {
+  overflow: hidden !important;
+  touch-action: none;
+  /* Prevent -webkit-overflow-scrolling from re-enabling momentum scroll */
+  -webkit-overflow-scrolling: auto !important;
+}
+
+/* Scrollable areas *inside* modals: allow internal scroll but don't let it
+   propagate out to the page (stops the rubber-band bounce leaking). */
+[data-radix-dialog-content] *,
+[data-radix-sheet-content] * {
+  -webkit-overflow-scrolling: auto;
+}
+
+[data-radix-dialog-content] [data-scrollable],
+[data-radix-sheet-content] [data-scrollable] {
+  overscroll-behavior: contain;
 }
 
 /* HeroCards background shadow - green theme */

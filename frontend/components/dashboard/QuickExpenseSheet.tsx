@@ -518,7 +518,8 @@ export function QuickExpenseSheet({
 
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto px-4 pb-2 min-h-0 touch-pan-y"
+          data-scrollable
+          className="flex-1 overflow-y-auto overscroll-contain px-4 pb-2 min-h-0 touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -809,18 +810,13 @@ export function QuickExpenseSheet({
 
         {/* Submit Button - Fixed at bottom */}
         <div className="px-4 pb-4 pt-2 border-t flex-shrink-0 bg-background">
-          {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && selectedPrice !== null && (
-            <div className="mb-2 text-center">
-              <p className="text-xs text-muted-foreground">Selected: {selectedItem?.label} - €{selectedPrice.toFixed(2)}</p>
-            </div>
-          )}
           <Button
             onClick={handleSubmit}
             disabled={!canSubmit || isSubmitting}
             size="lg"
             className={cn(
-              "w-full h-10 text-sm font-bold shadow-md",
-              transactionType === "income" 
+              "w-full h-12 text-base font-bold shadow-md",
+              transactionType === "income"
                 ? "bg-green-600 hover:bg-green-700 text-white"
                 : "bg-primary hover:bg-primary/90",
               !canSubmit && "opacity-50 cursor-not-allowed"
@@ -831,7 +827,10 @@ export function QuickExpenseSheet({
             ) : (
               <>
                 <Check className="mr-2 h-4 w-4" />
-                Save {transactionType === "income" ? "Income" : "Expense"}
+                {amount && parseFloat(amount) > 0
+                  ? `Save ${transactionType === "income" ? "Income" : "Expense"} · €${parseFloat(amount).toFixed(2)}`
+                  : `Save ${transactionType === "income" ? "Income" : "Expense"}`
+                }
               </>
             )}
           </Button>

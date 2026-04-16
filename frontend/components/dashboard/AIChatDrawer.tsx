@@ -160,7 +160,7 @@ export function AIChatDrawer() {
           </SheetHeader>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+          <div data-scrollable className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 min-h-0">
             {chatMessages.length === 0 && !chatLoading && (
               <div className="space-y-4">
                 {/* Welcome message */}
