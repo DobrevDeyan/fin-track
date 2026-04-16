@@ -273,7 +273,14 @@ export default function SettingsPage() {
       router.push("/auth/login")
     } catch (err: any) {
       console.error("Account deletion failed:", err)
-      setDeleteError(t("deleteAccountError"))
+      // Firebase Auth requires a recent sign-in before deleting the account.
+      // The deleteMyAccount CF calls admin.auth().deleteUser() which bypasses
+      // this, but the client token still needs to be valid to call the CF.
+      if (err?.code === "auth/requires-recent-login" || err?.message?.includes("requires-recent-login")) {
+        setDeleteError("For security, please sign out and sign back in before deleting your account.")
+      } else {
+        setDeleteError(t("deleteAccountError"))
+      }
       setDeleting(false)
     }
   }

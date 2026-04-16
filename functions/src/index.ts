@@ -1440,3 +1440,101 @@ export const updateHouseholdMemberName = onCall(
     return { ok: true };
   }
 );
+
+// ─── Account Deletion ─────────────────────────────────────────────────────────
+
+/**
+ * Delete all server-side data for the authenticated user and remove their
+ * Firebase Auth account.
+ *
+ * Covers data that the client SDK cannot touch (admin-write-only collections,
+ * Stripe subcollections, Auth account deletion).  Client-owned Firestore data
+ * (entries, budgets, etc.) is deleted by the frontend before calling this.
+ *
+ * Deleted here:
+ *   - auditLog documents where userId == uid
+ *   - customers/{uid} + subcollections (checkout_sessions, subscriptions, payments)
+ *   - rateLimits documents where userId == uid
+ *   - householdInvites documents where invitedEmail == user's email (pending invites)
+ *   - users/{uid}/notifications subcollection
+ *   - Firebase Auth account
+ */
+export const deleteMyAccount = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const userEmail = request.auth?.token?.email ?? null;
+    const BATCH_SIZE = 490;
+
+    // Helper: delete all docs from a query in batches
+    async function deleteQueryBatched(
+      q: FirebaseFirestore.Query
+    ): Promise<void> {
+      const snap = await q.get();
+      for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        snap.docs.slice(i, i + BATCH_SIZE).forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+
+    // Helper: delete all docs in a subcollection
+    async function deleteSubcollection(
+      parentRef: FirebaseFirestore.DocumentReference,
+      subcollectionName: string
+    ): Promise<void> {
+      const snap = await parentRef.collection(subcollectionName).get();
+      for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        snap.docs.slice(i, i + BATCH_SIZE).forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+
+    // 1. auditLog entries (admin-write-only collection)
+    await deleteQueryBatched(
+      db.collection("auditLog").where("userId", "==", userId)
+    );
+
+    // 2. Stripe customers subtree
+    const customerRef = db.collection("customers").doc(userId);
+    await Promise.all([
+      deleteSubcollection(customerRef, "checkout_sessions"),
+      deleteSubcollection(customerRef, "subscriptions"),
+      deleteSubcollection(customerRef, "payments"),
+    ]);
+    await customerRef.delete();
+
+    // 3. rateLimits documents for this user
+    await deleteQueryBatched(
+      db.collection("rateLimits").where("userId", "==", userId)
+    );
+
+    // 4. Pending household invites sent to this user's email
+    if (userEmail) {
+      await deleteQueryBatched(
+        db
+          .collection("householdInvites")
+          .where("invitedEmail", "==", userEmail.toLowerCase())
+          .where("status", "==", "pending")
+      );
+    }
+
+    // 5. Notifications subcollection
+    await deleteSubcollection(
+      db.collection("users").doc(userId),
+      "notifications"
+    );
+
+    // 6. Delete the Firebase Auth account last — once gone, no token is valid
+    await admin.auth().deleteUser(userId);
+
+    await logAuditEvent(userId, "account_deleted", { deletedAt: new Date().toISOString() }).catch(() => {
+      // best-effort — the auditLog was already purged, this is a final tombstone
+    });
+
+    return { ok: true };
+  }
+);

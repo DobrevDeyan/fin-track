@@ -212,6 +212,22 @@ export async function completeOnboarding(
 export async function resetFinancialData(userId: string): Promise<void> {
   const BATCH_SIZE = 490
 
+  // Delete Storage receipts before removing the Firestore entries that reference them
+  try {
+    const { deleteReceipt } = await import("./receipt-utils")
+    const entriesRef = collection(db, "entries")
+    const receiptSnap = await getDocs(
+      query(entriesRef, where("userId", "==", userId), where("receiptUrl", "!=", null))
+    )
+    const receiptUrls = receiptSnap.docs
+      .map((d) => d.data().receiptUrl as string | undefined)
+      .filter((url): url is string => !!url)
+    await Promise.allSettled(receiptUrls.map((url) => deleteReceipt(url)))
+  } catch (err) {
+    console.error("Error deleting Storage receipts during financial reset:", err)
+    // Non-fatal — continue reset
+  }
+
   const userOwnedCollections = [
     "entries",
     "budgets",
@@ -233,7 +249,6 @@ export async function resetFinancialData(userId: string): Promise<void> {
       await batch.commit()
     }
   }
-
 
   await Promise.all([
     deleteDoc(doc(db, "financialSummaries", userId)),
@@ -322,13 +337,13 @@ export async function deleteUserData(userId: string): Promise<void> {
     deleteDoc(doc(db, "users", userId)),
   ])
 
-  // 6. Delete the Firebase Auth account last — once gone, no more authenticated calls
-  const { auth } = await import("./firebase")
-  const { deleteUser } = await import("firebase/auth")
-  const currentUser = auth.currentUser
-  if (currentUser) {
-    await deleteUser(currentUser)
-  }
+  // 6. Call the server-side CF to delete admin-only data and the Auth account.
+  //    This covers: auditLog, customers/ (Stripe), rateLimits, householdInvites,
+  //    notifications subcollection, and finally admin.auth().deleteUser().
+  const { getFunctions, httpsCallable } = await import("firebase/functions")
+  const { app } = await import("./firebase")
+  const fns = getFunctions(app, "europe-west4")
+  await httpsCallable(fns, "deleteMyAccount")()
 }
 
 /**
