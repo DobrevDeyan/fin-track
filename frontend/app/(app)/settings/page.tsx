@@ -40,6 +40,8 @@ import { useNotifications } from "@/lib/hooks/useNotifications"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { useUIMode } from "@/contexts/UIComplexityContext"
+import { UIModeToggle } from "@/components/ui/UIModeToggle"
 
 const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? null
 
@@ -286,6 +288,7 @@ export default function SettingsPage() {
   }
 
   const isConfirmValid = confirmText.trim() === "DELETE"
+  const { mode } = useUIMode()
 
   if (!user) return null
 
@@ -311,11 +314,15 @@ export default function SettingsPage() {
             Appearance
           </CardTitle>
           <CardDescription>
-            Choose your theme and accent color. Changes apply instantly.
+            Choose your theme, accent color, and interface complexity. Changes apply instantly.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <ThemeControls />
+          <div className="pt-2 border-t border-border/50">
+            <p className="text-xs text-muted-foreground mb-3">Interface view</p>
+            <UIModeToggle variant="row" />
+          </div>
         </CardContent>
       </Card>
 
@@ -395,7 +402,8 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      {/* Community Leaderboard */}
+      {/* Community Leaderboard — full mode only */}
+      {mode === "full" && (
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -431,9 +439,11 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
-      {/* Family / Household */}
-      <Card className="mb-6">
+      {/* Family / Household — full mode only */}
+      {mode === "full" && (
+      <><Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
@@ -620,6 +630,8 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
 
       {/* Profile */}
       <Card className="mb-6">
@@ -672,7 +684,8 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Billing */}
+      {/* Billing — full mode only */}
+      {mode === "full" && (
       <Card id="billing" className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -768,6 +781,7 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Danger Zone */}
       <Card className="border-destructive/40">

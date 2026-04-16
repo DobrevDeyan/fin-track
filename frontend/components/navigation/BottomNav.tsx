@@ -5,17 +5,20 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, Calendar, FileText, Settings, Plus } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
+import { useUIMode } from "@/contexts/UIComplexityContext"
 
 const tabs = [
-  { href: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard" },
-  { href: "/calendar", icon: Calendar, labelKey: "calendar" },
-  { href: "/reports", icon: FileText, labelKey: "reports" },
-  { href: "/settings", icon: Settings, labelKey: "settings" },
+  { href: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", tier: "simple" },
+  { href: "/calendar", icon: Calendar, labelKey: "calendar", tier: "full" },
+  { href: "/reports", icon: FileText, labelKey: "reports", tier: "full" },
+  { href: "/settings", icon: Settings, labelKey: "settings", tier: "simple" },
 ] as const
 
 export function BottomNav() {
   const pathname = usePathname()
   const t = useTranslations("nav")
+  const { mode } = useUIMode()
+  const visibleTabs = mode === "simple" ? tabs.filter(tab => tab.tier === "simple") : tabs
 
   const openQuickAdd = () => {
     window.dispatchEvent(new CustomEvent("pocket:openQuickAdd"))
@@ -27,7 +30,7 @@ export function BottomNav() {
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}
     >
       <div className="flex items-center bg-background/95 backdrop-blur-md border border-border/60 shadow-xl shadow-black/10 rounded-2xl px-1 py-1.5 gap-0">
-        {tabs.map(({ href, icon: Icon, labelKey }) => {
+        {visibleTabs.map(({ href, icon: Icon, labelKey }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/")
           return (
             <Link

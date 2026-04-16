@@ -44,6 +44,8 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
 import { ThemeControls } from "@/components/ThemeControls"
+import { useUIMode } from "@/contexts/UIComplexityContext"
+import { UIModeToggle } from "@/components/ui/UIModeToggle"
 
 export const AppNavbar = () => {
   const t = useTranslations("nav")
@@ -53,17 +55,20 @@ export const AppNavbar = () => {
   const { user, logout } = useAuth()
   const { userCurrency, refreshCurrency, displayName } = useCurrency()
   const { locale, setLocale } = useLanguage()
+  const { mode } = useUIMode()
 
   const appRoutes = [
-    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
-    { href: "/calendar", label: t("calendar"), icon: CalendarIcon },
-    { href: "/reports", label: t("reports"), icon: FileText },
-    { href: "/receipts", label: t("receipts"), icon: Receipt },
-    { href: "/subscriptions", label: "Subscriptions", icon: Repeat },
-    { href: "/debt", label: "Debt Planner", icon: TrendingDown },
-    { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard, tier: "simple" as const },
+    { href: "/calendar", label: t("calendar"), icon: CalendarIcon, tier: "full" as const },
+    { href: "/reports", label: t("reports"), icon: FileText, tier: "full" as const },
+    { href: "/receipts", label: t("receipts"), icon: Receipt, tier: "full" as const },
+    { href: "/subscriptions", label: "Subscriptions", icon: Repeat, tier: "full" as const },
+    { href: "/debt", label: "Debt Planner", icon: TrendingDown, tier: "full" as const },
+    { href: "/leaderboard", label: "Leaderboard", icon: Trophy, tier: "full" as const },
     // { href: "/net-worth", label: t("netWorth"), icon: Landmark }, // disabled
   ]
+
+  const visibleRoutes = mode === "simple" ? appRoutes.filter(r => r.tier === "simple") : appRoutes
 
   const handleCurrencyChange = async (currency: SupportedCurrency) => {
     if (!user || currencyLoading) return
@@ -365,7 +370,7 @@ export const AppNavbar = () => {
                 Navigate
               </p>
               <div className="rounded-2xl overflow-hidden bg-muted/50">
-                {appRoutes.map(({ href, label, icon: Icon }, i) => {
+                {visibleRoutes.map(({ href, label, icon: Icon }, i) => {
                   const isActive = pathname === href
                   return (
                     <div key={href}>
@@ -398,7 +403,8 @@ export const AppNavbar = () => {
               </div>
             </motion.div>
 
-            {/* Tools */}
+            {/* Tools — full mode only */}
+            {mode === "full" && (
             <motion.div
               custom={1}
               initial="hidden"
@@ -438,6 +444,7 @@ export const AppNavbar = () => {
                 </a>
               </div>
             </motion.div>
+            )}
 
             {/* Account */}
             <motion.div
@@ -497,7 +504,9 @@ export const AppNavbar = () => {
               <p className="text-[11px] text-muted-foreground/60 font-semibold uppercase tracking-widest mb-3 px-1">
                 Preferences
               </p>
-              <div className="rounded-2xl bg-muted/50 px-4 py-3">
+              <div className="rounded-2xl bg-muted/50 px-4 py-3 space-y-3">
+                <UIModeToggle variant="row" />
+                <div className="h-px bg-border/40" />
                 <ThemeControls compact />
               </div>
             </motion.div>
@@ -548,7 +557,7 @@ export const AppNavbar = () => {
           {/* Desktop nav — icon pills with tooltips */}
           <TooltipProvider delayDuration={400}>
             <nav className="hidden md:flex items-center gap-1 bg-muted rounded-xl p-1">
-              {appRoutes.map(({ href, label, icon: Icon }) => {
+              {visibleRoutes.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href
                 return (
                   <Tooltip key={href}>
@@ -583,6 +592,7 @@ export const AppNavbar = () => {
 
           {/* Desktop right — consolidated currency/language + avatar */}
           <div className="hidden md:flex items-center gap-2">
+            <UIModeToggle variant="pill" />
             <NotificationBell variant="desktop" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

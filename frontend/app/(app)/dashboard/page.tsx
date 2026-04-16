@@ -38,7 +38,8 @@ import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContex
 import { useEntries } from "@/lib/hooks/dashboard";
 
 // Utilities
-import { getUniqueCategories, getExpenseCategories } from "@/lib/categories";
+import { getUniqueCategories, getExpenseCategories } from "@/lib/categories"
+import { useUIMode } from "@/contexts/UIComplexityContext";
 
 // Tabs
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,6 +72,7 @@ function DashboardInnerContent() {
     const tBudgets = useTranslations("budgets");
     const tRecurring = useTranslations("recurring");
     const { user } = useAuth();
+    const { mode } = useUIMode();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
     const { householdId, household, isHouseholdMode, setIsHouseholdMode, householdEntries, householdEntriesLoading, householdEntriesError, refreshHouseholdEntries } = useHousehold();
 
@@ -100,6 +102,7 @@ function DashboardInnerContent() {
       window.addEventListener("pocket:openQuickAdd", handler)
       return () => window.removeEventListener("pocket:openQuickAdd", handler)
     }, [])
+
 
     // Receipt scanner state
     const [scannerDialogOpen, setScannerDialogOpen] = useState(false);
@@ -234,6 +237,7 @@ function DashboardInnerContent() {
                         <h1 className="text-4xl font-bold text-foreground">{t("title")}</h1>
                         <p className="text-muted-foreground mt-2">{t("welcome", { name: displayName || user?.email?.split("@")[0] || "" })}</p>
                     </div>
+                    {mode === "full" && (
                     <div className="flex items-center gap-2">
                         {householdId && (
                             <div className="flex items-center rounded-lg border bg-muted p-0.5 gap-0.5">
@@ -266,6 +270,7 @@ function DashboardInnerContent() {
                             {t("scanReceipt")}
                         </Button>
                     </div>
+                    )}
                 </div>
 
                 {/* Metrics Cards */}
@@ -288,7 +293,8 @@ function DashboardInnerContent() {
                     </SectionErrorBoundary>
                 </div>
 
-                {/* Health Score + Anomaly Alert */}
+                {/* Health Score + Anomaly Alert — full mode only */}
+                {mode === "full" && (
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <SectionErrorBoundary label="Health Score">
                         <div className="relative">
@@ -306,6 +312,7 @@ function DashboardInnerContent() {
                         <AnomalyAlert userCurrency={userCurrency} className="flex-1" />
                     </SectionErrorBoundary>
                 </div>
+                )}
 
                 {/* Budget Progress - Now uses adjusted spent & budget */}
                 {((monthlyBudget ?? 0) > 0 || currentMonthIncome > 0) && (
@@ -320,12 +327,14 @@ function DashboardInnerContent() {
                     </div>
                 )}
 
-                {/* Cash Flow Forecast */}
+                {/* Cash Flow Forecast — full mode only */}
+                {mode === "full" && (
                 <div className="mb-8">
                     <SectionErrorBoundary label="Cash Flow Forecast">
                         <CashFlowForecast userCurrency={userCurrency} />
                     </SectionErrorBoundary>
                 </div>
+                )}
 
                 {/* Transactions — Personal or Family view */}
                 {isHouseholdMode && householdId ? (
@@ -424,7 +433,7 @@ function DashboardInnerContent() {
                         onEdit={entriesHook.handleEdit}
                         onDelete={entriesHook.handleDelete}
                         onImportCSV={() => setCsvImportOpen(true)}
-                        filters={<TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} />}
+                        filters={mode === "full" ? <TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} /> : undefined}
                         onLoadMore={entriesHook.loadMore}
                         hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore}
                         isLoadingMore={entriesHook.isLoadingMore}
@@ -432,7 +441,8 @@ function DashboardInnerContent() {
                 </SectionErrorBoundary>
                 )}
 
-                {/* Feature Sections - Tabbed Interface */}
+                {/* Feature Sections - Tabbed Interface — full mode only */}
+                {mode === "full" && (
                 <div className="mt-8" ref={tabsRef}>
                     <Tabs value={activeTab} onValueChange={handleTabChange}>
                         <TabsList className="grid w-full grid-cols-3">
@@ -476,6 +486,7 @@ function DashboardInnerContent() {
                         </AnimatePresence>
                     </div>
                 </div>
+                )}
 
                 {/* Add/Edit Entry Dialog */}
                 <AddTransactionDialog 
@@ -507,11 +518,11 @@ function DashboardInnerContent() {
                   savingsAccounts={activeSavingsAccounts}
                 />
 
-                {/* AI Budget Coach Chat */}
-                <AIChatDrawer />
+                {/* AI Budget Coach Chat — full mode only */}
+                {mode === "full" && <AIChatDrawer />}
 
-                {/* Achievement / Share card */}
-                <AchievementCard open={shareCardOpen} onClose={() => setShareCardOpen(false)} />
+                {/* Achievement / Share card — full mode only */}
+                {mode === "full" && <AchievementCard open={shareCardOpen} onClose={() => setShareCardOpen(false)} />}
 
                 {/* Salary Reminder Notifications */}
                 <SalaryReminderNotification entries={entriesHook.entries} />

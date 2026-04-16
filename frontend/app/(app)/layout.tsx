@@ -8,12 +8,14 @@ import { AuthGuard } from "@/components/auth/AuthGuard"
 import { SwipeBackNavigator } from "@/components/navigation/SwipeBackNavigator"
 import { NotificationListener } from "@/components/NotificationListener"
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider"
+import { UIComplexityProvider } from "@/contexts/UIComplexityContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   return (
     <AuthGuard>
+      <UIComplexityProvider>
       <DashboardProvider>
       <NotificationListener />
       <SwipeBackNavigator>
@@ -35,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <BottomNav />
       </SwipeBackNavigator>
       </DashboardProvider>
+      </UIComplexityProvider>
     </AuthGuard>
   )
 }
