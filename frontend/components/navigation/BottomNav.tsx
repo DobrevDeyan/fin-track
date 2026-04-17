@@ -41,7 +41,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
-              onClick={() => setOptimisticPath(href)}
+              onClick={() => setTimeout(() => setOptimisticPath(href), 0)}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 min-w-0",
                 isActive

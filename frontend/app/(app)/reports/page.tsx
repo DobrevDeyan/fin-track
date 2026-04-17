@@ -109,7 +109,7 @@ export default function ReportsPage() {
   }, [user, loading, debouncedDates])
 
   // Load 2-year entries for YearOverYearChart once on mount (independent of filter)
-  useEffect(() => {
+  /* useEffect(() => {
     if (!loading && user) {
       const now = new Date()
       const twoYearStart = formatDateForInput(new Date(now.getFullYear() - 1, 0, 1))
@@ -134,7 +134,7 @@ export default function ReportsPage() {
         setYoyEntries(converted)
       })
     }
-  }, [user, loading])
+  }, [user, loading]) */
 
   // Load cached AI digest
   useEffect(() => {
@@ -373,17 +373,17 @@ export default function ReportsPage() {
                   <option value="custom">{t("customRange")}</option>
                 </select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label htmlFor="startDate">{t("startDate")}</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="[color-scheme:light] dark:[color-scheme:dark]"
+                  className="min-w-0 [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label htmlFor="endDate">{t("endDate")}</Label>
                 <Input
                   id="endDate"
@@ -391,7 +391,7 @@ export default function ReportsPage() {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   min={startDate}
-                  className="[color-scheme:light] dark:[color-scheme:dark]"
+                  className="min-w-0 [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="col-span-2 md:col-span-1 flex items-end">
@@ -567,9 +567,9 @@ export default function ReportsPage() {
         </div>
 
         {/* 6. Year-over-Year Comparison */}
-        <div className="mb-2">
+        {/* <div className="mb-2">
           <YearOverYearChart entries={yoyEntries} userCurrency={userCurrency} />
-        </div>
+        </div> */}
 
       </div>
     </div>
