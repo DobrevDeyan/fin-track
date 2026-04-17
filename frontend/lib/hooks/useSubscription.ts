@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/AuthContext"
+import { logger } from "@/lib/utils/logger"
 
 export type PlanTier = "free" | "pro" | "business"
 export type SubscriptionStatus =
@@ -108,7 +109,7 @@ export function useSubscription(): UseSubscriptionReturn {
         setLoading(false)
       },
       (err) => {
-        console.error("Error listening to subscriptions:", err)
+        logger.error("Error listening to subscriptions", err)
         setError(err)
         setLoading(false)
       }

@@ -13,9 +13,8 @@ try {
     }
     db = admin.firestore();
     isFirebaseAvailable = true;
-    console.log('✅ Firebase Admin initialized successfully - Firestore logging enabled');
 } catch (error: any) {
-    console.warn('⚠️  Firebase Admin initialization failed - Firestore logging disabled');
+    console.warn('⚠️ Firebase Admin initialization failed - Firestore logging disabled');
     console.warn('   Error:', error.message);
     console.warn('   Document processing will continue, but logs will only appear in console.');
     console.warn('   To enable Firestore logging, fix the service account authentication in Google Cloud Console.');

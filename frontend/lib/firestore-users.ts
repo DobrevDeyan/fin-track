@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { UserDocument } from "./firestore-types"
+import { logger } from "./utils/logger"
 import { type SupportedCurrency } from "./constants/currency.constants"
 import { createEntry } from "./firestore-entries"
 
@@ -41,7 +42,7 @@ export async function getUserDocument(userId: string): Promise<(UserDocument & {
       ...userSnap.data(),
     } as UserDocument & { id: string }
   } catch (error) {
-    console.error("Error fetching user document:", error)
+    logger.error("Error fetching user document", error)
     throw error
   }
 }
@@ -65,10 +66,10 @@ export async function updateUserDisplayName(userId: string, displayName: string)
       const { callUpdateHouseholdMemberName } = await import("./firestore-household")
       await callUpdateHouseholdMemberName(displayName)
     } catch (err) {
-      console.warn("Could not sync display name to household:", err)
+      logger.warn("Could not sync display name to household", { err })
     }
   } catch (error) {
-    console.error("Error updating display name:", error)
+    logger.error("Error updating display name", error)
     throw error
   }
 }
@@ -85,7 +86,7 @@ export async function updateUserCurrency(userId: string, currency: SupportedCurr
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
-    console.error("Error updating user currency:", error)
+    logger.error("Error updating user currency", error)
     throw error
   }
 }
@@ -102,7 +103,7 @@ export async function updateUserLanguage(userId: string, language: string): Prom
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
-    console.error("Error updating user language:", error)
+    logger.error("Error updating user language", error)
     throw error
   }
 }
@@ -189,7 +190,7 @@ export async function completeOnboarding(
       }
     }
   } catch (error) {
-    console.error("Error completing onboarding:", error)
+    logger.error("Error completing onboarding", error)
     throw error
   }
 }
@@ -224,7 +225,7 @@ export async function resetFinancialData(userId: string): Promise<void> {
       .filter((url): url is string => !!url)
     await Promise.allSettled(receiptUrls.map((url) => deleteReceipt(url)))
   } catch (err) {
-    console.error("Error deleting Storage receipts during financial reset:", err)
+    logger.error("Error deleting Storage receipts during financial reset", err)
     // Non-fatal — continue reset
   }
 
@@ -283,7 +284,7 @@ export async function deleteUserData(userId: string): Promise<void> {
       const { callLeaveHousehold } = await import("./firestore-household")
       await callLeaveHousehold(userDoc.householdId)
     } catch (err) {
-      console.error("Error leaving household during account deletion:", err)
+      logger.error("Error leaving household during account deletion", err)
       // Non-fatal — continue deletion
     }
   }
@@ -301,7 +302,7 @@ export async function deleteUserData(userId: string): Promise<void> {
     // allSettled — a missing file must not block the rest of the deletion
     await Promise.allSettled(receiptUrls.map((url) => deleteReceipt(url)))
   } catch (err) {
-    console.error("Error deleting Storage receipts during account deletion:", err)
+    logger.error("Error deleting Storage receipts during account deletion", err)
     // Non-fatal — continue deletion
   }
 

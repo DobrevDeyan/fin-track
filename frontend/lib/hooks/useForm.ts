@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { logger } from "@/lib/utils/logger";
 
 export interface UseFormOptions<T> {
   initialValues: T;
@@ -85,7 +86,7 @@ export function useForm<T extends Record<string, any>>(options: UseFormOptions<T
       try {
         await onSubmit(values);
       } catch (error) {
-        console.error("Form submission error:", error);
+        logger.error("Form submission error", error);
         throw error;
       } finally {
         setIsSubmitting(false);

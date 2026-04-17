@@ -18,6 +18,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { logger } from "./utils/logger"
 
 export async function getAIDigest(
   userId: string,
@@ -51,6 +52,6 @@ export async function saveAIDigest(
       { merge: true }
     )
   } catch (err) {
-    console.error("[firestore-insights] Failed to save AI digest:", err)
+    logger.error("[firestore-insights] Failed to save AI digest", err)
   }
 }

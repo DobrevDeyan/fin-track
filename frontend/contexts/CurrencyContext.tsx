@@ -11,6 +11,8 @@ import { useAuth } from "./AuthContext"
 import { getUserDocument } from "@/lib/firestore-users"
 import { type SupportedCurrency, DEFAULT_CURRENCY } from "@/lib/constants/currency.constants"
 import { fetchExchangeRates, convertAmount as _convertAmount, type ExchangeRates } from "@/lib/exchange-rate"
+import { logger } from "@/lib/utils/logger"
+
 
 interface CurrencyContextType {
   userCurrency: SupportedCurrency
@@ -40,7 +42,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchExchangeRates()
       .then(setExchangeRates)
-      .catch((err) => console.warn("Exchange rate fetch failed:", err))
+      .catch((err) => logger.warn("Exchange rate fetch failed", { error: err }))
   }, [])
 
   const convertAmount = useCallback(
@@ -78,7 +80,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       setMonthlyBudget(userDoc?.monthlyBudget)
       setOnboardingCompleted(userDoc?.onboardingCompleted ?? false)
     } catch (error) {
-      console.error("Error loading user currency:", error)
+      logger.error("Error loading user currency", error)
       setUserCurrency(DEFAULT_CURRENCY)
     } finally {
       setLoading(false)

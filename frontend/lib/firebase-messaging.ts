@@ -10,6 +10,7 @@
 
 import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging"
 import { app } from "./firebase"
+import { logger } from "./utils/logger"
 
 let messaging: Messaging | null = null
 
@@ -36,7 +37,7 @@ export async function requestAndGetToken(): Promise<string | null> {
 
   const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY
   if (!vapidKey) {
-    console.warn("FCM: NEXT_PUBLIC_FCM_VAPID_KEY is not set")
+    logger.warn("FCM: NEXT_PUBLIC_FCM_VAPID_KEY is not set")
     return null
   }
 
@@ -51,7 +52,7 @@ export async function requestAndGetToken(): Promise<string | null> {
     const token = await getToken(m, { vapidKey, serviceWorkerRegistration: swReg })
     return token ?? null
   } catch (err) {
-    console.error("FCM: Failed to get token", err)
+    logger.error("FCM: Failed to get token", err)
     return null
   }
 }

@@ -34,6 +34,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { AMOUNT_RULES, VALIDATION_MESSAGES } from "@/lib/constants/validation.constants"
+import { logger } from "@/lib/utils/logger"
+
 
 interface TransactionData {
   description: string
@@ -223,7 +225,7 @@ export function AddTransactionDialog({
       onOpenChange(false)
     } catch (error) {
       // Error is handled by parent component
-      console.error("Error submitting entry:", error)
+      logger.error("Error submitting transaction entry", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -283,7 +285,7 @@ export function AddTransactionDialog({
       try {
         await deleteReceipt(existingReceiptUrl)
       } catch (error) {
-        console.error("Error deleting receipt:", error)
+        logger.error("Error deleting receipt", error)
         toast.error("Could not delete the receipt file from storage, but it was removed from this transaction.")
       }
     }

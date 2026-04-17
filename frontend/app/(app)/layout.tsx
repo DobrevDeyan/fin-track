@@ -22,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AppNavbar />
         {/* pb-24 on mobile gives space above the floating BottomNav pill; none on desktop */}
         <div className="pb-24 md:pb-0">
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="sync" initial={false}>
             <motion.div
               key={pathname}
               initial={{ opacity: 0 }}

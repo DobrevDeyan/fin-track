@@ -6,6 +6,7 @@
  */
 
 import type { SpendingContext } from "./insights-engine"
+import { logger } from "./utils/logger"
 
 const ML_SERVICE_URL =
   process.env.NEXT_PUBLIC_ML_SERVICE_URL || "http://localhost:8000"
@@ -49,7 +50,7 @@ export async function fetchAIDigest(
     const data = await res.json() as DigestResponse
     return data.success && typeof data.digest === "string" ? data.digest : null
   } catch (err) {
-    console.error("[insights-api] fetchAIDigest error:", err)
+    logger.error("[insights-api] fetchAIDigest error", err)
     return null
   }
 }
@@ -80,7 +81,7 @@ export async function fetchAIChatResponse(
     const data = await res.json() as ChatResponse
     return data.success && typeof data.response === "string" ? data.response : null
   } catch (err) {
-    console.error("[insights-api] fetchAIChatResponse error:", err)
+    logger.error("[insights-api] fetchAIChatResponse error", err)
     return null
   }
 }

@@ -18,6 +18,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { createEntry } from "@/lib/firestore-entries"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
+import { logger } from "@/lib/utils/logger"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -355,7 +357,7 @@ export function CSVImportDialog({ open, onOpenChange, onImportComplete }: CSVImp
         })
         succeeded++
       } catch (err) {
-        console.error("Failed to import row", i, err)
+        logger.error("Failed to import CSV row", err, { rowNumber: i })
       }
       setImportProgress(Math.round(((i + 1) / validRows.length) * 100))
     }

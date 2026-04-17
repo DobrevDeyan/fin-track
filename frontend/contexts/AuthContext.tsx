@@ -14,7 +14,8 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { getAuthErrorMessage } from "@/lib/utils";
-import { useSessionTimeout } from "@/lib/session-timeout";
+import { useSessionTimeout } from "@/lib/session-timeout"
+import { logger } from "@/lib/utils/logger";
 
 interface AuthContextType {
   user: User | null;
@@ -95,7 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false; // User cancelled, don't reset
     },
     onTimeout: async () => {
-      console.log("Session timeout: Logging out due to inactivity");
       await signOut(auth);
       // The onAuthStateChanged listener will set user to null
       // Components watching the user state will handle navigation
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const snap = await _getDoc(_doc(db, "users", user.uid));
           await createUserDocument(user, !snap.exists());
         } catch (error) {
-          console.error("Error creating user document:", error);
+          logger.error("Error creating user document", error);
         }
       }
     });
@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // The onAuthStateChanged listener will set user to null
       // Components watching the user state will handle navigation
     } catch (error) {
-      console.error("Logout error:", error);
+      logger.error("Logout error", error);
       throw error;
     }
   };

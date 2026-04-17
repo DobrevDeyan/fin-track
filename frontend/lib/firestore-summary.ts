@@ -21,6 +21,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore"
 import { db } from "./firebase"
+import { logger } from "./utils/logger"
 import type {
   FinancialSummaryDocument,
   MonthlyData,
@@ -88,20 +89,11 @@ export async function getFinancialSummary(
     const summaryRef = getSummaryRef(userId)
     const docSnap = await getDoc(summaryRef)
 
-    if (!docSnap.exists()) {
-      console.log(`[firestore-summary] No summary document found for ${userId}`)
-      return null
-    }
+    if (!docSnap.exists()) return null
 
-    const data = docSnap.data() as FinancialSummaryDocument
-    console.log(`[firestore-summary] Summary document found for ${userId}`, {
-      totalIncome: data.totalIncome,
-      totalExpenses: data.totalExpenses,
-      entryCount: data.entryCount
-    })
-    return data
+    return docSnap.data() as FinancialSummaryDocument
   } catch (error) {
-    console.error("[firestore-summary] Error fetching financial summary:", error)
+    logger.error("[firestore-summary] Error fetching financial summary", error)
     throw error
   }
 }
@@ -187,10 +179,7 @@ export async function initializeFinancialSummary(
   userId: string
 ): Promise<FinancialSummaryDocument> {
   try {
-    console.log(`[firestore-summary] Initializing/Rebuilding summary for ${userId}`)
     const allEntries = await getAllUserEntries(userId)
-    console.log(`[firestore-summary] Found ${allEntries.length} entries for ${userId}`)
-    
     const summary = computeSummaryFromEntries(userId, allEntries)
 
     const summaryRef = getSummaryRef(userId)
@@ -201,10 +190,9 @@ export async function initializeFinancialSummary(
       updatedAt: serverTimestamp(),
     })
 
-    console.log(`[firestore-summary] Summary initialized successfully for ${userId}`)
     return summary
   } catch (error) {
-    console.error("[firestore-summary] Error initializing financial summary:", error)
+    logger.error("[firestore-summary] Error initializing financial summary", error)
     throw error
   }
 }
@@ -232,7 +220,6 @@ async function isSummaryStale(
     if (summary.months && typeof summary.months === "object") {
       for (const key of Object.keys(summary.months)) {
         if (key.includes(".")) {
-          console.log(`[firestore-summary] Corrupted dot-notation field '${key}' detected, forcing rebuild.`)
           return true
         }
       }
@@ -241,14 +228,13 @@ async function isSummaryStale(
     // Also check root levels just in case
     for (const key of Object.keys(summary)) {
       if (key.startsWith("months.")) {
-         console.log(`[firestore-summary] Corrupted root dot-notation field '${key}' detected, forcing rebuild.`)
          return true
       }
     }
 
     return false
   } catch (error) {
-    console.error("Error validating summary:", error)
+    logger.error("Error validating summary", error)
     // If we can't validate, assume it's fine to avoid blocking
     return false
   }
@@ -261,21 +247,13 @@ async function isSummaryStale(
 export async function getOrCreateSummary(
   userId: string
 ): Promise<FinancialSummaryDocument> {
-  console.log(`[firestore-summary] getOrCreateSummary for ${userId}`)
   const existing = await getFinancialSummary(userId)
 
-  if (!existing) {
-    console.log("[firestore-summary] No existing summary, initializing...")
-    return initializeFinancialSummary(userId)
-  }
+  if (!existing) return initializeFinancialSummary(userId)
 
   const stale = await isSummaryStale(userId, existing)
-  if (stale) {
-    console.log(`[firestore-summary] Summary is stale (count mismatch), rebuilding...`)
-    return initializeFinancialSummary(userId)
-  }
+  if (stale) return initializeFinancialSummary(userId)
 
-  console.log("[firestore-summary] Returning existing summary")
   return existing
 }
 

@@ -39,7 +39,6 @@ app.use(express.json());
 app.use((req: Request, _res: Response, next: NextFunction) => {
     const start = Date.now();
     const { method, url, headers } = req;
-    console.log(`[REQ] ${method} ${url} origin=${headers.origin || 'none'}`);
     _res.on('finish', () => {
         console.log(`[RES] ${method} ${url} status=${_res.statusCode} duration=${Date.now() - start}ms`);
     });

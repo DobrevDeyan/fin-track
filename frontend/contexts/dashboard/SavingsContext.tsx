@@ -20,6 +20,8 @@ import {
 } from "@/lib/firestore-savings"
 import { SavingsAccountDocument } from "@/lib/firestore-types"
 import { isInsufficientBalanceError, ERROR_MESSAGES } from "@/lib/utils/error"
+import { logger } from "@/lib/utils/logger"
+
 
 // Use the full document type for compatibility with existing components
 export type SavingsAccount = SavingsAccountDocument & { id: string }
@@ -86,7 +88,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
       setSavingsAccounts(accounts)
       hasLoadedRef.current = true
     } catch (error) {
-      console.error(t(ERROR_MESSAGES.LOAD_FAILED) + ":", error) // Use translated error
+      logger.error(t(ERROR_MESSAGES.LOAD_FAILED), error) // Use translated error
       setSavingsAccounts([])
     } finally {
       setLoading(false)
@@ -107,7 +109,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
         await loadSavingsAccounts()
         toast.success(t("toast.savings.createSuccess")) // Use translated message
       } catch (error) {
-        console.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED) + ":", error) // Use translated error
+        logger.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED), error) // Use translated error
         toast.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED)) // Use translated error
       }
     },
@@ -123,7 +125,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
         await loadSavingsAccounts()
         toast.success(t("toast.savings.updateSuccess")) // Use translated message
       } catch (error) {
-        console.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED) + ":", error) // Use translated error
+        logger.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED), error) // Use translated error
         toast.error(t(ERROR_MESSAGES.SAVINGS_SAVE_FAILED)) // Use translated error
       }
     },
@@ -159,7 +161,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
         try {
           await deleteSavingsAccount(accountId)
         } catch (error) {
-          console.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED) + ":", error)
+          logger.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED), error)
           await loadSavingsAccounts()
           toast.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED))
         }
@@ -182,7 +184,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
         await loadSavingsAccounts()
         toast.success(t("toast.savings.depositSuccess")) // Use translated message
       } catch (error) {
-        console.error(t(ERROR_MESSAGES.DEPOSIT_FAILED) + ":", error) // Use translated error
+        logger.error(t(ERROR_MESSAGES.DEPOSIT_FAILED), error) // Use translated error
         toast.error(t(ERROR_MESSAGES.DEPOSIT_FAILED)) // Use translated error
       }
     },
@@ -198,7 +200,7 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
         await loadSavingsAccounts()
         toast.success(t("toast.savings.withdrawSuccess")) // Use translated message
       } catch (error: unknown) {
-        console.error(t(ERROR_MESSAGES.WITHDRAW_FAILED) + ":", error) // Use translated error
+        logger.error(t(ERROR_MESSAGES.WITHDRAW_FAILED), error) // Use translated error
         const errorMessage = isInsufficientBalanceError(error)
           ? ERROR_MESSAGES.INSUFFICIENT_BALANCE
           : ERROR_MESSAGES.WITHDRAW_FAILED

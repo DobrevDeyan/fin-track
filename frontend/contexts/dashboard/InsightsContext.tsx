@@ -42,6 +42,8 @@ import {
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
 import { fetchAIDigest, fetchAIChatResponse, type ChatMessage } from "@/lib/insights-api"
 import { toast } from "sonner"
+import { logger } from "@/lib/utils/logger"
+
 
 function getCurrentMonthKey(): string {
   const now = new Date()
@@ -204,7 +206,7 @@ export function InsightsProvider({ children }: InsightsProviderProps) {
           { role: "assistant", content: response },
         ])
       } catch (err) {
-        console.error("[InsightsContext] sendMessage error:", err)
+        logger.error("AI chat sendMessage error", err)
         toast.error("AI chat failed. Please try again.")
         setChatMessages((prev) => [
           ...prev,

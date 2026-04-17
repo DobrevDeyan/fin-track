@@ -24,6 +24,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { GoalDocument } from "@/lib/firestore-types"
 import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import { logger } from "@/lib/utils/logger"
+
 
 interface GoalData {
   name: string
@@ -124,7 +126,7 @@ export function GoalDialog({
       setIsActive(true)
       onOpenChange(false)
     } catch (error) {
-      console.error("Error submitting goal:", error)
+      logger.error("Error submitting goal", error)
     } finally {
       setIsSubmitting(false)
     }

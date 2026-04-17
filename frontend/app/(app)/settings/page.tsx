@@ -42,6 +42,8 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useUIMode } from "@/contexts/UIComplexityContext"
 import { UIModeToggle } from "@/components/ui/UIModeToggle"
+import { logger } from "@/lib/utils/logger"
+
 
 const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? null
 
@@ -213,7 +215,7 @@ export default function SettingsPage() {
       toast.success("All financial data has been reset.")
       window.location.reload()
     } catch (err: any) {
-      console.error("Reset failed:", err)
+      logger.error("Financial data reset failed", err)
       setResetError("Reset failed. Please try again.")
       setResetting(false)
     }
@@ -274,7 +276,7 @@ export default function SettingsPage() {
       await deleteUserData(user.uid)
       router.push("/auth/login")
     } catch (err: any) {
-      console.error("Account deletion failed:", err)
+      logger.error("Account deletion failed", err)
       // Firebase Auth requires a recent sign-in before deleting the account.
       // The deleteMyAccount CF calls admin.auth().deleteUser() which bypasses
       // this, but the client token still needs to be valid to call the CF.

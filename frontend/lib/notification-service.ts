@@ -3,6 +3,8 @@
  * Handles salary reminders and other notifications
  */
 
+import { logger } from "./utils/logger"
+
 interface NotificationOptions {
   title: string
   body: string
@@ -17,7 +19,7 @@ interface NotificationOptions {
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!("Notification" in window)) {
-    console.warn("This browser does not support notifications")
+    logger.warn("This browser does not support notifications")
     return false
   }
 
@@ -48,7 +50,7 @@ export function canSendNotifications(): boolean {
  */
 export function sendNotification(options: NotificationOptions): Notification | null {
   if (!canSendNotifications()) {
-    console.warn("Notifications not permitted")
+    logger.warn("Notifications not permitted")
     return null
   }
 
@@ -76,7 +78,7 @@ export function sendNotification(options: NotificationOptions): Notification | n
 
     return notification
   } catch (error) {
-    console.error("Error sending notification:", error)
+    logger.error("Error sending notification", error)
     return null
   }
 }

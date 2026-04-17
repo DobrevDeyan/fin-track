@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSubscription } from "./useSubscription"
 import { SCAN_LIMITS } from "@/lib/constants/subscription.constants"
+import { logger } from "@/lib/utils/logger"
 
 export interface ScanQuotaReturn {
   count: number
@@ -53,7 +54,7 @@ export function useScanQuota(): ScanQuotaReturn {
         setLoading(false)
       },
       (err) => {
-        console.error("[useScanQuota] snapshot error:", err)
+        logger.error("[useScanQuota] snapshot error", err)
         setLoading(false)
       }
     )

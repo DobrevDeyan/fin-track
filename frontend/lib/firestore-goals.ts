@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { GoalDocument } from "./firestore-types"
+import { logger } from "./utils/logger"
 
 // Type for update data
 interface GoalUpdateData {
@@ -90,7 +91,7 @@ export async function createGoal(
     
     return docRef.id
   } catch (error) {
-    console.error("Error creating goal:", error)
+    logger.error("Error creating goal", error)
     throw error
   }
 }
@@ -126,7 +127,7 @@ export async function getUserGoals(
       return 0
     })
   } catch (error) {
-    console.error("Error fetching goals:", error)
+    logger.error("Error fetching goals", error)
     throw error
   }
 }
@@ -161,7 +162,7 @@ export async function getActiveGoals(
       return 0
     })
   } catch (error) {
-    console.error("Error fetching active goals:", error)
+    logger.error("Error fetching active goals", error)
     throw error
   }
 }
@@ -222,7 +223,7 @@ export async function updateGoal(
 
     await updateDoc(goalRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
-    console.error("Error updating goal:", error)
+    logger.error("Error updating goal", error)
     throw error
   }
 }
@@ -235,7 +236,7 @@ export async function deleteGoal(goalId: string): Promise<void> {
     const goalRef = doc(db, "goals", goalId)
     await deleteDoc(goalRef)
   } catch (error) {
-    console.error("Error deleting goal:", error)
+    logger.error("Error deleting goal", error)
     throw error
   }
 }
@@ -259,7 +260,7 @@ export async function getGoal(
       ...docSnapshot.data(),
     } as GoalDocument & { id: string }
   } catch (error) {
-    console.error("Error fetching goal:", error)
+    logger.error("Error fetching goal", error)
     throw error
   }
 }

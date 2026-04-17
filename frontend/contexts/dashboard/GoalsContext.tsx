@@ -22,6 +22,8 @@ import { GoalDocument } from "@/lib/firestore-types"
 import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { useFinancialSummary } from "./FinancialSummaryContext"
+import { logger } from "@/lib/utils/logger"
+
 
 // Use the full document type for compatibility with existing components
 export type Goal = GoalDocument & { id: string }
@@ -86,7 +88,7 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
       const firestoreGoals = await getUserGoals(userId)
       setGoals(firestoreGoals)
     } catch (error) {
-      console.error(t(ERROR_MESSAGES.LOAD_FAILED) + ":", error)
+      logger.error(t(ERROR_MESSAGES.LOAD_FAILED), error)
       setGoals([])
     } finally {
       setLoading(false)
@@ -129,7 +131,7 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
           toast.success(t("toast.goals.createSuccess"))
         }
       } catch (error: unknown) {
-        console.error(t(ERROR_MESSAGES.GOAL_SAVE_FAILED) + ":", error)
+        logger.error(t(ERROR_MESSAGES.GOAL_SAVE_FAILED), error)
         toast.error(t(getErrorMessage(error, ERROR_MESSAGES.GOAL_SAVE_FAILED)))
         throw error
       }
@@ -155,7 +157,7 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
         try {
           await deleteGoal(goalId)
         } catch (error) {
-          console.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED) + ":", error)
+          logger.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED), error)
           await loadGoals()
           toast.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED))
         }
@@ -198,7 +200,7 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
         await refreshSummary()
         toast.success(t("toast.goals.addFundsSuccess"))
       } catch (error) {
-        console.error(t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED) + ":", error)
+        logger.error(t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED), error)
         toast.error(t(ERROR_MESSAGES.GOAL_ADD_FUNDS_FAILED))
       }
     },

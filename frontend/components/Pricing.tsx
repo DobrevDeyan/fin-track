@@ -11,6 +11,8 @@ import { collection, addDoc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import { logger } from "@/lib/utils/logger"
+
 
 const PRICE_IDS: Record<string, string | null> = {
   free: null,
@@ -100,7 +102,7 @@ export const Pricing = () => {
         toast.error("Checkout is taking too long. Please try again.")
       }, 30_000)
     } catch (error) {
-      console.error("Error creating checkout session:", error)
+      logger.error("Error creating stripe checkout session", error)
       toast.error("Could not create checkout session. Please try again.")
       setLoadingPlan(null)
     }

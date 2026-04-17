@@ -26,6 +26,8 @@ import {
 } from "@/lib/firestore-summary"
 import { calculateChange } from "@/lib/metrics-utils"
 import type { FinancialSummaryDocument, MonthlyData } from "@/lib/firestore-types"
+import { logger } from "@/lib/utils/logger"
+
 
 interface FinancialSummaryContextValue {
   summary: FinancialSummaryDocument | null
@@ -84,30 +86,14 @@ export function FinancialSummaryProvider({
   const [loading, setLoading] = useState(true)
 
   const refreshSummary = useCallback(async () => {
-    if (!userId) {
-      console.log("[FinancialSummaryContext] No userId provided to refreshSummary")
-      return
-    }
+    if (!userId) return
 
     try {
       setLoading(true)
-      console.log(`[FinancialSummaryContext] refreshSummary triggered for userId: ${userId}`)
-      
       const data = await getOrCreateSummary(userId)
-      
-      console.log("[FinancialSummaryContext] Summary fetch success:", {
-        id: userId,
-        totalIncome: data.totalIncome,
-        totalExpenses: data.totalExpenses,
-        entryCount: data.entryCount,
-        hasMonths: !!data.months,
-        monthsCount: data.months ? Object.keys(data.months).length : 0,
-        currentMonth: getCurrentMonthKey()
-      })
-      
       setSummary(data)
     } catch (error) {
-      console.error("[FinancialSummaryContext] Failed to load summary:", error)
+      logger.error("Failed to load financial summary", error)
     } finally {
       setLoading(false)
     }
@@ -118,11 +104,9 @@ export function FinancialSummaryProvider({
   // Automatically load summary when userId changes
   useEffect(() => {
     if (userId) {
-      console.log(`[FinancialSummaryContext] userId active: ${userId}`)
       refreshSummary()
       initialLoadDone.current = true
     } else if (initialLoadDone.current) {
-      console.log("[FinancialSummaryContext] userId disappeared, clearing summary")
       setSummary(null)
       setLoading(false)
     }

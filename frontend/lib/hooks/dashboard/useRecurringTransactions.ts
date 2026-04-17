@@ -13,6 +13,7 @@ import {
 } from "@/lib/firestore-recurring"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import type { RecurringTransaction, RecurringFormData, ToastState } from "./types"
+import { logger } from "@/lib/utils/logger"
 import type { Timestamp } from "firebase/firestore"
 
 interface UseRecurringTransactionsOptions {
@@ -37,7 +38,7 @@ export function useRecurringTransactions({
       const firestoreRecurring = await getUserRecurringTransactions(userId)
       setRecurringTransactions(firestoreRecurring)
     } catch (error) {
-      console.error("Error loading recurring transactions:", error)
+      logger.error("Error loading recurring transactions", error)
       setRecurringTransactions([])
     } finally {
       setLoading(false)
@@ -77,7 +78,7 @@ export function useRecurringTransactions({
         onToast({ message: "Recurring transaction created successfully!", type: "success" })
       }
     } catch (error: unknown) {
-      console.error("Error saving recurring transaction:", error)
+      logger.error("Error saving recurring transaction", error)
       const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SAVE_FAILED
       onToast({ message: errorMessage, type: "error" })
       throw error
@@ -97,7 +98,7 @@ export function useRecurringTransactions({
       await loadRecurringTransactions()
       onToast({ message: SUCCESS_MESSAGES.RECURRING_DELETED, type: "success" })
     } catch (error) {
-      console.error("Error deleting recurring transaction:", error)
+      logger.error("Error deleting recurring transaction", error)
       onToast({ message: "Failed to delete recurring transaction. Please try again.", type: "error" })
     }
   }, [userId, loadRecurringTransactions, onToast])

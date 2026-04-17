@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, Calendar, FileText, Settings, Plus } from "lucide-react"
@@ -20,6 +21,10 @@ export function BottomNav() {
   const { mode } = useUIMode()
   const visibleTabs = mode === "simple" ? tabs.filter(tab => tab.tier === "simple") : tabs
 
+  const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
+  useEffect(() => { setOptimisticPath(null) }, [pathname])
+  const activePath = optimisticPath ?? pathname
+
   const openQuickAdd = () => {
     window.dispatchEvent(new CustomEvent("pocket:openQuickAdd"))
   }
@@ -31,11 +36,12 @@ export function BottomNav() {
     >
       <div className="flex items-center bg-background/95 backdrop-blur-md border border-border/60 shadow-xl shadow-black/10 rounded-2xl px-1 py-1.5 gap-0">
         {visibleTabs.map(({ href, icon: Icon, labelKey }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/")
+          const isActive = activePath === href || activePath.startsWith(href + "/")
           return (
             <Link
               key={href}
               href={href}
+              onClick={() => setOptimisticPath(href)}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 min-w-0",
                 isActive

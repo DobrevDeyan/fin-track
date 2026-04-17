@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Camera, SwitchCamera, X, Loader2, AlertCircle } from "lucide-react"
 import { hasCameraSupport } from "@/lib/device-utils"
+import { logger } from "@/lib/utils/logger"
+
 
 interface CameraCaptureProps {
   onCapture: (file: File) => void
@@ -75,7 +77,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         setCameraState("ready")
       }
     } catch (error: unknown) {
-      console.error("Camera error:", error)
+      logger.error("Camera capture error", error)
       const err = error as { name?: string }
 
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {

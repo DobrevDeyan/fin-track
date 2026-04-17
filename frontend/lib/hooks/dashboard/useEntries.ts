@@ -18,6 +18,7 @@ import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.con
 import { toast } from "sonner"
 import { toISOString } from "@/lib/utils/timestamp"
 import type { Entry, EntryFormData } from "./types"
+import { logger } from "@/lib/utils/logger"
 
 interface UseEntriesOptions {
   userId: string | undefined
@@ -75,7 +76,7 @@ export function useEntries({
       setLastVisible(newLastVisible)
       setHasMore(firestoreEntries.length === 20)
     } catch (error) {
-      console.error("Error loading entries:", error)
+      logger.error("Error loading entries", error)
     } finally {
       setLoading(false)
     }
@@ -107,7 +108,7 @@ export function useEntries({
       setLastVisible(newLastVisible)
       setHasMore(firestoreEntries.length === 20)
     } catch (error) {
-      console.error("Error loading more entries:", error)
+      logger.error("Error loading more entries", error)
     } finally {
       setIsLoadingMore(false)
     }
@@ -152,7 +153,7 @@ export function useEntries({
               if (onSavingsReload) await onSavingsReload();
             }
           } catch (transferError) {
-             console.error("Error processing auto-transfer:", transferError);
+             logger.error("Error processing auto-transfer", transferError);
              toast.error("Transaction added but auto-transfer to Savings/Goal failed.");
           }
         }
@@ -176,7 +177,7 @@ export function useEntries({
         toast.success(SUCCESS_MESSAGES.ENTRY_ADDED(data.type))
       }
     } catch (error: unknown) {
-      console.error("Error saving entry:", error)
+      logger.error("Error saving entry", error)
       const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SAVE_FAILED
       toast.error(errorMessage)
       throw error
@@ -215,7 +216,7 @@ export function useEntries({
       if (onSummaryRefresh) await onSummaryRefresh()
       toast.success("Entry deleted successfully!")
     } catch (error) {
-      console.error("Error deleting entry:", error)
+      logger.error("Error deleting entry", error)
       toast.error(ERROR_MESSAGES.DELETE_FAILED)
     }
   }, [userId, entries, onSummaryRefresh])

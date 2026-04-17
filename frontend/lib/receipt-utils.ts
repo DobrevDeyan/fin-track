@@ -6,6 +6,7 @@
 
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"
 import { storage } from "./firebase"
+import { logger } from "./utils/logger"
 
 /**
  * Upload a receipt image to Firebase Storage
@@ -42,7 +43,7 @@ export async function uploadReceipt(
 
     return downloadURL
   } catch (error) {
-    console.error("Error uploading receipt:", error)
+    logger.error("Error uploading receipt", error)
     throw error
   }
 }
@@ -69,7 +70,7 @@ export async function deleteReceipt(receiptUrl: string): Promise<void> {
     // Delete the file
     await deleteObject(storageRef)
   } catch (error) {
-    console.error("Error deleting receipt:", error)
+    logger.error("Error deleting receipt", error)
     throw error
   }
 }

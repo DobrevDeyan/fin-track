@@ -46,6 +46,8 @@ import { motion, AnimatePresence, type Variants } from "framer-motion"
 import { ThemeControls } from "@/components/ThemeControls"
 import { useUIMode } from "@/contexts/UIComplexityContext"
 import { UIModeToggle } from "@/components/ui/UIModeToggle"
+import { logger } from "@/lib/utils/logger"
+
 
 export const AppNavbar = () => {
   const t = useTranslations("nav")
@@ -56,6 +58,12 @@ export const AppNavbar = () => {
   const { userCurrency, refreshCurrency, displayName } = useCurrency()
   const { locale, setLocale } = useLanguage()
   const { mode } = useUIMode()
+
+  // Optimistic active path — immediately reflects clicks without waiting for pathname
+  // to update (which only happens after the page chunk finishes loading in production)
+  const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
+  useEffect(() => { setOptimisticPath(null) }, [pathname])
+  const activePath = optimisticPath ?? pathname
 
   const appRoutes = [
     { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard, tier: "simple" as const },
@@ -80,7 +88,7 @@ export const AppNavbar = () => {
         window.location.reload()
       }, 100)
     } catch (error) {
-      console.error("Error updating currency:", error)
+      logger.error("Error updating currency", error)
       toast.error(ERROR_MESSAGES.CURRENCY_UPDATE_FAILED)
     } finally {
       setCurrencyLoading(false)
@@ -94,7 +102,7 @@ export const AppNavbar = () => {
       try {
         await updateUserLanguage(user.uid, loc)
       } catch (error) {
-        console.error("Error saving language:", error)
+        logger.error("Error saving language", error)
       }
     }
   }
@@ -104,7 +112,7 @@ export const AppNavbar = () => {
       setIsOpen(false)
       await logout()
     } catch (error) {
-      console.error("Failed to logout:", error)
+      logger.error("Failed to logout", error)
       if (typeof window !== "undefined") {
         window.location.href = "/auth/login"
       }
@@ -371,13 +379,13 @@ export const AppNavbar = () => {
               </p>
               <div className="rounded-2xl overflow-hidden bg-muted/50">
                 {visibleRoutes.map(({ href, label, icon: Icon }, i) => {
-                  const isActive = pathname === href
+                  const isActive = activePath === href
                   return (
                     <div key={href}>
                       {i > 0 && <div className="h-px bg-border/60 mx-4" />}
                       <Link
                         href={href}
-                        onClick={() => setIsOpen(false)}
+                        onClick={() => { setIsOpen(false); setOptimisticPath(href) }}
                         className={cn(
                           "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
                           isActive ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
@@ -459,15 +467,15 @@ export const AppNavbar = () => {
               <div className="rounded-2xl overflow-hidden bg-muted/50">
                 <Link
                   href="/settings"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => { setIsOpen(false); setOptimisticPath("/settings") }}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
-                    pathname === "/settings" ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
+                    activePath === "/settings" ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
                   )}
                 >
                   <div className={cn(
                     "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
-                    pathname === "/settings"
+                    activePath === "/settings"
                       ? "bg-emerald-100 text-emerald-600"
                       : "bg-background text-muted-foreground"
                   )}>
@@ -476,7 +484,7 @@ export const AppNavbar = () => {
                   <span className="flex-1">{t("accountSettings")}</span>
                   <ChevronRight className={cn(
                     "h-4 w-4 shrink-0",
-                    pathname === "/settings" ? "text-emerald-600/40" : "text-muted-foreground/30"
+                    activePath === "/settings" ? "text-emerald-600/40" : "text-muted-foreground/30"
                   )} />
                 </Link>
                 <div className="h-px bg-border/60 mx-4" />
@@ -558,12 +566,13 @@ export const AppNavbar = () => {
           <TooltipProvider delayDuration={400}>
             <nav className="hidden md:flex items-center gap-1 bg-muted rounded-xl p-1">
               {visibleRoutes.map(({ href, label, icon: Icon }) => {
-                const isActive = pathname === href
+                const isActive = activePath === href
                 return (
                   <Tooltip key={href}>
                     <TooltipTrigger asChild>
                       <Link
                         href={href}
+                        onClick={() => setOptimisticPath(href)}
                         className={cn(
                           "relative flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                           isActive

@@ -18,6 +18,8 @@ import {
 } from "@/lib/firestore-recurring"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
+import { logger } from "@/lib/utils/logger"
+
 
 // Use the full document type for compatibility with existing components
 export type RecurringTransaction = RecurringEntryDocument & { id: string }
@@ -81,7 +83,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
       setRecurringTransactions(firestoreRecurring)
       hasLoadedRef.current = true
     } catch (error) {
-      console.error("Error loading recurring transactions:", error)
+      logger.error("Error loading recurring transactions", error)
       setRecurringTransactions([])
     } finally {
       setLoading(false)
@@ -127,7 +129,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
           toast.success("Recurring transaction created successfully")
         }
       } catch (error: unknown) {
-        console.error("Error saving recurring transaction:", error)
+        logger.error("Error saving recurring transaction", error)
         toast.error(getErrorMessage(error, ERROR_MESSAGES.RECURRING_SAVE_FAILED))
         throw error
       }
@@ -153,7 +155,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
         try {
           await deleteRecurringTransaction(recurringId)
         } catch (error) {
-          console.error("Error deleting recurring transaction:", error)
+          logger.error("Error deleting recurring transaction", error)
           await loadRecurringTransactions()
           toast.error(ERROR_MESSAGES.RECURRING_DELETE_FAILED)
         }

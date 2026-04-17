@@ -15,6 +15,7 @@ import {
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { toISOString } from "@/lib/utils/timestamp"
 import type { Budget, BudgetFormData, ToastState } from "./types"
+import { logger } from "@/lib/utils/logger"
 
 interface UseBudgetsOptions {
   userId: string | undefined
@@ -49,7 +50,7 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
 
       setBudgets(convertedBudgets)
     } catch (error) {
-      console.error("Error loading budgets:", error)
+      logger.error("Error loading budgets", error)
       setBudgets([])
     } finally {
       setLoading(false)
@@ -93,7 +94,7 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
         onToast({ message: SUCCESS_MESSAGES.BUDGET_CREATED, type: "success" })
       }
     } catch (error: unknown) {
-      console.error("Error saving budget:", error)
+      logger.error("Error saving budget", error)
       const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SAVE_FAILED
       onToast({ message: errorMessage, type: "error" })
       throw error
@@ -113,7 +114,7 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
       await loadBudgets()
       onToast({ message: SUCCESS_MESSAGES.BUDGET_DELETED, type: "success" })
     } catch (error) {
-      console.error("Error deleting budget:", error)
+      logger.error("Error deleting budget", error)
       onToast({ message: ERROR_MESSAGES.DELETE_FAILED, type: "error" })
     }
   }, [userId, loadBudgets, onToast])

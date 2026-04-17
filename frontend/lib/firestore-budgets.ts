@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { BudgetDocument, CreateBudgetInput } from "./firestore-types"
+import { logger } from "./utils/logger"
 
 // Type for creating a new budget document
 interface NewBudgetDocument {
@@ -129,7 +130,7 @@ export async function createBudget(
     const docRef = await addDoc(budgetRef, newBudget)
     return docRef.id
   } catch (error) {
-    console.error("Error creating budget:", error)
+    logger.error("Error creating budget", error)
     throw error
   }
 }
@@ -181,7 +182,7 @@ export async function getUserBudgets(userId: string): Promise<(BudgetDocument & 
 
     return budgets
   } catch (error) {
-    console.error("Error fetching budgets:", error)
+    logger.error("Error fetching budgets", error)
     throw error
   }
 }
@@ -228,7 +229,7 @@ export async function getActiveBudgets(userId: string): Promise<(BudgetDocument 
 
     return budgets
   } catch (error) {
-    console.error("Error fetching active budgets:", error)
+    logger.error("Error fetching active budgets", error)
     throw error
   }
 }
@@ -280,7 +281,7 @@ export async function getBudgetsByCategory(
 
     return budgets
   } catch (error) {
-    console.error("Error fetching budgets by category:", error)
+    logger.error("Error fetching budgets by category", error)
     throw error
   }
 }
@@ -331,7 +332,7 @@ export async function updateBudget(
 
     await updateDoc(budgetRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
-    console.error("Error updating budget:", error)
+    logger.error("Error updating budget", error)
     throw error
   }
 }
@@ -344,7 +345,7 @@ export async function deleteBudget(budgetId: string): Promise<void> {
     const budgetRef = doc(db, "budgets", budgetId)
     await deleteDoc(budgetRef)
   } catch (error) {
-    console.error("Error deleting budget:", error)
+    logger.error("Error deleting budget", error)
     throw error
   }
 }
@@ -401,7 +402,7 @@ export async function getBudget(budgetId: string): Promise<(BudgetDocument & { i
 
     return null
   } catch (error) {
-    console.error("Error fetching budget:", error)
+    logger.error("Error fetching budget", error)
     throw error
   }
 }

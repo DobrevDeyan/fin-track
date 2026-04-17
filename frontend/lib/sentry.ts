@@ -27,3 +27,17 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_SENTRY_DSN) {
 }
 
 export { Sentry }
+
+/**
+ * USE FOR TESTING ONLY: Manually trigger an error to verify Sentry setup.
+ * Note: This only works if NEXT_PUBLIC_SENTRY_DSN is set and NOT in development,
+ * unless you temporarily comment out the beforeSend check above.
+ */
+export function testSentryError() {
+  try {
+    throw new Error("Sentry Setup Test: " + new Date().toISOString());
+  } catch (err) {
+    Sentry.captureException(err);
+    console.log("Test error sent to Sentry. Check your dashboard.");
+  }
+}

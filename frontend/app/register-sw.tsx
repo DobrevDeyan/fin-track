@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { initVersionTracking, APP_VERSION } from "@/lib/app-version"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { logger } from "@/lib/utils/logger"
+
 
 let updateAvailable = false
 let waitingWorker: ServiceWorker | null = null
@@ -24,8 +26,6 @@ export function RegisterSW() {
             updateViaCache: "none",
           })
           .then((registration) => {
-            console.log("Service Worker registered:", registration)
-            
             // Check if there's a waiting service worker
             if (registration.waiting) {
               waitingWorker = registration.waiting
@@ -45,8 +45,7 @@ export function RegisterSW() {
                       updateAvailable = true
                       showUpdateNotification(newWorker)
                     } else {
-                      // First install, just log
-                      console.log("Service Worker installed for the first time")
+                      // First install — nothing to do
                     }
                   }
                 })
@@ -82,16 +81,14 @@ export function RegisterSW() {
             })
           })
           .catch((error) => {
-            console.log("Service Worker registration failed:", error)
+            logger.error("Service Worker registration failed", error)
           })
         
         // Unregister any old service workers that might be causing issues
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           registrations.forEach((registration) => {
             if (registration.scope.includes("/sw.js") && !registration.active) {
-              registration.unregister().then(() => {
-                console.log("Unregistered old service worker")
-              })
+              registration.unregister()
             }
           })
         })

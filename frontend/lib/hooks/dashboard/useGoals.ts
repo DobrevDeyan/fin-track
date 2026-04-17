@@ -13,6 +13,7 @@ import {
 } from "@/lib/firestore-goals"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import type { Goal, GoalFormData, ToastState } from "./types"
+import { logger } from "@/lib/utils/logger"
 import type { Timestamp } from "firebase/firestore"
 
 interface UseGoalsOptions {
@@ -34,7 +35,7 @@ export function useGoals({ userId, onToast }: UseGoalsOptions) {
       const firestoreGoals = await getUserGoals(userId)
       setGoals(firestoreGoals)
     } catch (error) {
-      console.error("Error loading goals:", error)
+      logger.error("Error loading goals", error)
       setGoals([])
     } finally {
       setLoading(false)
@@ -76,7 +77,7 @@ export function useGoals({ userId, onToast }: UseGoalsOptions) {
         onToast({ message: "Goal created successfully!", type: "success" })
       }
     } catch (error: unknown) {
-      console.error("Error saving goal:", error)
+      logger.error("Error saving goal", error)
       const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.SAVE_FAILED
       onToast({ message: errorMessage, type: "error" })
       throw error
@@ -96,7 +97,7 @@ export function useGoals({ userId, onToast }: UseGoalsOptions) {
       await loadGoals()
       onToast({ message: SUCCESS_MESSAGES.GOAL_DELETED, type: "success" })
     } catch (error) {
-      console.error("Error deleting goal:", error)
+      logger.error("Error deleting goal", error)
       onToast({ message: "Failed to delete goal. Please try again.", type: "error" })
     }
   }, [userId, loadGoals, onToast])

@@ -23,6 +23,8 @@ import { Label } from "@/components/ui/label"
 import { Timestamp } from "firebase/firestore"
 import { DateRangeCalculator } from "@/lib/utils/date-range-utils"
 import type { BudgetPeriod } from "@/lib/constants/budget.constants"
+import { logger } from "@/lib/utils/logger"
+
 
 interface BudgetData {
   name: string
@@ -154,7 +156,7 @@ export function BudgetDialog({
       onOpenChange(false)
     } catch (error) {
       // Error is handled by parent component
-      console.error("Error submitting budget:", error)
+      logger.error("Error submitting budget", error)
     } finally {
       setIsSubmitting(false)
     }

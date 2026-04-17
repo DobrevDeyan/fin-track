@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoalDocument } from "@/lib/firestore-types"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import { logger } from "@/lib/utils/logger"
+
 
 interface AddFundsDialogProps {
   goal: (GoalDocument & { id: string }) | null
@@ -43,7 +45,7 @@ export function AddFundsDialog({
       setAmount("")
       onOpenChange(false)
     } catch (error) {
-      console.error("Error adding funds:", error)
+      logger.error("Error adding funds", error)
     } finally {
       setIsSubmitting(false)
     }

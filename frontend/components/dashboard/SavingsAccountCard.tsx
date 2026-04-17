@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import { logger } from "@/lib/utils/logger"
+
 
 type SavingsAccount = import("@/lib/firestore-types").SavingsAccountDocument & { id: string }
 
@@ -81,7 +83,7 @@ export function SavingsAccountCard({
       setSuccessPulse(true)
       setTimeout(() => setSuccessPulse(false), 700)
     } catch (error) {
-      console.error("Error processing transaction:", error)
+      logger.error("Error processing transaction", error)
       toast.error("Failed to process transaction")
     } finally {
       setIsSubmitting(false)

@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { calculateNextDate } from "@/lib/firestore-recurring"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import { logger } from "@/lib/utils/logger"
+
 
 interface RecurringTransactionData {
   name: string
@@ -119,7 +121,7 @@ export function RecurringTransactionDialog({
       setIsActive(true)
       onOpenChange(false)
     } catch (error) {
-      console.error("Error submitting recurring transaction:", error)
+      logger.error("Error submitting recurring transaction", error)
     } finally {
       setIsSubmitting(false)
     }

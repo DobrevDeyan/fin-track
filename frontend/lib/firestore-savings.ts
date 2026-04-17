@@ -21,6 +21,7 @@ import {
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { SavingsAccountDocument } from "./firestore-types"
+import { logger } from "./utils/logger"
 
 export type CreateSavingsAccountInput = Omit<
   SavingsAccountDocument,
@@ -67,7 +68,7 @@ export async function createSavingsAccount(
     
     return docRef.id
   } catch (error) {
-    console.error("Error creating savings account:", error)
+    logger.error("Error creating savings account", error)
     throw error
   }
 }
@@ -115,7 +116,7 @@ export async function getUserSavingsAccounts(
         return bTime - aTime
       })
     }
-    console.error("Error fetching savings accounts:", error)
+    logger.error("Error fetching savings accounts", error)
     throw error
   }
 }
@@ -141,7 +142,7 @@ export async function getActiveSavingsAccounts(
       ...doc.data(),
     })) as (SavingsAccountDocument & { id: string })[]
   } catch (error) {
-    console.error("Error fetching active savings accounts:", error)
+    logger.error("Error fetching active savings accounts", error)
     throw error
   }
 }
@@ -190,7 +191,7 @@ export async function updateSavingsAccount(
     
     await updateDoc(accountRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
-    console.error("Error updating savings account:", error)
+    logger.error("Error updating savings account", error)
     throw error
   }
 }
@@ -209,7 +210,7 @@ export async function addToSavingsAccount(
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
-    console.error("Error adding to savings account:", error)
+    logger.error("Error adding to savings account", error)
     throw error
   }
 }
@@ -239,7 +240,7 @@ export async function withdrawFromSavingsAccount(
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
-    console.error("Error withdrawing from savings account:", error)
+    logger.error("Error withdrawing from savings account", error)
     throw error
   }
 }
@@ -252,7 +253,7 @@ export async function deleteSavingsAccount(accountId: string): Promise<void> {
     const accountRef = doc(db, "savingsAccounts", accountId)
     await deleteDoc(accountRef)
   } catch (error) {
-    console.error("Error deleting savings account:", error)
+    logger.error("Error deleting savings account", error)
     throw error
   }
 }
@@ -276,7 +277,7 @@ export async function getSavingsAccount(
       ...docSnapshot.data(),
     } as SavingsAccountDocument & { id: string }
   } catch (error) {
-    console.error("Error fetching savings account:", error)
+    logger.error("Error fetching savings account", error)
     throw error
   }
 }

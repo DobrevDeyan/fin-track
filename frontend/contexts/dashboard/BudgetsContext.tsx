@@ -19,6 +19,8 @@ import {
 } from "@/lib/firestore-budgets"
 import { toISOString } from "@/lib/utils/timestamp"
 import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
+import { logger } from "@/lib/utils/logger"
+
 
 export interface Budget {
   id: string
@@ -109,7 +111,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
       setBudgets(convertedBudgets)
       hasLoadedRef.current = true
     } catch (error) {
-      console.error("Error loading budgets:", error)
+      logger.error("Error loading budgets", error)
       setBudgets([])
     } finally {
       setLoading(false)
@@ -159,7 +161,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
           toast.success("Budget created successfully")
         }
       } catch (error: unknown) {
-        console.error("Error saving budget:", error)
+        logger.error("Error saving budget", error)
         toast.error(getErrorMessage(error, ERROR_MESSAGES.BUDGET_SAVE_FAILED))
         throw error
       }
@@ -185,7 +187,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
         try {
           await deleteBudget(budgetId)
         } catch (error) {
-          console.error("Error deleting budget:", error)
+          logger.error("Error deleting budget", error)
           await loadBudgets()
           toast.error(ERROR_MESSAGES.BUDGET_DELETE_FAILED)
         }
@@ -206,7 +208,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
         await loadBudgets()
         toast.success("Budget renewed for the current period")
       } catch (error) {
-        console.error("Error renewing budget:", error)
+        logger.error("Error renewing budget", error)
         toast.error("Failed to renew budget")
       }
     },

@@ -21,6 +21,8 @@ import { Sparkles, Calendar, FileText, FileSpreadsheet, Info, RefreshCw } from "
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
+import { logger } from "@/lib/utils/logger"
+
 
 // ─── Module-level cache ────────────────────────────────────────────────────────
 // Survives bottom-nav navigation (component unmount/remount), cleared on hard refresh.
@@ -239,7 +241,7 @@ export default function ReportsPage() {
       setCached(entryCache, cacheKey, convertedEntries)
       setEntries(convertedEntries)
     } catch (error) {
-      console.error("Error loading entries:", error)
+      logger.error("Error loading report entries", error)
       setEntries([])
     } finally {
       setEntriesLoading(false)
@@ -321,7 +323,7 @@ export default function ReportsPage() {
         currency: userCurrency,
       })
     } catch (error) {
-      console.error("Error exporting PDF:", error)
+      logger.error("Error exporting PDF report", error)
       toast.error(t("exportPDFFailed"))
     }
   }
@@ -340,7 +342,7 @@ export default function ReportsPage() {
       const filename = `fintrack-report-${startDate}-to-${endDate}.csv`
       exportEntriesToCSV(entries, filename)
     } catch (error) {
-      console.error("Error exporting CSV:", error)
+      logger.error("Error exporting CSV report", error)
       toast.error(t("exportCSVFailed"))
     }
   }

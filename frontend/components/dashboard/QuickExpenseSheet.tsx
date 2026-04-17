@@ -39,6 +39,8 @@ import { QUICK_EXPENSE_CATEGORIES } from "@/lib/categories"
 import { formatDateForInput } from "@/lib/date-utils"
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
 import { getQuickItemsForCategory, type QuickItem } from "@/lib/quick-items"
+import { logger } from "@/lib/utils/logger"
+
 
 interface SavingsAccountOption {
   id: string
@@ -454,7 +456,7 @@ export function QuickExpenseSheet({
       onOpenChange(false)
     } catch (error) {
       // Error is handled by parent component
-      console.error("Error submitting transaction:", error)
+      logger.error("Error submitting transaction", error)
     } finally {
       setIsSubmitting(false)
     }

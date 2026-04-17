@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { SUPPORTED_CURRENCIES, CURRENCY_DISPLAY_NAMES } from "@/lib/constants/currency.constants"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import { logger } from "@/lib/utils/logger"
+
 
 const currencies = SUPPORTED_CURRENCIES
 
@@ -136,7 +138,7 @@ export function SavingsAccountDialog({
       })
       onOpenChange(false)
     } catch (error) {
-      console.error("Error submitting savings account:", error)
+      logger.error("Error submitting savings account", error)
     } finally {
       setIsSubmitting(false)
     }

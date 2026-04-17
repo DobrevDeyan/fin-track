@@ -25,6 +25,7 @@ import {
 import { db } from "./firebase"
 import { EntryDocument, CreateEntryInput } from "./firestore-types"
 import { getMonthKey } from "./firestore-summary"
+import { logger } from "./utils/logger"
 
 // Type for creating a new entry document
 interface NewEntryDocument {
@@ -211,7 +212,7 @@ export async function createEntry(
 
     return entryRef.id
   } catch (error) {
-    console.error("Error creating entry:", error)
+    logger.error("Error creating entry", error)
     throw error
   }
 }
@@ -256,10 +257,7 @@ export async function getUserEntries(
     try {
       querySnapshot = await getDocs(q)
     } catch (indexError: unknown) {
-      console.error(
-        "Firestore Index Error (likely missing index for userId + date + createdAt):",
-        indexError
-      )
+      logger.error("Firestore Index Error (likely missing index for userId + date + createdAt)", indexError)
       throw indexError
     }
 
@@ -278,7 +276,7 @@ export async function getUserEntries(
 
     return { entries, lastVisible: lastVisibleDoc }
   } catch (error) {
-    console.error("Error fetching entries:", error)
+    logger.error("Error fetching entries", error)
     throw error
   }
 }
@@ -312,7 +310,7 @@ export async function getUserEntriesByDateRange(
     })
     return entries
   } catch (error) {
-    console.error("Error fetching entries by date range:", error)
+    logger.error("Error fetching entries by date range", error)
     throw error
   }
 }
@@ -338,7 +336,7 @@ export async function getUserEntriesWithReceipts(
     const snapshot = await getDocs(q)
     return snapshot.docs.map((d) => ({ ...(d.data() as EntryDocument), id: d.id }))
   } catch (error) {
-    console.error("Error fetching entries with receipts:", error)
+    logger.error("Error fetching entries with receipts", error)
     throw error
   }
 }
@@ -475,7 +473,7 @@ export async function updateEntry(
       await updateDoc(entryRef, cleanUpdateData as Record<string, unknown>)
     }
   } catch (error) {
-    console.error("Error updating entry:", error)
+    logger.error("Error updating entry", error)
     throw error
   }
 }
@@ -524,7 +522,7 @@ export async function deleteEntry(
       await deleteDoc(entryRef)
     }
   } catch (error) {
-    console.error("Error deleting entry:", error)
+    logger.error("Error deleting entry", error)
     throw error
   }
 }
@@ -570,7 +568,7 @@ export async function getEntry(
 
     return null
   } catch (error) {
-    console.error("Error fetching entry:", error)
+    logger.error("Error fetching entry", error)
     throw error
   }
 }

@@ -7,6 +7,7 @@ import {
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/AuthContext"
+import { logger } from "@/lib/utils/logger"
 
 export interface AppNotification {
   id: string
@@ -43,7 +44,7 @@ export function useInAppNotifications() {
       setLoading(false)
     }, (err) => {
       // Swallow transient permission errors during auth token refresh — listener retries automatically
-      if (err.code !== "permission-denied") console.error("Notifications listener error:", err)
+      if (err.code !== "permission-denied") logger.error("Notifications listener error", err)
       setLoading(false)
     })
 

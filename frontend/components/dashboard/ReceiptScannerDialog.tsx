@@ -21,6 +21,8 @@ import {
 import { Label } from "@/components/ui/label"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import { logger } from "@/lib/utils/logger"
+
 import { formatDateForInput } from "@/lib/date-utils"
 import { Upload, FileImage, Loader2, AlertCircle, Check, X, Camera } from "lucide-react"
 import { scanReceipt, validateMagicBytes, ExtractedReceiptData } from "@/lib/receipt-scanner-api"
@@ -232,7 +234,7 @@ export function ReceiptScannerDialog({
 
       setScanState("success")
     } catch (error: any) {
-      console.error("Error scanning receipt:", error)
+      logger.error("Error scanning receipt", error)
       const isQuotaError = error?.status === 402 || error?.errorCode === "QuotaExceeded"
       setErrorMessage(
         isQuotaError
@@ -276,7 +278,7 @@ export function ReceiptScannerDialog({
         try {
           receiptUrl = await uploadReceipt(user.uid, selectedFile)
         } catch (uploadError) {
-          console.error("Receipt upload failed:", uploadError)
+          logger.error("Receipt upload failed", uploadError)
           // Non-fatal — save the entry without a receipt URL
         }
       }

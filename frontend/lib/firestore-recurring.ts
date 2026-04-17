@@ -22,6 +22,7 @@ import {
 import { httpsCallable } from "firebase/functions"
 import { db, functions } from "./firebase"
 import { RecurringEntryDocument } from "./firestore-types"
+import { logger } from "./utils/logger"
 
 // Type for update data
 interface RecurringUpdateData {
@@ -117,7 +118,7 @@ export async function createRecurringTransaction(
     
     return docRef.id
   } catch (error) {
-    console.error("Error creating recurring transaction:", error)
+    logger.error("Error creating recurring transaction", error)
     throw error
   }
 }
@@ -148,7 +149,7 @@ export async function getUserRecurringTransactions(
       return aTime - bTime
     })
   } catch (error: unknown) {
-    console.error("Error fetching recurring transactions:", error)
+    logger.error("Error fetching recurring transactions", error)
     throw error
   }
 }
@@ -174,7 +175,7 @@ export async function getActiveRecurringTransactions(
       ...doc.data(),
     })) as (RecurringEntryDocument & { id: string })[]
   } catch (error) {
-    console.error("Error fetching active recurring transactions:", error)
+    logger.error("Error fetching active recurring transactions", error)
     throw error
   }
 }
@@ -219,7 +220,7 @@ export async function updateRecurringTransaction(
 
     await updateDoc(recurringRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
-    console.error("Error updating recurring transaction:", error)
+    logger.error("Error updating recurring transaction", error)
     throw error
   }
 }
@@ -234,7 +235,7 @@ export async function deleteRecurringTransaction(
     const recurringRef = doc(db, "recurringTransactions", recurringId)
     await deleteDoc(recurringRef)
   } catch (error) {
-    console.error("Error deleting recurring transaction:", error)
+    logger.error("Error deleting recurring transaction", error)
     throw error
   }
 }
@@ -258,7 +259,7 @@ export async function getRecurringTransaction(
       ...docSnapshot.data(),
     } as RecurringEntryDocument & { id: string }
   } catch (error) {
-    console.error("Error fetching recurring transaction:", error)
+    logger.error("Error fetching recurring transaction", error)
     throw error
   }
 }
@@ -321,7 +322,7 @@ export async function processMyRecurringTransactions(): Promise<ProcessRecurring
     const result = await processFunction()
     return result.data
   } catch (error) {
-    console.error("Error processing recurring transactions:", error)
+    logger.error("Error processing recurring transactions", error)
     throw error
   }
 }

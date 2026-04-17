@@ -102,8 +102,6 @@ export async function scanReceipt(file: File, token: string, userId?: string): P
     formData.append('userId', userId);
   }
 
-  console.log(`[ML-Service] Starting scan request ${requestId} for file ${file.name} (${file.type})`);
-
   try {
     const response = await fetch(`${ML_SERVICE_URL}/api/upload-bill`, {
       method: 'POST',

@@ -14,6 +14,7 @@ import {
   withdrawFromSavingsAccount,
 } from "@/lib/firestore-savings"
 import type { SavingsAccount, SavingsAccountFormData, ToastState } from "./types"
+import { logger } from "@/lib/utils/logger"
 
 interface UseSavingsAccountsOptions {
   userId: string | undefined
@@ -34,7 +35,7 @@ export function useSavingsAccounts({ userId, onToast }: UseSavingsAccountsOption
       const accounts = await getUserSavingsAccounts(userId)
       setSavingsAccounts(accounts)
     } catch (error) {
-      console.error("Error loading savings accounts:", error)
+      logger.error("Error loading savings accounts", error)
       setSavingsAccounts([])
     } finally {
       setLoading(false)
@@ -49,7 +50,7 @@ export function useSavingsAccounts({ userId, onToast }: UseSavingsAccountsOption
       await loadSavingsAccounts()
       onToast({ message: "Savings account created successfully", type: "success" })
     } catch (error) {
-      console.error("Error creating savings account:", error)
+      logger.error("Error creating savings account", error)
       onToast({ message: "Failed to create savings account. Please try again.", type: "error" })
     }
   }, [userId, loadSavingsAccounts, onToast])
@@ -62,7 +63,7 @@ export function useSavingsAccounts({ userId, onToast }: UseSavingsAccountsOption
       await loadSavingsAccounts()
       onToast({ message: "Savings account updated successfully", type: "success" })
     } catch (error) {
-      console.error("Error updating savings account:", error)
+      logger.error("Error updating savings account", error)
       onToast({ message: "Failed to update savings account. Please try again.", type: "error" })
     }
   }, [userId, editingAccount, loadSavingsAccounts, onToast])
@@ -88,7 +89,7 @@ export function useSavingsAccounts({ userId, onToast }: UseSavingsAccountsOption
       await loadSavingsAccounts()
       onToast({ message: "Savings account deleted successfully", type: "success" })
     } catch (error) {
-      console.error("Error deleting savings account:", error)
+      logger.error("Error deleting savings account", error)
       onToast({ message: "Failed to delete savings account. Please try again.", type: "error" })
     }
   }, [userId, loadSavingsAccounts, onToast])
@@ -101,7 +102,7 @@ export function useSavingsAccounts({ userId, onToast }: UseSavingsAccountsOption
       await loadSavingsAccounts()
       onToast({ message: "Money added to savings account", type: "success" })
     } catch (error) {
-      console.error("Error adding money to savings account:", error)
+      logger.error("Error adding money to savings account", error)
       onToast({ message: "Failed to add money. Please try again.", type: "error" })
     }
   }, [userId, loadSavingsAccounts, onToast])
@@ -114,7 +115,7 @@ export function useSavingsAccounts({ userId, onToast }: UseSavingsAccountsOption
       await loadSavingsAccounts()
       onToast({ message: "Money withdrawn from savings account", type: "success" })
     } catch (error: unknown) {
-      console.error("Error withdrawing money from savings account:", error)
+      logger.error("Error withdrawing money from savings account", error)
       const errorMessage = error instanceof Error && error.message?.includes("Insufficient")
         ? "Insufficient balance in savings account"
         : "Failed to withdraw money. Please try again."
