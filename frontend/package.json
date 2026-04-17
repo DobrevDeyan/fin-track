@@ -30,6 +30,7 @@
         "@radix-ui/react-tabs": "^1.1.13",
         "@radix-ui/react-tooltip": "^1.2.8",
         "@sentry/browser": "^10.42.0",
+        "@sentry/nextjs": "^10.49.0",
         "@stripe/stripe-js": "^8.9.0",
         "@types/react-window": "^1.8.8",
         "class-variance-authority": "^0.7.0",

@@ -212,7 +212,7 @@ export async function createEntry(
 
     return entryRef.id
   } catch (error) {
-    logger.error("Error creating entry", error)
+    logger.error("Error creating entry", error, { critical: true })
     throw error
   }
 }
@@ -473,7 +473,7 @@ export async function updateEntry(
       await updateDoc(entryRef, cleanUpdateData as Record<string, unknown>)
     }
   } catch (error) {
-    logger.error("Error updating entry", error)
+    logger.error("Error updating entry", error, { critical: true })
     throw error
   }
 }
@@ -522,7 +522,7 @@ export async function deleteEntry(
       await deleteDoc(entryRef)
     }
   } catch (error) {
-    logger.error("Error deleting entry", error)
+    logger.error("Error deleting entry", error, { critical: true })
     throw error
   }
 }

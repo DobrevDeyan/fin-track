@@ -37,19 +37,6 @@ interface RecurringUpdateData {
   nextDate?: Timestamp
 }
 
-// Helper to check if error is a Firestore index error
-function isFirestoreIndexError(error: unknown): boolean {
-  if (error instanceof Error) {
-    const firestoreError = error as Error & { code?: string }
-    return (
-      firestoreError.code === "failed-precondition" ||
-      firestoreError.message?.includes("index") ||
-      false
-    )
-  }
-  return false
-}
-
 // Helper to convert date to timestamp
 function toTimestamp(date: Timestamp | Date | string): Timestamp {
   if (date instanceof Timestamp) {
@@ -322,7 +309,7 @@ export async function processMyRecurringTransactions(): Promise<ProcessRecurring
     const result = await processFunction()
     return result.data
   } catch (error) {
-    logger.error("Error processing recurring transactions", error)
+    logger.error("Error processing recurring transactions", error, { critical: true })
     throw error
   }
 }

@@ -76,8 +76,11 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 NEXT_PUBLIC_STRIPE_PRO_PRICE_ID=price_...
 NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID=price_...
 
+# Sentry — DSN is hardcoded in sentry.*.config.ts (wizard-generated), but set
+# this too so any legacy references resolve
+NEXT_PUBLIC_SENTRY_DSN=https://a4558a37de4cd389bd289658df338449@o4511088583114752.ingest.de.sentry.io/4511088625713232
+
 # Optional
-NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
 NEXT_PUBLIC_PLAUSIBLE_DOMAIN=your-domain.com
 ```
 
@@ -125,7 +128,7 @@ No environment variables needed — Firebase Admin SDK auto-initializes in the F
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` | `pk_live_...` |
 | `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` | test price ID | live price ID |
 | `NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID` | test price ID | live price ID |
-| `NEXT_PUBLIC_SENTRY_DSN` | *(optional)* | DSN from sentry.io |
+| `NEXT_PUBLIC_SENTRY_DSN` | DSN from sentry.io (required) | same |
 | `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` | *(optional)* | e.g. `pocket.app` |
 
 ---
@@ -153,6 +156,54 @@ After setup, deploy rules before testing locally with emulators off:
 
 ```bash
 firebase deploy --only firestore,storage
+```
+
+---
+
+## Sentry Error Monitoring
+
+Sentry is already configured in the codebase (`sentry.server.config.ts`, `sentry.edge.config.ts`, `instrumentation.ts`, `instrumentation-client.ts`). **You do not need to re-run the wizard on a new machine** — the DSN is hardcoded in those files.
+
+### What you need on a new machine
+
+1. Copy `.env.sentry-build-plugin` from the working machine (it contains the auth token for source map uploads at build time). This file is gitignored.
+
+   Alternatively, generate a new token:
+   - Go to [sentry.io](https://sentry.io) → Settings → Auth Tokens → Create token
+   - Scopes needed: `project:read`, `project:releases`, `org:read`
+   - Create `frontend/.env.sentry-build-plugin`:
+     ```env
+     SENTRY_AUTH_TOKEN=your_token_here
+     ```
+
+2. That's it — the rest is already in git.
+
+### How it works
+
+- **`instrumentation-client.ts`** — initializes Sentry in the browser (no dev guard, sends in all environments)
+- **`sentry.server.config.ts`** — initializes Sentry on the server/API routes
+- **`sentry.edge.config.ts`** — initializes Sentry on edge runtime
+- **`lib/utils/logger.ts`** — `logger.error(..., { critical: true })` automatically calls `Sentry.captureException`
+
+### Critical errors forwarded to Sentry automatically
+
+| Location | Error |
+|----------|-------|
+| `firestore-entries.ts` | Create / update / delete entry |
+| `firestore-recurring.ts` | Process recurring transactions |
+| `firestore-summary.ts` | Initialize financial summary |
+| `firestore-users.ts` | Complete onboarding |
+| `AuthContext.tsx` | Create user document |
+| `error.tsx` | Any unhandled React error boundary catch |
+| `SectionErrorBoundary.tsx` | Any dashboard section crash |
+
+### To test Sentry on a new machine
+
+```bash
+cd frontend && npm run dev
+# Visit http://localhost:3001/sentry-example-page — page was deleted after initial test
+# Alternatively trigger via browser console:
+# import('@sentry/nextjs').then(s => s.captureException(new Error('test')))
 ```
 
 ---

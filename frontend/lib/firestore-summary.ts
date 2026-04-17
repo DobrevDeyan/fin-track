@@ -192,7 +192,7 @@ export async function initializeFinancialSummary(
 
     return summary
   } catch (error) {
-    logger.error("[firestore-summary] Error initializing financial summary", error)
+    logger.error("[firestore-summary] Error initializing financial summary", error, { critical: true })
     throw error
   }
 }

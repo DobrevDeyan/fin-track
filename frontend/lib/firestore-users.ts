@@ -190,7 +190,7 @@ export async function completeOnboarding(
       }
     }
   } catch (error) {
-    logger.error("Error completing onboarding", error)
+    logger.error("Error completing onboarding", error, { critical: true })
     throw error
   }
 }

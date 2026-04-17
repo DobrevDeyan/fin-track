@@ -7,8 +7,10 @@
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-interface LogContext {
+export interface LogContext {
   [key: string]: any;
+  /** Set to true to forward this error to Sentry for alerting */
+  critical?: boolean;
 }
 
 // PII patterns to redact
@@ -146,11 +148,14 @@ class Logger {
   }
 
   /**
-   * Error level logging
+   * Error level logging.
+   * Pass `context: { critical: true }` to also forward the error to Sentry.
    */
   error(message: string, error?: Error | unknown, context?: LogContext): void {
+    const { critical, ...restContext } = context ?? {};
+
     const errorContext = {
-      ...context,
+      ...restContext,
       error: error instanceof Error ? {
         message: error.message,
         stack: error.stack,
@@ -160,6 +165,17 @@ class Logger {
 
     const formatted = formatMessage('error', message, errorContext);
     console.error(formatted);
+
+    if (critical && typeof window !== 'undefined') {
+      import('@sentry/nextjs').then(({ captureException }) => {
+        const sentryError = error instanceof Error
+          ? error
+          : new Error(message);
+        captureException(sentryError, {
+          extra: { logMessage: message, ...restContext },
+        });
+      }).catch(() => { /* Sentry not available */ });
+    }
   }
 
   /**

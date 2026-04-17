@@ -50,6 +50,14 @@ cd ml-service && npm run dev      # http://localhost:8000 (optional)
 
 ---
 
+## Error Monitoring (Sentry)
+
+Sentry (`@sentry/nextjs`) is fully configured. Critical errors are automatically forwarded from `logger.error(..., { critical: true })` calls throughout the codebase.
+
+**New machine setup:** copy `.env.sentry-build-plugin` (gitignored auth token) — everything else is already in git. See [docs/SETUP.md](docs/SETUP.md#sentry-error-monitoring) for full details.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |

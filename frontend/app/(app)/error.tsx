@@ -2,9 +2,7 @@
 
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Sentry } from "@/lib/sentry"
 import { logger } from "@/lib/utils/logger"
-
 
 export default function AppError({
   error,
@@ -14,8 +12,7 @@ export default function AppError({
   reset: () => void
 }) {
   useEffect(() => {
-    logger.error("Global app error caught", error)
-    Sentry.captureException(error)
+    logger.error("Global app error caught", error, { critical: true })
   }, [error])
 
   return (

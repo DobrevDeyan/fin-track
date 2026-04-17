@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const snap = await _getDoc(_doc(db, "users", user.uid));
           await createUserDocument(user, !snap.exists());
         } catch (error) {
-          logger.error("Error creating user document", error);
+          logger.error("Error creating user document", error, { critical: true });
         }
       }
     });

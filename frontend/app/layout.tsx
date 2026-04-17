@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import * as Sentry from "@sentry/nextjs"
 import { Inter, Poppins } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
@@ -9,7 +10,6 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext"
 import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
 import { InstallPrompt } from "@/components/InstallPrompt"
-import { SentryProvider } from "@/components/SentryProvider"
 import { HouseholdProvider } from "@/contexts/HouseholdContext"
 import { defaultLocale } from "@/i18n/config"
 import { Toaster } from "sonner"
@@ -31,28 +31,33 @@ const poppins = Poppins({
   variable: "--font-poppins",
 })
 
-export const metadata: Metadata = {
-  title: "Pocket - Smart Financial Management",
-  description: "Track your expenses, manage your budget, and gain insights into your spending with manual entry tracking.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Pocket",
-  },
-  icons: {
-    icon: [
-      { url: "/icons/favicon_dark/favicon.ico", sizes: "any" },
-      { url: "/icons/favicon_dark/favicon.svg", type: "image/svg+xml" },
-      { url: "/icons/favicon_dark/favicon-96x96.png", sizes: "96x96", type: "image/png" },
-      { url: "/icons/favicon_dark/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/favicon_dark/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [
-      { url: "/icons/favicon_dark/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: "/icons/favicon_dark/favicon.ico",
-  },
+export function generateMetadata(): Metadata {
+  return {
+    title: "Pocket - Smart Financial Management",
+    description: "Track your expenses, manage your budget, and gain insights into your spending with manual entry tracking.",
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Pocket",
+    },
+    icons: {
+      icon: [
+        { url: "/icons/favicon_dark/favicon.ico", sizes: "any" },
+        { url: "/icons/favicon_dark/favicon.svg", type: "image/svg+xml" },
+        { url: "/icons/favicon_dark/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+        { url: "/icons/favicon_dark/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/favicon_dark/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [
+        { url: "/icons/favicon_dark/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      ],
+      shortcut: "/icons/favicon_dark/favicon.ico",
+    },
+    other: {
+      ...Sentry.getTraceData(),
+    },
+  }
 }
 
 export const viewport: Viewport = {
@@ -110,8 +115,7 @@ export default function RootLayout({
                 {children}
                 <RegisterSW />
                 <InstallPrompt />
-                <SentryProvider />
-                <Toaster richColors position="top-right" />
+<Toaster richColors position="top-right" />
               </LanguageProvider>
             </CurrencyProvider>
             </HouseholdProvider>
