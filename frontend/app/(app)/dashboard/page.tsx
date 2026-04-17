@@ -16,6 +16,7 @@ import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
 const AchievementCard = dynamic(() => import("@/components/dashboard/AchievementCard").then(m => ({ default: m.AchievementCard })), { ssr: false });
 import { AnomalyAlert } from "@/components/dashboard/AnomalyAlert";
+import { HouseholdMemberBreakdown } from "@/components/dashboard/HouseholdMemberBreakdown";
 const CashFlowForecast = dynamic(
   () => import("@/components/dashboard/CashFlowForecast").then(m => ({ default: m.CashFlowForecast })),
   { ssr: false, loading: () => <div className="h-[180px] w-full rounded-xl border bg-card animate-pulse" /> }
@@ -297,7 +298,7 @@ function DashboardInnerContent() {
                 {mode === "full" && (
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <SectionErrorBoundary label="Health Score">
-                        <div className="relative">
+                        <div className="relative flex-1">
                             <HealthScoreCard />
                             <button
                                 onClick={() => setShareCardOpen(true)}
@@ -358,6 +359,13 @@ function DashboardInnerContent() {
                                     {householdEntriesLoading ? "Loading…" : "Refresh"}
                                 </Button>
                             </div>
+
+                            {!householdEntriesLoading && householdEntries.length > 0 && (
+                                <HouseholdMemberBreakdown
+                                    entries={householdEntries}
+                                    userCurrency={userCurrency}
+                                />
+                            )}
 
                             {householdEntriesLoading ? (
                                 <div className="divide-y">
