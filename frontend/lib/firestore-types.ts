@@ -149,6 +149,46 @@ export interface GoalDocument {
   updatedAt: Timestamp
 }
 
+// Household Budget Document
+export interface HouseholdBudgetDocument {
+  householdId: string
+  name: string
+  category: string
+  amount: number
+  currency: string
+  period: "weekly" | "monthly" | "yearly"
+  startDate: Timestamp
+  endDate: Timestamp
+  isActive: boolean
+  alertThreshold?: number
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// Household Goal Contribution
+export interface HouseholdGoalContribution {
+  uid: string
+  displayName: string
+  amount: number
+  addedAt: string // ISO string
+}
+
+// Household Goal Document
+export interface HouseholdGoalDocument {
+  householdId: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  currency: string
+  deadline?: Timestamp
+  category?: string
+  description?: string
+  isActive: boolean
+  contributions: HouseholdGoalContribution[]
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
 // Savings Account Document
 export interface SavingsAccountDocument {
   userId: string

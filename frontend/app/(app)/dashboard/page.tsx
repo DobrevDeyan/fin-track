@@ -58,6 +58,9 @@ const BudgetsSection = dynamic(() => import("@/components/dashboard/sections/Bud
 
 const RecurringSection = dynamic(() => import("@/components/dashboard/sections/RecurringSection").then((mod) => ({ default: mod.RecurringSection })), { ssr: false });
 
+const HouseholdBudgetsSection = dynamic(() => import("@/components/dashboard/sections/HouseholdBudgetsSection").then((mod) => ({ default: mod.HouseholdBudgetsSection })), { ssr: false });
+const HouseholdGoalsSection = dynamic(() => import("@/components/dashboard/sections/HouseholdGoalsSection").then((mod) => ({ default: mod.HouseholdGoalsSection })), { ssr: false });
+
 // Lazy load receipt scanner (only needed when user clicks scan button)
 const ReceiptScannerDialog = dynamic(() => import("@/components/dashboard/ReceiptScannerDialog").then((mod) => ({ default: mod.ReceiptScannerDialog })), { ssr: false });
 
@@ -447,6 +450,42 @@ function DashboardInnerContent() {
                         isLoadingMore={entriesHook.isLoadingMore}
                     />
                 </SectionErrorBoundary>
+                )}
+
+                {/* Household shared budget + goals — family mode, full mode only */}
+                {mode === "full" && isHouseholdMode && householdId && (
+                <div className="mt-8 space-y-8">
+                    <div className="rounded-xl border bg-card">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">Shared Budget</span>
+                            {household && <span className="text-xs text-muted-foreground">— {household.name}</span>}
+                        </div>
+                        <div className="px-4">
+                            <SectionErrorBoundary label="Household Budgets">
+                                <HouseholdBudgetsSection
+                                    householdEntries={householdEntries}
+                                    categories={expenseCategories}
+                                />
+                            </SectionErrorBoundary>
+                        </div>
+                    </div>
+                    <div className="rounded-xl border bg-card">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">Shared Goals</span>
+                            {household && <span className="text-xs text-muted-foreground">— {household.name}</span>}
+                        </div>
+                        <div className="px-4">
+                            <SectionErrorBoundary label="Household Goals">
+                                <HouseholdGoalsSection
+                                    categories={expenseCategories}
+                                    userCurrency={userCurrency}
+                                />
+                            </SectionErrorBoundary>
+                        </div>
+                    </div>
+                </div>
                 )}
 
                 {/* Feature Sections - Tabbed Interface — full mode only */}

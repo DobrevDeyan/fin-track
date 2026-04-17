@@ -294,6 +294,40 @@ const {
 
 ---
 
+### `useHouseholdBudgets()`
+
+**Location:** `contexts/dashboard/HouseholdBudgetsContext.tsx`
+
+```typescript
+const {
+  budgets,        // HouseholdBudget[]
+  loading,        // boolean
+  addBudget,      // (budget: NewHouseholdBudget) => Promise<void>
+  updateBudget,   // (id, updates) => Promise<void>
+  deleteBudget,   // (id) => Promise<void>
+  renewBudget,    // (id, period) => Promise<void>
+} = useHouseholdBudgets()
+```
+
+---
+
+### `useHouseholdGoals()`
+
+**Location:** `contexts/dashboard/HouseholdGoalsContext.tsx`
+
+```typescript
+const {
+  goals,           // HouseholdGoal[]
+  loading,         // boolean
+  addGoal,         // (goal: NewHouseholdGoal) => Promise<void>
+  updateGoal,      // (id, updates) => Promise<void>
+  deleteGoal,      // (id) => Promise<void>
+  addContribution, // (id, amount) => Promise<void>
+} = useHouseholdGoals()
+```
+
+---
+
 ### `useRecurringContext()`
 
 **Location:** `contexts/dashboard/RecurringContext.tsx`
@@ -449,7 +483,7 @@ All Sheets use `[&>button]:hidden` to suppress the default close button.
 
 **Location:** `contexts/dashboard/DashboardProvider.tsx`
 
-Wraps all dashboard contexts (Budgets, Goals, Recurring, Savings). Entries use the `useEntries()` hook directly.
+Wraps all dashboard contexts (Budgets, Goals, Recurring, Savings). When `isHouseholdMode` is active, it also wraps `HouseholdBudgetsProvider` and `HouseholdGoalsProvider`.
 
 ```tsx
 export default function DashboardPage() {
@@ -613,6 +647,43 @@ interface HouseholdMember {
   email: string
   displayName: string
   joinedAt: Timestamp
+}
+
+interface HouseholdBudgetDocument {
+  householdId: string
+  name: string
+  category: string
+  amount: number
+  currency: string
+  period: "weekly" | "monthly" | "yearly"
+  startDate: Timestamp
+  endDate: Timestamp
+  isActive: boolean
+  alertThreshold?: number
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+interface HouseholdGoalContribution {
+  uid: string
+  displayName: string
+  amount: number
+  addedAt: string // ISO string
+}
+
+interface HouseholdGoalDocument {
+  householdId: string
+  name: string
+  targetAmount: number
+  currentAmount: number
+  currency: string
+  deadline?: Timestamp
+  category?: string
+  description?: string
+  isActive: boolean
+  contributions: HouseholdGoalContribution[]
+  createdAt: Timestamp
+  updatedAt: Timestamp
 }
 ```
 

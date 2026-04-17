@@ -322,7 +322,25 @@ The link expires after 7 days. You can generate a new one at any time.
 
 On the dashboard, use the **Personal / Family** toggle at the top to switch views:
 - **Personal** — your own transactions only (default)
-- **Family** — merged view of all household members' transactions
+- **Family** — merged view of all household members' transactions, plus shared budgets and goals
+
+### Shared Household Budgets
+
+When in **Family** view, you can access shared household budgets. These are separate from your personal budgets and are visible/editable by all members of the household.
+
+1. Toggle the dashboard to **Family** mode.
+2. Scroll to the **Household Budgets** section.
+3. Click **"+ Add Household Budget"** to create a new shared budget.
+4. All members will see the same progress bar, which aggregates spending from all household members in that category.
+
+### Shared Household Goals
+
+Shared goals allow the household to save together for big purchases or emergencies.
+
+1. Toggle the dashboard to **Family** mode.
+2. Scroll to the **Household Goals** section.
+3. Click **"+ Add Household Goal"** to set a new shared target.
+4. **Contributions:** Any member can contribute to a shared goal. Click a goal card and use the **"Add Contribution"** button. The goal card will show who contributed what and the total progress towards the target.
 
 ### Managing Members
 

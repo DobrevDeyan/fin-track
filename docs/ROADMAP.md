@@ -62,6 +62,8 @@
 - [x] Invite link flow — `household/accept` public page; `returnUrl` preserved across auth
 - [x] Personal / Family toggle on dashboard — merged household transaction view
 - [x] Firestore rule: `uid in memberUids` flat array check (`.map()` not valid in rules)
+- [x] Shared Household Budgets — real-time synced budgets across household members
+- [x] Shared Household Goals — shared target tracking and goal contributions
 
 ### Technical
 - [x] PWA — installable, service worker, offline support
@@ -196,7 +198,7 @@ These are valuable features but won't move the acquisition needle at the current
 | Recurring Transactions | ✅ | ✅ | ✅ | ✅ |
 | YoY Analytics | ✅ | ✅ | ✅ | ✅ |
 | Household / Couple View | ✅ | ✅ | ❌ | ❌ |
-| Shared Budgets | ❌ | ✅ | ❌ | ❌ |
+| Shared Budgets | ✅ | ✅ | ❌ | ❌ |
 | Investment Tracking | ❌ | ✅ | ✅ | ✅ |
 | Net Worth | ✅ | ✅ | ✅ | ✅ |
 
@@ -230,7 +232,7 @@ Pocket tiers:
 
 ### Gaps to Address
 - Investment tracking — **Major Gap** (planned Q3 2026)
-- Shared budgets / expense splitting — **Minor Gap** (household merging done; per-budget sharing is future work)
+- Expense splitting — **Minor Gap** (individual expense splitting needed; shared household budgets and goals are implemented)
 - Sankey diagrams — **Minor Gap** (YoY now implemented)
 
 ### Overall Competitive Score: 9.5/10

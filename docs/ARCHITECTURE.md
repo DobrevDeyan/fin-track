@@ -331,6 +331,8 @@ db = initializeFirestore(app, {
 | `aiInsights` | Firebase UID | Cached AI-generated monthly digests |
 | `assets` | Auto | Net worth assets & liabilities |
 | `households` | Auto | Household name, ownerUid, `members[]`, `memberUids[]` |
+| `householdBudgets` | Auto | Shared family budgets by category |
+| `householdGoals` | Auto | Shared family savings targets and contributions |
 | `householdInvites` | Auto | 7-day email invite tokens |
 | `userDebts` | Firebase UID | Debt Payoff Planner items (single doc per user) |
 | `scanUsage` | Firebase UID | OCR scan quota (Admin SDK only) |

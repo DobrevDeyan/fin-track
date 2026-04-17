@@ -205,7 +205,7 @@ frontend/components/dashboard/
 
 ### Module 7 — Household / Family Budgeting
 
-**What it does:** Shared workspace. Owner creates household, invites members by email, everyone sees merged transactions in Family view.
+**What it does:** Shared workspace. Owner creates household, invites members by email, everyone sees merged transactions in Family view. Now includes shared household budgets and goals.
 
 **Files:**
 ```
@@ -220,21 +220,34 @@ frontend/app/household/accept/
 frontend/app/(app)/settings/page.tsx    — household card section (~lines 118–560)
 frontend/app/(app)/dashboard/page.tsx   — Personal/Family toggle + merged entries view
 
+frontend/lib/firestore-household-budgets.ts — CRUD for shared budgets
+frontend/lib/firestore-household-goals.ts   — CRUD for shared goals + contributions
+frontend/contexts/dashboard/HouseholdBudgetsContext.tsx
+frontend/contexts/dashboard/HouseholdGoalsContext.tsx
+
+frontend/components/dashboard/
+  HouseholdBudgetsSection.tsx
+  HouseholdGoalsSection.tsx
+  HouseholdGoalCard.tsx
+
 functions/src/index.ts                  — createHousehold, sendHouseholdInvite, acceptHouseholdInvite,
                                            getHouseholdEntries, leaveHousehold, getMyHousehold
-firestore.rules                         — households (memberUids-based read), householdInvites
+firestore.rules                         — households, householdBudgets, householdGoals
 ```
 
 **Key invariants to preserve:**
 - `memberUids` must stay in sync with `members` array — updated atomically in every CF
 - Client never writes to `households` or `householdInvites` — Admin SDK only
+- Shared budgets/goals are written directly by clients (rules allow membership-based writes)
 - Invite token is 32-byte hex, expires in 7 days, single-use (status flipped to "accepted" on use)
 
 **Test targets (priority order):**
 1. `AcceptInviteContent` — all 5 status states render (idle, loading, success, error, wrong-email)
 2. `HouseholdContext` — mock `callGetMyHousehold`; verify householdId/household populate; verify `isHouseholdMode` resets to false when householdId becomes null
-3. Invite flow — unauthenticated user → sign in → `?returnUrl=` preserved → lands back on accept page after login
-4. Settings household section — create form; invite form; leave button triggers confirmation dialog
+3. Household Budgets — verify CRUD only visible in Family mode; verify edits sync for all members
+4. Household Goals — verify contribution logic; verify progress updates for all members
+5. Invite flow — unauthenticated user → sign in → `?returnUrl=` preserved → lands back on accept page after login
+6. Settings household section — create form; invite form; leave button triggers confirmation dialog
 
 ---
 

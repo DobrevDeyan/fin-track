@@ -147,6 +147,24 @@ service cloud.firestore {
 
     // ===== Household / Family Budgeting =====
 
+    // Helper: check if the current user is a member of a given household
+    function isHouseholdMember(householdId) {
+      return request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/households/$(householdId)).data.memberUids;
+    }
+
+    // Shared household budgets — any member can read/write
+    match /householdBudgets/{budgetId} {
+      allow read, delete, update: if isHouseholdMember(resource.data.householdId);
+      allow create: if isHouseholdMember(request.resource.data.householdId);
+    }
+
+    // Shared household goals — any member can read/write
+    match /householdGoals/{goalId} {
+      allow read, delete, update: if isHouseholdMember(resource.data.householdId);
+      allow create: if isHouseholdMember(request.resource.data.householdId);
+    }
+
     // Household document — members can read/list; only Admin SDK writes.
     // memberUids is a flat string[] kept in sync with the members array by Cloud Functions.
     match /households/{householdId} {
