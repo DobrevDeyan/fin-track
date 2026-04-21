@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { SUPPORTED_CURRENCIES, CURRENCY_DISPLAY_NAMES } from "@/lib/constants/currency.constants"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
+import { useTranslations } from "next-intl"
 
 
 const currencies = SUPPORTED_CURRENCIES
@@ -90,6 +91,10 @@ export function SavingsAccountDialog({
   const [icon, setIcon] = useState("piggy-bank")
   const [isActive, setIsActive] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [nameError, setNameError] = useState("")
+  const [balanceError, setBalanceError] = useState("")
+  const t = useTranslations("savings")
+  const tCommon = useTranslations("common")
 
   // Populate form when editing
   useEffect(() => {
@@ -111,19 +116,24 @@ export function SavingsAccountDialog({
       setIcon("piggy-bank")
       setIsActive(true)
     }
+    setNameError("")
+    setBalanceError("")
   }, [editingAccount, defaultCurrency, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!name.trim()) {
-      return
-    }
 
+    let valid = true
+    if (!name.trim()) {
+      setNameError(t("validation.nameRequired"))
+      valid = false
+    }
     const balanceNum = parseFloat(balance) || 0
     if (balanceNum < 0) {
-      return
+      setBalanceError(t("validation.balanceNegative"))
+      valid = false
     }
+    if (!valid) return
 
     setIsSubmitting(true)
     try {
@@ -150,29 +160,28 @@ export function SavingsAccountDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {editingAccount ? "Edit Savings Account" : "Create Savings Account"}
+              {editingAccount ? t("editAccount") : t("createAccount")}
             </DialogTitle>
             <DialogDescription>
-              {editingAccount
-                ? "Update your savings account details."
-                : "Create a new savings account to track money separately from your spending balance."}
+              {editingAccount ? t("editAccountDesc") : t("createAccountDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Account Name *</Label>
+              <Label htmlFor="name">{t("accountName")}</Label>
               <Input
                 id="name"
                 placeholder="e.g., Emergency Fund, Vacation Fund"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                onChange={(e) => { setName(e.target.value); if (nameError) setNameError("") }}
+                className={nameError ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {nameError && <p className="text-xs text-red-500">{nameError}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="balance">Initial Balance</Label>
+                <Label htmlFor="balance">{t("initialBalance")}</Label>
                 <Input
                   id="balance"
                   type="number"
@@ -181,11 +190,13 @@ export function SavingsAccountDialog({
                   max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
+                  onChange={(e) => { setBalance(e.target.value); if (balanceError) setBalanceError("") }}
+                  className={balanceError ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
+                {balanceError && <p className="text-xs text-red-500">{balanceError}</p>}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">{tCommon("currency")}</Label>
                 <Select value={currency} onValueChange={setCurrency}>
                   <SelectTrigger id="currency">
                     <SelectValue />
@@ -202,10 +213,10 @@ export function SavingsAccountDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">{tCommon("description")} ({tCommon("optional")})</Label>
               <Textarea
                 id="description"
-                placeholder="Add a note about this savings account..."
+                placeholder={t("notePlaceholder")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
@@ -214,7 +225,7 @@ export function SavingsAccountDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="icon">Icon</Label>
+                <Label htmlFor="icon">{t("icon")}</Label>
                 <Select value={icon} onValueChange={setIcon}>
                   <SelectTrigger id="icon">
                     <SelectValue />
@@ -229,7 +240,7 @@ export function SavingsAccountDialog({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="color">Color</Label>
+                <Label htmlFor="color">{t("color")}</Label>
                 <Select value={color} onValueChange={setColor}>
                   <SelectTrigger id="color">
                     <SelectValue />
@@ -252,10 +263,10 @@ export function SavingsAccountDialog({
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {editingAccount ? "Update" : "Create"}
+              {editingAccount ? tCommon("update") : tCommon("create")}
             </Button>
           </DialogFooter>
         </form>

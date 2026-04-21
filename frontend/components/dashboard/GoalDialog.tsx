@@ -68,6 +68,15 @@ export function GoalDialog({
   const [description, setDescription] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<"name" | "targetAmount", string>>>({})
+
+  const validate = () => {
+    const e: typeof errors = {}
+    if (!name.trim()) e.name = t("validation.nameRequired")
+    if (!targetAmount || parseFloat(targetAmount) <= 0) e.targetAmount = t("validation.targetAmountRequired")
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   // Populate form when editing
   useEffect(() => {
@@ -86,7 +95,6 @@ export function GoalDialog({
       setDescription(editingGoal.description || "")
       setIsActive(editingGoal.isActive)
     } else {
-      // Reset form for new goal
       setName("")
       setTargetAmount("")
       setCurrentAmount("0")
@@ -96,11 +104,13 @@ export function GoalDialog({
       setDescription("")
       setIsActive(true)
     }
+    setErrors({})
   }, [editingGoal, open, defaultCurrency])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !targetAmount || isSubmitting) return
+    if (isSubmitting) return
+    if (!validate()) return
 
     setIsSubmitting(true)
     try {
@@ -151,9 +161,10 @@ export function GoalDialog({
                 id="name"
                 placeholder={t("goalNamePlaceholder")}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                onChange={(e) => { setName(e.target.value); if (errors.name) setErrors(prev => ({ ...prev, name: undefined })) }}
+                className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
 
             <div className="grid gap-2">
@@ -178,9 +189,10 @@ export function GoalDialog({
                   max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   value={targetAmount}
-                  onChange={(e) => setTargetAmount(e.target.value)}
-                  required
+                  onChange={(e) => { setTargetAmount(e.target.value); if (errors.targetAmount) setErrors(prev => ({ ...prev, targetAmount: undefined })) }}
+                  className={errors.targetAmount ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
+                {errors.targetAmount && <p className="text-xs text-red-500">{errors.targetAmount}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="currency">{tCommon("currency")}</Label>
@@ -210,7 +222,6 @@ export function GoalDialog({
                 placeholder="0.00"
                 value={currentAmount}
                 onChange={(e) => setCurrentAmount(e.target.value)}
-                required
               />
               <p className="text-xs text-muted-foreground">
                 {t("currentAmountHint")}

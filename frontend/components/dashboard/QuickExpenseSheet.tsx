@@ -40,6 +40,7 @@ import { formatDateForInput } from "@/lib/date-utils"
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
 import { getQuickItemsForCategory, type QuickItem } from "@/lib/quick-items"
 import { logger } from "@/lib/utils/logger"
+import { useTranslations } from "next-intl"
 
 
 interface SavingsAccountOption {
@@ -121,7 +122,10 @@ export function QuickExpenseSheet({
   const [description, setDescription] = useState("")
   const [descriptionManuallyEdited, setDescriptionManuallyEdited] = useState(false) // Track if user manually edited description
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+  const [submitError, setSubmitError] = useState("")
+  const t = useTranslations("dashboard")
+  const tCommon = useTranslations("common")
+
   // Quick flow states (expenses only)
   const [useQuickFlow, setUseQuickFlow] = useState(false) // Toggle for quick flow mode
   const [quickFlowStep, setQuickFlowStep] = useState<QuickFlowStep>("category")
@@ -161,6 +165,7 @@ export function QuickExpenseSheet({
       setDescription("")
       setDescriptionManuallyEdited(false)
       setIsSubmitting(false)
+      setSubmitError("")
       setUseQuickFlow(false)
       setQuickFlowStep("category")
       setSelectedItem(null)
@@ -182,6 +187,7 @@ export function QuickExpenseSheet({
   // Handle category selection - only move to quick flow if enabled
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId)
+    if (submitError) setSubmitError("")
     if (transactionType === "expense" && useQuickFlow) {
       const items = getQuickItemsForCategory(categoryId)
       if (items.length > 0) {
@@ -414,6 +420,7 @@ export function QuickExpenseSheet({
       setAmount("")
       return
     }
+    if (submitError) setSubmitError("")
     setAmount((prev) => {
       const next = prev === "0" && value !== "." ? value : prev + value
       // Enforce max 2 decimal places
@@ -426,9 +433,15 @@ export function QuickExpenseSheet({
   }
 
   const handleSubmit = async () => {
-    if (!selectedCategory || !amount || parseFloat(amount) <= 0) {
+    if (!selectedCategory) {
+      setSubmitError(t("validation.categorySelectFirst"))
       return
     }
+    if (!amount || parseFloat(amount) <= 0) {
+      setSubmitError(t("validation.amountPositive"))
+      return
+    }
+    setSubmitError("")
 
     setIsSubmitting(true)
     try {
@@ -499,19 +512,19 @@ export function QuickExpenseSheet({
                 <button
                   onClick={handleBack}
                   className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg hover:bg-accent active:bg-accent/80 transition-colors -ml-1 flex items-center justify-center touch-manipulation"
-                  aria-label="Back"
+                  aria-label={tCommon("back")}
                 >
                   <ArrowLeft className="h-7 w-7" />
                 </button>
               )}
               <div className="flex-1">
-                <SheetTitle className="text-xl font-bold">Quick Transaction</SheetTitle>
+                <SheetTitle className="text-xl font-bold">{t("quickTransaction")}</SheetTitle>
                 <SheetDescription className="text-xs mt-1">
-                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "category" && "Select a category to get started"}
-                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "item" && "Choose an item"}
-                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && "Select approximate price"}
-                  {transactionType === "expense" && !useQuickFlow && "Select category, enter amount, and save"}
-                  {transactionType === "income" && "Select type, category, enter amount, and save"}
+                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "category" && t("selectCategoryStart")}
+                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "item" && t("chooseItemDesc")}
+                  {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && t("selectApproxPrice")}
+                  {transactionType === "expense" && !useQuickFlow && t("manualExpenseDesc")}
+                  {transactionType === "income" && t("manualIncomeDesc")}
                 </SheetDescription>
               </div>
             </div>
@@ -528,7 +541,7 @@ export function QuickExpenseSheet({
           <div className="flex flex-col gap-2.5">
             {/* Transaction Type Selector - Always visible */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Type</Label>
+              <Label className="text-xs font-semibold">{tCommon("type")}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -542,7 +555,7 @@ export function QuickExpenseSheet({
                   )}
                 >
                   <TrendingDown className="h-4 w-4" />
-                  Expense
+                  {tCommon("expense")}
                 </button>
                 <button
                   type="button"
@@ -556,7 +569,7 @@ export function QuickExpenseSheet({
                   )}
                 >
                   <TrendingUp className="h-4 w-4" />
-                  Income
+                  {tCommon("income")}
                 </button>
               </div>
             </div>
@@ -575,7 +588,7 @@ export function QuickExpenseSheet({
                       : "border-border hover:border-primary/50"
                   )}
                 >
-                  {useQuickFlow ? "✓ Quick Add Mode" : "⚡ Use Quick Add"}
+                  {useQuickFlow ? `✓ ${t("quickAddMode")}` : `⚡ ${t("useQuickAdd")}`}
                 </button>
               </div>
             )}
@@ -583,7 +596,7 @@ export function QuickExpenseSheet({
             {/* Quick Flow for Expenses */}
             {transactionType === "expense" && useQuickFlow && quickFlowStep === "category" && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Category</Label>
+                <Label className="text-xs font-semibold">{tCommon("category")}</Label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {quickExpenseCategories.map((category) => {
                     const Icon = category.icon || CircleDot
@@ -617,7 +630,7 @@ export function QuickExpenseSheet({
 
             {transactionType === "expense" && useQuickFlow && quickFlowStep === "item" && quickItems.length > 0 && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Select Item</Label>
+                <Label className="text-xs font-semibold">{t("selectItem")}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {quickItems.map((item) => (
                     <button
@@ -641,10 +654,10 @@ export function QuickExpenseSheet({
 
             {transactionType === "expense" && useQuickFlow && quickFlowStep === "price" && priceOptions.length > 0 && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Select Price</Label>
+                <Label className="text-xs font-semibold">{t("selectPrice")}</Label>
                 <div className="text-center py-2 mb-2">
                   <p className="text-sm text-muted-foreground">{selectedItem?.label}</p>
-                  <p className="text-xs text-muted-foreground">Suggested: €{selectedItem?.amount.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{t("suggested")}: €{selectedItem?.amount.toFixed(2)}</p>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {priceOptions.map((price) => {
@@ -675,7 +688,7 @@ export function QuickExpenseSheet({
               <>
               {/* Category Selection for Manual Entry */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Category</Label>
+                <Label className="text-xs font-semibold">{tCommon("category")}</Label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {categories.map((category) => {
                     const Icon = category.icon || CircleDot
@@ -713,7 +726,7 @@ export function QuickExpenseSheet({
                   {/* Active Savings Accounts inside manual Expense */}
                   {transactionType === "expense" && savingsAccounts.length > 0 && (
                     <div className="col-span-3 pb-1 pt-2 my-2 border-t w-full text-xs font-semibold text-muted-foreground text-center bg-transparent">
-                      Savings Accounts
+                      {t("savingsAccounts")}
                     </div>
                   )}
                   {transactionType === "expense" && savingsAccounts.map((account) => {
@@ -747,7 +760,7 @@ export function QuickExpenseSheet({
 
               {/* Amount Display */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Amount</Label>
+                <Label className="text-xs font-semibold">{tCommon("amount")}</Label>
                 <div className="relative">
                   <div className="text-2xl font-bold text-center py-2.5 px-4 bg-muted rounded-lg min-h-[60px] flex items-center justify-center">
                     <span className="text-muted-foreground mr-1.5 text-lg">€</span>
@@ -763,9 +776,9 @@ export function QuickExpenseSheet({
               {/* Description (Optional) */}
               {selectedCategory && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Description (Optional)</Label>
+                  <Label className="text-xs font-semibold">{t("descriptionOptional")}</Label>
                   <Input
-                    placeholder="e.g., Grocery store, Salary..."
+                    placeholder={t("descriptionPlaceholder")}
                     value={description}
                     onChange={(e) => {
                       setDescription(e.target.value)
@@ -812,26 +825,26 @@ export function QuickExpenseSheet({
 
         {/* Submit Button - Fixed at bottom */}
         <div className="px-4 pb-4 pt-2 border-t flex-shrink-0 bg-background">
+          {submitError && <p className="text-xs text-red-500 mb-2 text-center">{submitError}</p>}
           <Button
             onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting}
+            disabled={isSubmitting}
             size="lg"
             className={cn(
               "w-full h-12 text-base font-bold shadow-md",
               transactionType === "income"
                 ? "bg-green-600 hover:bg-green-700 text-white"
-                : "bg-primary hover:bg-primary/90",
-              !canSubmit && "opacity-50 cursor-not-allowed"
+                : "bg-primary hover:bg-primary/90"
             )}
           >
             {isSubmitting ? (
-              "Saving..."
+              t("saving")
             ) : (
               <>
                 <Check className="mr-2 h-4 w-4" />
                 {amount && parseFloat(amount) > 0
-                  ? `Save ${transactionType === "income" ? "Income" : "Expense"} · €${parseFloat(amount).toFixed(2)}`
-                  : `Save ${transactionType === "income" ? "Income" : "Expense"}`
+                  ? `${t(transactionType === "income" ? "saveIncome" : "saveExpense")} · €${parseFloat(amount).toFixed(2)}`
+                  : t(transactionType === "income" ? "saveIncome" : "saveExpense")
                 }
               </>
             )}

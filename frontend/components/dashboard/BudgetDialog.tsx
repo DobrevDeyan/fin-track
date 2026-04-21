@@ -84,6 +84,16 @@ export function BudgetDialog({
   const [isActive, setIsActive] = useState(true)
   const [alertThreshold, setAlertThreshold] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount", string>>>({})
+
+  const validate = () => {
+    const e: typeof errors = {}
+    if (!name.trim()) e.name = t("validation.nameRequired")
+    if (!category) e.category = t("validation.categoryRequired")
+    if (!amount || parseFloat(amount) <= 0) e.amount = t("validation.amountRequired")
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   // Populate form when editing
   useEffect(() => {
@@ -99,7 +109,6 @@ export function BudgetDialog({
       setIsActive(editingBudget.isActive)
       setAlertThreshold(editingBudget.alertThreshold?.toString() || "")
     } else {
-      // Reset form for new budget
       setName("")
       setCategory("")
       setAmount("")
@@ -112,6 +121,7 @@ export function BudgetDialog({
       setIsActive(true)
       setAlertThreshold("")
     }
+    setErrors({})
   }, [editingBudget, open, defaultCurrency])
 
   // Update end date when period or start date changes (for new budgets)
@@ -125,7 +135,8 @@ export function BudgetDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !amount || !category || isSubmitting) return
+    if (isSubmitting) return
+    if (!validate()) return
 
     setIsSubmitting(true)
     try {
@@ -181,15 +192,16 @@ export function BudgetDialog({
                 id="name"
                 placeholder={t("budgetNamePlaceholder")}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                onChange={(e) => { setName(e.target.value); if (errors.name) setErrors(prev => ({ ...prev, name: undefined })) }}
+                className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="category">{t("category")}</Label>
-              <Select value={category} onValueChange={setCategory} required>
-                <SelectTrigger>
+              <Select value={category} onValueChange={(v) => { setCategory(v); if (errors.category) setErrors(prev => ({ ...prev, category: undefined })) }}>
+                <SelectTrigger className={errors.category ? "border-red-500 focus:ring-red-500" : ""}>
                   <SelectValue placeholder={t("selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -200,6 +212,7 @@ export function BudgetDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -213,9 +226,10 @@ export function BudgetDialog({
                   max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
+                  onChange={(e) => { setAmount(e.target.value); if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined })) }}
+                  className={errors.amount ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
+                {errors.amount && <p className="text-xs text-red-500">{errors.amount}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="currency">{tCommon("currency")}</Label>
@@ -261,7 +275,6 @@ export function BudgetDialog({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  required
                 />
               </div>
               <div className="grid gap-2">
@@ -272,7 +285,6 @@ export function BudgetDialog({
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   min={startDate}
-                  required
                 />
               </div>
             </div>

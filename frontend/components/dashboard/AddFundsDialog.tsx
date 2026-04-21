@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,11 +33,26 @@ export function AddFundsDialog({
 }: AddFundsDialogProps) {
   const t = useTranslations("goals")
   const [amount, setAmount] = useState("")
+  const [amountError, setAmountError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!open) {
+      setAmount("")
+      setAmountError("")
+    }
+  }, [open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!goal || !amount || parseFloat(amount) <= 0) return
+    if (isSubmitting) return
+
+    if (!amount || parseFloat(amount) <= 0) {
+      setAmountError(t("validation.amountRequired"))
+      return
+    }
+
+    if (!goal) return
 
     try {
       setIsSubmitting(true)
@@ -77,13 +92,13 @@ export function AddFundsDialog({
                   min="0.01"
                   max={AMOUNT_RULES.MAX}
                   placeholder="0.00"
-                  className="pl-12"
+                  className={`pl-12 ${amountError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => { setAmount(e.target.value); if (amountError) setAmountError("") }}
                   autoFocus
-                  required
                 />
               </div>
+              {amountError && <p className="text-xs text-red-500">{amountError}</p>}
             </div>
           </div>
           <DialogFooter>
@@ -95,7 +110,7 @@ export function AddFundsDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !amount}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Adding..." : t("addFunds")}
             </Button>
           </DialogFooter>

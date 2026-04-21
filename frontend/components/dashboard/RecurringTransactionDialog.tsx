@@ -23,6 +23,7 @@ import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { calculateNextDate } from "@/lib/firestore-recurring"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
+import { useTranslations } from "next-intl"
 
 
 interface RecurringTransactionData {
@@ -58,6 +59,18 @@ export function RecurringTransactionDialog({
   const [nextDate, setNextDate] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount", string>>>({})
+  const t = useTranslations("recurring")
+  const tCommon = useTranslations("common")
+
+  const validate = () => {
+    const e: typeof errors = {}
+    if (!name.trim()) e.name = t("validation.nameRequired")
+    if (!category) e.category = t("validation.categoryRequired")
+    if (!amount || parseFloat(amount) <= 0) e.amount = t("validation.amountRequired")
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   // Populate form when editing
   useEffect(() => {
@@ -83,6 +96,7 @@ export function RecurringTransactionDialog({
       setNextDate(today.toISOString().split("T")[0])
       setIsActive(true)
     }
+    setErrors({})
   }, [editingRecurring, open])
 
   // Auto-update next date when frequency changes (for new transactions)
@@ -96,7 +110,8 @@ export function RecurringTransactionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !amount || !category || isSubmitting) return
+    if (isSubmitting) return
+    if (!validate()) return
 
     setIsSubmitting(true)
     try {
@@ -139,45 +154,44 @@ export function RecurringTransactionDialog({
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editingRecurring ? "Edit Recurring Transaction" : "Create Recurring Transaction"}
+            {editingRecurring ? t("editRecurring") : t("createRecurring")}
           </DialogTitle>
           <DialogDescription>
-            {editingRecurring
-              ? "Update your recurring transaction details."
-              : "Set up a recurring bill or subscription that will automatically create transactions."}
+            {editingRecurring ? t("editRecurringDesc") : t("createRecurringDesc")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Transaction Name</Label>
+              <Label htmlFor="name">{t("transactionName")}</Label>
               <Input
                 id="name"
-                placeholder="e.g., Netflix Subscription"
+                placeholder={t("transactionNamePlaceholder")}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                onChange={(e) => { setName(e.target.value); if (errors.name) setErrors(prev => ({ ...prev, name: undefined })) }}
+                className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type">{tCommon("type")}</Label>
               <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="expense">{tCommon("expense")}</SelectItem>
+                  <SelectItem value="income">{tCommon("income")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="category">Category</Label>
-              <Select value={category} onValueChange={setCategory} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+              <Label htmlFor="category">{tCommon("category")}</Label>
+              <Select value={category} onValueChange={(v) => { setCategory(v); if (errors.category) setErrors(prev => ({ ...prev, category: undefined })) }}>
+                <SelectTrigger className={errors.category ? "border-red-500 focus:ring-red-500" : ""}>
+                  <SelectValue placeholder={tCommon("category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCategories.map((cat) => (
@@ -187,10 +201,11 @@ export function RecurringTransactionDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{tCommon("amount")}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -199,13 +214,14 @@ export function RecurringTransactionDialog({
                 max={AMOUNT_RULES.MAX}
                 placeholder="0.00"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
+                onChange={(e) => { setAmount(e.target.value); if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined })) }}
+                className={errors.amount ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.amount && <p className="text-xs text-red-500">{errors.amount}</p>}
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="frequency">Frequency</Label>
+              <Label htmlFor="frequency">{tCommon("frequency")}</Label>
               <Select
                 value={frequency}
                 onValueChange={(value: "weekly" | "monthly" | "yearly") => setFrequency(value)}
@@ -214,24 +230,23 @@ export function RecurringTransactionDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="weekly">{tCommon("weekly")}</SelectItem>
+                  <SelectItem value="monthly">{tCommon("monthly")}</SelectItem>
+                  <SelectItem value="yearly">{tCommon("yearly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="nextDate">Next Occurrence Date</Label>
+              <Label htmlFor="nextDate">{t("nextOccurrence")}</Label>
               <Input
                 id="nextDate"
                 type="date"
                 value={nextDate}
                 onChange={(e) => setNextDate(e.target.value)}
-                required
               />
               <p className="text-xs text-muted-foreground">
-                When should the next transaction be created?
+                {t("nextOccurrenceHint")}
               </p>
             </div>
 
@@ -244,16 +259,16 @@ export function RecurringTransactionDialog({
                 className="h-4 w-4 rounded border-gray-300"
               />
               <Label htmlFor="isActive" className="cursor-pointer">
-                Active (will create transactions automatically)
+                {t("activeAutoCreate")}
               </Label>
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : editingRecurring ? "Update Recurring Transaction" : "Create Recurring Transaction"}
+              {isSubmitting ? tCommon("loading") : editingRecurring ? t("editRecurring") : t("createRecurring")}
             </Button>
           </DialogFooter>
         </form>

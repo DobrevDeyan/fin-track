@@ -100,6 +100,8 @@ export function AddTransactionDialog({
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [amountError, setAmountError] = useState<string | null>(null)
+  const [descriptionError, setDescriptionError] = useState<string | null>(null)
+  const [categoryError, setCategoryError] = useState<string | null>(null)
 
   // Populate form when editing
   useEffect(() => {
@@ -115,8 +117,9 @@ export function AddTransactionDialog({
       setReceiptFile(null)
       setReceiptPreview(null)
       setAmountError(null)
+      setDescriptionError(null)
+      setCategoryError(null)
     } else {
-      // Reset form for new entry
       setDescription("")
       setAmount("")
       setCategory("")
@@ -129,6 +132,8 @@ export function AddTransactionDialog({
       setReceiptPreview(null)
       setExistingReceiptUrl(null)
       setAmountError(null)
+      setDescriptionError(null)
+      setCategoryError(null)
     }
   }, [editingEntry, open, defaultDate])
 
@@ -162,9 +167,13 @@ export function AddTransactionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!description || !category) return
-    if (!validateAmount(amount)) return
     if (isSubmitting) return
+
+    let valid = true
+    if (!description.trim()) { setDescriptionError(t("validation.descriptionRequired")); valid = false }
+    if (!category) { setCategoryError(t("validation.categoryRequired")); valid = false }
+    if (!validateAmount(amount)) valid = false
+    if (!valid) return
 
     setIsSubmitting(true)
     try {
@@ -325,10 +334,11 @@ export function AddTransactionDialog({
                 id="description"
                 placeholder={t("descriptionPlaceholder")}
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { setDescription(e.target.value); if (descriptionError) setDescriptionError(null) }}
                 maxLength={500}
-                required
+                className={descriptionError ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {descriptionError && <p className="text-xs text-red-500">{descriptionError}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="amount">{tCommon("amount")}</Label>
@@ -345,7 +355,6 @@ export function AddTransactionDialog({
                   if (amountError) setAmountError(null)
                 }}
                 className={amountError ? "border-destructive" : ""}
-                required
                 aria-invalid={!!amountError}
                 aria-describedby={amountError ? "amount-error" : undefined}
               />
@@ -357,8 +366,8 @@ export function AddTransactionDialog({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="category">{tCommon("category")}</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
+              <Select value={category} onValueChange={(v) => { setCategory(v); if (categoryError) setCategoryError(null) }}>
+                <SelectTrigger className={categoryError ? "border-red-500 focus:ring-red-500" : ""}>
                   <SelectValue placeholder={t("selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -389,6 +398,7 @@ export function AddTransactionDialog({
                   )}
                 </SelectContent>
               </Select>
+              {categoryError && <p className="text-xs text-red-500">{categoryError}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="date">{tCommon("date")}</Label>
@@ -397,7 +407,6 @@ export function AddTransactionDialog({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                required
               />
             </div>
             <div className="grid gap-2">

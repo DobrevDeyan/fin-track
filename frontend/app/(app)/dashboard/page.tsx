@@ -8,8 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useHousehold } from "@/contexts/HouseholdContext";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScanLine, Users, User, Share2 } from "lucide-react";
+import { ScanLine, Users, User, Share2, UtensilsCrossed, ShoppingCart, Car, Zap, Calculator, Smile, Heart, GraduationCap, Plane, Gift, Briefcase, Wallet, CircleDot } from "lucide-react";
 import { MetricsCards, MetricsCardsSkeleton } from "@/components/dashboard/MetricsCards";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
@@ -40,11 +39,27 @@ import { useEntries } from "@/lib/hooks/dashboard";
 
 // Utilities
 import { getUniqueCategories, getExpenseCategories } from "@/lib/categories"
+import { getCategoryColor } from "@/lib/constants/category.constants"
+
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  "Food & Dining":      UtensilsCrossed,
+  "Shopping":           ShoppingCart,
+  "Transportation":     Car,
+  "Bills & Utilities":  Zap,
+  "Taxes & Insurance":  Calculator,
+  "Entertainment":      Smile,
+  "Health & Pharmacy":  Heart,
+  "Education":          GraduationCap,
+  "Travel & Vacation":  Plane,
+  "Gifts & Donations":  Gift,
+  "Salary":             Briefcase,
+  "Goal Contribution":  Wallet,
+  "Other":              CircleDot,
+}
 import { useUIMode } from "@/contexts/UIComplexityContext";
 
 // Tabs
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnimatePresence, motion } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Lazy load dialogs
 const AddTransactionDialog = dynamic(() => import("@/components/dashboard/AddTransactionDialog").then((mod) => ({ default: mod.AddTransactionDialog })), {
@@ -75,6 +90,7 @@ function DashboardInnerContent() {
     const tSavings = useTranslations("savings");
     const tBudgets = useTranslations("budgets");
     const tRecurring = useTranslations("recurring");
+    const tHousehold = useTranslations("household");
     const { user } = useAuth();
     const { mode } = useUIMode();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
@@ -121,15 +137,15 @@ function DashboardInnerContent() {
     const TAB_ORDER = ["savings", "budgets", "recurring"] as const;
     type TabValue = typeof TAB_ORDER[number];
     const [activeTab, setActiveTab] = useState<TabValue>("savings");
-    const [tabDirection, setTabDirection] = useState(0);
 
     const handleTabChange = useCallback((val: string) => {
-        const nextIndex = TAB_ORDER.indexOf(val as TabValue);
-        const currIndex = TAB_ORDER.indexOf(activeTab);
-        setTabDirection(nextIndex > currIndex ? 1 : -1);
         setActiveTab(val as TabValue);
-        setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
-    }, [activeTab]);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            });
+        });
+    }, []);
 
     // Track if initial load has happened
     const hasLoadedRef = useRef(false);
@@ -347,7 +363,7 @@ function DashboardInnerContent() {
                             <div className="flex items-center justify-between px-4 py-3 border-b">
                                 <div className="flex items-center gap-2">
                                     <Users className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-medium text-sm">Family Transactions</span>
+                                    <span className="font-medium text-sm">{tHousehold("familyTransactions")}</span>
                                     {household && (
                                         <span className="text-xs text-muted-foreground">— {household.name}</span>
                                     )}
@@ -359,7 +375,7 @@ function DashboardInnerContent() {
                                     onClick={refreshHouseholdEntries}
                                     disabled={householdEntriesLoading}
                                 >
-                                    {householdEntriesLoading ? "Loading…" : "Refresh"}
+                                    {householdEntriesLoading ? tHousehold("loading") : tHousehold("refresh")}
                                 </Button>
                             </div>
 
@@ -390,25 +406,26 @@ function DashboardInnerContent() {
                                         className="text-xs underline text-muted-foreground hover:text-foreground"
                                         onClick={() => refreshHouseholdEntries()}
                                     >
-                                        Try again
+                                        {tHousehold("tryAgain")}
                                     </button>
                                 </div>
                             ) : householdEntries.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground text-sm">
                                     <Users className="h-8 w-8 mb-2 opacity-40" />
-                                    No transactions yet from family members.
+                                    {tHousehold("noTransactions")}
                                 </div>
                             ) : (
                                 <div className="divide-y max-h-[520px] overflow-y-auto">
                                     {householdEntries.map((entry) => (
                                         <div key={entry.id} className="flex items-center gap-3 px-4 py-3">
-                                            <div className={`flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold shrink-0 ${
-                                                entry.type === "income"
-                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                                    : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
-                                            }`}>
-                                                {entry.type === "income" ? "+" : "−"}
-                                            </div>
+                                            {(() => {
+                                                const Icon = CATEGORY_ICONS[entry.category] ?? CircleDot
+                                                return (
+                                                    <span className={`flex items-center justify-center w-7 h-7 rounded-full shrink-0 ${getCategoryColor(entry.category)}`}>
+                                                        <Icon className="h-3.5 w-3.5" />
+                                                    </span>
+                                                )
+                                            })()}
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-medium truncate">{entry.description}</p>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -417,9 +434,7 @@ function DashboardInnerContent() {
                                                     <span className="text-xs text-muted-foreground">
                                                         {new Date(entry.date).toLocaleDateString()}
                                                     </span>
-                                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                                                        {entry.memberDisplayName}
-                                                    </Badge>
+                                                    <span className="text-xs text-muted-foreground">{entry.memberDisplayName}</span>
                                                 </div>
                                             </div>
                                             <span className={`text-sm font-semibold shrink-0 ${
@@ -458,7 +473,7 @@ function DashboardInnerContent() {
                     <div className="rounded-xl border bg-card">
                         <div className="flex items-center gap-2 px-4 py-3 border-b">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-sm">Shared Budget</span>
+                            <span className="font-medium text-sm">{tHousehold("sharedBudget")}</span>
                             {household && <span className="text-xs text-muted-foreground">— {household.name}</span>}
                         </div>
                         <div className="px-4">
@@ -473,7 +488,7 @@ function DashboardInnerContent() {
                     <div className="rounded-xl border bg-card">
                         <div className="flex items-center gap-2 px-4 py-3 border-b">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-sm">Shared Goals</span>
+                            <span className="font-medium text-sm">{tHousehold("sharedGoals")}</span>
                             {household && <span className="text-xs text-muted-foreground">— {household.name}</span>}
                         </div>
                         <div className="px-4">
@@ -503,35 +518,22 @@ function DashboardInnerContent() {
                                 {tRecurring("tabLabel")} ({recurringTransactions.length})
                             </TabsTrigger>
                         </TabsList>
+                        <TabsContent value="savings" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
+                            <SectionErrorBoundary label="Savings">
+                                <SavingsSection />
+                            </SectionErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="budgets" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
+                            <SectionErrorBoundary label="Budgets">
+                                <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} />
+                            </SectionErrorBoundary>
+                        </TabsContent>
+                        <TabsContent value="recurring" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
+                            <SectionErrorBoundary label="Recurring">
+                                <RecurringSection categories={expenseCategories} />
+                            </SectionErrorBoundary>
+                        </TabsContent>
                     </Tabs>
-                    <div className="overflow-hidden mt-2">
-                        <AnimatePresence mode="wait" custom={tabDirection}>
-                            <motion.div
-                                key={activeTab}
-                                custom={tabDirection}
-                                initial={{ opacity: 0, x: tabDirection * 40 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: tabDirection * -40 }}
-                                transition={{ duration: 0.25, ease: "easeInOut" }}
-                            >
-                                {activeTab === "savings" && (
-                                    <SectionErrorBoundary label="Savings">
-                                        <SavingsSection />
-                                    </SectionErrorBoundary>
-                                )}
-                                {activeTab === "budgets" && (
-                                    <SectionErrorBoundary label="Budgets">
-                                        <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} />
-                                    </SectionErrorBoundary>
-                                )}
-                                {activeTab === "recurring" && (
-                                    <SectionErrorBoundary label="Recurring">
-                                        <RecurringSection categories={categories} />
-                                    </SectionErrorBoundary>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
                 </div>
                 )}
 

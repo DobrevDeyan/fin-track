@@ -6,6 +6,7 @@ import { Edit, Trash2, Target, Calendar, Plus } from "lucide-react"
 import { formatCurrency } from "@/lib/currency-utils"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
 import { motion } from "framer-motion"
+import { useTranslations } from "next-intl"
 import type { HouseholdGoal } from "@/contexts/dashboard/HouseholdGoalsContext"
 
 const MEMBER_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#3b82f6"]
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props) {
+  const t = useTranslations("goals")
+  const tCommon = useTranslations("common")
   const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount)
   const remaining = goal.targetAmount - goal.currentAmount
   const isComplete = progress >= 100
@@ -59,7 +62,7 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
             </div>
             {isComplete && (
               <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded shrink-0 ml-2">
-                Complete!
+                {t("complete")}
               </span>
             )}
           </div>
@@ -69,7 +72,7 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
           {/* Progress bar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Progress</span>
+              <span className="text-sm text-muted-foreground">{t("progress")}</span>
               <span className="text-sm font-semibold">{progress.toFixed(1)}%</span>
             </div>
             <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
@@ -83,18 +86,18 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
           {/* Amounts */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Current</span>
+              <span className="text-muted-foreground">{t("current")}</span>
               <p className="font-semibold">{formatCurrency(goal.currentAmount, { currency: goal.currency })}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Target</span>
+              <span className="text-muted-foreground">{t("target")}</span>
               <p className="font-semibold">{formatCurrency(goal.targetAmount, { currency: goal.currency })}</p>
             </div>
           </div>
 
           {remaining > 0 && (
             <p className="text-sm">
-              <span className="text-muted-foreground">Remaining: </span>
+              <span className="text-muted-foreground">{t("remainingAmount")}: </span>
               <span className="font-semibold">{formatCurrency(remaining, { currency: goal.currency })}</span>
             </p>
           )}
@@ -102,7 +105,7 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
           {deadlineText && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Deadline: {deadlineText}</span>
+              <span>{t("deadline")}: {deadlineText}</span>
             </div>
           )}
 
@@ -113,7 +116,7 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
           {/* Contributors */}
           {memberTotals.length > 0 && (
             <div className="pt-2 border-t space-y-1.5">
-              <p className="text-xs text-muted-foreground font-medium">Contributions</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("contributions")}</p>
               {memberTotals.map(([uid, { displayName, total }], i) => (
                 <div key={uid} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5">
@@ -133,14 +136,14 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
-            <Button variant="default" size="sm" className="flex-1" onClick={() => onAddFunds(goal)}>
+            <Button variant="default" className="flex-1" onClick={() => onAddFunds(goal)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Funds
+              {t("addFunds")}
             </Button>
             <div className="flex gap-2 flex-1">
               <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(goal)}>
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {tCommon("edit")}
               </Button>
               <Button
                 variant="outline"
@@ -149,7 +152,7 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
                 onClick={() => onDelete(goal.id)}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {tCommon("delete")}
               </Button>
             </div>
           </div>

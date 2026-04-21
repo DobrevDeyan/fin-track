@@ -184,7 +184,13 @@
     "budgetNotSet": "Monthly budget not set",
     "setBudget": "Set Budget",
     "showMore": "Show more ({count})",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "validation": {
+      "descriptionRequired": "Description is required",
+      "categoryRequired": "Please select a category",
+      "categorySelectFirst": "Please select a category first",
+      "amountPositive": "Please enter an amount greater than 0"
+    }
   },
   "onboarding": {
     "title": "Welcome to Pocket!",
@@ -221,6 +227,11 @@
     "alertThreshold": "Alert Threshold % (Optional)",
     "alertThresholdDesc": "Get alerted when spending reaches this percentage of budget",
     "activeBudget": "Active Budget",
+    "validation": {
+      "nameRequired": "Budget name is required",
+      "categoryRequired": "Please select a category",
+      "amountRequired": "Enter a valid amount greater than 0"
+    },
     "spent": "Spent",
     "used": "used",
     "remainingAmount": "remaining",
@@ -253,7 +264,16 @@
     "createFirst": "Create Your First Savings Account",
     "totalSavings": "Total Savings",
     "emptyTitle": "No savings accounts yet",
-    "emptyDescription": "Create a savings account to track your savings separately from your spending."
+    "emptyDescription": "Create a savings account to track your savings separately from your spending.",
+    "editAccountDesc": "Update your savings account details.",
+    "createAccountDesc": "Create a new savings account to track money separately from your spending balance.",
+    "notePlaceholder": "Add a note about this savings account...",
+    "icon": "Icon",
+    "color": "Color",
+    "validation": {
+      "nameRequired": "Account name is required",
+      "balanceNegative": "Balance cannot be negative"
+    }
   },
   "recurring": {
     "title": "Recurring Transactions",
@@ -262,7 +282,7 @@
     "createRecurring": "Create Recurring Transaction",
     "editRecurring": "Edit Recurring Transaction",
     "updateRecurring": "Update Recurring",
-    "createRecurringDesc": "Set up a recurring bill or subscription.",
+    "createRecurringDesc": "Set up a recurring bill or subscription that will automatically create transactions.",
     "editRecurringDesc": "Update your recurring transaction details.",
     "loading": "Loading recurring transactions...",
     "transactionName": "Transaction Name",
@@ -283,7 +303,12 @@
     "noTransactionsDesc": "Set up recurring bills and subscriptions to automatically create transactions. Perfect for monthly subscriptions, bills, or regular income.",
     "createFirst": "Create Your First Recurring Transaction",
     "emptyTitle": "No recurring transactions yet",
-    "emptyDescription": "Set up recurring bills or subscriptions to automatically track regular payments."
+    "emptyDescription": "Set up recurring bills or subscriptions to automatically track regular payments.",
+    "validation": {
+      "nameRequired": "Transaction name is required",
+      "categoryRequired": "Please select a category",
+      "amountRequired": "Enter a valid amount greater than 0"
+    }
   },
   "goals": {
     "title": "Financial Goals",
@@ -319,7 +344,13 @@
     "addFundsDesc": "This amount will be deducted from your balance and added to the goal.",
     "addAmount": "Amount to Add",
     "emptyTitle": "No goals yet",
-    "emptyDescription": "Set a savings goal to track your progress toward something that matters."
+    "emptyDescription": "Set a savings goal to track your progress toward something that matters.",
+    "contributions": "Contributions",
+    "validation": {
+      "nameRequired": "Goal name is required",
+      "targetAmountRequired": "Enter a target amount greater than 0",
+      "amountRequired": "Enter an amount greater than 0"
+    }
   },
   "calendar": {
     "title": "Calendar",
@@ -537,6 +568,15 @@
       "termsOfService": "Terms of Service",
       "securityCompliance": "Security & Compliance"
     }
+  },
+  "household": {
+    "familyTransactions": "Family Transactions",
+    "sharedBudget": "Shared Budget",
+    "sharedGoals": "Shared Goals",
+    "loading": "Loading…",
+    "refresh": "Refresh",
+    "tryAgain": "Try again",
+    "noTransactions": "No transactions yet from family members."
   },
   "error": {
     "unexpected": "An unexpected error occurred. Please try again.",

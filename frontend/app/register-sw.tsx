@@ -123,7 +123,7 @@ export function RegisterSW() {
           </Button>
           <Button
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setUpdatePending(false)
               toast.dismiss()
