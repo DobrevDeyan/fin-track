@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useMoney } from "@/contexts/CurrencyContext"
+import { useTranslations } from "next-intl"
 import { getUserRecurringTransactions, updateRecurringTransaction } from "@/lib/firestore-recurring"
 import type { RecurringEntryDocument } from "@/lib/firestore-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -53,6 +54,7 @@ function categoryColor(cat: string) {
 export default function SubscriptionsPage() {
   const { user } = useAuth()
   const { format: fmt } = useMoney()
+  const t = useTranslations("subscriptions")
   const [items, setItems] = useState<RecurringTx[]>([])
   const [loading, setLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>("cost")
@@ -63,9 +65,9 @@ export default function SubscriptionsPage() {
     setLoading(true)
     getUserRecurringTransactions(user.uid)
       .then(setItems)
-      .catch(() => toast.error("Failed to load subscriptions."))
+      .catch(() => toast.error(t("failedToLoad")))
       .finally(() => setLoading(false))
-  }, [user])
+  }, [user, t])
 
   const subscriptions = useMemo(
     () => items.filter((t) => t.type === "expense"),
@@ -101,11 +103,11 @@ export default function SubscriptionsPage() {
     try {
       await updateRecurringTransaction(item.id, { isActive: !item.isActive })
       setItems((prev) =>
-        prev.map((t) => (t.id === item.id ? { ...t, isActive: !t.isActive } : t))
+        prev.map((tx) => (tx.id === item.id ? { ...tx, isActive: !tx.isActive } : tx))
       )
-      toast.success(item.isActive ? "Subscription paused." : "Subscription resumed.")
+      toast.success(item.isActive ? t("pausedSuccess") : t("resumedSuccess"))
     } catch {
-      toast.error("Failed to update subscription.")
+      toast.error(t("failedToUpdate"))
     } finally {
       setToggling(null)
     }
@@ -119,10 +121,10 @@ export default function SubscriptionsPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Repeat className="h-6 w-6 text-primary" />
-          Subscription Tracker
+          {t("title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          All your recurring expenses in one place. Pause anything you don't need.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -130,16 +132,16 @@ export default function SubscriptionsPage() {
       <div className="grid grid-cols-2 gap-3">
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-1">Monthly cost</p>
+            <p className="text-xs text-muted-foreground mb-1">{t("monthlyCost")}</p>
             <p className="text-2xl font-bold text-primary">{fmt(totalMonthly)}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{active.length} active</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("activeCount", { count: active.length })}</p>
           </CardContent>
         </Card>
         <Card className="bg-destructive/5 border-destructive/20">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-1">Annual cost</p>
+            <p className="text-xs text-muted-foreground mb-1">{t("annualCost")}</p>
             <p className="text-2xl font-bold text-destructive">{fmt(totalAnnual)}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">per year</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("perYear")}</p>
           </CardContent>
         </Card>
       </div>
@@ -148,7 +150,7 @@ export default function SubscriptionsPage() {
       {byCategory.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">By category</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("byCategory")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {byCategory.map(([cat, amount]) => {
@@ -157,7 +159,7 @@ export default function SubscriptionsPage() {
                 <div key={cat} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className={cn("px-1.5 py-0.5 rounded-full text-xs font-medium", categoryColor(cat))}>{cat}</span>
-                    <span className="text-muted-foreground">{fmt(amount)}/mo</span>
+                    <span className="text-muted-foreground">{t("approxPerMonth", { amount: fmt(amount) })}</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                     <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
@@ -172,7 +174,7 @@ export default function SubscriptionsPage() {
       {/* Sort controls */}
       <div className="flex items-center gap-2">
         <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">Sort:</span>
+        <span className="text-xs text-muted-foreground">{t("sortLabel")}</span>
         {(["cost", "name", "nextDate"] as SortKey[]).map((k) => (
           <button
             key={k}
@@ -184,7 +186,7 @@ export default function SubscriptionsPage() {
                 : "text-muted-foreground hover:bg-muted"
             )}
           >
-            {k === "cost" ? "Cost" : k === "name" ? "Name" : "Next charge"}
+            {k === "cost" ? t("sortCost") : k === "name" ? t("sortName") : t("sortNextDate")}
           </button>
         ))}
       </div>
@@ -194,7 +196,7 @@ export default function SubscriptionsPage() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground text-sm">
             <CreditCard className="h-8 w-8 mx-auto mb-3 opacity-30" />
-            No recurring expenses found. Add them from the dashboard.
+            {t("noRecurring")}
           </CardContent>
         </Card>
       ) : (
@@ -221,10 +223,10 @@ export default function SubscriptionsPage() {
                         {item.category}
                       </Badge>
                       {!item.isActive && (
-                        <Badge variant="secondary" className="text-xs shrink-0">Paused</Badge>
+                        <Badge variant="secondary" className="text-xs shrink-0">{t("paused")}</Badge>
                       )}
                       {isExpensive && item.isActive && (
-                        <span title="This is over 30% of your total subscription spend">
+                        <span title={t("expensiveHint")}>
                           <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                         </span>
                       )}
@@ -232,22 +234,22 @@ export default function SubscriptionsPage() {
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       <span className="text-base font-bold">
                         {fmt(item.amount)}
-                        <span className="text-xs font-normal text-muted-foreground ml-1">/{item.frequency === "weekly" ? "wk" : item.frequency === "monthly" ? "mo" : "yr"}</span>
+                        <span className="text-xs font-normal text-muted-foreground ml-1">/{item.frequency === "weekly" ? t("freqWeekly") : item.frequency === "monthly" ? t("freqMonthly") : t("freqYearly")}</span>
                       </span>
                       {item.frequency !== "monthly" && (
-                        <span className="text-xs text-muted-foreground">≈ {fmt(monthly)}/mo</span>
+                        <span className="text-xs text-muted-foreground">{t("approxPerMonth", { amount: fmt(monthly) })}</span>
                       )}
-                      <span className="text-xs text-muted-foreground">{fmt(annual)}/yr</span>
+                      <span className="text-xs text-muted-foreground">{t("perYearAmount", { amount: fmt(annual) })}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {item.isActive
                         ? days === 0
-                          ? "Charges today"
+                          ? t("chargesToday")
                           : days === 1
-                          ? "Charges tomorrow"
-                          : `Next charge in ${days} days`
-                        : "Paused"}
+                          ? t("chargesTomorrow")
+                          : t("nextChargeDays", { days })
+                        : t("paused")}
                     </div>
                   </div>
                   <Button
@@ -261,7 +263,7 @@ export default function SubscriptionsPage() {
                     )}
                     disabled={toggling === item.id}
                     onClick={() => handleToggle(item)}
-                    title={item.isActive ? "Pause" : "Resume"}
+                    title={item.isActive ? t("pauseLabel") : t("resumeLabel")}
                   >
                     {item.isActive
                       ? <PauseCircle className="h-5 w-5" />
@@ -280,13 +282,11 @@ export default function SubscriptionsPage() {
           <CardContent className="p-4 flex items-start gap-3">
             <TrendingDown className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
-              Pausing just one subscription could save you{" "}
-              <span className="font-semibold text-foreground">
-                {fmt(sorted.find((s) => s.isActive)
+              {t("savingsTip", {
+                amount: fmt(sorted.find((s) => s.isActive)
                   ? toAnnual(sorted.filter((s) => s.isActive)[0].amount, sorted.filter((s) => s.isActive)[0].frequency)
-                  : 0)}
-              </span>{" "}
-              a year. Review anything you haven't used in the past 30 days.
+                  : 0),
+              })}
             </p>
           </CardContent>
         </Card>

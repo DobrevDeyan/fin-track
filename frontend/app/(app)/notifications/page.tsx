@@ -3,21 +3,13 @@
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { useInAppNotifications } from "@/lib/hooks/useInAppNotifications"
 import { Bell, TriangleAlert, FlaskConical, CheckCheck, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import type { AppNotification } from "@/lib/hooks/useInAppNotifications"
-
-function relativeTime(ts: AppNotification["createdAt"]): string {
-  if (!ts) return ""
-  const diff = Math.floor((Date.now() - ts.toDate().getTime()) / 1000)
-  if (diff < 60) return "just now"
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-  return `${Math.floor(diff / 86400)}d ago`
-}
 
 function TypeIcon({ type }: { type: AppNotification["type"] }) {
   if (type === "budget") return (
@@ -40,7 +32,17 @@ function TypeIcon({ type }: { type: AppNotification["type"] }) {
 export default function NotificationsPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const t = useTranslations("notifications")
   const { notifications, unreadCount, loading: notifsLoading, markAllRead } = useInAppNotifications()
+
+  function relativeTime(ts: AppNotification["createdAt"]): string {
+    if (!ts) return ""
+    const diff = Math.floor((Date.now() - ts.toDate().getTime()) / 1000)
+    if (diff < 60) return t("justNow")
+    if (diff < 3600) return t("minutesAgo", { count: Math.floor(diff / 60) })
+    if (diff < 86400) return t("hoursAgo", { count: Math.floor(diff / 3600) })
+    return t("daysAgo", { count: Math.floor(diff / 86400) })
+  }
 
   useEffect(() => {
     if (!loading && !user) router.replace("/auth/login")
@@ -61,9 +63,9 @@ export default function NotificationsPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground leading-tight">Notifications</h1>
+          <h1 className="text-xl font-bold text-foreground leading-tight">{t("title")}</h1>
           {unreadCount > 0 && (
-            <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
+            <p className="text-xs text-muted-foreground">{t("unreadCount", { count: unreadCount })}</p>
           )}
         </div>
         {unreadCount > 0 && (
@@ -74,7 +76,7 @@ export default function NotificationsPage() {
             onClick={markAllRead}
           >
             <CheckCheck className="h-3.5 w-3.5" />
-            Mark all read
+            {t("markAllRead")}
           </Button>
         )}
       </div>
@@ -97,8 +99,8 @@ export default function NotificationsPage() {
           <div className="flex items-center justify-center h-16 w-16 rounded-full bg-muted">
             <Bell className="h-8 w-8 opacity-40" />
           </div>
-          <p className="text-sm font-medium">You're all caught up</p>
-          <p className="text-xs text-muted-foreground/70">No notifications yet</p>
+          <p className="text-sm font-medium">{t("caughtUp")}</p>
+          <p className="text-xs text-muted-foreground/70">{t("noNotificationsYet")}</p>
         </div>
       ) : (
         <div className="space-y-2">

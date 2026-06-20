@@ -1171,7 +1171,9 @@ export const acceptHouseholdInvite = onCall(
   async (request) => {
     const userId = request.auth?.uid;
     const callerEmail = request.auth?.token?.email;
+    const emailVerified = request.auth?.token?.email_verified;
     if (!userId || !callerEmail) throw new HttpsError("unauthenticated", "Not authenticated");
+    if (!emailVerified) throw new HttpsError("unauthenticated", "Email address must be verified to accept household invites");
 
     await checkRateLimit(userId, "acceptHouseholdInvite");
 
@@ -1222,6 +1224,15 @@ export const acceptHouseholdInvite = onCall(
 
     const userSnap = await db.collection("users").doc(userId).get();
     const userData = userSnap.data();
+
+    // H2: single-household guard — users can only belong to one household at a time
+    if (userData?.householdId && userData.householdId !== invite.householdId) {
+      throw new HttpsError(
+        "failed-precondition",
+        "You are already a member of another household. Leave it before accepting this invite."
+      );
+    }
+
     const displayName = userData?.displayName || userData?.username || callerEmail;
 
     const newMember: HouseholdMember = {
@@ -1365,8 +1376,21 @@ export const leaveHousehold = onCall(
     const batch = db.batch();
 
     if (remainingMembers.length === 0) {
-      // Last member leaving — delete the household
+      // Last member leaving — delete the household and all associated data
       batch.delete(householdRef);
+
+      // H3: clean up orphaned sub-data so nothing lingers after dissolution
+      const [budgetSnap, goalSnap, inviteSnap] = await Promise.all([
+        db.collection("householdBudgets").where("householdId", "==", householdId).get(),
+        db.collection("householdGoals").where("householdId", "==", householdId).get(),
+        db.collection("householdInvites")
+          .where("householdId", "==", householdId)
+          .where("status", "==", "pending")
+          .get(),
+      ]);
+      budgetSnap.docs.forEach((d) => batch.delete(d.ref));
+      goalSnap.docs.forEach((d) => batch.delete(d.ref));
+      inviteSnap.docs.forEach((d) => batch.delete(d.ref));
     } else {
       const updates: Record<string, unknown> = {
         members: remainingMembers,
@@ -1532,6 +1556,9 @@ export const deleteMyAccount = onCall(
       db.collection("scanUsage").doc(userId).delete(),
       db.collection("userDebts").doc(userId).delete(),
       db.collection("leaderboardProfiles").doc(userId).delete(),
+      // users/{uid} — deleted by the client first, but ensure the CF is self-sufficient
+      // if invoked standalone (e.g., admin repair). Firestore delete is idempotent.
+      db.collection("users").doc(userId).delete(),
     ]);
 
     // 6. Delete the Firebase Auth account last — once gone, no token is valid

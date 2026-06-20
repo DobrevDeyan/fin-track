@@ -331,6 +331,7 @@ export async function deleteUserData(userId: string): Promise<void> {
     "savingsAccounts",
     "recurringTransactions",
     "assets",
+    "categories",
   ]
 
   for (const collectionName of userOwnedCollections) {
@@ -351,6 +352,7 @@ export async function deleteUserData(userId: string): Promise<void> {
     deleteDoc(doc(db, "financialSummaries", userId)),
     deleteDoc(doc(db, "aiInsights", userId)),
     deleteDoc(doc(db, "scanUsage", userId)),
+    deleteDoc(doc(db, "userDebts", userId)),
     deleteDoc(doc(db, "leaderboardProfiles", userId)),
     deleteDoc(doc(db, "users", userId)),
   ])

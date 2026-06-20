@@ -85,7 +85,9 @@
       "Bash(npm audit *)",
       "Bash(grep -iE 'key|credential|service.?account|\\\\.json$')",
       "Bash(git check-ignore *)",
-      "Bash(grep -iv \"currencySymbol\\\\|currencyCode\\\\|//\\\\|currency: \\\\\"EUR\\\\\" //\")"
+      "Bash(grep -iv \"currencySymbol\\\\|currencyCode\\\\|//\\\\|currency: \\\\\"EUR\\\\\" //\")",
+      "Bash(node /d/repos/fin-track/frontend/node_modules/typescript/bin/tsc --noEmit -p /d/repos/fin-track/functions/tsconfig.json)",
+      "Bash(node /d/repos/fin-track/frontend/node_modules/typescript/bin/tsc --noEmit -p /d/repos/fin-track/frontend/tsconfig.json)"
     ]
   }
 }

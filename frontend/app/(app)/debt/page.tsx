@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useId } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useMoney } from "@/contexts/CurrencyContext"
+import { useTranslations, useLocale } from "next-intl"
 import { getUserDebts, saveUserDebts } from "@/lib/firestore-debt"
 import type { DebtItem, DebtType } from "@/lib/firestore-types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -37,13 +38,7 @@ const ResponsiveContainer = dynamic(
 
 type Strategy = "snowball" | "avalanche"
 
-const DEBT_TYPE_LABELS: Record<DebtType, string> = {
-  credit_card: "Credit Card",
-  loan: "Personal Loan",
-  mortgage: "Mortgage",
-  student_loan: "Student Loan",
-  other: "Other",
-}
+const DEBT_TYPES: DebtType[] = ["credit_card", "loan", "mortgage", "student_loan", "other"]
 
 const DEBT_TYPE_COLORS: Record<DebtType, string> = {
   credit_card: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
@@ -126,10 +121,10 @@ function calculatePayoff(debts: DebtItem[], extraPayment: number, strategy: Stra
   return { months: month, totalInterest: Math.round(totalInterest), neverPaysOff, timeline }
 }
 
-function debtFreeDate(months: number): string {
+function debtFreeDate(months: number, locale: string): string {
   const d = new Date()
   d.setMonth(d.getMonth() + months)
-  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  return d.toLocaleDateString(locale, { month: "long", year: "numeric" })
 }
 
 // ── Form ────────────────────────────────────────────────────────────────────
@@ -149,6 +144,7 @@ function DebtForm({
   onSave: (values: Omit<DebtItem, "id">) => void
   onCancel: () => void
 }) {
+  const t = useTranslations("debt")
   const [v, setV] = useState({ ...EMPTY_FORM, ...initial })
   const id = useId()
 
@@ -161,35 +157,35 @@ function DebtForm({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label htmlFor={`${id}-name`} className="text-xs">Debt name</Label>
-        <Input id={`${id}-name`} placeholder="e.g. Visa Credit Card" value={v.name}
+        <Label htmlFor={`${id}-name`} className="text-xs">{t("debtName")}</Label>
+        <Input id={`${id}-name`} placeholder={t("debtNamePlaceholder")} value={v.name}
           onChange={(e) => setV({ ...v, name: e.target.value })} />
       </div>
       <div className="space-y-1">
-        <Label htmlFor={`${id}-type`} className="text-xs">Type</Label>
+        <Label htmlFor={`${id}-type`} className="text-xs">{t("type")}</Label>
         <Select value={v.type} onValueChange={(val) => setV({ ...v, type: val as DebtType })}>
           <SelectTrigger id={`${id}-type`}><SelectValue /></SelectTrigger>
           <SelectContent>
-            {Object.entries(DEBT_TYPE_LABELS).map(([k, label]) => (
-              <SelectItem key={k} value={k}>{label}</SelectItem>
+            {DEBT_TYPES.map((k) => (
+              <SelectItem key={k} value={k}>{t(`types.${k}`)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <Label htmlFor={`${id}-balance`} className="text-xs">Current balance ({currency})</Label>
+          <Label htmlFor={`${id}-balance`} className="text-xs">{t("currentBalance", { currency })}</Label>
           <Input id={`${id}-balance`} type="number" min="0" step="0.01" placeholder="5000"
             value={v.balance} onChange={(e) => setV({ ...v, balance: e.target.value })} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor={`${id}-rate`} className="text-xs">Interest rate (APR %)</Label>
+          <Label htmlFor={`${id}-rate`} className="text-xs">{t("interestRate")}</Label>
           <Input id={`${id}-rate`} type="number" min="0" step="0.1" placeholder="19.9"
             value={v.interestRate} onChange={(e) => setV({ ...v, interestRate: e.target.value })} />
         </div>
       </div>
       <div className="space-y-1">
-        <Label htmlFor={`${id}-min`} className="text-xs">Minimum monthly payment ({currency})</Label>
+        <Label htmlFor={`${id}-min`} className="text-xs">{t("minPayment", { currency })}</Label>
         <Input id={`${id}-min`} type="number" min="1" step="0.01" placeholder="150"
           value={v.minPayment} onChange={(e) => setV({ ...v, minPayment: e.target.value })} />
       </div>
@@ -203,9 +199,9 @@ function DebtForm({
             type: v.type,
             currency,
           })}>
-          Save
+          {t("save")}
         </Button>
-        <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>{t("cancel")}</Button>
       </div>
     </div>
   )
@@ -216,6 +212,8 @@ function DebtForm({
 export default function DebtPage() {
   const { user } = useAuth()
   const { format: formatAmount, toBase, fromBase, currency: userCurrency } = useMoney()
+  const t = useTranslations("debt")
+  const locale = useLocale()
   const [debts, setDebts] = useState<DebtItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -228,9 +226,9 @@ export default function DebtPage() {
     if (!user) return
     getUserDebts(user.uid)
       .then(setDebts)
-      .catch(() => toast.error("Failed to load debts."))
+      .catch(() => toast.error(t("failedToLoad")))
       .finally(() => setLoading(false))
-  }, [user])
+  }, [user, t])
 
   const persist = async (next: DebtItem[]) => {
     if (!user) return
@@ -239,7 +237,7 @@ export default function DebtPage() {
       await saveUserDebts(user.uid, next)
       setDebts(next)
     } catch {
-      toast.error("Failed to save.")
+      toast.error(t("failedToSave"))
     } finally {
       setSaving(false)
     }
@@ -249,7 +247,7 @@ export default function DebtPage() {
     const next = [...debts, { ...values, id: crypto.randomUUID(), balance: toBase(values.balance), minPayment: toBase(values.minPayment) }]
     persist(next)
     setAddOpen(false)
-    toast.success("Debt added.")
+    toast.success(t("debtAdded"))
   }
 
   const handleEdit = (values: Omit<DebtItem, "id">) => {
@@ -257,12 +255,12 @@ export default function DebtPage() {
     const next = debts.map((d) => (d.id === editItem.id ? { ...values, id: d.id, balance: toBase(values.balance), minPayment: toBase(values.minPayment) } : d))
     persist(next)
     setEditItem(null)
-    toast.success("Debt updated.")
+    toast.success(t("debtUpdated"))
   }
 
   const handleDelete = (id: string) => {
     persist(debts.filter((d) => d.id !== id))
-    toast.success("Debt removed.")
+    toast.success(t("debtRemoved"))
   }
 
   const totalDebt = useMemo(
@@ -303,10 +301,10 @@ export default function DebtPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Landmark className="h-6 w-6 text-primary" />
-          Debt Payoff Planner
+          {t("title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Snowball or avalanche — find the fastest path to debt freedom.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -319,13 +317,13 @@ export default function DebtPage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm">{d.name}</span>
                   <Badge variant="outline" className={cn("text-xs", DEBT_TYPE_COLORS[d.type])}>
-                    {DEBT_TYPE_LABELS[d.type]}
+                    {t(`types.${d.type}`)}
                   </Badge>
                 </div>
                 <div className="flex gap-4 mt-1 text-xs text-muted-foreground flex-wrap">
                   <span className="text-base font-bold text-foreground">{formatAmount(d.balance)}</span>
-                  <span>{d.interestRate}% APR</span>
-                  <span>Min {formatAmount(d.minPayment)}/mo</span>
+                  <span>{d.interestRate}{t("aprLabel")}</span>
+                  <span>{t("minPerMonth", { amount: formatAmount(d.minPayment) })}</span>
                 </div>
               </div>
               <div className="flex gap-1 shrink-0">
@@ -342,7 +340,7 @@ export default function DebtPage() {
         ))}
 
         <Button variant="outline" size="sm" className="w-full border-dashed" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-1.5" /> Add a debt
+          <Plus className="h-4 w-4 mr-1.5" /> {t("addDebt")}
         </Button>
       </div>
 
@@ -352,20 +350,20 @@ export default function DebtPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <Card className="bg-destructive/5 border-destructive/20">
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground mb-1">Total debt</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("totalDebt")}</p>
                 <p className="text-xl font-bold text-destructive">{formatAmount(totalDebt)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground mb-1">Min. payments</p>
-                <p className="text-xl font-bold">{formatAmount(totalMinPayment)}/mo</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("minPayments")}</p>
+                <p className="text-xl font-bold">{formatAmount(totalMinPayment)}{t("perMonth")}</p>
               </CardContent>
             </Card>
             {result.months > 0 && (
               <Card className="bg-emerald-500/5 border-emerald-500/20">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Interest to pay</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("interestToPay")}</p>
                   <p className="text-xl font-bold text-emerald-600">{formatAmount(result.totalInterest)}</p>
                 </CardContent>
               </Card>
@@ -375,9 +373,9 @@ export default function DebtPage() {
           {/* Strategy + extra payment */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Payoff strategy</CardTitle>
+              <CardTitle className="text-sm">{t("payoffStrategy")}</CardTitle>
               <CardDescription className="text-xs">
-                Choose a strategy and optionally add extra monthly payment above minimums.
+                {t("payoffStrategyDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -393,8 +391,8 @@ export default function DebtPage() {
                 >
                   <Flame className={cn("h-4 w-4 shrink-0", strategy === "avalanche" ? "text-primary" : "text-muted-foreground")} />
                   <div>
-                    <p className="text-sm font-medium">Avalanche</p>
-                    <p className="text-xs text-muted-foreground">Highest interest first — saves the most money</p>
+                    <p className="text-sm font-medium">{t("avalanche")}</p>
+                    <p className="text-xs text-muted-foreground">{t("avalancheDesc")}</p>
                   </div>
                 </button>
                 <button
@@ -408,14 +406,14 @@ export default function DebtPage() {
                 >
                   <Snowflake className={cn("h-4 w-4 shrink-0", strategy === "snowball" ? "text-primary" : "text-muted-foreground")} />
                   <div>
-                    <p className="text-sm font-medium">Snowball</p>
-                    <p className="text-xs text-muted-foreground">Lowest balance first — builds momentum</p>
+                    <p className="text-sm font-medium">{t("snowball")}</p>
+                    <p className="text-xs text-muted-foreground">{t("snowballDesc")}</p>
                   </div>
                 </button>
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs">Extra monthly payment ({userCurrency})</Label>
+                <Label className="text-xs">{t("extraPayment", { currency: userCurrency })}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -425,7 +423,7 @@ export default function DebtPage() {
                   onChange={(e) => setExtraPayment(Math.max(0, parseFloat(e.target.value) || 0))}
                   className="max-w-[180px]"
                 />
-                <p className="text-xs text-muted-foreground">Added on top of minimum payments each month.</p>
+                <p className="text-xs text-muted-foreground">{t("extraPaymentHint")}</p>
               </div>
             </CardContent>
           </Card>
@@ -436,12 +434,12 @@ export default function DebtPage() {
               <CardContent className="p-5 flex items-start gap-4">
                 <AlertTriangle className="h-8 w-8 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-lg font-bold text-red-600">These payments won&apos;t clear your debt</p>
+                  <p className="text-lg font-bold text-red-600">{t("neverPaysOffTitle")}</p>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {underwaterDebts.length > 0
-                      ? `The minimum payment on ${underwaterDebts.map((d) => d.name).join(", ")} is less than its monthly interest, so the balance keeps growing. `
-                      : "Your monthly payments don't cover the interest, so the balance keeps growing. "}
-                    Add an extra monthly payment above to find a real payoff date.
+                      ? t("neverPaysOffBody", { names: underwaterDebts.map((d) => d.name).join(", ") })
+                      : t("neverPaysOffBodyGeneric")}
+                    {" "}{t("neverPaysOffHint")}
                   </p>
                 </div>
               </CardContent>
@@ -452,17 +450,19 @@ export default function DebtPage() {
                 <Trophy className="h-8 w-8 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-lg font-bold">
-                    Debt-free by{" "}
-                    <span className="text-emerald-600">{debtFreeDate(result.months)}</span>
+                    {t("debtFreeBy", { date: debtFreeDate(result.months, locale) })}
                   </p>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {result.months} months · {formatAmount(result.totalInterest)} total interest
+                    {t("monthsCount", { count: result.months })} · {t("totalInterest", { amount: formatAmount(result.totalInterest) })}
                   </p>
                   {avalancheResult.months !== snowballResult.months && (
                     <p className="text-xs text-muted-foreground mt-1">
                       {strategy === "avalanche"
-                        ? `Avalanche saves ${formatAmount(snowballResult.totalInterest - avalancheResult.totalInterest)} vs snowball`
-                        : `Snowball is ${avalancheResult.months - snowballResult.months} month${avalancheResult.months - snowballResult.months !== 1 ? "s" : ""} faster than avalanche`}
+                        ? t("avalancheSaves", { amount: formatAmount(snowballResult.totalInterest - avalancheResult.totalInterest) })
+                        : t("snowballFaster", {
+                            count: avalancheResult.months - snowballResult.months,
+                            monthWord: avalancheResult.months - snowballResult.months === 1 ? "month" : "months",
+                          })}
                     </p>
                   )}
                 </div>
@@ -476,7 +476,7 @@ export default function DebtPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-emerald-500" />
-                  Balance over time
+                  {t("balanceOverTime")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -499,7 +499,7 @@ export default function DebtPage() {
                         width={36}
                       />
                       <Tooltip
-                        formatter={(v) => [formatAmount(Number(v ?? 0)), "Balance"]}
+                        formatter={(v) => [formatAmount(Number(v ?? 0)), t("balance")]}
                         contentStyle={{ fontSize: 12 }}
                       />
                       <Area
@@ -520,21 +520,21 @@ export default function DebtPage() {
           {!result.neverPaysOff && avalancheResult.months > 0 && snowballResult.months > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Strategy comparison</CardTitle>
+                <CardTitle className="text-sm">{t("strategyComparison")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <div className={cn("rounded-lg border p-3", strategy === "avalanche" && "border-primary bg-primary/5")}>
                     <Flame className="h-4 w-4 mx-auto mb-1 text-orange-500" />
-                    <p className="text-xs font-medium">Avalanche</p>
-                    <p className="text-sm font-bold mt-1">{debtFreeDate(avalancheResult.months)}</p>
-                    <p className="text-xs text-muted-foreground">{formatAmount(avalancheResult.totalInterest)} interest</p>
+                    <p className="text-xs font-medium">{t("avalanche")}</p>
+                    <p className="text-sm font-bold mt-1">{debtFreeDate(avalancheResult.months, locale)}</p>
+                    <p className="text-xs text-muted-foreground">{t("interestAmount", { amount: formatAmount(avalancheResult.totalInterest) })}</p>
                   </div>
                   <div className={cn("rounded-lg border p-3", strategy === "snowball" && "border-primary bg-primary/5")}>
                     <Snowflake className="h-4 w-4 mx-auto mb-1 text-blue-500" />
-                    <p className="text-xs font-medium">Snowball</p>
-                    <p className="text-sm font-bold mt-1">{debtFreeDate(snowballResult.months)}</p>
-                    <p className="text-xs text-muted-foreground">{formatAmount(snowballResult.totalInterest)} interest</p>
+                    <p className="text-xs font-medium">{t("snowball")}</p>
+                    <p className="text-sm font-bold mt-1">{debtFreeDate(snowballResult.months, locale)}</p>
+                    <p className="text-xs text-muted-foreground">{t("interestAmount", { amount: formatAmount(snowballResult.totalInterest) })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -547,9 +547,9 @@ export default function DebtPage() {
         <Card className="border-dashed">
           <CardContent className="py-16 text-center text-muted-foreground text-sm">
             <Landmark className="h-10 w-10 mx-auto mb-3 opacity-20" />
-            <p className="font-medium mb-1">No debts added yet</p>
+            <p className="font-medium mb-1">{t("noDebtsTitle")}</p>
             <p className="text-xs max-w-xs mx-auto">
-              Add your credit cards, loans, and any other debts to see your payoff timeline and how much interest you'll save.
+              {t("noDebtsBody")}
             </p>
           </CardContent>
         </Card>
@@ -557,14 +557,14 @@ export default function DebtPage() {
 
       {saving && (
         <div className="fixed bottom-20 right-4 flex items-center gap-1.5 bg-background border rounded-full px-3 py-1.5 shadow-sm text-xs text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+          <Loader2 className="h-3 w-3 animate-spin" /> {t("savingIndicator")}
         </div>
       )}
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add a debt</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("addDebtDialogTitle")}</DialogTitle></DialogHeader>
           <DebtForm currency={userCurrency} onSave={handleAdd} onCancel={() => setAddOpen(false)} />
         </DialogContent>
       </Dialog>
@@ -572,7 +572,7 @@ export default function DebtPage() {
       {/* Edit dialog */}
       <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit debt</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("editDebtDialogTitle")}</DialogTitle></DialogHeader>
           {editItem && (
             <DebtForm
               currency={userCurrency}
