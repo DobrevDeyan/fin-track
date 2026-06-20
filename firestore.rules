@@ -84,9 +84,16 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
-    // Financial Summaries - document ID is the userId
+    // Financial Summaries - document ID is the userId.
+    // SERVER-AUTHORITATIVE: maintained only by the maintainFinancialSummary
+    // Cloud Function (Admin SDK). Clients may read their own summary and delete
+    // it (e.g. account reset/deletion), but may NOT create or update it — this
+    // prevents forged totals that would corrupt the dashboard or game the
+    // leaderboard (review LB1).
     match /financialSummaries/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if false;
     }
 
     // Recurring Transactions - users can only access their own recurring transactions

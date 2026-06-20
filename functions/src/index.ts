@@ -8,7 +8,7 @@ import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentDeleted, onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentDeleted, onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions";
 
 // Initialize Firebase Admin
@@ -1541,6 +1541,114 @@ export const deleteMyAccount = onCall(
       // best-effort — the auditLog was already purged, this is a final tombstone
     });
 
+    return { ok: true };
+  }
+);
+
+// ─── Financial Summary Maintenance (server-authoritative) ─────────────────────
+
+interface SummaryMonthAgg {
+  income: number;
+  expenses: number;
+  salary: number;
+  expensesByCategory: Record<string, number>;
+  incomeByCategory: Record<string, number>;
+}
+
+/**
+ * Recompute financialSummaries/{userId} from the user's entries with the Admin
+ * SDK. This is the SINGLE writer of the summary — clients are denied create/
+ * update by the security rules.
+ *
+ * It derives totals from the entries themselves (not deltas), so it is
+ * idempotent — safe under Firestore's at-least-once trigger redelivery — and
+ * self-heals any drift on the next entry mutation.
+ */
+async function rebuildSummaryFromEntries(userId: string): Promise<void> {
+  const summaryRef = db.collection("financialSummaries").doc(userId);
+  const snap = await db.collection("entries").where("userId", "==", userId).get();
+
+  // No entries left (e.g. after a reset or account deletion) — remove the doc
+  // rather than leave an empty summary behind.
+  if (snap.empty) {
+    await summaryRef.delete().catch(() => { /* already gone */ });
+    return;
+  }
+
+  let totalIncome = 0;
+  let totalExpenses = 0;
+  let totalSalary = 0;
+  const months: Record<string, SummaryMonthAgg> = {};
+
+  for (const doc of snap.docs) {
+    const e = doc.data() as {
+      type?: "income" | "expense";
+      amount?: number;
+      category?: string;
+      categoryId?: string;
+      date?: admin.firestore.Timestamp;
+    };
+    if (typeof e.amount !== "number" || !isFinite(e.amount) || !e.date) continue;
+    const category = e.category ?? "Uncategorized";
+    const d = e.date.toDate();
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!months[monthKey]) {
+      months[monthKey] = { income: 0, expenses: 0, salary: 0, expensesByCategory: {}, incomeByCategory: {} };
+    }
+    const m = months[monthKey];
+    if (e.type === "income") {
+      totalIncome += e.amount;
+      m.income += e.amount;
+      m.incomeByCategory[category] = (m.incomeByCategory[category] || 0) + e.amount;
+      if (category === "Salary" || e.categoryId === "salary") {
+        totalSalary += e.amount;
+        m.salary += e.amount;
+      }
+    } else {
+      totalExpenses += e.amount;
+      m.expenses += e.amount;
+      m.expensesByCategory[category] = (m.expensesByCategory[category] || 0) + e.amount;
+    }
+  }
+
+  await summaryRef.set({
+    userId,
+    totalIncome,
+    totalExpenses,
+    totalSalary,
+    entryCount: snap.size,
+    months,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+/**
+ * Trigger: keep financialSummaries in sync on every entry create/update/delete,
+ * INCLUDING entries created server-side (e.g. by the recurring-transaction
+ * processor), which previously never updated the summary (review R1).
+ */
+export const maintainFinancialSummary = onDocumentWritten(
+  { document: "entries/{entryId}", region: "europe-west4" },
+  async (event) => {
+    const before = event.data?.before?.data() as { userId?: string } | undefined;
+    const after = event.data?.after?.data() as { userId?: string } | undefined;
+    const userId = after?.userId ?? before?.userId;
+    if (!userId) return;
+    await rebuildSummaryFromEntries(userId);
+  }
+);
+
+/**
+ * Callable: force a server-side rebuild of the caller's financial summary.
+ * Used to backfill/repair summaries written by the old client path before the
+ * summary became server-authoritative, or any time the client finds it missing.
+ */
+export const rebuildMySummary = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+    await rebuildSummaryFromEntries(userId);
     return { ok: true };
   }
 );

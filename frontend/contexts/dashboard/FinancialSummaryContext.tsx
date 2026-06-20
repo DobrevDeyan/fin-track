@@ -16,10 +16,11 @@ import {
   useState,
   useMemo,
   useEffect,
-  useRef,
 } from "react"
+import { onSnapshot } from "firebase/firestore"
 import {
-  getOrCreateSummary,
+  getSummaryRef,
+  getFinancialSummary,
   getCurrentMonthKey,
   getPreviousMonthKey,
   getMonthData,
@@ -86,31 +87,40 @@ export function FinancialSummaryProvider({
   const [loading, setLoading] = useState(true)
 
   const refreshSummary = useCallback(async () => {
+    // The summary is server-maintained and the live listener below keeps it in
+    // sync; this one-off read is kept for explicit refresh (e.g. pull-to-refresh).
     if (!userId) return
-
     try {
-      setLoading(true)
-      const data = await getOrCreateSummary(userId)
+      const data = await getFinancialSummary(userId)
       setSummary(data)
     } catch (error) {
       logger.error("Failed to load financial summary", error)
-    } finally {
-      setLoading(false)
     }
   }, [userId])
 
-  const initialLoadDone = useRef(false)
-
-  // Automatically load summary when userId changes
+  // Subscribe to the server-maintained summary doc so trigger updates — e.g.
+  // after adding an entry, or a recurring transaction firing — appear live
+  // (within ~1s) without a manual refresh.
   useEffect(() => {
-    if (userId) {
-      refreshSummary()
-      initialLoadDone.current = true
-    } else if (initialLoadDone.current) {
+    if (!userId) {
       setSummary(null)
       setLoading(false)
+      return
     }
-  }, [userId, refreshSummary])
+    setLoading(true)
+    const unsub = onSnapshot(
+      getSummaryRef(userId),
+      (snap) => {
+        setSummary(snap.exists() ? (snap.data() as FinancialSummaryDocument) : null)
+        setLoading(false)
+      },
+      (error) => {
+        logger.error("Financial summary listener error", error)
+        setLoading(false)
+      }
+    )
+    return () => unsub()
+  }, [userId])
 
   const currentMonthKey = getCurrentMonthKey()
   const previousMonthKey = getPreviousMonthKey()

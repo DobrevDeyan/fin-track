@@ -1,8 +1,15 @@
 /**
  * Firestore Entries Service
  *
- * Functions for CRUD operations on entries collection.
- * All mutations atomically update the financial summary via batch writes.
+ * Functions for CRUD operations on the entries collection.
+ *
+ * The financial summary (financialSummaries/{userId}) is NO LONGER written by
+ * the client. It is maintained server-side by the `maintainFinancialSummary`
+ * Cloud Function trigger, which recomputes it on every entry create/update/
+ * delete (including entries created by the recurring-transaction processor).
+ * Security rules deny client create/update on that doc. The client only writes
+ * entries here; the summary updates a moment later and the dashboard listens to
+ * it live (see FinancialSummaryContext).
  */
 
 import {
@@ -18,13 +25,11 @@ import {
   serverTimestamp,
   getDoc,
   FieldValue,
-  writeBatch,
-  increment,
   setDoc,
+  deleteDoc,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { EntryDocument, CreateEntryInput } from "./firestore-types"
-import { getMonthKey } from "./firestore-summary"
 import { logger } from "./utils/logger"
 
 // Type for creating a new entry document
@@ -88,43 +93,8 @@ function toTimestamp(date: Timestamp | Date | string): Timestamp {
 }
 
 /**
- * Build the summary update fields for adding an entry's effect
- */
-function buildSummaryIncrements(
-  type: "income" | "expense",
-  amount: number,
-  category: string,
-  date: Timestamp | Date | string,
-  sign: 1 | -1 = 1
-): Record<string, FieldValue> {
-  const monthKey = getMonthKey(date)
-  const delta = amount * sign
-
-  const updates: Record<string, FieldValue> = {
-    updatedAt: serverTimestamp(),
-    entryCount: increment(sign),
-  }
-
-  if (type === "income") {
-    updates.totalIncome = increment(delta)
-    updates[`months.${monthKey}.income`] = increment(delta)
-    updates[`months.${monthKey}.incomeByCategory.${category}`] = increment(delta)
-    
-    if (category === "Salary") {
-      updates.totalSalary = increment(delta)
-      updates[`months.${monthKey}.salary`] = increment(delta)
-    }
-  } else {
-    updates.totalExpenses = increment(delta)
-    updates[`months.${monthKey}.expenses`] = increment(delta)
-    updates[`months.${monthKey}.expensesByCategory.${category}`] = increment(delta)
-  }
-
-  return updates
-}
-
-/**
- * Create a new entry in Firestore + atomically update financial summary
+ * Create a new entry in Firestore.
+ * The financial summary is updated by the server-side trigger.
  */
 export async function createEntry(
   userId: string,
@@ -134,9 +104,7 @@ export async function createEntry(
   }
 ): Promise<string> {
   try {
-    const batch = writeBatch(db)
-
-    // 1. Build entry document
+    // Build the entry document
     const entryRef = doc(collection(db, "entries"))
     const entryDate = toTimestamp(entryData.date)
 
@@ -183,32 +151,9 @@ export async function createEntry(
       newEntry.savingsAllocation = entryData.savingsAllocation
     }
 
-    batch.set(entryRef, newEntry)
-
-    // 2. Update financial summary atomically.
-    //    Use setDoc+merge so the batch succeeds even if the summary doc is missing
-    //    (e.g. first entry for a new user, or summary was deleted).
-    //    If the doc is genuinely absent we initialize it first so all historical
-    //    totals are correct before the new entry's increment lands.
-    const summaryRef = doc(db, "financialSummaries", userId)
-    const summarySnap = await getDoc(summaryRef)
-
-    if (!summarySnap.exists()) {
-      const { initializeFinancialSummary } = await import("./firestore-summary")
-      await initializeFinancialSummary(userId)
-    }
-
-    const summaryUpdates = buildSummaryIncrements(
-      entryData.type,
-      entryData.amount,
-      entryData.category,
-      entryDate
-    )
-    // setDoc+merge lets increment() work regardless of whether the doc existed
-    batch.set(summaryRef, summaryUpdates, { merge: true })
-
-    // 3. Commit both operations atomically
-    await batch.commit()
+    // Persist only the entry; the maintainFinancialSummary trigger recomputes
+    // financialSummaries/{userId} server-side.
+    await setDoc(entryRef, newEntry)
 
     return entryRef.id
   } catch (error) {
@@ -342,14 +287,16 @@ export async function getUserEntriesWithReceipts(
 }
 
 /**
- * Update an existing entry + atomically update financial summary
+ * Update an existing entry.
+ * The financial summary is updated by the server-side trigger.
  *
- * @param oldEntry - The previous state of the entry (for reversing its summary effect)
+ * @param _oldEntry - Deprecated; retained for call-site compatibility. The
+ *   summary is now recomputed server-side, so the previous state is unused.
  */
 export async function updateEntry(
   entryId: string,
   updates: Partial<Omit<EntryDocument, "id" | "userId" | "createdAt">>,
-  oldEntry?: {
+  _oldEntry?: {
     type: "income" | "expense"
     amount: number
     category: string
@@ -359,17 +306,6 @@ export async function updateEntry(
 ): Promise<void> {
   try {
     const entryRef = doc(db, "entries", entryId)
-
-    // Self-heal: if the caller didn't supply the previous state, load it from
-    // Firestore so an amount/category/date edit can never silently desync the
-    // financial summary (the staleness check only compares entry counts).
-    if (!oldEntry) {
-      const existingSnap = await getDoc(entryRef)
-      if (existingSnap.exists()) {
-        const d = existingSnap.data() as EntryDocument
-        oldEntry = { type: d.type, amount: d.amount, category: d.category, date: d.date, userId: d.userId }
-      }
-    }
 
     const cleanUpdateData: EntryUpdateData = {
       updatedAt: serverTimestamp(),
@@ -419,77 +355,9 @@ export async function updateEntry(
       cleanUpdateData.recurringId = updates.recurringId
     }
 
-    // If we have old entry data, update summary atomically
-    if (oldEntry) {
-      const batch = writeBatch(db)
-      batch.update(entryRef, cleanUpdateData as Record<string, unknown>)
-
-      const summaryRef = doc(db, "financialSummaries", oldEntry.userId)
-
-      const oldMonthKey = getMonthKey(oldEntry.date)
-      const newType = updates.type ?? oldEntry.type
-      const newAmount = updates.amount ?? oldEntry.amount
-      const newCategory = updates.category ?? oldEntry.category
-      const newDate = updates.date ?? oldEntry.date
-      const newMonthKey = getMonthKey(newDate)
-
-      const combinedUpdates: Record<string, FieldValue> = {
-        updatedAt: serverTimestamp(),
-      }
-
-      // Compute net per-field deltas (reverse old, apply new)
-      const fieldDeltas: Record<string, number> = {}
-
-      // Reverse old
-      if (oldEntry.type === "income") {
-        fieldDeltas[`totalIncome`] = (fieldDeltas[`totalIncome`] || 0) - oldEntry.amount
-        fieldDeltas[`months.${oldMonthKey}.income`] = (fieldDeltas[`months.${oldMonthKey}.income`] || 0) - oldEntry.amount
-        fieldDeltas[`months.${oldMonthKey}.incomeByCategory.${oldEntry.category}`] = (fieldDeltas[`months.${oldMonthKey}.incomeByCategory.${oldEntry.category}`] || 0) - oldEntry.amount
-        if (oldEntry.category === "Salary") {
-          fieldDeltas[`totalSalary`] = (fieldDeltas[`totalSalary`] || 0) - oldEntry.amount
-          fieldDeltas[`months.${oldMonthKey}.salary`] = (fieldDeltas[`months.${oldMonthKey}.salary`] || 0) - oldEntry.amount
-        }
-      } else {
-        fieldDeltas[`totalExpenses`] = (fieldDeltas[`totalExpenses`] || 0) - oldEntry.amount
-        fieldDeltas[`months.${oldMonthKey}.expenses`] = (fieldDeltas[`months.${oldMonthKey}.expenses`] || 0) - oldEntry.amount
-        fieldDeltas[`months.${oldMonthKey}.expensesByCategory.${oldEntry.category}`] = (fieldDeltas[`months.${oldMonthKey}.expensesByCategory.${oldEntry.category}`] || 0) - oldEntry.amount
-      }
-
-      // Apply new
-      if (newType === "income") {
-        fieldDeltas[`totalIncome`] = (fieldDeltas[`totalIncome`] || 0) + newAmount
-        fieldDeltas[`months.${newMonthKey}.income`] = (fieldDeltas[`months.${newMonthKey}.income`] || 0) + newAmount
-        fieldDeltas[`months.${newMonthKey}.incomeByCategory.${newCategory}`] = (fieldDeltas[`months.${newMonthKey}.incomeByCategory.${newCategory}`] || 0) + newAmount
-        if (newCategory === "Salary") {
-          fieldDeltas[`totalSalary`] = (fieldDeltas[`totalSalary`] || 0) + newAmount
-          fieldDeltas[`months.${newMonthKey}.salary`] = (fieldDeltas[`months.${newMonthKey}.salary`] || 0) + newAmount
-        }
-      } else {
-        fieldDeltas[`totalExpenses`] = (fieldDeltas[`totalExpenses`] || 0) + newAmount
-        fieldDeltas[`months.${newMonthKey}.expenses`] = (fieldDeltas[`months.${newMonthKey}.expenses`] || 0) + newAmount
-        fieldDeltas[`months.${newMonthKey}.expensesByCategory.${newCategory}`] = (fieldDeltas[`months.${newMonthKey}.expensesByCategory.${newCategory}`] || 0) + newAmount
-      }
-
-      for (const [field, delta] of Object.entries(fieldDeltas)) {
-        if (delta !== 0) {
-          // Add to combinedUpdates since that's what we eventually use
-          combinedUpdates[field] = increment(delta)
-        }
-      }
-
-      // Resilient write: initialise the summary first if it's missing, then use
-      // set+merge so increments never fail with "No document to update".
-      const summarySnap = await getDoc(summaryRef)
-      if (!summarySnap.exists()) {
-        const { initializeFinancialSummary } = await import("./firestore-summary")
-        await initializeFinancialSummary(oldEntry.userId)
-      }
-      batch.set(summaryRef, combinedUpdates, { merge: true })
-      await batch.commit()
-    } else {
-      // No old entry data - just update the entry without summary
-      await updateDoc(entryRef, cleanUpdateData as Record<string, unknown>)
-    }
+    // The summary is maintained server-side by the maintainFinancialSummary
+    // trigger, so we only persist the entry change here.
+    await updateDoc(entryRef, cleanUpdateData as Record<string, unknown>)
   } catch (error) {
     logger.error("Error updating entry", error, { critical: true })
     throw error
@@ -497,13 +365,14 @@ export async function updateEntry(
 }
 
 /**
- * Delete an entry + atomically update financial summary
+ * Delete an entry.
+ * The financial summary is updated by the server-side trigger.
  *
- * @param entryData - The entry being deleted (for reversing its summary effect)
+ * @param _entryData - Deprecated; retained for call-site compatibility.
  */
 export async function deleteEntry(
   entryId: string,
-  entryData?: {
+  _entryData?: {
     type: "income" | "expense"
     amount: number
     category: string
@@ -513,32 +382,9 @@ export async function deleteEntry(
 ): Promise<void> {
   try {
     const entryRef = doc(db, "entries", entryId)
-
-    if (entryData) {
-      const batch = writeBatch(db)
-      batch.delete(entryRef)
-
-      // Reverse the entry's effect on the summary.
-      // Guard with setDoc+merge so we don't crash if the summary was deleted.
-      const summaryRef = doc(db, "financialSummaries", entryData.userId)
-      const summarySnap = await getDoc(summaryRef)
-      if (summarySnap.exists()) {
-        const reverseUpdates = buildSummaryIncrements(
-          entryData.type,
-          entryData.amount,
-          entryData.category,
-          entryData.date,
-          -1
-        )
-        batch.update(summaryRef, reverseUpdates)
-      }
-
-      await batch.commit()
-    } else {
-      // Fallback: delete without summary update (summary will self-heal on next load)
-      const { deleteDoc } = await import("firebase/firestore")
-      await deleteDoc(entryRef)
-    }
+    // The summary is maintained server-side by the maintainFinancialSummary
+    // trigger, so deleting the entry is all the client needs to do.
+    await deleteDoc(entryRef)
   } catch (error) {
     logger.error("Error deleting entry", error, { critical: true })
     throw error
