@@ -4,13 +4,12 @@ import { useEffect, useState, useMemo } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
-import { useCurrency } from "@/contexts/CurrencyContext"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getUserEntriesByDateRange } from "@/lib/firestore-entries"
-import { formatCurrency } from "@/lib/currency-utils"
 import { formatDateForInput } from "@/lib/date-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
@@ -81,7 +80,7 @@ export default function ReportsPage() {
   const t = useTranslations("reports")
   const { user, loading } = useAuth()
   const { isPro } = useSubscription()
-  const { userCurrency } = useCurrency()
+  const { format, currency: userCurrency } = useMoney()
   const [entries, setEntries] = useState<Entry[]>([])
   const [yoyEntries, setYoyEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(false)
@@ -473,19 +472,19 @@ export default function ReportsPage() {
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalIncome")}</p>
                   <p className="text-xl font-bold text-green-600">
-                    {formatCurrency(metrics.income, { currency: userCurrency })}
+                    {format(metrics.income)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("totalExpenses")}</p>
                   <p className="text-xl font-bold text-red-600">
-                    {formatCurrency(metrics.expenses, { currency: userCurrency })}
+                    {format(metrics.expenses)}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("netBalance")}</p>
                   <p className={`text-xl font-bold ${metrics.balance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {formatCurrency(metrics.balance, { currency: userCurrency })}
+                    {format(metrics.balance)}
                   </p>
                 </div>
                 <div className="space-y-1">

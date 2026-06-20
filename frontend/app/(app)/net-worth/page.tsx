@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCurrency } from "@/contexts/CurrencyContext"
+import { useMoney } from "@/contexts/CurrencyContext"
 import {
   getAssets,
   createAsset,
@@ -13,7 +13,7 @@ import {
   type AssetType,
   type CreateAssetInput,
 } from "@/lib/firestore-networth"
-import { formatCurrency } from "@/lib/currency-utils"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -72,7 +72,7 @@ export default function NetWorthPage() {
   const t = useTranslations("netWorth")
   const tCommon = useTranslations("common")
   const { user, loading: authLoading } = useAuth()
-  const { userCurrency } = useCurrency()
+  const { format, toBase, fromBase, currency: userCurrency } = useMoney()
 
   const [assets, setAssets] = useState<Asset[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -115,8 +115,8 @@ export default function NetWorthPage() {
     setForm({
       name: asset.name,
       type: asset.type,
-      value: asset.value,
-      currency: asset.currency,
+      value: fromBase(asset.value),
+      currency: userCurrency,
       isLiability: asset.isLiability,
       notes: asset.notes ?? "",
     })
@@ -128,11 +128,12 @@ export default function NetWorthPage() {
     if (!user || submitting) return
     try {
       setSubmitting(true)
+      const formToSave = { ...form, value: toBase(form.value), currency: BASE_CURRENCY }
       if (editingAsset) {
-        await updateAsset(editingAsset.id, form)
+        await updateAsset(editingAsset.id, formToSave)
         toast.success(t("updateSuccess"))
       } else {
-        await createAsset(user.uid, form)
+        await createAsset(user.uid, formToSave)
         toast.success(t("createSuccess"))
       }
       setDialogOpen(false)
@@ -187,7 +188,7 @@ export default function NetWorthPage() {
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{t("totalNetWorth")}</p>
             <p className={cn("text-2xl font-bold", netWorth >= 0 ? "text-green-600" : "text-red-600")}>
-              {formatCurrency(netWorth, { currency: userCurrency })}
+              {format(netWorth)}
             </p>
             <div className="flex items-center gap-1 mt-1">
               {netWorth >= 0 ? <TrendingUp className="h-3.5 w-3.5 text-green-500" /> : <TrendingDown className="h-3.5 w-3.5 text-red-500" />}
@@ -198,14 +199,14 @@ export default function NetWorthPage() {
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{t("totalAssets")}</p>
-            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalAssets, { currency: userCurrency })}</p>
+            <p className="text-2xl font-bold text-green-600">{format(totalAssets)}</p>
             <p className="text-xs text-muted-foreground mt-1">{assetList.length} items</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{t("totalLiabilities")}</p>
-            <p className="text-2xl font-bold text-red-600">{formatCurrency(totalLiabilities, { currency: userCurrency })}</p>
+            <p className="text-2xl font-bold text-red-600">{format(totalLiabilities)}</p>
             <p className="text-xs text-muted-foreground mt-1">{liabilityList.length} items</p>
           </CardContent>
         </Card>
@@ -375,17 +376,17 @@ export default function NetWorthPage() {
 
 function AssetRow({
   asset,
-  userCurrency,
   t,
   onEdit,
   onDelete,
 }: {
   asset: Asset
-  userCurrency: string
+  userCurrency?: string
   t: ReturnType<typeof useTranslations>
   onEdit: (a: Asset) => void
   onDelete: (id: string) => void
 }) {
+  const { format } = useMoney()
   const Icon = ASSET_TYPE_ICONS[asset.type]
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
@@ -398,7 +399,7 @@ function AssetRow({
       </div>
       <div className="text-right flex-shrink-0">
         <p className={cn("font-semibold text-sm", asset.isLiability ? "text-red-600" : "text-green-600")}>
-          {asset.isLiability ? "−" : "+"}{formatCurrency(asset.value, { currency: asset.currency || userCurrency })}
+          {asset.isLiability ? "−" : "+"}{format(asset.value)}
         </p>
         <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5">{asset.type}</Badge>
       </div>

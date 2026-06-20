@@ -54,6 +54,10 @@ export function SavingsAccountCard({
   onAddMoney,
   onWithdrawMoney,
 }: SavingsAccountCardProps) {
+  const { format, toBase, fromBase, currency } = useMoney()
+  const displayBalance = fromBase(account.balance)
+  const fmtAmt = (n: number) =>
+    new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(n)
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false)
   const [transactionType, setTransactionType] = useState<"add" | "withdraw">("add")
   const [amount, setAmount] = useState("")
@@ -66,7 +70,7 @@ export function SavingsAccountCard({
       return
     }
 
-    if (transactionType === "withdraw" && amountNum > account.balance) {
+    if (transactionType === "withdraw" && toBase(amountNum) > account.balance) {
       toast.error("Insufficient balance")
       return
     }
@@ -74,9 +78,9 @@ export function SavingsAccountCard({
     setIsSubmitting(true)
     try {
       if (transactionType === "add") {
-        await onAddMoney(account.id, amountNum)
+        await onAddMoney(account.id, toBase(amountNum))
       } else {
-        await onWithdrawMoney(account.id, amountNum)
+        await onWithdrawMoney(account.id, toBase(amountNum))
       }
       setAmount("")
       setTransactionDialogOpen(false)
@@ -145,7 +149,7 @@ export function SavingsAccountCard({
             <div>
               <p className="text-sm text-muted-foreground mb-1">Balance</p>
               <p className="text-2xl font-bold">
-                {formatCurrency(account.balance, { currency: account.currency })}
+                {format(account.balance)}
               </p>
             </div>
             <div className="flex gap-2">
@@ -195,12 +199,12 @@ export function SavingsAccountCard({
               )}
             </DialogTitle>
             <DialogDescription>
-              Balance: <span className="font-medium text-foreground">{formatCurrency(account.balance, { currency: account.currency })}</span>
+              Balance: <span className="font-medium text-foreground">{format(account.balance)}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount ({account.currency})</Label>
+              <Label htmlFor="amount">Amount ({currency})</Label>
               <Input
                 id="amount"
                 type="number"
@@ -218,9 +222,9 @@ export function SavingsAccountCard({
             {/* Quick presets */}
             <div className="flex gap-2 flex-wrap">
               {(transactionType === "add" ? [10, 50, 100, 500] : [
-                ...(account.balance >= 100 ? [Math.round(account.balance * 0.25)] : []),
-                ...(account.balance >= 50 ? [Math.round(account.balance * 0.5)] : []),
-                Math.round(account.balance),
+                ...(displayBalance >= 100 ? [Math.round(displayBalance * 0.25)] : []),
+                ...(displayBalance >= 50 ? [Math.round(displayBalance * 0.5)] : []),
+                Math.round(displayBalance),
               ].filter((v, i, a) => v > 0 && a.indexOf(v) === i)).map((preset) => (
                 <button
                   key={preset}
@@ -228,7 +232,7 @@ export function SavingsAccountCard({
                   onClick={() => setAmount(String(preset))}
                   className="px-3 py-1 rounded-full text-xs font-medium border border-border hover:bg-accent transition-colors"
                 >
-                  {formatCurrency(preset, { currency: account.currency })}
+                  {fmtAmt(preset)}
                 </button>
               ))}
             </div>

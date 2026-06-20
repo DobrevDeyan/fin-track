@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCurrency } from "@/contexts/CurrencyContext"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { getUserRecurringTransactions, updateRecurringTransaction } from "@/lib/firestore-recurring"
 import type { RecurringEntryDocument } from "@/lib/firestore-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -53,8 +52,7 @@ function categoryColor(cat: string) {
 
 export default function SubscriptionsPage() {
   const { user } = useAuth()
-  const { userCurrency } = useCurrency()
-  const fmt = (amount: number) => formatCurrency(amount, { currency: userCurrency })
+  const { format: fmt } = useMoney()
   const [items, setItems] = useState<RecurringTx[]>([])
   const [loading, setLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>("cost")

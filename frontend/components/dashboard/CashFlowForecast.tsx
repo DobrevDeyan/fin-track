@@ -28,14 +28,6 @@ import { useMoney } from "@/contexts/CurrencyContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
-function formatCurrency(amount: number, currency = "EUR") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
 function formatAxisDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00")
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -50,10 +42,10 @@ interface CustomTooltipProps {
   active?: boolean
   payload?: TooltipPayloadItem[]
   label?: string
-  currency?: string
 }
 
-function CustomTooltip({ active, payload, label, currency }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  const { format } = useMoney()
   if (!active || !payload?.length) return null
   const balance = payload.find((p) => p.dataKey === "balance")?.value
   const lower = payload.find((p) => p.dataKey === "lower")?.value
@@ -63,19 +55,20 @@ function CustomTooltip({ active, payload, label, currency }: CustomTooltipProps)
     <div className="rounded-lg border bg-popover text-popover-foreground p-3 shadow-md text-xs">
       <p className="font-medium mb-1">{label ? formatAxisDate(label) : ""}</p>
       <p className="text-foreground font-semibold">
-        {formatCurrency(balance ?? 0, currency)}
+        {format(balance ?? 0)}
       </p>
       {lower !== undefined && upper !== undefined && (
         <p className="text-muted-foreground">
-          Range: {formatCurrency(lower, currency)} – {formatCurrency(upper, currency)}
+          Range: {format(lower)} – {format(upper)}
         </p>
       )}
     </div>
   )
 }
-export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = "EUR" }: { userCurrency?: string }) {
+export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency?: string }) {
   const { cashFlowData } = useInsightsContext()
   const { isPro, loading: subscriptionLoading } = useSubscription()
+  const { format } = useMoney()
 
   if (subscriptionLoading) {
     return (
@@ -183,12 +176,12 @@ export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = 
                 interval={Math.floor(cashFlowData.length / 4)}
               />
               <YAxis
-                tickFormatter={(v) => formatCurrency(v, userCurrency)}
+                tickFormatter={(v) => format(v, { maximumFractionDigits: 0 })}
                 tick={{ fontSize: 10 }}
                 width={70}
                 className="text-muted-foreground"
               />
-              <Tooltip content={<CustomTooltip currency={userCurrency} />} />
+              <Tooltip content={<CustomTooltip />} />
               {/* Confidence band (upper – lower area) */}
               <Area
                 type="monotone"
@@ -235,7 +228,7 @@ export const CashFlowForecast = memo(function CashFlowForecast({ userCurrency = 
                   point.balance >= startBalance ? "text-green-600" : "text-red-500"
                 }`}
               >
-                {formatCurrency(point.balance, userCurrency)}
+                {format(point.balance)}
               </div>
             </div>
           ))}

@@ -5,8 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
 import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContext"
-import { useCurrency } from "@/contexts/CurrencyContext"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useCurrency, useMoney } from "@/contexts/CurrencyContext"
 import { Download, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -29,8 +28,8 @@ export function AchievementCard({ open, onClose }: Props) {
   const [capturing, setCapturing] = useState(false)
   const { healthScore } = useInsightsContext()
   const { currentMonthIncome, currentMonthExpenses } = useFinancialSummary()
-  const { userCurrency, displayName } = useCurrency()
-  const formatAmount = (amount: number) => formatCurrency(amount, { currency: userCurrency })
+  const { displayName } = useCurrency()
+  const { format: formatAmount } = useMoney()
 
   const tier = healthScore?.tier ?? "good"
   const score = healthScore?.score ?? 0

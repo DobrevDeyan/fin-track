@@ -15,6 +15,8 @@ import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.con
 import type { Goal, GoalFormData, ToastState } from "./types"
 import { logger } from "@/lib/utils/logger"
 import type { Timestamp } from "firebase/firestore"
+import { useMoney } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 
 interface UseGoalsOptions {
   userId: string | undefined
@@ -22,6 +24,7 @@ interface UseGoalsOptions {
 }
 
 export function useGoals({ userId, onToast }: UseGoalsOptions) {
+  const { toBase } = useMoney()
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -49,9 +52,9 @@ export function useGoals({ userId, onToast }: UseGoalsOptions) {
       if (editingGoal) {
         await updateGoal(editingGoal.id, {
           name: data.name,
-          targetAmount: data.targetAmount,
-          currentAmount: data.currentAmount,
-          currency: data.currency,
+          targetAmount: toBase(data.targetAmount),
+          currentAmount: toBase(data.currentAmount),
+          currency: BASE_CURRENCY,
           deadline: data.deadline as unknown as Timestamp,
           category: data.category,
           description: data.description,
@@ -64,9 +67,9 @@ export function useGoals({ userId, onToast }: UseGoalsOptions) {
       } else {
         await createGoal(userId, {
           name: data.name,
-          targetAmount: data.targetAmount,
-          currentAmount: data.currentAmount,
-          currency: data.currency,
+          targetAmount: toBase(data.targetAmount),
+          currentAmount: toBase(data.currentAmount),
+          currency: BASE_CURRENCY,
           deadline: data.deadline as unknown as Timestamp,
           category: data.category,
           description: data.description,
@@ -82,7 +85,7 @@ export function useGoals({ userId, onToast }: UseGoalsOptions) {
       onToast({ message: errorMessage, type: "error" })
       throw error
     }
-  }, [userId, editingGoal, loadGoals, onToast])
+  }, [userId, editingGoal, loadGoals, onToast, toBase])
 
   const handleEdit = useCallback((goal: Goal) => {
     setEditingGoal(goal)

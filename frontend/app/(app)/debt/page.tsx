@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useMemo, useId } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCurrency } from "@/contexts/CurrencyContext"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { getUserDebts, saveUserDebts } from "@/lib/firestore-debt"
 import type { DebtItem, DebtType } from "@/lib/firestore-types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -212,8 +211,7 @@ function DebtForm({
 
 export default function DebtPage() {
   const { user } = useAuth()
-  const { userCurrency } = useCurrency()
-  const formatAmount = (amount: number) => formatCurrency(amount, { currency: userCurrency })
+  const { format: formatAmount, toBase, fromBase, currency: userCurrency } = useMoney()
   const [debts, setDebts] = useState<DebtItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -244,7 +242,7 @@ export default function DebtPage() {
   }
 
   const handleAdd = (values: Omit<DebtItem, "id">) => {
-    const next = [...debts, { ...values, id: crypto.randomUUID() }]
+    const next = [...debts, { ...values, id: crypto.randomUUID(), balance: toBase(values.balance), minPayment: toBase(values.minPayment) }]
     persist(next)
     setAddOpen(false)
     toast.success("Debt added.")
@@ -252,7 +250,7 @@ export default function DebtPage() {
 
   const handleEdit = (values: Omit<DebtItem, "id">) => {
     if (!editItem) return
-    const next = debts.map((d) => (d.id === editItem.id ? { ...values, id: d.id } : d))
+    const next = debts.map((d) => (d.id === editItem.id ? { ...values, id: d.id, balance: toBase(values.balance), minPayment: toBase(values.minPayment) } : d))
     persist(next)
     setEditItem(null)
     toast.success("Debt updated.")
@@ -554,9 +552,9 @@ export default function DebtPage() {
               currency={userCurrency}
               initial={{
                 name: editItem.name,
-                balance: String(editItem.balance),
+                balance: String(fromBase(editItem.balance)),
                 interestRate: String(editItem.interestRate),
-                minPayment: String(editItem.minPayment),
+                minPayment: String(fromBase(editItem.minPayment)),
                 type: editItem.type,
               }}
               onSave={handleEdit}

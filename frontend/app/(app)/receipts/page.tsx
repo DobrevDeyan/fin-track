@@ -5,8 +5,7 @@ import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { getUserEntriesWithReceipts } from "@/lib/firestore-entries"
 import { formatDate } from "@/lib/date-utils"
-import { formatCurrency } from "@/lib/currency-utils"
-import { useCurrency } from "@/contexts/CurrencyContext"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,7 +36,7 @@ export default function ReceiptsPage() {
   const t = useTranslations("receipts")
   const tCommon = useTranslations("common")
   const { user, loading } = useAuth()
-  const { userCurrency } = useCurrency()
+  const { format } = useMoney()
   const { remaining, limit, count } = useScanQuota()
   const { isPro, loading: subLoading } = useSubscription()
 
@@ -164,7 +163,7 @@ export default function ReceiptsPage() {
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100">
                   <p className="text-white text-xs font-medium truncate">{entry.description}</p>
                   <p className="text-white/80 text-xs">
-                    {formatCurrency(entry.amount, { currency: entry.currency || userCurrency })}
+                    {format(entry.amount)}
                   </p>
                 </div>
                 {/* Type badge */}
@@ -208,7 +207,7 @@ export default function ReceiptsPage() {
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">
-                      {formatCurrency(activeLightboxEntry.amount, { currency: activeLightboxEntry.currency || userCurrency })}
+                      {format(activeLightboxEntry.amount)}
                     </span>
                     <Badge variant="outline" className="text-xs">
                       {activeLightboxEntry.category}

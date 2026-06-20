@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, useMoney } from "@/contexts/CurrencyContext";
 import { useHousehold } from "@/contexts/HouseholdContext";
 import { Button } from "@/components/ui/button";
 import { ScanLine, Users, User, Share2, UtensilsCrossed, ShoppingCart, Car, Zap, Calculator, Smile, Heart, GraduationCap, Plane, Gift, Briefcase, Wallet, CircleDot } from "lucide-react";
@@ -94,6 +94,7 @@ function DashboardInnerContent() {
     const { user } = useAuth();
     const { mode } = useUIMode();
     const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
+    const { format: formatMoney } = useMoney();
     const { householdId, household, isHouseholdMode, setIsHouseholdMode, householdEntries, householdEntriesLoading, householdEntriesError, refreshHouseholdEntries } = useHousehold();
 
     // Financial summary (single source of truth for metrics)
@@ -443,7 +444,7 @@ function DashboardInnerContent() {
                                                     : "text-rose-600 dark:text-rose-400"
                                             }`}>
                                                 {entry.type === "income" ? "+" : "−"}
-                                                {userCurrency} {entry.amount.toFixed(2)}
+                                                {formatMoney(entry.amount)}
                                             </span>
                                         </div>
                                     ))}

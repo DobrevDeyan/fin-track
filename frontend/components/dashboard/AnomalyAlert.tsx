@@ -17,8 +17,9 @@ import { cn } from "@/lib/utils"
 
 const STORAGE_KEY = "pocket-anomaly-dismissed"
 
-export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR", className }: { userCurrency?: string; className?: string }) {
+export const AnomalyAlert = memo(function AnomalyAlert({ className }: { userCurrency?: string; className?: string }) {
   const { anomalies } = useInsightsContext()
+  const { format } = useMoney()
 
   // Fingerprint = month + sorted anomaly categories — auto-resets each month or when anomalies change
   const fingerprint = `${new Date().toISOString().slice(0, 7)}-${anomalies.map(a => a.category).sort().join(",")}`
@@ -56,13 +57,13 @@ export const AnomalyAlert = memo(function AnomalyAlert({ userCurrency = "EUR", c
                 <TrendingUp className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" />
                 <span>
                   <span className="font-medium">{a.category}:</span>{" "}
-                  {formatCurrency(a.current, userCurrency)} this month
+                  {format(a.current)} this month
                   {a.average > 0 && (
                     <>
                       {" "}
                       vs{" "}
                       <span className="font-medium">
-                        {formatCurrency(a.average, userCurrency)}
+                        {format(a.average)}
                       </span>{" "}
                       average
                     </>

@@ -5,20 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Plus, PiggyBank } from "lucide-react";
 import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList";
 import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog";
-import { formatCurrency } from "@/lib/currency-utils";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
 import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, useMoney } from "@/contexts/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function SavingsSection() {
     const { userCurrency } = useCurrency();
+    const { format } = useMoney();
     const { savingsAccounts, loading, dialogOpen, editingAccount, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleAddMoney, handleWithdrawMoney, openDialog } = useSavingsContext();
 
     const t = useTranslations("savings");
 
     const totalSavings = calculateTotalSavings(savingsAccounts);
-    const description = savingsAccounts.length > 0 ? t("descriptionWithTotal", { total: formatCurrency(totalSavings, { currency: userCurrency }) }) : t("description");
+    const description = savingsAccounts.length > 0 ? t("descriptionWithTotal", { total: format(totalSavings) }) : t("description");
 
     return (
         <>

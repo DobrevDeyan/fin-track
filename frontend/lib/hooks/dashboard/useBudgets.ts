@@ -16,6 +16,8 @@ import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.con
 import { toISOString } from "@/lib/utils/timestamp"
 import type { Budget, BudgetFormData, ToastState } from "./types"
 import { logger } from "@/lib/utils/logger"
+import { useMoney } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 
 interface UseBudgetsOptions {
   userId: string | undefined
@@ -23,6 +25,7 @@ interface UseBudgetsOptions {
 }
 
 export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
+  const { toBase } = useMoney()
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -65,8 +68,8 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
         await updateBudget(editingBudget.id, {
           name: data.name,
           category: data.category,
-          amount: data.amount,
-          currency: data.currency,
+          amount: toBase(data.amount),
+          currency: BASE_CURRENCY,
           period: data.period,
           startDate: data.startDate as unknown as Timestamp,
           endDate: data.endDate as unknown as Timestamp,
@@ -81,8 +84,8 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
         await createBudget(userId, {
           name: data.name,
           category: data.category,
-          amount: data.amount,
-          currency: data.currency,
+          amount: toBase(data.amount),
+          currency: BASE_CURRENCY,
           period: data.period,
           startDate: data.startDate as unknown as Timestamp,
           endDate: data.endDate as unknown as Timestamp,
@@ -99,7 +102,7 @@ export function useBudgets({ userId, onToast }: UseBudgetsOptions) {
       onToast({ message: errorMessage, type: "error" })
       throw error
     }
-  }, [userId, editingBudget, loadBudgets, onToast])
+  }, [userId, editingBudget, loadBudgets, onToast, toBase])
 
   const handleEdit = useCallback((budget: Budget) => {
     setEditingBudget(budget)
