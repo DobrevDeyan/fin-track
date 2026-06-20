@@ -22,7 +22,8 @@ import {
 import { db } from "./firebase"
 import { UserDocument } from "./firestore-types"
 import { logger } from "./utils/logger"
-import { type SupportedCurrency } from "./constants/currency.constants"
+import { type SupportedCurrency, BASE_CURRENCY } from "./constants/currency.constants"
+import { fetchExchangeRates, convertAmount } from "./exchange-rate"
 import { createEntry } from "./firestore-entries"
 
 /**
@@ -118,10 +119,26 @@ export async function completeOnboarding(
   try {
     const userRef = doc(db, "users", userId)
 
+    // Stored amounts are canonical base currency (EUR). The wizard collects the
+    // budget/salary in the user's display currency, so convert before persisting
+    // (identity for EUR users; corrects USD users).
+    let baseMonthlyBudget = data.monthlyBudget
+    try {
+      const rates = await fetchExchangeRates()
+      baseMonthlyBudget = convertAmount(
+        data.monthlyBudget,
+        data.currency as SupportedCurrency,
+        BASE_CURRENCY,
+        rates
+      )
+    } catch (rateErr) {
+      logger.warn("Onboarding: exchange-rate fetch failed; storing budget unconverted", { rateErr })
+    }
+
     await updateDoc(userRef, {
       displayName: data.displayName,
       currency: data.currency,
-      monthlyBudget: data.monthlyBudget,
+      monthlyBudget: baseMonthlyBudget,
       onboardingCompleted: true,
       updatedAt: serverTimestamp(),
     })
@@ -166,7 +183,7 @@ export async function completeOnboarding(
       await setDoc(recurringRef, {
         userId,
         name: "Monthly Salary",
-        amount: data.monthlyBudget,
+        amount: baseMonthlyBudget,
         type: "income",
         category: "Salary",
         frequency: "monthly",
@@ -179,8 +196,8 @@ export async function completeOnboarding(
       if (salaryIsToday) {
         await createEntry(userId, {
           type: "income",
-          amount: data.monthlyBudget,
-          currency: data.currency,
+          amount: baseMonthlyBudget,
+          currency: BASE_CURRENCY,
           category: "Salary",
           description: "Monthly Salary",
           date: today,

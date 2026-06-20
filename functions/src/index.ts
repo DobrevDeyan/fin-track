@@ -391,6 +391,10 @@ async function sendPushToUser(
   userId: string,
   notification: { title: string; body: string; url?: string; tag?: string; type?: string }
 ): Promise<void> {
+  // Persist to the in-app inbox FIRST, regardless of whether a push is delivered —
+  // users who never enabled browser push must still see notifications (review N1).
+  await saveNotification(userId, notification);
+
   const userSnap = await db.collection("users").doc(userId).get();
   const tokens: string[] = userSnap.data()?.fcmTokens ?? [];
   if (tokens.length === 0) return;
@@ -450,9 +454,6 @@ async function sendPushToUser(
       fcmTokens: admin.firestore.FieldValue.arrayRemove(...staleTokens),
     });
   }
-
-  // Persist to in-app inbox regardless of push delivery
-  await saveNotification(userId, notification);
 }
 
 // ─── Budget Alert Trigger ─────────────────────────────────────────────────────
@@ -471,8 +472,6 @@ export const checkBudgetOnEntry = onDocumentCreated(
     const userId = data.userId as string;
     const entryDate: admin.firestore.Timestamp = data.date;
     const entryTs = entryDate.toDate();
-    // "YYYY-MM" key used to track which alerts have already been sent this period
-    const monthKey = `${entryTs.getFullYear()}-${String(entryTs.getMonth() + 1).padStart(2, "0")}`;
 
     // Fetch all active budgets for this user
     const budgetsSnap = await db
@@ -489,6 +488,10 @@ export const checkBudgetOnEntry = onDocumentCreated(
 
         const budgetStart: admin.firestore.Timestamp = budget.startDate;
         const budgetEnd: admin.firestore.Timestamp = budget.endDate;
+        // Dedup key tied to THIS budget period instance (its startDate), so alert
+        // state resets when the budget renews — not every calendar month. Fixes
+        // weekly/yearly budgets re-alerting every month (review B3).
+        const periodKey = budgetStart.toDate().toISOString().slice(0, 10);
 
         // Skip if the triggering entry falls outside this budget's period
         if (entryTs < budgetStart.toDate() || entryTs > budgetEnd.toDate()) continue;
@@ -518,7 +521,7 @@ export const checkBudgetOnEntry = onDocumentCreated(
         // Dedup: skip if we already sent an alert at this level (or higher) this month.
         // lastAlertedMonthKey / lastAlertedLevel are written below when we send.
         if (
-          budget.lastAlertedMonthKey === monthKey &&
+          budget.lastAlertedPeriodKey === periodKey &&
           (budget.lastAlertedLevel ?? 0) >= alertLevel
         ) continue;
 
@@ -533,7 +536,7 @@ export const checkBudgetOnEntry = onDocumentCreated(
 
         // Mark this alert level as sent so the next expense doesn't re-notify
         await budgetDoc.ref.update({
-          lastAlertedMonthKey: monthKey,
+          lastAlertedPeriodKey: periodKey,
           lastAlertedLevel: alertLevel,
         });
       } catch (err) {

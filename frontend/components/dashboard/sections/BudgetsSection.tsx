@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Plus, Wallet } from "lucide-react";
@@ -7,19 +8,63 @@ import { BudgetList } from "@/components/dashboard/BudgetList";
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { getUserEntriesByDateRange } from "@/lib/firestore-entries";
+import { toISOString } from "@/lib/utils/timestamp";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Entry } from "@/lib/hooks/dashboard";
 
 interface BudgetsSectionProps {
-    entries: Entry[];
     categories: string[];
 }
 
-export function BudgetsSection({ entries, categories }: BudgetsSectionProps) {
+export function BudgetsSection({ categories }: BudgetsSectionProps) {
+    const { user } = useAuth();
     const { userCurrency } = useCurrency();
     const { budgets, loading, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleRenew, openDialog } = useBudgetsContext();
 
     const t = useTranslations("budgets");
+
+    // Budget "spent" must reflect ALL transactions within each budget's period —
+    // not just the most-recently-loaded page of entries. Load entries for the
+    // union of every budget's date range in a single ranged query and let
+    // BudgetList bucket them per budget. (Previously this used the dashboard's
+    // 20-entry list, which silently undercounted spending — see review B1.)
+    const [spendEntries, setSpendEntries] = useState<Entry[]>([]);
+
+    useEffect(() => {
+        if (!user || budgets.length === 0) {
+            setSpendEntries([]);
+            return;
+        }
+        const starts = budgets.map((b) => new Date(b.startDate).getTime()).filter((n) => !Number.isNaN(n));
+        const ends = budgets.map((b) => new Date(b.endDate).getTime()).filter((n) => !Number.isNaN(n));
+        if (starts.length === 0 || ends.length === 0) return;
+        const minStart = new Date(Math.min(...starts)).toISOString().slice(0, 10);
+        const maxEnd = new Date(Math.max(...ends)).toISOString().slice(0, 10);
+
+        let cancelled = false;
+        getUserEntriesByDateRange(user.uid, minStart, maxEnd)
+            .then((docs) => {
+                if (cancelled) return;
+                setSpendEntries(
+                    docs.map((d) => ({
+                        id: d.id,
+                        description: d.description,
+                        amount: d.amount,
+                        category: d.category,
+                        date: toISOString(d.date) || "",
+                        type: d.type,
+                    }))
+                );
+            })
+            .catch(() => {
+                if (!cancelled) setSpendEntries([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [user, budgets]);
 
     return (
         <>
@@ -56,7 +101,7 @@ export function BudgetsSection({ entries, categories }: BudgetsSectionProps) {
                             </Button>
                         </div>
                     ) : (
-                        <BudgetList budgets={budgets} entries={entries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />
+                        <BudgetList budgets={budgets} entries={spendEntries} categories={categories} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onRenew={handleRenew} />
                     )}
                 </div>
             </div>

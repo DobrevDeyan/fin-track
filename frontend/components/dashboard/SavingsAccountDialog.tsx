@@ -24,6 +24,7 @@ import { SUPPORTED_CURRENCIES, CURRENCY_DISPLAY_NAMES } from "@/lib/constants/cu
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
 import { useTranslations } from "next-intl"
+import { useMoney } from "@/contexts/CurrencyContext"
 
 
 const currencies = SUPPORTED_CURRENCIES
@@ -95,12 +96,15 @@ export function SavingsAccountDialog({
   const [balanceError, setBalanceError] = useState("")
   const t = useTranslations("savings")
   const tCommon = useTranslations("common")
+  // Stored balances are canonical base currency (EUR); the form works in the
+  // user's display currency. Convert display->base on save, base->display on edit.
+  const { toBase, fromBase } = useMoney()
 
   // Populate form when editing
   useEffect(() => {
     if (editingAccount) {
       setName(editingAccount.name)
-      setBalance(editingAccount.balance.toString())
+      setBalance(fromBase(editingAccount.balance).toFixed(2))
       setCurrency(editingAccount.currency)
       setDescription(editingAccount.description || "")
       setColor(editingAccount.color || "#000000")
@@ -139,7 +143,7 @@ export function SavingsAccountDialog({
     try {
       await onSubmit({
         name: name.trim(),
-        balance: balanceNum,
+        balance: toBase(balanceNum),
         currency,
         description: description.trim() || undefined,
         color,

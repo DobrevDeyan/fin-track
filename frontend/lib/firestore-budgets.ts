@@ -364,6 +364,7 @@ export async function renewBudget(
   if (period === "monthly") {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1)
     endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    endDate.setHours(23, 59, 59, 999)
   } else if (period === "weekly") {
     const day = now.getDay()
     const diff = day === 0 ? -6 : 1 - day // Monday as week start
@@ -376,6 +377,7 @@ export async function renewBudget(
   } else {
     startDate = new Date(now.getFullYear(), 0, 1)
     endDate = new Date(now.getFullYear(), 11, 31)
+    endDate.setHours(23, 59, 59, 999)
   }
 
   await updateBudget(budgetId, {

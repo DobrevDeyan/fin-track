@@ -18,6 +18,7 @@ import {
   serverTimestamp,
   getDoc,
   increment,
+  runTransaction,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { SavingsAccountDocument } from "./firestore-types"
@@ -224,20 +225,21 @@ export async function withdrawFromSavingsAccount(
 ): Promise<void> {
   try {
     const accountRef = doc(db, "savingsAccounts", accountId)
-    const accountDoc = await getDoc(accountRef)
-    
-    if (!accountDoc.exists()) {
-      throw new Error("Savings account not found")
-    }
-    
-    const currentBalance = accountDoc.data().balance as number
-    if (currentBalance < amount) {
-      throw new Error("Insufficient balance in savings account")
-    }
-    
-    await updateDoc(accountRef, {
-      balance: increment(-amount),
-      updatedAt: serverTimestamp(),
+    // Read-check-write inside a transaction so two concurrent withdrawals can't
+    // both pass the balance check and overdraw the account (see review S3).
+    await runTransaction(db, async (txn) => {
+      const accountDoc = await txn.get(accountRef)
+      if (!accountDoc.exists()) {
+        throw new Error("Savings account not found")
+      }
+      const currentBalance = accountDoc.data().balance as number
+      if (currentBalance < amount) {
+        throw new Error("Insufficient balance in savings account")
+      }
+      txn.update(accountRef, {
+        balance: increment(-amount),
+        updatedAt: serverTimestamp(),
+      })
     })
   } catch (error) {
     logger.error("Error withdrawing from savings account", error)

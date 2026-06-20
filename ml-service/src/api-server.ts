@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import { processDocument } from './document-ai-handler';
 import insightsRouter from './insights-routes';
 import { requireAuth } from './middleware/auth';
-import { checkSubscriptionTier, checkAndIncrementScanQuota } from './firestore-quota';
+import { checkSubscriptionTier, checkAndIncrementScanQuota, refundScanQuota } from './firestore-quota';
 import * as fs from 'fs';
 
 const app = express();
@@ -179,6 +179,12 @@ app.post('/api/upload-bill', uploadLimiter, requireAuth, upload.single('billFile
         // Ensure file is cleaned up even on error
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
+        }
+
+        // The scan was already counted before Document AI ran; since it failed,
+        // refund the quota so users aren't charged for a failure (review RC1).
+        if (req.uid) {
+            await refundScanQuota(req.uid);
         }
 
         console.error('Error processing document:', error);

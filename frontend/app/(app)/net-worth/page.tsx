@@ -13,7 +13,7 @@ import {
   type AssetType,
   type CreateAssetInput,
 } from "@/lib/firestore-networth"
-import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
+import { BASE_CURRENCY, SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -128,7 +128,7 @@ export default function NetWorthPage() {
     if (!user || submitting) return
     try {
       setSubmitting(true)
-      const formToSave = { ...form, value: toBase(form.value), currency: BASE_CURRENCY }
+      const formToSave = { ...form, value: toBase(form.value, form.currency as SupportedCurrency), currency: BASE_CURRENCY }
       if (editingAsset) {
         await updateAsset(editingAsset.id, formToSave)
         toast.success(t("updateSuccess"))
@@ -318,10 +318,9 @@ export default function NetWorthPage() {
                 <Select value={form.currency} onValueChange={(v) => setForm((f) => ({ ...f, currency: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="BGN">BGN</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

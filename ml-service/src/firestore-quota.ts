@@ -116,3 +116,31 @@ export async function checkAndIncrementScanQuota(
     return { allowed: false, count: 0, limit };
   }
 }
+
+/**
+ * Refund one scan to the user's monthly counter — used when a scan was counted
+ * (checkAndIncrementScanQuota succeeded) but the Document AI call then failed,
+ * so the user isn't charged a scan for a failure (review RC1).
+ */
+export async function refundScanQuota(uid: string): Promise<void> {
+  const docRef = db.collection('scanUsage').doc(uid);
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  try {
+    await db.runTransaction(async (tx) => {
+      const doc = await tx.get(docRef);
+      if (!doc.exists) return;
+      const data = doc.data()!;
+      // Only refund within the same month the scan was counted.
+      if (data.month !== currentMonth) return;
+      const count = data.count ?? 0;
+      if (count <= 0) return;
+      tx.update(docRef, {
+        count: count - 1,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (err: any) {
+    console.error('[quota] refundScanQuota error:', err.message);
+    // Non-fatal — a failed refund just leaves the (already-counted) failed scan.
+  }
+}

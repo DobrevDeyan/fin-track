@@ -38,6 +38,7 @@ export function useEntries({
   const [entries, setEntries] = useState<Entry[]>([])
   const [filteredEntries, setFilteredEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null)
 
@@ -53,6 +54,7 @@ export function useEntries({
     if (!userId) return
 
     try {
+      setError(null)
       if (refresh) {
         setLoading(true)
         setLastVisible(null)
@@ -81,8 +83,10 @@ export function useEntries({
       setFilteredEntries(convertedEntries)
       setLastVisible(newLastVisible)
       setHasMore(firestoreEntries.length === 20)
-    } catch (error) {
-      logger.error("Error loading entries", error)
+    } catch (err) {
+      logger.error("Error loading entries", err)
+      setError(err instanceof Error ? err : new Error("Failed to load entries"))
+      toast.error("Failed to load transactions. Pull to refresh or try again.")
     } finally {
       setLoading(false)
     }
@@ -151,22 +155,6 @@ export function useEntries({
         toast.success(SUCCESS_MESSAGES.ENTRY_UPDATED)
         setEditingEntry(null)
       } else {
-        // Handle automated savings/goals transfers for "expense" types
-        // where the category is actually a savings account or a goal
-        if (data.type === "expense" && data.categoryId) {
-          try {
-            if (data.categoryId.startsWith("savings_")) {
-              const accountId = data.categoryId.replace("savings_", "");
-              // Adding to saving (moving money into the account) — store in EUR
-              await addToSavingsAccount(accountId, toBaseCurrency(data.amount));
-              if (onSavingsReload) await onSavingsReload();
-            }
-          } catch (transferError) {
-             logger.error("Error processing auto-transfer", transferError);
-             toast.error("Transaction added but auto-transfer to Savings/Goal failed.");
-          }
-        }
-
         // Standard entry creation — amount stored canonically in EUR
         await createEntry(userId, {
           type: data.type,
@@ -180,7 +168,22 @@ export function useEntries({
           receiptUrl: data.receiptUrl,
           categoryId: data.categoryId,
         })
-        
+
+        // Only AFTER the entry is safely recorded, run any automated savings
+        // transfer (an expense whose category is a savings account). Doing this
+        // after creation ensures we never move money into savings without a
+        // matching expense entry (see review F2).
+        if (data.type === "expense" && data.categoryId?.startsWith("savings_")) {
+          try {
+            const accountId = data.categoryId.replace("savings_", "")
+            await addToSavingsAccount(accountId, toBaseCurrency(data.amount))
+            if (onSavingsReload) await onSavingsReload()
+          } catch (transferError) {
+            logger.error("Error processing auto-transfer to savings", transferError)
+            toast.error("Transaction saved, but moving it into the savings account failed — adjust the balance manually.")
+          }
+        }
+
         await loadEntries()
         if (onSummaryRefresh) await onSummaryRefresh()
         toast.success(SUCCESS_MESSAGES.ENTRY_ADDED(data.type))
@@ -242,6 +245,7 @@ export function useEntries({
     filteredEntries,
     setFilteredEntries,
     loading,
+    error,
     dialogOpen,
     setDialogOpen,
     editingEntry,

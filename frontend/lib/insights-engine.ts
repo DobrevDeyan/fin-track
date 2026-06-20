@@ -315,7 +315,24 @@ export function generateCashFlowForecast(
     : []
   if (activeCheck.length === 0 || pastKeysCheck.length < 2) return []
 
-  // Average daily spend from last 3 months
+  // Recurring expenses are applied below as discrete dated events, so they must
+  // NOT also be baked into the "average daily spend" baseline or they'd be
+  // double-counted (see review RP1). Subtract the monthly-equivalent recurring
+  // expense from each historical month to leave only discretionary spend.
+  const monthlyRecurringExpense = activeCheck
+    .filter((r) => r.type === "expense")
+    .reduce(
+      (s, r) =>
+        s +
+        (r.frequency === "weekly"
+          ? r.amount * 4.33
+          : r.frequency === "yearly"
+          ? r.amount / 12
+          : r.amount),
+      0
+    )
+
+  // Average daily DISCRETIONARY spend from last 3 months
   let avgDailySpend = 0
   let sdDailySpend = 0
 
@@ -323,9 +340,9 @@ export function generateCashFlowForecast(
     const currentKey = getCurrentMonthKey()
     const pastKeys = getLastNMonthKeys(summary.months, 3, currentKey)
     if (pastKeys.length > 0) {
-      const monthlyExpenses = pastKeys.map((k) => summary.months[k].expenses)
-      avgDailySpend = mean(monthlyExpenses) / 30
-      sdDailySpend = stdDev(monthlyExpenses) / 30
+      const discretionary = pastKeys.map((k) => Math.max(0, summary.months[k].expenses - monthlyRecurringExpense))
+      avgDailySpend = mean(discretionary) / 30
+      sdDailySpend = stdDev(discretionary) / 30
     }
   }
 

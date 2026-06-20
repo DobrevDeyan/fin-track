@@ -11,6 +11,9 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { useRecurringContext } from "@/contexts/dashboard/RecurringContext";
 
 import { useEntries } from "@/lib/hooks/dashboard";
+import type { Entry } from "@/lib/hooks/dashboard";
+import { getUserEntriesByDateRange } from "@/lib/firestore-entries";
+import { toISOString } from "@/lib/utils/timestamp";
 
 /**
  * Inner content that uses the dashboard contexts
@@ -27,18 +30,50 @@ function CalendarInnerContent() {
     const [prefilledDate, setPrefilledDate] = useState<string>("");
     const [dialogOpen, setDialogOpen] = useState(false);
 
+    // The calendar is a historical month-grid view, so it must show entries far
+    // beyond the most-recent page. Load a wide range (last 12 months → next month)
+    // via a ranged query rather than the 20-entry useEntries list (see review CAL1).
+    const [calendarEntries, setCalendarEntries] = useState<Entry[]>([]);
+    const [calLoading, setCalLoading] = useState(true);
+
+    // useEntries is kept only for its add/create handler (which updates the summary).
     const entriesHook = useEntries({
         userId: user?.uid,
         userCurrency
     });
 
+    const loadCalendarEntries = useCallback(async () => {
+        if (!user) return;
+        setCalLoading(true);
+        try {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth() - 12, 1).toISOString().slice(0, 10);
+            const end = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().slice(0, 10);
+            const docs = await getUserEntriesByDateRange(user.uid, start, end);
+            setCalendarEntries(
+                docs.map((d) => ({
+                    id: d.id,
+                    description: d.description,
+                    amount: d.amount,
+                    category: d.category,
+                    date: toISOString(d.date) || "",
+                    type: d.type,
+                }))
+            );
+        } catch {
+            setCalendarEntries([]);
+        } finally {
+            setCalLoading(false);
+        }
+    }, [user]);
+
     useEffect(() => {
         if (user && !hasLoadedRef.current) {
             hasLoadedRef.current = true;
-            entriesHook.loadEntries();
+            loadCalendarEntries();
             ensureRecurringLoaded();
         }
-    }, [user, entriesHook.loadEntries, ensureRecurringLoaded]);
+    }, [user, loadCalendarEntries, ensureRecurringLoaded]);
 
     const handleAddTransaction = useCallback((dateStr: string) => {
         setPrefilledDate(dateStr);
@@ -53,7 +88,7 @@ function CalendarInnerContent() {
     }, []);
 
     return (
-        <PullToRefresh onRefresh={async () => { await entriesHook.loadEntries(); await loadRecurringTransactions(); }}>
+        <PullToRefresh onRefresh={async () => { await loadCalendarEntries(); await loadRecurringTransactions(); }}>
         <div className="min-h-screen bg-background overflow-x-hidden">
             <div className="container py-8 px-4 sm:px-6">
                 {/* Header */}
@@ -65,7 +100,7 @@ function CalendarInnerContent() {
                 </div>
 
                 {/* Loading state */}
-                {entriesHook.loading ? (
+                {calLoading ? (
                     <div className="flex items-center justify-center py-24">
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -73,7 +108,7 @@ function CalendarInnerContent() {
                         </div>
                     </div>
                 ) : (
-                    <CalendarView entries={entriesHook.entries} recurringTransactions={recurringTransactions} userCurrency={userCurrency} onAddTransaction={handleAddTransaction} />
+                    <CalendarView entries={calendarEntries} recurringTransactions={recurringTransactions} userCurrency={userCurrency} onAddTransaction={handleAddTransaction} />
                 )}
 
                 {/* Add Transaction Dialog */}
@@ -82,6 +117,7 @@ function CalendarInnerContent() {
                     onOpenChange={handleDialogClose}
                     onSubmit={async (data) => {
                         await entriesHook.handleAdd(data);
+                        await loadCalendarEntries();
                         setDialogOpen(false);
                     }}
                     editingEntry={null}

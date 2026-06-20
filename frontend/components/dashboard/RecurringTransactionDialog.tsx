@@ -24,6 +24,7 @@ import { calculateNextDate } from "@/lib/firestore-recurring"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
 import { useTranslations } from "next-intl"
+import { useMoney } from "@/contexts/CurrencyContext"
 
 
 interface RecurringTransactionData {
@@ -62,6 +63,9 @@ export function RecurringTransactionDialog({
   const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount", string>>>({})
   const t = useTranslations("recurring")
   const tCommon = useTranslations("common")
+  // Stored amounts are canonical base currency (EUR); the form works in the
+  // user's display currency. Convert base->display on edit, display->base on save.
+  const { toBase, fromBase } = useMoney()
 
   const validate = () => {
     const e: typeof errors = {}
@@ -76,7 +80,7 @@ export function RecurringTransactionDialog({
   useEffect(() => {
     if (editingRecurring) {
       setName(editingRecurring.name)
-      setAmount(editingRecurring.amount.toString())
+      setAmount(fromBase(editingRecurring.amount).toFixed(2))
       setType(editingRecurring.type)
       setCategory(editingRecurring.category)
       setFrequency(editingRecurring.frequency)
@@ -117,7 +121,7 @@ export function RecurringTransactionDialog({
     try {
       await onSubmit({
         name,
-        amount: parseFloat(amount),
+        amount: toBase(parseFloat(amount)),
         type,
         category,
         frequency,

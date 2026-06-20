@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
   Landmark, Plus, Trash2, TrendingDown, Trophy, CalendarCheck,
-  Loader2, Snowflake, Flame, Pencil,
+  Loader2, Snowflake, Flame, Pencil, AlertTriangle,
 } from "lucide-react"
 import dynamic from "next/dynamic"
 
@@ -58,12 +58,13 @@ const DEBT_TYPE_COLORS: Record<DebtType, string> = {
 interface PayoffResult {
   months: number
   totalInterest: number
+  neverPaysOff: boolean
   timeline: { month: number; label: string; totalBalance: number }[]
 }
 
 function calculatePayoff(debts: DebtItem[], extraPayment: number, strategy: Strategy): PayoffResult {
   if (debts.length === 0 || debts.every((d) => d.balance <= 0)) {
-    return { months: 0, totalInterest: 0, timeline: [] }
+    return { months: 0, totalInterest: 0, neverPaysOff: false, timeline: [] }
   }
 
   // Work on mutable copies
@@ -119,7 +120,10 @@ function calculatePayoff(debts: DebtItem[], extraPayment: number, strategy: Stra
     }
   }
 
-  return { months: month, totalInterest: Math.round(totalInterest), timeline }
+  // If the loop hit the cap with balances still outstanding, these inputs never
+  // amortise (interest outpaces payments) — surface that instead of a bogus date.
+  const neverPaysOff = balances.some((d) => d.balance > 0.01)
+  return { months: month, totalInterest: Math.round(totalInterest), neverPaysOff, timeline }
 }
 
 function debtFreeDate(months: number): string {
@@ -267,6 +271,13 @@ export default function DebtPage() {
   )
   const totalMinPayment = useMemo(
     () => debts.reduce((s, d) => s + d.minPayment, 0),
+    [debts]
+  )
+
+  // Debts whose minimum payment doesn't even cover one month of interest — these
+  // are why a payoff plan may never converge (see review D1).
+  const underwaterDebts = useMemo(
+    () => debts.filter((d) => d.balance > 0 && (d.balance * d.interestRate) / 1200 >= d.minPayment),
     [debts]
   )
 
@@ -420,7 +431,22 @@ export default function DebtPage() {
           </Card>
 
           {/* Payoff headline */}
-          {result.months > 0 && (
+          {result.neverPaysOff ? (
+            <Card className="bg-red-500/5 border-red-500/30">
+              <CardContent className="p-5 flex items-start gap-4">
+                <AlertTriangle className="h-8 w-8 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-lg font-bold text-red-600">These payments won&apos;t clear your debt</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {underwaterDebts.length > 0
+                      ? `The minimum payment on ${underwaterDebts.map((d) => d.name).join(", ")} is less than its monthly interest, so the balance keeps growing. `
+                      : "Your monthly payments don't cover the interest, so the balance keeps growing. "}
+                    Add an extra monthly payment above to find a real payoff date.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : result.months > 0 ? (
             <Card className="bg-emerald-500/5 border-emerald-500/20">
               <CardContent className="p-5 flex items-start gap-4">
                 <Trophy className="h-8 w-8 text-emerald-500 shrink-0 mt-0.5" />
@@ -442,10 +468,10 @@ export default function DebtPage() {
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
           {/* Timeline chart */}
-          {result.timeline.length > 1 && (
+          {!result.neverPaysOff && result.timeline.length > 1 && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
@@ -491,7 +517,7 @@ export default function DebtPage() {
           )}
 
           {/* Strategy comparison */}
-          {avalancheResult.months > 0 && snowballResult.months > 0 && (
+          {!result.neverPaysOff && avalancheResult.months > 0 && snowballResult.months > 0 && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Strategy comparison</CardTitle>

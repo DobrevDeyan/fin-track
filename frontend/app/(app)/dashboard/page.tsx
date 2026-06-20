@@ -526,7 +526,7 @@ function DashboardInnerContent() {
                         </TabsContent>
                         <TabsContent value="budgets" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
                             <SectionErrorBoundary label="Budgets">
-                                <BudgetsSection entries={entriesHook.entries} categories={expenseCategories} />
+                                <BudgetsSection categories={expenseCategories} />
                             </SectionErrorBoundary>
                         </TabsContent>
                         <TabsContent value="recurring" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
