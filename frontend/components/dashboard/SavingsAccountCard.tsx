@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Plus, Minus } from "lucide-react"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import {
   Dialog,

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { useTranslations } from "next-intl"
 
 interface BudgetProgressBarProps {
@@ -11,8 +11,10 @@ interface BudgetProgressBarProps {
   userCurrency: string
 }
 
-export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses, userCurrency }: BudgetProgressBarProps) {
+export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses }: BudgetProgressBarProps) {
   const t = useTranslations("dashboard")
+  // monthlyBudget / currentMonthExpenses are canonical EUR; convert at render.
+  const { format } = useMoney()
 
   const spent = currentMonthExpenses
 
@@ -33,8 +35,8 @@ export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses, userCur
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-muted-foreground">{t("budgetThisMonth")}</h3>
           <span className="text-sm font-semibold">
-            {formatCurrency(spent, { currency: userCurrency })}
-            {hasBudget && ` / ${formatCurrency(monthlyBudget, { currency: userCurrency })}`}
+            {format(spent)}
+            {hasBudget && ` / ${format(monthlyBudget)}`}
           </span>
         </div>
 
@@ -49,8 +51,8 @@ export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses, userCur
             {!hasBudget
               ? t("budgetNotSet")
               : isOverBudget
-              ? t("overBudgetBy", { amount: formatCurrency(spent - monthlyBudget, { currency: userCurrency }) })
-              : t("remainingBudget", { amount: formatCurrency(remaining, { currency: userCurrency }) })}
+              ? t("overBudgetBy", { amount: format(spent - monthlyBudget) })
+              : t("remainingBudget", { amount: format(remaining) })}
           </span>
           {hasBudget && <span className="text-muted-foreground">{Math.round(percentage)}%</span>}
         </div>

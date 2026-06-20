@@ -4,7 +4,7 @@ import { List, RowComponentProps } from "react-window"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, FileImage } from "lucide-react"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { formatDateCompact } from "@/lib/date-utils"
 import { getCategoryColor } from "@/lib/constants/category.constants"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
@@ -47,6 +47,8 @@ export function VirtualizedTransactionTable({
   height = 600,
   itemSize = 80,
 }: VirtualizedTransactionTableProps) {
+  const { format } = useMoney()
+
   // Row component for the new react-window API
   const TransactionRow = ({ index, style, ariaAttributes }: RowComponentProps<RowProps>) => {
     const transaction = transactions[index]
@@ -118,7 +120,7 @@ export function VirtualizedTransactionTable({
           className={`w-32 flex-shrink-0 text-right font-semibold ${getTransactionTypeColor(transaction.type)}`}
         >
           {transaction.type === "income" ? "+" : "-"}
-          {formatCurrency(transaction.amount, { currency: transaction.currency || "USD" })}
+          {format(transaction.amount)}
         </div>
 
         {/* Actions */}

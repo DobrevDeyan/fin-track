@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Calendar, Repeat } from "lucide-react"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
 import { useTranslations } from "next-intl"
 import type { BudgetPeriod } from "@/lib/constants/budget.constants"
@@ -21,10 +21,11 @@ export function RecurringTransactionCard({
   recurring,
   onEdit,
   onDelete,
-  userCurrency = "EUR",
+  userCurrency,
 }: RecurringTransactionCardProps) {
   const t = useTranslations("recurring")
   const tCommon = useTranslations("common")
+  const { format } = useMoney()
 
   const nextDate = recurring.nextDate.toDate()
   const formattedDate = nextDate.toLocaleDateString(undefined, {
@@ -58,7 +59,7 @@ export function RecurringTransactionCard({
             <span className="text-sm text-muted-foreground">{tCommon("amount")}</span>
             <span className={`font-semibold ${getTransactionTypeColor(recurring.type)}`}>
               {recurring.type === "expense" ? "-" : "+"}
-              {formatCurrency(recurring.amount, { currency: userCurrency })}
+              {format(recurring.amount)}
             </span>
           </div>
 

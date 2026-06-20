@@ -8,8 +8,10 @@
 import type { SupportedCurrency } from "@/lib/constants/currency.constants"
 
 const CACHE_KEY = "fin_track_exchange_rate"
-// Proxied through our own API route to avoid CORS issues with direct browser requests
-const FRANKFURTER_URL = "/api/exchange-rate"
+// Frankfurter is a public, CORS-enabled API (ECB data, no key required), so we call
+// it directly from the browser. A Next.js API route can't serve this on a static
+// export deployed to Firebase Hosting. The CSP `connect-src` already allows it.
+const FRANKFURTER_URL = "https://api.frankfurter.app/latest?from=EUR&to=USD"
 
 interface RateCache {
   date: string

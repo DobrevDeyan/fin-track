@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Target, Calendar, Plus } from "lucide-react"
 import { GoalDocument } from "@/lib/firestore-types"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
 import { getBadgeStatusColor } from "@/lib/constants/ui.constants"
 import { motion } from "framer-motion"
@@ -17,6 +17,7 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) {
+  const { format } = useMoney()
   const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount)
   const remaining = goal.targetAmount - goal.currentAmount
   const isComplete = progress >= 100
@@ -81,18 +82,18 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Current</span>
-              <p className="font-semibold">{formatCurrency(goal.currentAmount, { currency: goal.currency })}</p>
+              <p className="font-semibold">{format(goal.currentAmount)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Target</span>
-              <p className="font-semibold">{formatCurrency(goal.targetAmount, { currency: goal.currency })}</p>
+              <p className="font-semibold">{format(goal.targetAmount)}</p>
             </div>
           </div>
 
           {remaining > 0 && (
             <div className="text-sm">
               <span className="text-muted-foreground">Remaining: </span>
-              <span className="font-semibold">{formatCurrency(remaining, { currency: goal.currency })}</span>
+              <span className="font-semibold">{format(remaining)}</span>
             </div>
           )}
 

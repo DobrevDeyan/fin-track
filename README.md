@@ -26,7 +26,7 @@ A privacy-first personal finance PWA with AI-powered insights, receipt scanning,
 cd frontend && npm install
 
 # 2. Configure (copy env vars from docs/SETUP.md)
-cp frontend/.env.example frontend/.env.local
+cp frontend/.env.local.example frontend/.env.local
 
 # 3. Run
 cd frontend && npm run dev        # http://localhost:3001

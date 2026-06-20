@@ -24,6 +24,7 @@ import { memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Info } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 

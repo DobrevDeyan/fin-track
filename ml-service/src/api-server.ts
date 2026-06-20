@@ -11,6 +11,11 @@ import * as fs from 'fs';
 
 const app = express();
 
+// Cloud Run terminates TLS at Google's front end and forwards the real client IP
+// in X-Forwarded-For. Trust exactly one proxy hop so express-rate-limit keys on the
+// actual client IP instead of bucketing every user under the proxy's address.
+app.set('trust proxy', 1);
+
 // Configure CORS - supports comma-separated origins for multiple environments
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3001')
     .split(',')

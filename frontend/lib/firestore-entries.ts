@@ -360,6 +360,17 @@ export async function updateEntry(
   try {
     const entryRef = doc(db, "entries", entryId)
 
+    // Self-heal: if the caller didn't supply the previous state, load it from
+    // Firestore so an amount/category/date edit can never silently desync the
+    // financial summary (the staleness check only compares entry counts).
+    if (!oldEntry) {
+      const existingSnap = await getDoc(entryRef)
+      if (existingSnap.exists()) {
+        const d = existingSnap.data() as EntryDocument
+        oldEntry = { type: d.type, amount: d.amount, category: d.category, date: d.date, userId: d.userId }
+      }
+    }
+
     const cleanUpdateData: EntryUpdateData = {
       updatedAt: serverTimestamp(),
     }
@@ -466,7 +477,14 @@ export async function updateEntry(
         }
       }
 
-      batch.update(summaryRef, combinedUpdates)
+      // Resilient write: initialise the summary first if it's missing, then use
+      // set+merge so increments never fail with "No document to update".
+      const summarySnap = await getDoc(summaryRef)
+      if (!summarySnap.exists()) {
+        const { initializeFinancialSummary } = await import("./firestore-summary")
+        await initializeFinancialSummary(oldEntry.userId)
+      }
+      batch.set(summaryRef, combinedUpdates, { merge: true })
       await batch.commit()
     } else {
       // No old entry data - just update the entry without summary

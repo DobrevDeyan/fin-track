@@ -12,15 +12,8 @@ import { memo, useState, useCallback } from "react"
 import { AlertTriangle, X, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { cn } from "@/lib/utils"
-
-function formatCurrency(amount: number, currency = "EUR") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 const STORAGE_KEY = "pocket-anomaly-dismissed"
 

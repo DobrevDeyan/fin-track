@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Target, Calendar, Plus } from "lucide-react"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
 import { motion } from "framer-motion"
 import { useTranslations } from "next-intl"
@@ -21,6 +21,7 @@ interface Props {
 export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props) {
   const t = useTranslations("goals")
   const tCommon = useTranslations("common")
+  const { format } = useMoney()
   const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount)
   const remaining = goal.targetAmount - goal.currentAmount
   const isComplete = progress >= 100
@@ -87,18 +88,18 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">{t("current")}</span>
-              <p className="font-semibold">{formatCurrency(goal.currentAmount, { currency: goal.currency })}</p>
+              <p className="font-semibold">{format(goal.currentAmount)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">{t("target")}</span>
-              <p className="font-semibold">{formatCurrency(goal.targetAmount, { currency: goal.currency })}</p>
+              <p className="font-semibold">{format(goal.targetAmount)}</p>
             </div>
           </div>
 
           {remaining > 0 && (
             <p className="text-sm">
               <span className="text-muted-foreground">{t("remainingAmount")}: </span>
-              <span className="font-semibold">{formatCurrency(remaining, { currency: goal.currency })}</span>
+              <span className="font-semibold">{format(remaining)}</span>
             </p>
           )}
 
@@ -127,7 +128,7 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
                     <span className="text-muted-foreground">{displayName}</span>
                   </div>
                   <span className="font-medium tabular-nums">
-                    {formatCurrency(total, { currency: goal.currency })}
+                    {format(total)}
                   </span>
                 </div>
               ))}

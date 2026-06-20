@@ -94,3 +94,7 @@ out/
 *.key
 *.cert
 .claude/
+
+# Local credential reference (never commit — see API_KEYS.md header)
+API_KEYS.md
+API_KEYS*.md

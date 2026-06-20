@@ -14,7 +14,7 @@ service cloud.firestore {
         allow create, delete: if false;
       }
     }
-    
+
     // Entries - users can only access their own entries
     match /entries/{entryId} {
       // Allow get (single document read) if user owns it
@@ -23,16 +23,22 @@ service cloud.firestore {
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      // Allow update/delete if user is authenticated and owns the entry
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow update if user owns the entry AND the ownerId is not being changed
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      // Allow delete if user owns the entry
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
+
     // Categories - users can only access their own categories
     match /categories/{categoryId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow get, list: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
+
     // Budgets - users can only access their own budgets
     match /budgets/{budgetId} {
       // Allow get (single document read) if user owns it
@@ -41,8 +47,11 @@ service cloud.firestore {
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      // Allow update/delete if user is authenticated and owns the budget
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow update if user owns the budget AND the ownerId is not being changed
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      // Allow delete if user owns the budget
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
     // Savings Accounts - users can only access their own savings accounts
@@ -53,8 +62,11 @@ service cloud.firestore {
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      // Allow update/delete if user is authenticated and owns the account
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow update if user owns the account AND the ownerId is not being changed
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      // Allow delete if user owns the account
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
     // Goals - users can only access their own goals
@@ -65,10 +77,13 @@ service cloud.firestore {
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      // Allow update/delete if user is authenticated and owns the goal
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow update if user owns the goal AND the ownerId is not being changed
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      // Allow delete if user owns the goal
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-    
+
     // Financial Summaries - document ID is the userId
     match /financialSummaries/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -82,8 +97,11 @@ service cloud.firestore {
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       // Allow create if user is authenticated and sets their own userId
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      // Allow update/delete if user is authenticated and owns the transaction
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow update if user owns the transaction AND the ownerId is not being changed
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      // Allow delete if user owns the transaction
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
     // AI Insights cache - document ID is userId
@@ -142,7 +160,9 @@ service cloud.firestore {
       allow get: if request.auth != null && request.auth.uid == resource.data.userId;
       allow list: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
     // ===== Household / Family Budgeting =====
@@ -153,16 +173,22 @@ service cloud.firestore {
           && request.auth.uid in get(/databases/$(database)/documents/households/$(householdId)).data.memberUids;
     }
 
-    // Shared household budgets — any member can read/write
+    // Shared household budgets — any member can read/write; householdId is immutable on update
     match /householdBudgets/{budgetId} {
-      allow read, delete, update: if isHouseholdMember(resource.data.householdId);
+      allow read: if isHouseholdMember(resource.data.householdId);
       allow create: if isHouseholdMember(request.resource.data.householdId);
+      allow update: if isHouseholdMember(resource.data.householdId)
+                    && request.resource.data.householdId == resource.data.householdId;
+      allow delete: if isHouseholdMember(resource.data.householdId);
     }
 
-    // Shared household goals — any member can read/write
+    // Shared household goals — any member can read/write; householdId is immutable on update
     match /householdGoals/{goalId} {
-      allow read, delete, update: if isHouseholdMember(resource.data.householdId);
+      allow read: if isHouseholdMember(resource.data.householdId);
       allow create: if isHouseholdMember(request.resource.data.householdId);
+      allow update: if isHouseholdMember(resource.data.householdId)
+                    && request.resource.data.householdId == resource.data.householdId;
+      allow delete: if isHouseholdMember(resource.data.householdId);
     }
 
     // Household document — members can read/list; only Admin SDK writes.
@@ -206,4 +232,3 @@ service cloud.firestore {
     }
   }
 }
-

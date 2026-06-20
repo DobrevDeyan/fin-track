@@ -18,6 +18,8 @@ import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.con
 import { toast } from "sonner"
 import { toISOString } from "@/lib/utils/timestamp"
 import type { Entry, EntryFormData } from "./types"
+import { useCurrency } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { logger } from "@/lib/utils/logger"
 
 interface UseEntriesOptions {
@@ -42,6 +44,10 @@ export function useEntries({
   const [lastVisible, setLastVisible] = useState<unknown>(null)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Stored amounts are canonical EUR; the form works in the user's display currency.
+  // Convert display → EUR on the way into Firestore.
+  const { toBaseCurrency } = useCurrency()
 
   const loadEntries = useCallback(async (refresh = false) => {
     if (!userId) return
@@ -119,10 +125,13 @@ export function useEntries({
 
     try {
       if (editingEntry) {
-        // Pass old entry data so the summary can be updated atomically
+        // Pass old entry data so the summary can be updated atomically.
+        // editingEntry.amount is already canonical EUR (stored); the new amount
+        // comes from the form in display currency, so convert it to EUR.
         await updateEntry(editingEntry.id, {
           type: data.type,
-          amount: data.amount,
+          amount: toBaseCurrency(data.amount),
+          currency: BASE_CURRENCY,
           description: data.description,
           category: data.category,
           date: data.date as unknown as Timestamp,
@@ -148,8 +157,8 @@ export function useEntries({
           try {
             if (data.categoryId.startsWith("savings_")) {
               const accountId = data.categoryId.replace("savings_", "");
-              // Adding to saving (moving money into the account)
-              await addToSavingsAccount(accountId, data.amount);
+              // Adding to saving (moving money into the account) — store in EUR
+              await addToSavingsAccount(accountId, toBaseCurrency(data.amount));
               if (onSavingsReload) await onSavingsReload();
             }
           } catch (transferError) {
@@ -158,11 +167,11 @@ export function useEntries({
           }
         }
 
-        // Standard entry creation
+        // Standard entry creation — amount stored canonically in EUR
         await createEntry(userId, {
           type: data.type,
-          amount: data.amount,
-          currency: userCurrency,
+          amount: toBaseCurrency(data.amount),
+          currency: BASE_CURRENCY,
           description: data.description,
           category: data.category,
           date: data.date,
@@ -182,7 +191,7 @@ export function useEntries({
       toast.error(errorMessage)
       throw error
     }
-  }, [userId, userCurrency, editingEntry, loadEntries, onSavingsReload, onSummaryRefresh])
+  }, [userId, editingEntry, loadEntries, onSavingsReload, onSummaryRefresh, toBaseCurrency])
 
   const handleEdit = useCallback((id: string) => {
     const entry = entries.find((e) => e.id === id)

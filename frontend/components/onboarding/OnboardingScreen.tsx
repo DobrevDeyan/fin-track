@@ -31,9 +31,11 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     setMounted(true)
   }, [])
 
-  // Typing effect
+  // Typing effect — depends on `mounted` so it re-runs once the portal is in the DOM
+  // and typedEl.current is attached (first render returns null, ref is null until then)
   useEffect(() => {
     if (phase !== "greeting") return
+    if (!typedEl.current) return
 
     const typed = new Typed(typedEl.current, {
       strings: [t("greeting"), "Smart Financial Management Made Easy"],
@@ -51,7 +53,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     return () => {
       typed.destroy()
     }
-  }, [phase, t])
+  }, [phase, t, mounted])
 
   const handleNext = () => {
     if (step < 3) setStep(step + 1)

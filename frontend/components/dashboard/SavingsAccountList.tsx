@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { SavingsAccountCard } from "./SavingsAccountCard"
 import { Card, CardContent } from "@/components/ui/card"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 
@@ -28,10 +28,11 @@ export function SavingsAccountList({
   onDelete,
   onAddMoney,
   onWithdrawMoney,
-  defaultCurrency = "EUR",
+  defaultCurrency,
   hideHeader = false,
 }: SavingsAccountListProps) {
   const t = useTranslations("savings")
+  const { format } = useMoney()
   const activeAccounts = accounts.filter((acc) => acc.isActive)
   const totalSavings = activeAccounts.reduce((sum, acc) => sum + acc.balance, 0)
 
@@ -76,7 +77,7 @@ export function SavingsAccountList({
             <p className="text-muted-foreground mt-1">
               {t("totalSavings")}:{" "}
               <span className="font-semibold text-foreground">
-                {formatCurrency(totalSavings, { currency: defaultCurrency })}
+                {format(totalSavings)}
               </span>
             </p>
           </div>

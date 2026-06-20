@@ -81,7 +81,11 @@
       "Bash(grep -rn \"use client\" app/**/*.tsx)",
       "Bash(grep -n \"await.*\\\\\\(\\)\" app/**/*.tsx)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(npm audit *)",
+      "Bash(grep -iE 'key|credential|service.?account|\\\\.json$')",
+      "Bash(git check-ignore *)",
+      "Bash(grep -iv \"currencySymbol\\\\|currencyCode\\\\|//\\\\|currency: \\\\\"EUR\\\\\" //\")"
     ]
   }
 }

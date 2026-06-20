@@ -69,12 +69,16 @@ const createUserDocument = async (user: User, isNewUser: boolean = false) => {
       createdAt: serverTimestamp(),
     });
   } else {
-    // Update existing user document (only update timestamp and avatar if changed)
+    // Existing user: only refresh auth-derived fields. Do NOT write currency,
+    // language, username, or names here — those are user-editable in Settings and
+    // would otherwise be reset to their defaults ("EUR"/"en") on every login/refresh.
     await setDoc(
       userRef,
       {
-        ...userData,
-        createdAt: userSnap.data()?.createdAt || serverTimestamp(),
+        email,
+        avatarUrl,
+        providerId,
+        updatedAt: serverTimestamp(),
       },
       { merge: true }
     );

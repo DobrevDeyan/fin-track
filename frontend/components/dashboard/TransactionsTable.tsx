@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { formatCurrency, formatAmount } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { formatDate, formatDateCompact } from "@/lib/date-utils"
 import { getCategoryColor } from "@/lib/constants/category.constants"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
@@ -94,6 +94,7 @@ export function TransactionsTable({
   const t = useTranslations("dashboard")
   const tCommon = useTranslations("common")
   const haptics = useHaptics()
+  const { format } = useMoney()
   const [expanded, setExpanded] = useState(false)
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const prevIdsRef = useRef<Set<string>>(new Set(transactions.map(t => t.id)))
@@ -358,7 +359,7 @@ export function TransactionsTable({
                       >
                         <span className="inline-block leading-loose align-middle py-0.5">
                           {transaction.type === "income" ? "+" : "-"}
-                          {formatCurrency(Math.abs(transaction.amount), { currency: transaction.currency || "EUR" })}
+                          {format(Math.abs(transaction.amount))}
                         </span>
                       </TableCell>
                       <TableCell className="text-right py-2 sm:py-4">

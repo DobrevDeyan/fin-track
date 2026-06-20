@@ -455,23 +455,6 @@ async function sendPushToUser(
   await saveNotification(userId, notification);
 }
 
-// ─── TODO: REMOVE — Test push notification ────────────────────────────────────
-export const sendTestPush = onCall(
-  { region: "europe-west4" },
-  async (request) => {
-    const userId = request.auth?.uid;
-    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
-    await sendPushToUser(userId, {
-      title: "🧪 Test notification",
-      body: "Push notifications are working correctly!",
-      url: "/dashboard/",
-      tag: "test-push",
-      type: "test",
-    });
-    return { ok: true };
-  }
-);
-
 // ─── Budget Alert Trigger ─────────────────────────────────────────────────────
 
 /**
@@ -1027,10 +1010,11 @@ export const getMyHousehold = onCall(
       return buildPayload(ownerSnap.docs[0]);
     }
 
-    // Not owner — check member array
+    // Not owner — check membership via the flat memberUids array.
+    // (array-contains on the full member objects never matches a partial {uid}.)
     const memberSnap = await db
       .collection("households")
-      .where("members", "array-contains", { uid: userId } as any)
+      .where("memberUids", "array-contains", userId)
       .limit(1)
       .get();
 
@@ -1527,6 +1511,25 @@ export const deleteMyAccount = onCall(
       db.collection("users").doc(userId),
       "notifications"
     );
+
+    // 5b. Backstop: delete client-owned data too, in case the frontend pre-delete
+    //     step failed or was skipped — leaves no orphaned documents under this uid.
+    await Promise.all([
+      deleteQueryBatched(db.collection("entries").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("budgets").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("goals").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("savingsAccounts").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("categories").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("recurringTransactions").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("assets").where("userId", "==", userId)),
+    ]);
+    await Promise.all([
+      db.collection("financialSummaries").doc(userId).delete(),
+      db.collection("aiInsights").doc(userId).delete(),
+      db.collection("scanUsage").doc(userId).delete(),
+      db.collection("userDebts").doc(userId).delete(),
+      db.collection("leaderboardProfiles").doc(userId).delete(),
+    ]);
 
     // 6. Delete the Firebase Auth account last — once gone, no token is valid
     await admin.auth().deleteUser(userId);

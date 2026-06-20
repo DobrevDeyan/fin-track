@@ -3,7 +3,7 @@
 import { memo, useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingDown, TrendingUp, Wallet, ArrowUp, ArrowDown, Minus } from "lucide-react"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { useInView } from "framer-motion"
@@ -88,6 +88,7 @@ interface MetricsCardsProps {
   incomeChange: { change: string; trend: "up" | "down" | "neutral" }
   spendingChange: { change: string; trend: "up" | "down" | "neutral" }
   cashFlowChange: { change: string; trend: "up" | "down" | "neutral" }
+  /** @deprecated amounts are now formatted via useMoney(); kept for caller compatibility */
   userCurrency?: string
 }
 
@@ -115,10 +116,10 @@ export const MetricsCards = memo(function MetricsCards({
   incomeChange,
   spendingChange,
   cashFlowChange,
-  userCurrency = "EUR",
 }: MetricsCardsProps) {
   const t = useTranslations("dashboard")
-  const fmt = (v: number) => formatCurrency(v, { currency: userCurrency })
+  // Values arrive as canonical EUR; format() converts to the display currency at render.
+  const { format: fmt } = useMoney()
 
   const monthlyStats = [
     {

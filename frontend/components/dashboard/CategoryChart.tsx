@@ -8,7 +8,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Pie, PieChart, Cell } from "recharts"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 
 interface Entry {
   id: string
@@ -45,7 +45,8 @@ const chartConfig = {
   },
 } satisfies Record<string, { label: string }>
 
-export function CategoryChart({ entries, userCurrency = "EUR" }: CategoryChartProps) {
+export function CategoryChart({ entries, userCurrency }: CategoryChartProps) {
+  const { format } = useMoney()
   // Calculate spending by category for current month
   const categoryData = useMemo(() => {
     const now = new Date()
@@ -132,7 +133,7 @@ export function CategoryChart({ entries, userCurrency = "EUR" }: CategoryChartPr
                     </div>
                     <div className="text-right">
                     <div className="text-sm font-semibold">
-                      {formatCurrency(item.value, { currency: userCurrency })}
+                      {format(item.value)}
                     </div>
                       <div className="text-xs text-muted-foreground">
                         {percentage}%

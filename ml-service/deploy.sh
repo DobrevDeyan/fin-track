@@ -9,8 +9,10 @@ PROCESSOR_ID="566b35e21d475435"
 # Your Firebase Hosting URLs + local dev (Cloud Run needs to allow CORS from these)
 FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000"
 
-# Gemini AI key (free tier from aistudio.google.com)
-GEMINI_API_KEY="${GEMINI_API_KEY:-AIzaSyDZc9xqAkC_3T3fAVrt9dfH6kdhRo6o5aA}"
+# Gemini AI key (free tier from aistudio.google.com).
+# Provide via env — never hardcode a key here (this script is committed to git):
+#   export GEMINI_API_KEY=your_key   # then run ./deploy.sh
+GEMINI_API_KEY="${GEMINI_API_KEY:?Set GEMINI_API_KEY before deploying, e.g. export GEMINI_API_KEY=your_key}"
 
 echo "Deploying $SERVICE_NAME to Google Cloud Run..."
 

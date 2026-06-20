@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Repeat } from "lucide-react"
 import { formatDate } from "@/lib/date-utils"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { getCategoryColor } from "@/lib/constants/category.constants"
 import { getTransactionTypeColor } from "@/lib/constants/transaction.constants"
 import type { Entry } from "@/lib/hooks/dashboard/types"
@@ -44,6 +44,7 @@ export function CalendarEventPopover({
   onAddTransaction,
 }: CalendarEventPopoverProps) {
   const t = useTranslations("calendar")
+  const { format } = useMoney()
 
   if (!date) return null
 
@@ -68,12 +69,12 @@ export function CalendarEventPopover({
           <div className="flex gap-4 text-sm mb-2">
             {incomeTotal > 0 && (
               <span className="text-green-600 font-medium">
-                +{formatCurrency(incomeTotal, { currency: userCurrency })}
+                +{format(incomeTotal)}
               </span>
             )}
             {expenseTotal > 0 && (
               <span className="text-red-600 font-medium">
-                -{formatCurrency(expenseTotal, { currency: userCurrency })}
+                -{format(expenseTotal)}
               </span>
             )}
           </div>
@@ -96,7 +97,7 @@ export function CalendarEventPopover({
                 </div>
                 <span className={`text-sm font-medium shrink-0 ml-2 ${getTransactionTypeColor(entry.type)}`}>
                   {entry.type === "income" ? "+" : "-"}
-                  {formatCurrency(entry.amount, { currency: userCurrency })}
+                  {format(entry.amount)}
                 </span>
               </div>
             ))}
@@ -124,7 +125,7 @@ export function CalendarEventPopover({
                 </div>
                 <span className={`text-sm font-medium shrink-0 ml-2 ${getTransactionTypeColor(item.type)}`}>
                   {item.type === "income" ? "+" : "-"}
-                  {formatCurrency(item.amount, { currency: userCurrency })}
+                  {format(item.amount)}
                 </span>
               </div>
             ))}

@@ -31,6 +31,8 @@ import { Badge } from "@/components/ui/badge"
 import { X, Upload, FileImage, Trash2 } from "lucide-react"
 import { uploadReceipt, deleteReceipt, validateReceiptFile, validateReceiptFileDeep } from "@/lib/receipt-utils"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCurrency } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { AMOUNT_RULES, VALIDATION_MESSAGES } from "@/lib/constants/validation.constants"
@@ -84,6 +86,8 @@ export function AddTransactionDialog({
   defaultDate,
 }: AddTransactionDialogProps) {
   const { user } = useAuth()
+  // Stored amounts are canonical EUR; show the user their display currency when editing.
+  const { convertAmount, userCurrency } = useCurrency()
   const t = useTranslations("dashboard")
   const tCommon = useTranslations("common")
   const [description, setDescription] = useState("")
@@ -107,7 +111,7 @@ export function AddTransactionDialog({
   useEffect(() => {
     if (editingEntry) {
       setDescription(editingEntry.description)
-      setAmount(editingEntry.amount.toString())
+      setAmount(convertAmount(editingEntry.amount, BASE_CURRENCY, userCurrency).toFixed(2))
       setCategory(editingEntry.category)
       setType(editingEntry.type)
       setDate(formatDateForInput(editingEntry.date))

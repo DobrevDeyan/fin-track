@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 import type { HouseholdEntry } from "@/lib/firestore-household"
 
 const MEMBER_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#3b82f6"]
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function HouseholdMemberBreakdown({ entries, userCurrency }: Props) {
-  const fmt = (n: number) => formatCurrency(n, { currency: userCurrency })
+  const { format: fmt } = useMoney()
 
   const members = useMemo(() => {
     const map = new Map<string, { name: string; expenses: number; income: number }>()

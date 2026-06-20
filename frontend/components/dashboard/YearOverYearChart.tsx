@@ -19,7 +19,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatCurrency } from "@/lib/currency-utils"
+import { useMoney } from "@/contexts/CurrencyContext"
 
 interface Entry {
   id: string
@@ -36,7 +36,8 @@ interface YearOverYearChartProps {
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-export function YearOverYearChart({ entries, userCurrency = "EUR" }: YearOverYearChartProps) {
+export function YearOverYearChart({ entries, userCurrency }: YearOverYearChartProps) {
+  const { format } = useMoney()
   const currentYear = new Date().getFullYear()
   const previousYear = currentYear - 1
 
@@ -69,7 +70,7 @@ export function YearOverYearChart({ entries, userCurrency = "EUR" }: YearOverYea
   const hasPreviousYear = entries.some((e) => new Date(e.date).getFullYear() === previousYear)
 
   const formatTick = (value: number) =>
-    formatCurrency(value, { currency: userCurrency, minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    format(value, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null
@@ -82,7 +83,7 @@ export function YearOverYearChart({ entries, userCurrency = "EUR" }: YearOverYea
               <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: p.fill }} />
               {p.name}
             </span>
-            <span className="font-mono">{formatCurrency(p.value, { currency: userCurrency })}</span>
+            <span className="font-mono">{format(p.value)}</span>
           </div>
         ))}
       </div>
