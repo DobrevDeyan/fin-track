@@ -340,9 +340,15 @@ export function generateCashFlowForecast(
     const currentKey = getCurrentMonthKey()
     const pastKeys = getLastNMonthKeys(summary.months, 3, currentKey)
     if (pastKeys.length > 0) {
-      const discretionary = pastKeys.map((k) => Math.max(0, summary.months[k].expenses - monthlyRecurringExpense))
-      avgDailySpend = mean(discretionary) / 30
-      sdDailySpend = stdDev(discretionary) / 30
+      const daysInMonth = (key: string) => {
+        const [y, m] = key.split("-").map(Number)
+        return new Date(y, m, 0).getDate()
+      }
+      const dailyDiscretionary = pastKeys.map((k) =>
+        Math.max(0, summary.months[k].expenses - monthlyRecurringExpense) / daysInMonth(k)
+      )
+      avgDailySpend = mean(dailyDiscretionary)
+      sdDailySpend = stdDev(dailyDiscretionary)
     }
   }
 

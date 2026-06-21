@@ -7,7 +7,6 @@ import { BudgetList } from "@/components/dashboard/BudgetList"
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useHouseholdBudgetsContext } from "@/contexts/dashboard/HouseholdBudgetsContext"
-import { useCurrency } from "@/contexts/CurrencyContext"
 import type { HouseholdEntry } from "@/lib/firestore-household"
 
 interface Props {
@@ -16,7 +15,6 @@ interface Props {
 }
 
 export function HouseholdBudgetsSection({ householdEntries, categories }: Props) {
-  const { userCurrency } = useCurrency()
   const {
     budgets, loading, dialogOpen, editingBudget,
     ensureBudgetsLoaded, handleDialogClose, handleSubmit,
@@ -85,7 +83,6 @@ export function HouseholdBudgetsSection({ householdEntries, categories }: Props)
         onSubmit={handleSubmit}
         editingBudget={editingBudget}
         categories={categories}
-        defaultCurrency={userCurrency}
       />
     </>
   )

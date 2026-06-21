@@ -7,7 +7,6 @@ import { Plus, Wallet } from "lucide-react";
 import { BudgetList } from "@/components/dashboard/BudgetList";
 import { BudgetDialog } from "@/components/dashboard/BudgetDialog";
 import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserEntriesByDateRange } from "@/lib/firestore-entries";
 import { toISOString } from "@/lib/utils/timestamp";
@@ -20,7 +19,6 @@ interface BudgetsSectionProps {
 
 export function BudgetsSection({ categories }: BudgetsSectionProps) {
     const { user } = useAuth();
-    const { userCurrency } = useCurrency();
     const { budgets, loading, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleRenew, openDialog } = useBudgetsContext();
 
     const t = useTranslations("budgets");
@@ -106,7 +104,7 @@ export function BudgetsSection({ categories }: BudgetsSectionProps) {
                 </div>
             </div>
 
-            <BudgetDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingBudget={editingBudget} categories={categories} defaultCurrency={userCurrency} />
+            <BudgetDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingBudget={editingBudget} categories={categories} />
         </>
     );
 }

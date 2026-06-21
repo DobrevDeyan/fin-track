@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -55,14 +56,11 @@ interface BudgetDialogProps {
     alertThreshold?: number
   } | null
   categories: string[]
-  defaultCurrency?: string
 }
 
-import { SUPPORTED_CURRENCIES } from "@/lib/constants/currency.constants"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { BUDGET_PERIODS } from "@/lib/constants/budget.constants"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
-
-const currencies = SUPPORTED_CURRENCIES
 
 export function BudgetDialog({
   open,
@@ -70,14 +68,13 @@ export function BudgetDialog({
   onSubmit,
   editingBudget,
   categories,
-  defaultCurrency = "EUR",
 }: BudgetDialogProps) {
   const t = useTranslations("budgets")
   const tCommon = useTranslations("common")
+  const { toBase, fromBase } = useMoney()
   const [name, setName] = useState("")
   const [category, setCategory] = useState<string>("")
   const [amount, setAmount] = useState("")
-  const [currency, setCurrency] = useState(defaultCurrency)
   const [period, setPeriod] = useState<BudgetPeriod>("monthly")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -100,8 +97,7 @@ export function BudgetDialog({
     if (editingBudget) {
       setName(editingBudget.name)
       setCategory(editingBudget.category || "")
-      setAmount(editingBudget.amount.toString())
-      setCurrency(editingBudget.currency)
+      setAmount(fromBase(editingBudget.amount).toFixed(2))
       setPeriod(editingBudget.period)
       // Extract date part (YYYY-MM-DD) from ISO string if needed
       setStartDate(editingBudget.startDate.split("T")[0])
@@ -112,7 +108,6 @@ export function BudgetDialog({
       setName("")
       setCategory("")
       setAmount("")
-      setCurrency(defaultCurrency)
       setPeriod("monthly")
       const now = new Date()
       const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", now)
@@ -122,7 +117,7 @@ export function BudgetDialog({
       setAlertThreshold("")
     }
     setErrors({})
-  }, [editingBudget, open, defaultCurrency])
+  }, [editingBudget, open, fromBase])
 
   // Update end date when period or start date changes (for new budgets)
   useEffect(() => {
@@ -143,8 +138,8 @@ export function BudgetDialog({
       await onSubmit({
         name,
         category,
-        amount: parseFloat(amount),
-        currency,
+        amount: toBase(parseFloat(amount)),
+        currency: BASE_CURRENCY,
         period,
         startDate,
         endDate,
@@ -156,7 +151,6 @@ export function BudgetDialog({
       setName("")
       setCategory("")
       setAmount("")
-      setCurrency(defaultCurrency)
       setPeriod("monthly")
       const now = new Date()
       const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", now)
@@ -215,37 +209,20 @@ export function BudgetDialog({
               {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="amount">{t("budgetAmount")}</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  max={AMOUNT_RULES.MAX}
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => { setAmount(e.target.value); if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined })) }}
-                  className={errors.amount ? "border-red-500 focus-visible:ring-red-500" : ""}
-                />
-                {errors.amount && <p className="text-xs text-red-500">{errors.amount}</p>}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="currency">{tCommon("currency")}</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((curr) => (
-                      <SelectItem key={curr} value={curr}>
-                        {curr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="amount">{t("budgetAmount")}</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={AMOUNT_RULES.MAX}
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value); if (errors.amount) setErrors(prev => ({ ...prev, amount: undefined })) }}
+                className={errors.amount ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {errors.amount && <p className="text-xs text-red-500">{errors.amount}</p>}
             </div>
 
             <div className="grid gap-2">

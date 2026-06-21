@@ -5,7 +5,9 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useMoney } from "@/contexts/CurrencyContext"
 import { useTranslations, useLocale } from "next-intl"
 import { getUserDebts, saveUserDebts } from "@/lib/firestore-debt"
+import { createEntry } from "@/lib/firestore-entries"
 import type { DebtItem, DebtType } from "@/lib/firestore-types"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,7 +20,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
   Landmark, Plus, Trash2, TrendingDown, Trophy, CalendarCheck,
-  Loader2, Snowflake, Flame, Pencil, AlertTriangle,
+  Loader2, Snowflake, Flame, Pencil, AlertTriangle, CreditCard,
 } from "lucide-react"
 import dynamic from "next/dynamic"
 
@@ -221,6 +223,9 @@ export default function DebtPage() {
   const [extraPayment, setExtraPayment] = useState(0)
   const [addOpen, setAddOpen] = useState(false)
   const [editItem, setEditItem] = useState<DebtItem | null>(null)
+  const [paymentDebt, setPaymentDebt] = useState<DebtItem | null>(null)
+  const [paymentAmount, setPaymentAmount] = useState("")
+  const [paymentSaving, setPaymentSaving] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -261,6 +266,34 @@ export default function DebtPage() {
   const handleDelete = (id: string) => {
     persist(debts.filter((d) => d.id !== id))
     toast.success(t("debtRemoved"))
+  }
+
+  const handlePayment = async () => {
+    if (!user || !paymentDebt || paymentSaving) return
+    const display = parseFloat(paymentAmount)
+    if (!display || display <= 0) return
+    setPaymentSaving(true)
+    try {
+      const baseAmount = toBase(display)
+      await createEntry(user.uid, {
+        type: "expense",
+        amount: baseAmount,
+        currency: BASE_CURRENCY,
+        description: t("paymentDesc", { name: paymentDebt.name }),
+        category: t("paymentCategory"),
+        date: new Date().toISOString(),
+      })
+      const newBalance = Math.max(0, paymentDebt.balance - baseAmount)
+      const next = debts.map((d) => d.id === paymentDebt.id ? { ...d, balance: newBalance } : d)
+      await persist(next)
+      toast.success(t("paymentSuccess"))
+      setPaymentDebt(null)
+      setPaymentAmount("")
+    } catch {
+      toast.error(t("failedToSave"))
+    } finally {
+      setPaymentSaving(false)
+    }
   }
 
   const totalDebt = useMemo(
@@ -327,6 +360,11 @@ export default function DebtPage() {
                 </div>
               </div>
               <div className="flex gap-1 shrink-0">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700"
+                  title={t("recordPayment")}
+                  onClick={() => { setPaymentDebt(d); setPaymentAmount("") }}>
+                  <CreditCard className="h-3.5 w-3.5" />
+                </Button>
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditItem(d)}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
@@ -566,6 +604,44 @@ export default function DebtPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>{t("addDebtDialogTitle")}</DialogTitle></DialogHeader>
           <DebtForm currency={userCurrency} onSave={handleAdd} onCancel={() => setAddOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment dialog */}
+      <Dialog open={!!paymentDebt} onOpenChange={(o) => !o && setPaymentDebt(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("paymentDialogTitle")}</DialogTitle>
+            <p className="text-sm text-muted-foreground">{t("paymentDialogDesc")}</p>
+          </DialogHeader>
+          {paymentDebt && (
+            <div className="space-y-4 pt-1">
+              <div className="space-y-1">
+                <Label className="text-xs">{t("paymentAmountLabel", { currency: userCurrency })}</Label>
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  autoFocus
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder={fromBase(paymentDebt.minPayment).toFixed(2)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("balance")}: {formatAmount(paymentDebt.balance)} · {t("minPerMonth", { amount: formatAmount(paymentDebt.minPayment) })}
+                </p>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setPaymentDebt(null)}>{t("cancel")}</Button>
+                <Button
+                  disabled={!paymentAmount || parseFloat(paymentAmount) <= 0 || paymentSaving}
+                  onClick={handlePayment}
+                >
+                  {paymentSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("recordPayment")}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

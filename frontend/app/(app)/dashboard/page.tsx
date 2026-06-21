@@ -462,7 +462,7 @@ function DashboardInnerContent() {
                         onImportCSV={() => setCsvImportOpen(true)}
                         filters={mode === "full" ? <TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} /> : undefined}
                         onLoadMore={entriesHook.loadMore}
-                        hasMore={entriesHook.filteredEntries.length === 0 && entriesHook.hasMore}
+                        hasMore={entriesHook.hasMore}
                         isLoadingMore={entriesHook.isLoadingMore}
                     />
                 </SectionErrorBoundary>

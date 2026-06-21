@@ -686,7 +686,18 @@
     "createSuccess": "Активът е добавен",
     "updateSuccess": "Активът е обновен",
     "deleteSuccess": "Активът е изтрит",
-    "error": "Нещо се обърка"
+    "error": "Нещо се обърка",
+    "noLiabilities": "Няма добавени пасиви",
+    "itemCount": "{count} позиции",
+    "dialogDescAsset": "Проследете актив, който притежавате",
+    "dialogDescLiability": "Проследете дълг или задължение",
+    "deleteConfirmDesc": "Това ще премахне тази позиция от проследяването на нетната ви стойност.",
+    "assetMinusLiabilities": "Активи − Пасиви",
+    "fromSavings": "От Спестовни Сметки",
+    "fromDebts": "От Проследяване на Дългове",
+    "autoIncluded": "Автоматично включено",
+    "savingsCount": "{count} сметки",
+    "debtCount": "{count} дълга"
   },
   "receipts": {
     "title": "Касови бележки",
@@ -697,7 +708,12 @@
     "viewTransaction": "Виж транзакция",
     "receiptFrom": "Бележка от {merchant}",
     "loading": "Зареждане на бележки...",
-    "error": "Неуспешно зареждане на бележките"
+    "error": "Неуспешно зареждане на бележките",
+    "scanQuotaLabel": "Сканирания на бележки този месец",
+    "scansLeft": "Остават {count}",
+    "scanHint": "Използвайте скенера за бележки в таблото при добавяне на транзакция.",
+    "receiptCount": "{count} бележки",
+    "open": "Отвори"
   },
   "csvImport": {
     "title": "Импортиране на транзакции",
@@ -815,6 +831,13 @@
     "debtAdded": "Дългът е добавен.",
     "debtUpdated": "Дългът е актуализиран.",
     "debtRemoved": "Дългът е премахнат.",
+    "recordPayment": "Запиши плащане",
+    "paymentDialogTitle": "Запиши плащане по дълг",
+    "paymentDialogDesc": "Ще бъде създаден разход и балансът на дълга ще намалее.",
+    "paymentAmountLabel": "Сума на плащане ({currency})",
+    "paymentDesc": "Плащане по дълг: {name}",
+    "paymentSuccess": "Плащането е записано",
+    "paymentCategory": "Плащане по дълг",
     "types": {
       "credit_card": "Кредитна карта",
       "loan": "Личен заем",

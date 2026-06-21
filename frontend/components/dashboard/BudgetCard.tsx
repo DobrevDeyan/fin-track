@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/date-utils"
 import { getTrendColor } from "@/lib/constants/ui.constants"
 import { useTranslations } from "next-intl"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { motion } from "framer-motion"
 
 interface Budget {
@@ -35,6 +36,7 @@ interface BudgetCardProps {
 export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetCardProps) {
   const t = useTranslations("budgets")
   const tCommon = useTranslations("common")
+  const { format } = useMoney()
 
   const remaining = budget.amount - spent
   const percentage = Math.min((spent / budget.amount) * 100, 100)
@@ -99,7 +101,7 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">{t("spent")}</span>
               <span className="font-medium">
-                {budget.currency} {spent.toFixed(2)} / {budget.currency} {budget.amount.toFixed(2)}
+                {format(spent)} / {format(budget.amount)}
               </span>
             </div>
             <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
@@ -114,8 +116,8 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
               </span>
               <span className={`font-medium ${getTrendColor(remaining > 0 ? "up" : remaining < 0 ? "down" : "neutral")}`}>
                 {remaining >= 0
-                  ? `${budget.currency} ${remaining.toFixed(2)} ${t("remainingAmount")}`
-                  : `${budget.currency} ${Math.abs(remaining).toFixed(2)} ${t("overBudget")}`}
+                  ? `${format(remaining)} ${t("remainingAmount")}`
+                  : `${format(Math.abs(remaining))} ${t("overBudget")}`}
               </span>
             </div>
           </div>

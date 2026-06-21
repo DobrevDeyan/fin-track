@@ -21,6 +21,7 @@ import { createEntry } from "@/lib/firestore-entries"
 import { GoalDocument } from "@/lib/firestore-types"
 import { getErrorMessage, ERROR_MESSAGES } from "@/lib/utils/error"
 import { useCurrency } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { useFinancialSummary } from "./FinancialSummaryContext"
 import { logger } from "@/lib/utils/logger"
 
@@ -66,7 +67,7 @@ interface GoalsProviderProps {
 
 export function GoalsProvider({ children, userId }: GoalsProviderProps) {
   const t = useTranslations()
-  const { userCurrency } = useCurrency()
+  const { userCurrency, toBaseCurrency } = useCurrency()
   const { refreshSummary } = useFinancialSummary()
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
@@ -180,11 +181,11 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
 
       try {
         // 1. Create an expense entry for proper accounting
-        //    This deducts from the user's balance and updates the financial summary
+        //    Amount must be converted to EUR base before storage.
         await createEntry(userId, {
           type: "expense",
-          amount,
-          currency: userCurrency,
+          amount: toBaseCurrency(amount),
+          currency: BASE_CURRENCY,
           description: `Goal contribution: ${goal.name}`,
           category: "Goal Contribution",
           date: new Date().toISOString(),

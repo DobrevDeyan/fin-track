@@ -102,8 +102,8 @@ export default function ReceiptsPage() {
         !isPro ? (
           <div className="mb-6">
             <UpgradePrompt
-              feature="Receipt Scanning"
-              description="Scan and attach receipts to your transactions. Upgrade to Pro for 30 scans/month."
+              feature={t("title")}
+              description={t("scanHint")}
             />
           </div>
         ) : (
@@ -112,13 +112,13 @@ export default function ReceiptsPage() {
               <ScanLine className="h-5 w-5 text-muted-foreground shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium">Receipt scans this month</span>
+                  <span className="text-sm font-medium">{t("scanQuotaLabel")}</span>
                   <span className="text-sm text-muted-foreground">{count} / {limit}</span>
                 </div>
                 <Progress value={limit > 0 ? (count / limit) * 100 : 0} className="h-1.5" />
               </div>
               <Badge variant={remaining === 0 ? "destructive" : remaining <= 5 ? "secondary" : "outline"} className="shrink-0">
-                {remaining} left
+                {t("scansLeft", { count: remaining })}
               </Badge>
             </CardContent>
           </Card>
@@ -137,13 +137,13 @@ export default function ReceiptsPage() {
           <h2 className="text-lg font-semibold mb-1">{t("noReceipts")}</h2>
           <p className="text-muted-foreground text-sm max-w-sm">{t("noReceiptsDescription")}</p>
           <p className="text-muted-foreground text-xs mt-4">
-            Use the receipt scanner on the dashboard when adding a transaction.
+            {t("scanHint")}
           </p>
         </div>
       ) : (
         <>
           <p className="text-sm text-muted-foreground mb-4">
-            {entries.length} {entries.length === 1 ? "receipt" : "receipts"}
+            {t("receiptCount", { count: entries.length })}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {entries.map((entry, index) => (
@@ -224,7 +224,7 @@ export default function ReceiptsPage() {
                     onClick={() => window.open(activeLightboxEntry.receiptUrl!, "_blank")}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
-                    Open
+                    {t("open")}
                   </Button>
                 </div>
               </div>

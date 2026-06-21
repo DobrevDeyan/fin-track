@@ -13,6 +13,9 @@ import {
   type AssetType,
   type CreateAssetInput,
 } from "@/lib/firestore-networth"
+import { getUserSavingsAccounts } from "@/lib/firestore-savings"
+import { getUserDebts } from "@/lib/firestore-debt"
+import type { SavingsAccountDocument, DebtItem } from "@/lib/firestore-types"
 import { BASE_CURRENCY, SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -75,6 +78,8 @@ export default function NetWorthPage() {
   const { format, toBase, fromBase, currency: userCurrency } = useMoney()
 
   const [assets, setAssets] = useState<Asset[]>([])
+  const [savingsAccounts, setSavingsAccounts] = useState<(SavingsAccountDocument & { id: string })[]>([])
+  const [debts, setDebts] = useState<DebtItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
@@ -86,7 +91,14 @@ export default function NetWorthPage() {
     if (!user) return
     try {
       setIsLoading(true)
-      setAssets(await getAssets(user.uid))
+      const [loadedAssets, loadedSavings, loadedDebts] = await Promise.all([
+        getAssets(user.uid),
+        getUserSavingsAccounts(user.uid),
+        getUserDebts(user.uid),
+      ])
+      setAssets(loadedAssets)
+      setSavingsAccounts(loadedSavings)
+      setDebts(loadedDebts)
     } catch {
       toast.error(t("error"))
     } finally {
@@ -99,8 +111,10 @@ export default function NetWorthPage() {
   }, [authLoading, load])
 
   // ── Computed totals ────────────────────────────────────────────────────────
-  const totalAssets = assets.filter((a) => !a.isLiability).reduce((s, a) => s + a.value, 0)
-  const totalLiabilities = assets.filter((a) => a.isLiability).reduce((s, a) => s + a.value, 0)
+  const savingsTotal = savingsAccounts.reduce((s, a) => s + a.balance, 0)
+  const debtTotal = debts.reduce((s, d) => s + d.balance, 0)
+  const totalAssets = assets.filter((a) => !a.isLiability).reduce((s, a) => s + a.value, 0) + savingsTotal
+  const totalLiabilities = assets.filter((a) => a.isLiability).reduce((s, a) => s + a.value, 0) + debtTotal
   const netWorth = totalAssets - totalLiabilities
 
   // ── Dialog helpers ─────────────────────────────────────────────────────────
@@ -192,7 +206,7 @@ export default function NetWorthPage() {
             </p>
             <div className="flex items-center gap-1 mt-1">
               {netWorth >= 0 ? <TrendingUp className="h-3.5 w-3.5 text-green-500" /> : <TrendingDown className="h-3.5 w-3.5 text-red-500" />}
-              <span className="text-xs text-muted-foreground">Assets − Liabilities</span>
+              <span className="text-xs text-muted-foreground">{t("assetMinusLiabilities")}</span>
             </div>
           </CardContent>
         </Card>
@@ -200,19 +214,19 @@ export default function NetWorthPage() {
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{t("totalAssets")}</p>
             <p className="text-2xl font-bold text-green-600">{format(totalAssets)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{assetList.length} items</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("itemCount", { count: assetList.length + savingsAccounts.length })}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{t("totalLiabilities")}</p>
             <p className="text-2xl font-bold text-red-600">{format(totalLiabilities)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{liabilityList.length} items</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("itemCount", { count: liabilityList.length + debts.length })}</p>
           </CardContent>
         </Card>
       </div>
 
-      {assets.length === 0 ? (
+      {assets.length === 0 && savingsAccounts.length === 0 && debts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Landmark className="h-16 w-16 text-muted-foreground/30 mb-4" />
           <h2 className="text-lg font-semibold mb-1">{t("noAssets")}</h2>
@@ -236,13 +250,34 @@ export default function NetWorthPage() {
                 <Plus className="h-4 w-4 mr-1" />{t("addAsset")}
               </Button>
             </div>
-            {assetList.length === 0 ? (
+            {assetList.length === 0 && savingsAccounts.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">{t("noAssets")}</p>
             ) : (
               <div className="space-y-2">
                 {assetList.map((asset) => (
                   <AssetRow key={asset.id} asset={asset} userCurrency={userCurrency} t={t} onEdit={openEdit} onDelete={setDeleteId} />
                 ))}
+                {savingsAccounts.length > 0 && (
+                  <>
+                    <p className="text-xs text-muted-foreground pt-1 pb-0.5 flex items-center gap-1">
+                      <span className="h-px flex-1 bg-border" />
+                      {t("fromSavings")} · {t("autoIncluded")}
+                      <span className="h-px flex-1 bg-border" />
+                    </p>
+                    {savingsAccounts.map((acc) => (
+                      <div key={acc.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                        <div className="p-2 rounded-md bg-green-100 dark:bg-green-950">
+                          <PiggyBank className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{acc.name}</p>
+                          <p className="text-xs text-muted-foreground">{t("autoIncluded")}</p>
+                        </div>
+                        <p className="font-semibold text-sm text-green-600">+{format(acc.balance)}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -255,13 +290,34 @@ export default function NetWorthPage() {
                 <Plus className="h-4 w-4 mr-1" />{t("addLiability")}
               </Button>
             </div>
-            {liabilityList.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">No liabilities added</p>
+            {liabilityList.length === 0 && debts.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">{t("noLiabilities")}</p>
             ) : (
               <div className="space-y-2">
                 {liabilityList.map((asset) => (
                   <AssetRow key={asset.id} asset={asset} userCurrency={userCurrency} t={t} onEdit={openEdit} onDelete={setDeleteId} />
                 ))}
+                {debts.length > 0 && (
+                  <>
+                    <p className="text-xs text-muted-foreground pt-1 pb-0.5 flex items-center gap-1">
+                      <span className="h-px flex-1 bg-border" />
+                      {t("fromDebts")} · {t("autoIncluded")}
+                      <span className="h-px flex-1 bg-border" />
+                    </p>
+                    {debts.map((debt) => (
+                      <div key={debt.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                        <div className="p-2 rounded-md bg-red-100 dark:bg-red-950">
+                          <TrendingDown className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{debt.name}</p>
+                          <p className="text-xs text-muted-foreground">{t("autoIncluded")}</p>
+                        </div>
+                        <p className="font-semibold text-sm text-red-600">−{format(debt.balance)}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -274,7 +330,7 @@ export default function NetWorthPage() {
           <DialogHeader>
             <DialogTitle>{editingAsset ? t("editAsset") : form.isLiability ? t("addLiability") : t("addAsset")}</DialogTitle>
             <DialogDescription>
-              {form.isLiability ? "Track a debt or liability" : "Track an asset you own"}
+              {form.isLiability ? t("dialogDescLiability") : t("dialogDescAsset")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -357,7 +413,7 @@ export default function NetWorthPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{tCommon("delete")}</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently remove this entry from your net worth tracking.</AlertDialogDescription>
+            <AlertDialogDescription>{t("deleteConfirmDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
@@ -400,7 +456,9 @@ function AssetRow({
         <p className={cn("font-semibold text-sm", asset.isLiability ? "text-red-600" : "text-green-600")}>
           {asset.isLiability ? "−" : "+"}{format(asset.value)}
         </p>
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5">{asset.type}</Badge>
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5">
+          {({ bank: t("typeBank"), investment: t("typeInvestment"), property: t("typeProperty"), vehicle: t("typeVehicle"), other: t("typeOther") } as Record<AssetType, string>)[asset.type]}
+        </Badge>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit(asset)}>

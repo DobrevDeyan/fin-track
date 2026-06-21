@@ -686,7 +686,18 @@
     "createSuccess": "Asset added",
     "updateSuccess": "Asset updated",
     "deleteSuccess": "Asset deleted",
-    "error": "Something went wrong"
+    "error": "Something went wrong",
+    "noLiabilities": "No liabilities added",
+    "itemCount": "{count} items",
+    "dialogDescAsset": "Track an asset you own",
+    "dialogDescLiability": "Track a debt or liability",
+    "deleteConfirmDesc": "This will permanently remove this entry from your net worth tracking.",
+    "assetMinusLiabilities": "Assets − Liabilities",
+    "fromSavings": "From Savings Accounts",
+    "fromDebts": "From Debt Tracker",
+    "autoIncluded": "Auto-included",
+    "savingsCount": "{count} accounts",
+    "debtCount": "{count} debts"
   },
   "receipts": {
     "title": "Receipts",
@@ -697,7 +708,12 @@
     "viewTransaction": "View Transaction",
     "receiptFrom": "Receipt from {merchant}",
     "loading": "Loading receipts...",
-    "error": "Failed to load receipts"
+    "error": "Failed to load receipts",
+    "scanQuotaLabel": "Receipt scans this month",
+    "scansLeft": "{count} left",
+    "scanHint": "Use the receipt scanner on the dashboard when adding a transaction.",
+    "receiptCount": "{count} receipts",
+    "open": "Open"
   },
   "csvImport": {
     "title": "Import Transactions",
@@ -815,6 +831,13 @@
     "debtAdded": "Debt added.",
     "debtUpdated": "Debt updated.",
     "debtRemoved": "Debt removed.",
+    "recordPayment": "Record Payment",
+    "paymentDialogTitle": "Record Debt Payment",
+    "paymentDialogDesc": "This will create an expense entry and reduce the debt balance.",
+    "paymentAmountLabel": "Payment amount ({currency})",
+    "paymentDesc": "Debt payment: {name}",
+    "paymentSuccess": "Payment recorded",
+    "paymentCategory": "Debt Payment",
     "types": {
       "credit_card": "Credit Card",
       "loan": "Personal Loan",
