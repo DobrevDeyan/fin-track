@@ -655,6 +655,13 @@ function computeHealthScore(
   budgets: Array<{ category: string; amount: number; period: string; isActive: boolean }>,
   goals: Array<{ targetAmount: number; currentAmount: number; isActive: boolean }>
 ): { score: number; tier: HealthTier } {
+  // Mirror the client guard (insights-engine calculateHealthScore): an account
+  // with no monthly data has nothing to score — return 0/critical rather than
+  // accumulating neutral/default points into a misleading positive score.
+  if (Object.keys(months).length === 0) {
+    return { score: 0, tier: "critical" };
+  }
+
   const now = new Date();
   const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const recent3 = lbGetLastN(months, 3, currentKey);
@@ -693,15 +700,17 @@ function computeHealthScore(
   }
 
   // 4. Income Stability (max 15)
-  let incomeScore = 15;
+  // Neutral (half marks) until there are >=3 months of history — an account
+  // with too little data hasn't *earned* full stability marks.
+  let incomeScore = 7.5;
   if (past6.length >= 3) {
     const incomes = past6.map((k) => months[k].income);
     const incMean = lbMean(incomes);
     incomeScore = 15 * (1 - lbClamp(incMean > 0 ? lbStdDev(incomes) / incMean : 0, 0, 1));
   }
 
-  // 5. Spending Regularity (max 10)
-  let spendingScore = 10;
+  // 5. Spending Regularity (max 10) — neutral until >=3 months of history.
+  let spendingScore = 5;
   if (past6.length >= 3) {
     const expenses = past6.map((k) => months[k].expenses);
     const expMean = lbMean(expenses);
@@ -779,6 +788,13 @@ export const aggregateLeaderboard = onSchedule(
           if (!summarySnap.exists) return;
           const months = (summarySnap.data()?.months ?? {}) as Record<string, MonthlyData>;
           const monthCount = Object.keys(months).length;
+
+          // Accounts with no monthly data don't belong on the leaderboard.
+          // Delete any stale profile (e.g. user cleared all entries) and skip.
+          if (monthCount === 0) {
+            await db.collection("leaderboardProfiles").doc(userId).delete();
+            return;
+          }
 
           const budgets = budgetsSnap.docs.map((d) => d.data() as { category: string; amount: number; period: string; isActive: boolean });
           const goals = goalsSnap.docs.map((d) => d.data() as { targetAmount: number; currentAmount: number; isActive: boolean });
@@ -900,6 +916,12 @@ export const triggerLeaderboardAggregation = onCall(
           ]);
           if (!summarySnap.exists) return;
           const months = (summarySnap.data()?.months ?? {}) as Record<string, MonthlyData>;
+          // Accounts with no monthly data don't belong on the leaderboard.
+          // Delete any stale profile and skip.
+          if (Object.keys(months).length === 0) {
+            await db.collection("leaderboardProfiles").doc(uid).delete();
+            return;
+          }
           const budgets = budgetsSnap.docs.map((d) => d.data() as { category: string; amount: number; period: string; isActive: boolean });
           const goals = goalsSnap.docs.map((d) => d.data() as { targetAmount: number; currentAmount: number; isActive: boolean });
           const { score, tier } = computeHealthScore(months, budgets, goals);

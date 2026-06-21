@@ -175,8 +175,11 @@ export function calculateHealthScore(
   }
 
   // 4. Income Stability (max 15pts)
-  // Measured as coefficient of variation (lower = more stable)
-  let incomeScore = 15
+  // Measured as coefficient of variation (lower = more stable).
+  // Neutral (half marks) until there are >=3 months of history — an account
+  // with too little data hasn't earned full stability marks. Keep this in sync
+  // with computeHealthScore in functions/src/index.ts (leaderboard scorer).
+  let incomeScore = 7.5
   if (past6.length >= 3) {
     const incomes = past6.map((k) => months[k].income)
     const incMean = mean(incomes)
@@ -184,8 +187,8 @@ export function calculateHealthScore(
     incomeScore = 15 * (1 - clamp(incCV, 0, 1))
   }
 
-  // 5. Spending Regularity (max 10pts)
-  let spendingScore = 10
+  // 5. Spending Regularity (max 10pts) — neutral until >=3 months of history.
+  let spendingScore = 5
   if (past6.length >= 3) {
     const expenses = past6.map((k) => months[k].expenses)
     const expMean = mean(expenses)

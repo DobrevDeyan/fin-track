@@ -581,7 +581,7 @@ export const AppNavbar = () => {
                         )}
                       >
                         <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-emerald-600")} />
-                        <span className="hidden lg:inline">{label}</span>
+                        <span className="hidden xl:inline whitespace-nowrap">{label}</span>
                         {isActive && (
                           <motion.div
                             layoutId="desktopActiveBar"
@@ -590,7 +590,7 @@ export const AppNavbar = () => {
                         )}
                       </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="lg:hidden">
+                    <TooltipContent side="bottom" className="xl:hidden">
                       {label}
                     </TooltipContent>
                   </Tooltip>

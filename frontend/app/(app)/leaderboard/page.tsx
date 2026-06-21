@@ -191,6 +191,12 @@ export default function LeaderboardPage() {
       : []),
   ]
 
+  // The stats snapshot can lag behind individual profiles (it's only rewritten on
+  // aggregation). When we've injected the viewer's own profile that the snapshot
+  // doesn't know about yet, the displayed list is larger than stats.totalParticipants
+  // — reconcile so the "members" pill and the list header never contradict each other.
+  const effectiveTotal = Math.max(stats?.totalParticipants ?? 0, displayList.length)
+
   // Percentile: how many in top list have a higher score
   const aboveMe = profile && stats
     ? topScores.filter((s) => s.score > profile.score).length
@@ -226,7 +232,7 @@ export default function LeaderboardPage() {
         <div className="flex gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 text-xs font-medium text-foreground">
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            {stats.totalParticipants} member{stats.totalParticipants !== 1 ? "s" : ""}
+            {effectiveTotal} member{effectiveTotal !== 1 ? "s" : ""}
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 text-xs font-medium text-foreground">
             <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
@@ -297,9 +303,9 @@ export default function LeaderboardPage() {
         <Card className="overflow-hidden">
           <CardHeader className="pb-0 pt-3 px-4">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              {stats && stats.totalParticipants > (stats.topScores.length)
+              {stats && stats.totalParticipants > displayList.length
                 ? `Top ${stats.topScores.length} of ${stats.totalParticipants}`
-                : `${displayList.length} participant${displayList.length !== 1 ? "s" : ""}`}
+                : `${effectiveTotal} participant${effectiveTotal !== 1 ? "s" : ""}`}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 pt-2">
