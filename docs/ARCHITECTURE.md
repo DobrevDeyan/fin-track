@@ -157,7 +157,7 @@ fin-track/
 │   └── public/                     # SW, manifest, icons
 │
 ├── functions/                      # Firebase Cloud Functions
-│   └── src/index.ts                # All 12 custom functions
+│   └── src/index.ts                # All 20 custom functions
 │
 ├── ml-service/                     # AI/ML microservice (Cloud Run)
 │   ├── src/
@@ -182,24 +182,15 @@ fin-track/
 
 ### Financial Summary (Single Source of Truth)
 
-Every entry mutation (add, edit, delete) atomically updates `financialSummaries/{userId}` in the same Firestore batch write:
+`financialSummaries/{userId}` is **server-authoritative** — the client never writes to it. On every entry create, update, or delete the `maintainFinancialSummary` Cloud Function trigger recomputes the summary by reading all of the user's entries from scratch. `FinancialSummaryContext` subscribes via `onSnapshot` so dashboard metrics update ~1 s after any change.
 
-```typescript
-const batch = writeBatch(db)
-batch.set(entryRef, entryData)
-batch.update(summaryRef, {
-  totalIncome: increment(amount),
-  [`months.${yyyyMM}.income`]: increment(amount),
-  [`months.${yyyyMM}.incomeByCategory.${category}`]: increment(amount),
-})
-await batch.commit()
-```
+Firestore rules deny client `create`/`update` on this collection; only the Admin SDK can write. To repair a corrupted summary, call the `rebuildMySummary` callable function.
 
-Dashboard metrics are always in sync — no re-aggregation needed.
+**Cost note:** the trigger performs a full entry-collection scan per entry write, proportional to total entry count.
 
 ### Data Loading Pattern
 
-No real-time listeners on the dashboard. Data is loaded once on mount via explicit `load*()` calls in each context. The provider hierarchy controls load order:
+Most data is loaded once on mount via explicit `load*()` calls in each context. Exception: `FinancialSummaryContext` uses an `onSnapshot` live listener so it reflects trigger updates without a page refresh. The provider hierarchy controls load order:
 
 ```
 FinancialSummaryProvider
@@ -398,13 +389,18 @@ All custom functions are in `functions/src/index.ts`.
 | Function | Region | Rate Limit | Purpose |
 |----------|--------|------------|---------|
 | `processMyRecurringTransactions` | `us-central1` | 3 calls/5min | User-triggered recurring transaction processing |
+| `deleteMyNotifications` | `us-central1` | — | Deletes all in-app notifications for the caller |
 | `createHousehold` | `europe-west4` | — | Creates household; caller becomes owner |
 | `sendHouseholdInvite` | `europe-west4` | 10 calls/5min | Generates 7-day invite token |
 | `acceptHouseholdInvite` | `europe-west4` | — | Validates token + email; adds caller to household |
 | `getHouseholdEntries` | `europe-west4` | — | Returns merged entries for all household members |
-| `leaveHousehold` | `europe-west4` | — | Removes caller; transfers ownership if needed |
+| `leaveHousehold` | `europe-west4` | — | Removes caller; transfers ownership if needed; batch-deletes orphaned budgets/goals/invites if last member |
 | `getMyHousehold` | `europe-west4` | — | Returns household data via Admin SDK (bypasses rules/cache); backfills `memberUids` if missing |
+| `updateHouseholdMemberName` | `europe-west4` | — | Syncs display-name change to the household member list |
 | `updateLeaderboardOptIn` | `us-central1` | — | Opts user in/out of leaderboard; purges profile on opt-out |
+| `triggerLeaderboardAggregation` | `us-central1` | — | Manually triggers leaderboard rebuild (admin/debug use) |
+| `deleteMyAccount` | `us-central1` | — | Deletes caller's Firestore data and Auth account (CF backstop; also called as final step of client-side account deletion) |
+| `rebuildMySummary` | `us-central1` | — | Recomputes `financialSummaries/{uid}` from all entries (repair/backfill) |
 
 ### Firestore-Triggered Functions
 
@@ -413,6 +409,7 @@ All custom functions are in `functions/src/index.ts`.
 | `checkBudgetOnEntry` | `europe-west4` | `entries` created | Sends FCM push notification at 80%/100% budget threshold |
 | `onEntryDeleted` | `europe-west4` | `entries` deleted | Writes audit log entry |
 | `onLargeEntryCreated` | `europe-west4` | `entries` created | Flags transactions ≥ €10,000 in audit log |
+| `maintainFinancialSummary` | `europe-west4` | `entries` written | Recomputes `financialSummaries/{uid}` from all entries on every create/update/delete |
 
 ### Stripe Extension Functions (managed, v1)
 
@@ -446,7 +443,7 @@ All custom functions are in `functions/src/index.ts`.
 - API key in `ml-service/.env` and baked into `deploy.sh`
 - Always use `--update-env-vars` on Cloud Run updates (not `--set-env-vars` — the latter wipes all env vars)
 
-**Node.js Runtime:** Cloud Functions currently on Node.js 20. Deprecated 2026-04-30, decommissioned 2026-10-30. Upgrade `functions/package.json` `engines.node` to `"22"` before April 2026.
+**Node.js Runtime:** Cloud Functions run on Node.js 22 (`functions/package.json` `engines.node: "22"`). Node.js 20 was deprecated 2026-04-30 and will be decommissioned 2026-10-30 — do not downgrade.
 
 ### Service Accounts
 
@@ -639,28 +636,31 @@ The query uses `where("userId", "in", [...]) + orderBy("date", "desc")` which re
 
 ### Currency Formatting
 
-Always use `formatCurrency` from `@/lib/currency-utils`. Do not destructure `formatAmount` or `fmt` from `useCurrency()` — those do not exist.
+Always use `useMoney()` from `@/contexts/CurrencyContext`. It returns `{ format, toBase, fromBase, currency }`.
 
 ```typescript
-// Correct pattern
-const { userCurrency } = useCurrency()
-const fmt = (n: number) => formatCurrency(n, { currency: userCurrency })
+// Correct
+const { format: fmt, toBase, fromBase, currency } = useMoney()
+// fmt(eurAmount)              → EUR-base number → display string
+// toBase(displayAmount, from?) → display → EUR base (use on save)
+// fromBase(eurAmount)          → EUR base → display value (use for form prefill)
 
-// Wrong — will crash
-const { formatAmount } = useCurrency()
+// Wrong — formatCurrency from currency-utils is a dead export; useCurrency does not exist
+import { formatCurrency } from "@/lib/currency-utils" // unused
+const { formatAmount } = useCurrency()               // will crash
 ```
 
 ### Exchange Rates
 
-Frankfurter API is proxied through `/api/exchange-rate` (Next.js API route) to avoid CORS. Always call the internal route, not the external URL directly:
+Frankfurter API (`api.frankfurter.app`) is called **directly from the browser** — it supports CORS, no proxy needed. There is no `/api/exchange-rate` route (the app uses `output: 'export'`, so Next.js API routes cannot exist). Results are cached in `localStorage` per calendar day.
 
 ```typescript
 // Correct
-import { getExchangeRate } from "@/lib/exchange-rate"
-// internally calls /api/exchange-rate
+import { fetchExchangeRates } from "@/lib/exchange-rate"
+// calls https://api.frankfurter.app/latest directly; result cached in localStorage
 
-// Wrong — CORS error in browser
-fetch("https://api.frankfurter.app/latest")
+// Wrong — there is no /api/exchange-rate route in this project
+fetch("/api/exchange-rate")
 ```
 
 ### Recurring Transaction Dates

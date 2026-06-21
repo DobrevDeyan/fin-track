@@ -454,7 +454,7 @@ frontend/lib/stripe.ts
 
 **Test targets (priority order):**
 1. `useSubscription` — mock Firestore; free vs pro tier flags set correctly
-2. Currency change — `CurrencyContext` updates, `formatCurrency` uses new currency everywhere
+2. Currency change — `CurrencyContext` updates, `useMoney()` reflects new currency everywhere
 3. Display name save — calls `updateUserDisplayName`, shows success toast
 4. Delete account flow — confirmation text must match exactly before button enables
 

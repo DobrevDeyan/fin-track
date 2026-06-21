@@ -499,9 +499,22 @@ export default function DashboardPage() {
 
 ## Utilities
 
-### `formatCurrency()`
+### `useMoney()` — currency formatting in components
+
+**Location:** `contexts/CurrencyContext.tsx`
+
+```typescript
+const { format: fmt, toBase, fromBase, currency } = useMoney()
+// fmt(eurAmount)               → display string (e.g. "€1,234.56")
+// toBase(displayAmount, from?) → display → EUR base (call on save)
+// fromBase(eurAmount)          → EUR base → display number (call for form prefill)
+```
+
+### `formatCurrency()` — low-level utility
 
 **Location:** `lib/currency-utils.ts`
+
+> **Note:** Components do not call this directly. Use `useMoney()` instead.
 
 ```typescript
 formatCurrency(1234.56, { currency: "EUR" })           // "€1,234.56"

@@ -6,7 +6,7 @@
 
 ## Prerequisites
 
-- **Node.js** 20+ LTS (`node --version` should show v20.x)
+- **Node.js** 22+ LTS (`node --version` should show v22.x)
 - **npm** 9+
 - **Firebase CLI**: `npm install -g firebase-tools`
 - **Google Cloud CLI** (optional — only needed for ML service deployment)
