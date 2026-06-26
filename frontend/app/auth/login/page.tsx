@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSafeInternalPath } from "@/lib/utils";
 import { Chrome, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
@@ -25,8 +26,8 @@ export default function LoginPage() {
   // Redirect already-authenticated users to return URL or dashboard
   useEffect(() => {
     if (!authLoading && user) {
-      const returnUrl = searchParams.get('returnUrl');
-      const destination = returnUrl ? decodeURIComponent(returnUrl) : '/dashboard';
+      // Validate returnUrl to a same-origin path — prevents open-redirect after login.
+      const destination = getSafeInternalPath(searchParams.get('returnUrl'));
       router.push(destination);
     }
   }, [user, authLoading, router, searchParams]);

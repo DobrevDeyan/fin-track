@@ -83,6 +83,16 @@ export function useSessionTimeout(
 
     // Set logout timer
     inactivityTimerRef.current = setTimeout(async () => {
+      // Guard against a stale logout: a blocking onWarning (e.g. window.confirm) can
+      // hold the main thread past this timer's deadline, queuing this callback. If the
+      // user then chose "stay", resetInactivityTimer() refreshed lastActivityRef — so a
+      // genuine timeout means little activity since lastActivityRef. If activity is more
+      // recent than the timeout window, re-arm instead of logging the user out.
+      const elapsedSinceActivity = Date.now() - lastActivityRef.current;
+      if (elapsedSinceActivity < sessionTimeout - 1000) {
+        resetInactivityTimer();
+        return;
+      }
       if (isActiveRef.current && onTimeoutRef.current) {
         await onTimeoutRef.current();
       }

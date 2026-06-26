@@ -93,12 +93,9 @@ fin-track/
     │   ├── auth.py              # Firebase token verification
     │   ├── forecasting.py       # Prophet / ARIMA logic
     │   └── anomaly_detection.py # Isolation Forest logic
-    ├── models/
-    │   ├── entry.py             # Pydantic models matching Firestore schema
-    │   └── responses.py         # Typed API response models
-    └── tests/
-        ├── test_analytics.py
-        └── test_forecast.py
+    └── models/
+        ├── entry.py             # Pydantic models matching Firestore schema
+        └── responses.py         # Typed API response models
 ```
 
 ---

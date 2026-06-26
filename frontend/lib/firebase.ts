@@ -34,6 +34,19 @@ let functions: Functions;
 let analytics: Analytics | null = null;
 
 if (typeof window !== "undefined") {
+  // Fail loud on misconfiguration: with empty config, initializeApp() still succeeds
+  // but every auth/firestore call later fails with an opaque error. Surface it up front
+  // (critical → Sentry) so a broken deploy/preview is caught immediately.
+  const requiredConfigKeys = ["apiKey", "authDomain", "projectId", "appId"] as const;
+  const missingConfigKeys = requiredConfigKeys.filter((key) => !firebaseConfig[key]);
+  if (missingConfigKeys.length > 0) {
+    logger.error(
+      "Firebase configuration is missing required environment variables",
+      undefined,
+      { critical: true, missingConfigKeys }
+    );
+  }
+
   // Only initialize on client side
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);

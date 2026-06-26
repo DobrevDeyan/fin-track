@@ -96,7 +96,6 @@ Pocket is a monorepo with three independently deployed services:
 | **i18n** | next-intl (English, Bulgarian) |
 | **Export** | jsPDF, CSV |
 | **Error Tracking** | Sentry (`@sentry/nextjs`) |
-| **Testing** | Jest, React Testing Library |
 
 ---
 

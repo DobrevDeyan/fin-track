@@ -234,10 +234,6 @@ Use `pk_test_` publishable key and test price IDs in `.env.local`. Test in incog
 | `npm run build` | Production build (syncs version + Next.js static export to `out/`) |
 | `npm start` | Serve production build |
 | `npm run lint` | Run ESLint |
-| `npm test` | Run Jest tests |
-| `npm run test:watch` | Jest in watch mode |
-| `npm run test:coverage` | Generate coverage report |
-| `npm run test:ci` | CI mode (no watch, with coverage) |
 
 ### Cloud Functions
 

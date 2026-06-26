@@ -88,7 +88,10 @@
       "Bash(grep -iv \"currencySymbol\\\\|currencyCode\\\\|//\\\\|currency: \\\\\"EUR\\\\\" //\")",
       "Bash(node /d/repos/fin-track/frontend/node_modules/typescript/bin/tsc --noEmit -p /d/repos/fin-track/functions/tsconfig.json)",
       "Bash(node /d/repos/fin-track/frontend/node_modules/typescript/bin/tsc --noEmit -p /d/repos/fin-track/frontend/tsconfig.json)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('engines', 'not set'\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('engines', 'not set'\\)\\)\")",
+      "Bash(node -e \"const en=require\\('./messages/en.json'\\); console.log\\('EN auth keys:'\\); console.log\\(Object.keys\\(en.auth||{}\\).sort\\(\\).join\\('\\\\n'\\)\\);\")",
+      "PowerShell(npm install --prefix d:\\\\repos\\\\fin-track\\\\frontend 2>&1)",
+      "PowerShell(npm install --prefix d:\\\\repos\\\\fin-track\\\\functions 2>&1)"
     ]
   }
 }

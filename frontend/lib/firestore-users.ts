@@ -216,7 +216,7 @@ export async function completeOnboarding(
  * Reset all financial data for a user without deleting their account.
  *
  * Collections cleared:
- *   entries, budgets, goals, savingsAccounts, recurringTransactions, assets
+ *   entries, budgets, goals, savingsAccounts, recurringTransactions, assets, categories
  *   (queried by userId field, chunked into 500-doc batches)
  *
  * Single documents cleared:
@@ -253,6 +253,7 @@ export async function resetFinancialData(userId: string): Promise<void> {
     "savingsAccounts",
     "recurringTransactions",
     "assets",
+    "categories",
   ]
 
   for (const collectionName of userOwnedCollections) {
@@ -281,9 +282,10 @@ export async function resetFinancialData(userId: string): Promise<void> {
  *   entries, budgets, goals, savingsAccounts, recurringTransactions, assets
  *   (queried by userId field, chunked into 500-doc batches)
  *
- * Single documents deleted:
- *   financialSummaries/{userId}, aiInsights/{userId}, scanUsage/{userId},
- *   leaderboardProfiles/{userId}, users/{userId}
+ * Single documents deleted (client-side here):
+ *   financialSummaries/{userId}, aiInsights/{userId}, userDebts/{userId}, users/{userId}
+ *   (scanUsage/{userId} and leaderboardProfiles/{userId} are admin-write-only and
+ *    are deleted server-side by the deleteMyAccount CF — see step 5/6)
  *
  * Side-effects:
  *   - Firebase Storage receipts under receipts/{userId}/ are deleted
@@ -347,13 +349,15 @@ export async function deleteUserData(userId: string): Promise<void> {
     }
   }
 
-  // 5. Delete single-document records keyed by userId
+  // 5. Delete single-document records keyed by userId.
+  //    NOTE: scanUsage and leaderboardProfiles are admin-write-only (firestore.rules
+  //    `allow write: if false`), so the client cannot delete them — the deleteMyAccount
+  //    CF (step 6) removes them server-side. Deleting them here would reject with
+  //    permission-denied and abort the whole Promise.all before the CF ever runs.
   await Promise.all([
     deleteDoc(doc(db, "financialSummaries", userId)),
     deleteDoc(doc(db, "aiInsights", userId)),
-    deleteDoc(doc(db, "scanUsage", userId)),
     deleteDoc(doc(db, "userDebts", userId)),
-    deleteDoc(doc(db, "leaderboardProfiles", userId)),
     deleteDoc(doc(db, "users", userId)),
   ])
 

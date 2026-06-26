@@ -77,13 +77,9 @@ analytics-service/
 │   ├── forecasting.py            # Linear trend + EMA cash flow forecasting
 │   └── anomaly_detection.py      # Isolation Forest anomaly detection
 │
-├── models/
-│   ├── entry.py                  # Pydantic request models (DateRangeRequest)
-│   └── responses.py              # Typed response models
-│
-└── tests/
-    ├── test_analytics.py         # FastAPI TestClient tests with dependency overrides
-    └── test_forecast.py          # Unit tests for forecasting service
+└── models/
+    ├── entry.py                  # Pydantic request models (DateRangeRequest)
+    └── responses.py              # Typed response models
 ```
 
 ---
@@ -350,24 +346,6 @@ The Excel export returns a binary response with `Content-Type: application/vnd.o
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/api/investments/` | Token | Placeholder — Phase 4 |
-
----
-
-## Running Tests
-
-```bash
-cd analytics-service
-source .venv/bin/activate
-pytest tests/ -v
-```
-
-Tests use FastAPI's `TestClient` and override the `verify_token` dependency with a stub — no real Firebase connection needed. Firestore calls are mocked with `unittest.mock.patch`.
-
-To run a single file:
-
-```bash
-pytest tests/test_forecast.py -v
-```
 
 ---
 

@@ -38,3 +38,24 @@ export function getAuthErrorMessage(errorCode: string): string {
   return errorMessages[errorCode] || "An unexpected error occurred. Please try again.";
 }
 
+/**
+ * Sanitize a user-supplied `returnUrl` into a safe, same-origin path.
+ *
+ * Prevents open-redirect / phishing after auth: only same-origin absolute paths
+ * are allowed (must start with a single "/" and not "//" or "/\\", which browsers
+ * treat as protocol-relative external URLs). Anything else falls back.
+ */
+export function getSafeInternalPath(raw: string | null | undefined, fallback: string = "/dashboard"): string {
+  if (!raw) return fallback;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return fallback;
+  }
+  // Reject external/protocol-relative ("//host", "/\\host"), absolute URLs, and
+  // schemes like "javascript:" — only allow paths rooted at a single "/".
+  if (!/^\/(?![/\\])/.test(decoded)) return fallback;
+  return decoded;
+}
+

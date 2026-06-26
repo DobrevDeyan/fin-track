@@ -45,7 +45,6 @@ cd ml-service && npm run dev      # http://localhost:8000 (optional)
 | [docs/API.md](docs/API.md) | ML service endpoints, Cloud Functions, hooks, components, types |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | End-user feature documentation |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Feature status, Q3 2026 plans, competitive analysis |
-| [docs/TESTING.md](docs/TESTING.md) | Manual functional test plan (20 modules) |
 | [docs/LAUNCH.md](docs/LAUNCH.md) | Beta launch strategy — channels, retention, metrics |
 
 ---

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { sendPasswordResetEmail, AuthError } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getAuthErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +26,7 @@ export default function ForgotPasswordPage() {
       return false;
     }
     if (!emailRegex.test(value)) {
-      setEmailError(t("emailInvalid"));2
+      setEmailError(t("emailInvalid"));
       return false;
     }
     setEmailError("");
@@ -43,8 +44,15 @@ export default function ForgotPasswordPage() {
       await sendPasswordResetEmail(auth, email);
       setSuccess(true);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("resetError");
-      setError(message);
+      const code = (err as AuthError)?.code;
+      // Enumeration-safe: never reveal whether an account exists for this email.
+      // If Firebase's email-enumeration protection is off it returns user-not-found —
+      // surface the same generic success the user would see for a real account.
+      if (code === "auth/user-not-found") {
+        setSuccess(true);
+      } else {
+        setError(code ? getAuthErrorMessage(code) : t("resetError"));
+      }
     } finally {
       setLoading(false);
     }

@@ -28,8 +28,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper function to create or update user document in Firestore
-const createUserDocument = async (user: User, isNewUser: boolean = false) => {
+// Helper function to create or update user document in Firestore.
+// New-vs-existing is decided solely by whether the Firestore doc exists (reliable),
+// rather than any auth-metadata heuristic.
+const createUserDocument = async (user: User) => {
   if (!user || typeof window === "undefined") return;
 
   const userRef = doc(db, "users", user.uid);
@@ -61,7 +63,7 @@ const createUserDocument = async (user: User, isNewUser: boolean = false) => {
     updatedAt: serverTimestamp(),
   };
 
-  if (!userSnap.exists() || isNewUser) {
+  if (!userSnap.exists()) {
     // Create new user document — onboardingCompleted: false triggers the onboarding flow
     await setDoc(userRef, {
       ...userData,
@@ -110,14 +112,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
-      
-      // Create or update user document in Firestore when auth state changes.
-      // Pass isNewUser=true when the doc doesn't exist yet so onboardingCompleted is initialised.
+
+      // Single writer for the user document. createUserDocument checks existence
+      // internally and either creates it (initialising onboardingCompleted) or refreshes
+      // auth-derived fields. signIn/signUp/signInWithGoogle no longer write it themselves,
+      // which avoids the duplicate reads and racing writers on every login.
       if (user) {
         try {
-          const { doc: _doc, getDoc: _getDoc } = await import("firebase/firestore");
-          const snap = await _getDoc(_doc(db, "users", user.uid));
-          await createUserDocument(user, !snap.exists());
+          await createUserDocument(user);
         } catch (error) {
           logger.error("Error creating user document", error, { critical: true });
         }
@@ -129,11 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // Ensure user document exists (in case it wasn't created before)
-      if (userCredential.user) {
-        await createUserDocument(userCredential.user);
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      // The onAuthStateChanged listener creates/refreshes the user document.
     } catch (error) {
       const authError = error as AuthError;
       throw new Error(getAuthErrorMessage(authError.code));
@@ -142,11 +141,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Create user document for new user
-      if (userCredential.user) {
-        await createUserDocument(userCredential.user, true);
-      }
+      await createUserWithEmailAndPassword(auth, email, password);
+      // The onAuthStateChanged listener creates the user document — the doc is absent
+      // for a brand-new account, so it initialises onboardingCompleted: false.
     } catch (error) {
       const authError = error as AuthError;
       throw new Error(getAuthErrorMessage(authError.code));
@@ -156,12 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      // Check if this is a new user or existing user
-      const isNewUser = userCredential.user.metadata.creationTime === userCredential.user.metadata.lastSignInTime;
-      if (userCredential.user) {
-        await createUserDocument(userCredential.user, isNewUser);
-      }
+      await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener creates/refreshes the user document, keying
+      // new-vs-existing off whether the Firestore doc exists.
     } catch (error) {
       const authError = error as AuthError;
       throw new Error(getAuthErrorMessage(authError.code));
