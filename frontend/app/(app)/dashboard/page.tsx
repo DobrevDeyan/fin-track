@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency, useMoney } from "@/contexts/CurrencyContext";
 import { useHousehold } from "@/contexts/HouseholdContext";
 import { Button } from "@/components/ui/button";
-import { ScanLine, Users, User, Share2, UtensilsCrossed, ShoppingCart, Car, Zap, Calculator, Smile, Heart, GraduationCap, Plane, Gift, Briefcase, Wallet, CircleDot } from "lucide-react";
+import { ScanLine, Users, User, Share2, UtensilsCrossed, ShoppingCart, Car, Zap, Calculator, Smile, Heart, GraduationCap, Plane, Gift, Briefcase, Wallet, CircleDot, BarChart3 } from "lucide-react";
 import { MetricsCards, MetricsCardsSkeleton } from "@/components/dashboard/MetricsCards";
 import { BudgetProgressBar } from "@/components/dashboard/BudgetProgressBar";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
@@ -24,7 +24,8 @@ import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { QuickExpenseSheet } from "@/components/dashboard/QuickExpenseSheet"
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
-import { TransactionFilters } from "@/components/dashboard/TransactionFilters";
+import { TransactionFilters, type TransactionFilterCriteria } from "@/components/dashboard/TransactionFilters";
+import { filterAndSortTransactions } from "@/lib/transaction-filters";
 import { SalaryReminderNotification } from "@/components/SalaryReminderNotification";
 import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
 import { completeOnboarding } from "@/lib/firestore-users";
@@ -54,6 +55,10 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   "Gifts & Donations":  Gift,
   "Salary":             Briefcase,
   "Goal Contribution":  Wallet,
+  // Income categories (DEFAULT_INCOME_CATEGORIES) — see review M4.
+  "Freelance":          Wallet,
+  "Investment":         BarChart3,
+  "Gift":               Gift,
   "Other":              CircleDot,
 }
 import { useUIMode } from "@/contexts/UIComplexityContext";
@@ -159,6 +164,38 @@ function DashboardInnerContent() {
         onSavingsReload: loadSavingsAccounts,
         onSummaryRefresh: refreshSummary,
     });
+
+    // The transactions filter UI reports its criteria here; the visible list is
+    // derived from the single `entries` source. When no filter UI is mounted
+    // (non-full mode) criteria stays null and we show all loaded entries. When a
+    // filter is active but matches nothing, the derived list is correctly empty
+    // (no fallback to the full list — see review C1).
+    const [filterCriteria, setFilterCriteria] = useState<TransactionFilterCriteria | null>(null);
+    const isFiltering = filterCriteria?.hasActiveFilters ?? false;
+    const { allEntries, loadAllEntries, loadingAllEntries } = entriesHook;
+
+    // When a filter is active, search the full history (loaded lazily) instead
+    // of only the paginated page, so older transactions are searchable (M1).
+    useEffect(() => {
+        if (isFiltering && !allEntries && !loadingAllEntries) {
+            loadAllEntries();
+        }
+    }, [isFiltering, allEntries, loadingAllEntries, loadAllEntries]);
+
+    // Filter over the full history once it's loaded; otherwise the paginated list.
+    const filterSource = isFiltering && allEntries ? allEntries : entriesHook.entries;
+    const visibleTransactions = useMemo(() => {
+        if (!filterCriteria) return entriesHook.entries;
+        return filterAndSortTransactions(
+            filterSource,
+            filterCriteria.options,
+            filterCriteria.sortBy
+        );
+    }, [filterSource, filterCriteria, entriesHook.entries]);
+
+    // While the full history is still loading for an active filter, show a
+    // loading state rather than a premature "no results".
+    const isFilterResultsLoading = isFiltering && loadingAllEntries && !allEntries;
 
     // Load all data when auth is ready
     useEffect(() => {
@@ -455,14 +492,16 @@ function DashboardInnerContent() {
                 ) : (
                 <SectionErrorBoundary label="Transactions">
                     <TransactionsTable
-                        transactions={entriesHook.filteredEntries.length > 0 ? entriesHook.filteredEntries : entriesHook.entries}
+                        transactions={visibleTransactions}
                         onAdd={() => entriesHook.setDialogOpen(true)}
                         onEdit={entriesHook.handleEdit}
                         onDelete={entriesHook.handleDelete}
                         onImportCSV={() => setCsvImportOpen(true)}
-                        filters={mode === "full" ? <TransactionFilters entries={entriesHook.entries} onFilterChange={entriesHook.setFilteredEntries} compact={true} /> : undefined}
+                        filters={mode === "full" ? <TransactionFilters entries={entriesHook.entries} onFilterChange={setFilterCriteria} compact={true} /> : undefined}
+                        hasActiveFilters={mode === "full" && isFiltering}
+                        isResultsLoading={isFilterResultsLoading}
                         onLoadMore={entriesHook.loadMore}
-                        hasMore={entriesHook.hasMore}
+                        hasMore={isFiltering ? false : entriesHook.hasMore}
                         isLoadingMore={entriesHook.isLoadingMore}
                     />
                 </SectionErrorBoundary>

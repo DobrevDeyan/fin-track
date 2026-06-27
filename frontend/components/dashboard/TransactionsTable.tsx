@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Plus, Trash2, Edit, ChevronLeft, ChevronRight, FileImage, ChevronDown, ChevronUp,
-  Receipt, Zap, FileUp,
+  Receipt, Zap, FileUp, Loader2,
   UtensilsCrossed, ShoppingCart, Car, Calculator, Smile, Heart,
-  GraduationCap, Plane, Gift, CircleDot, Briefcase, Wallet,
+  GraduationCap, Plane, Gift, CircleDot, Briefcase, Wallet, BarChart3,
 } from "lucide-react"
 import { VirtualizedTransactionTable } from "./VirtualizedTransactionTable"
 import {
@@ -47,6 +47,10 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   "Gifts & Donations": Gift,
   "Salary":           Briefcase,
   "Goal Contribution": Wallet,
+  // Income categories (DEFAULT_INCOME_CATEGORIES) — see review M4.
+  "Freelance":        Wallet,
+  "Investment":       BarChart3,
+  "Gift":             Gift,
   "Other":            CircleDot,
 }
 
@@ -73,6 +77,12 @@ interface TransactionsTableProps {
   onLoadMore?: () => void
   hasMore?: boolean
   isLoadingMore?: boolean
+  /** True when the parent's filter UI has at least one active filter. Lets the
+   *  empty state distinguish "no results for your filters" from "no entries yet". */
+  hasActiveFilters?: boolean
+  /** True while the full history is still loading for an active filter, so the
+   *  empty area shows a loader instead of a premature "no results". */
+  isResultsLoading?: boolean
 }
 
 const INITIAL_VISIBLE = 2
@@ -90,6 +100,8 @@ export function TransactionsTable({
   onLoadMore,
   hasMore,
   isLoadingMore,
+  hasActiveFilters = false,
+  isResultsLoading = false,
 }: TransactionsTableProps) {
   const t = useTranslations("dashboard")
   const tCommon = useTranslations("common")
@@ -228,19 +240,36 @@ export function TransactionsTable({
       </CardHeader>
       <CardContent className="px-2 sm:px-4 md:px-6">
         {transactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="rounded-full bg-muted p-6 mb-4">
-              <Receipt className="h-12 w-12 text-muted-foreground" />
+          isResultsLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground">{tCommon("loading")}</p>
             </div>
-            <h3 className="text-lg font-semibold mb-2">{t("noEntriesYet")}</h3>
-            <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
-              {t("noEntriesDescription")}
-            </p>
-            <Button onClick={onAdd} size="lg" className="gap-2">
-              <Plus className="h-5 w-5" />
-              {t("addFirstEntry")}
-            </Button>
-          </div>
+          ) : hasActiveFilters ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="rounded-full bg-muted p-6 mb-4">
+                <Receipt className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">{t("noFilterResults")}</h3>
+              <p className="text-sm text-muted-foreground text-center max-w-sm">
+                {t("noFilterResultsDescription")}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="rounded-full bg-muted p-6 mb-4">
+                <Receipt className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">{t("noEntriesYet")}</h3>
+              <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+                {t("noEntriesDescription")}
+              </p>
+              <Button onClick={onAdd} size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                {t("addFirstEntry")}
+              </Button>
+            </div>
+          )
         ) : shouldVirtualize && (useVirtualization || expanded) ? (
           <div className="space-y-4">
             {shouldVirtualize && !useVirtualization && (

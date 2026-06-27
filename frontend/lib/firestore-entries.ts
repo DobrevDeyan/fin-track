@@ -227,6 +227,64 @@ export async function getUserEntries(
 }
 
 /**
+ * Get the user's full entry history (bounded), most-recent first.
+ *
+ * Used by the transactions filter/search view so that searching and filtering
+ * operate over the whole dataset rather than only the first paginated page
+ * (see review M1). Pages through Firestore in batches and stops at `maxEntries`
+ * to bound read cost; a user with more than that many entries searches their
+ * most recent `maxEntries`. Reuses the same userId + date + createdAt index as
+ * getUserEntries.
+ */
+export async function getAllUserEntries(
+  userId: string,
+  maxEntries: number = 2000
+): Promise<(EntryDocument & { id: string })[]> {
+  try {
+    const entriesRef = collection(db, "entries")
+    const { limit, startAfter } = await import("firebase/firestore")
+    const pageSize = 500
+
+    const all: (EntryDocument & { id: string })[] = []
+    let cursor: unknown = null
+
+    while (all.length < maxEntries) {
+      const q = cursor
+        ? query(
+            entriesRef,
+            where("userId", "==", userId),
+            orderBy("date", "desc"),
+            orderBy("createdAt", "desc"),
+            startAfter(cursor),
+            limit(pageSize)
+          )
+        : query(
+            entriesRef,
+            where("userId", "==", userId),
+            orderBy("date", "desc"),
+            orderBy("createdAt", "desc"),
+            limit(pageSize)
+          )
+
+      const snap = await getDocs(q)
+      if (snap.empty) break
+
+      snap.forEach((d) =>
+        all.push({ ...(d.data() as EntryDocument), id: d.id })
+      )
+
+      if (snap.docs.length < pageSize) break
+      cursor = snap.docs[snap.docs.length - 1]
+    }
+
+    return all.slice(0, maxEntries)
+  } catch (error) {
+    logger.error("Error fetching all entries", error)
+    throw error
+  }
+}
+
+/**
  * Get entries for a user within a date range (for reports).
  * Queries Firestore server-side — only loads docs in the selected range.
  */

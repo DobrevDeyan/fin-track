@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search, Filter, X, ArrowUpDown } from "lucide-react"
 import { getUniqueCategories } from "@/lib/categories"
-import { filterAndSortTransactions } from "@/lib/transaction-filters"
+import type { FilterOptions } from "@/lib/types"
 
 interface Entry {
   id: string
@@ -26,9 +26,21 @@ interface Entry {
   tags?: string[]
 }
 
+/**
+ * The filter UI reports the user's chosen criteria upward; the parent owns the
+ * source entries and derives the filtered view from them (single source of
+ * truth). The component never computes or stores the filtered array itself —
+ * that previously caused two writers to race on the same list (see review C2).
+ */
+export interface TransactionFilterCriteria {
+  options: FilterOptions
+  sortBy: string
+  hasActiveFilters: boolean
+}
+
 interface TransactionFiltersProps {
   entries: Entry[]
-  onFilterChange: (filtered: Entry[]) => void
+  onFilterChange: (criteria: TransactionFilterCriteria) => void
   compact?: boolean
   className?: string // Add className prop for styling
 }
@@ -57,23 +69,33 @@ export function TransactionFilters({
     new Set(entries.flatMap((e) => e.tags ?? []))
   ).sort()
 
-  // Apply filters whenever any filter value or entries change
+  const hasActiveFilters =
+    searchQuery !== "" ||
+    categoryFilter !== "all" ||
+    typeFilter !== "all" ||
+    dateFilter !== "all" ||
+    tagFilter !== "" ||
+    sortBy !== "date-desc" ||
+    customDateRange.startDate !== "" ||
+    customDateRange.endDate !== ""
+
+  // Report the chosen criteria upward whenever a filter value changes. The
+  // parent derives the filtered list from its own `entries` source, so this
+  // effect does NOT depend on `entries` and never fires on data changes.
   useEffect(() => {
-    onFilterChange(
-      filterAndSortTransactions(
-        entries,
-        {
-          searchQuery,
-          categoryFilter,
-          typeFilter,
-          dateFilter,
-          tagFilter,
-          customDateRange: showCustomDateRange ? customDateRange : undefined,
-        },
-        sortBy
-      )
-    )
-  }, [searchQuery, categoryFilter, typeFilter, dateFilter, tagFilter, sortBy, customDateRange, showCustomDateRange, entries, onFilterChange])
+    onFilterChange({
+      options: {
+        searchQuery,
+        categoryFilter,
+        typeFilter,
+        dateFilter,
+        tagFilter,
+        customDateRange: showCustomDateRange ? customDateRange : undefined,
+      },
+      sortBy,
+      hasActiveFilters,
+    })
+  }, [searchQuery, categoryFilter, typeFilter, dateFilter, tagFilter, sortBy, customDateRange, showCustomDateRange, hasActiveFilters, onFilterChange])
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
@@ -110,18 +132,9 @@ export function TransactionFilters({
     setSortBy("date-desc")
     setCustomDateRange({ startDate: "", endDate: "" })
     setShowCustomDateRange(false)
-    onFilterChange(entries)
+    // No explicit onFilterChange here: resetting the state above re-runs the
+    // reporting effect, which emits the cleared criteria to the parent.
   }
-
-  const hasActiveFilters =
-    searchQuery ||
-    categoryFilter !== "all" ||
-    typeFilter !== "all" ||
-    dateFilter !== "all" ||
-    tagFilter ||
-    sortBy !== "date-desc" ||
-    customDateRange.startDate ||
-    customDateRange.endDate
 
   const filterControls = (
     <div className="flex items-center gap-3">

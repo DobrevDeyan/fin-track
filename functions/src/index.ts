@@ -1613,16 +1613,9 @@ interface SummaryMonthAgg {
  * idempotent — safe under Firestore's at-least-once trigger redelivery — and
  * self-heals any drift on the next entry mutation.
  */
-async function rebuildSummaryFromEntries(userId: string): Promise<void> {
+async function rebuildSummaryFromEntries(userId: string, eventMillis?: number): Promise<void> {
   const summaryRef = db.collection("financialSummaries").doc(userId);
   const snap = await db.collection("entries").where("userId", "==", userId).get();
-
-  // No entries left (e.g. after a reset or account deletion) — remove the doc
-  // rather than leave an empty summary behind.
-  if (snap.empty) {
-    await summaryRef.delete().catch(() => { /* already gone */ });
-    return;
-  }
 
   let totalIncome = 0;
   let totalExpenses = 0;
@@ -1660,14 +1653,39 @@ async function rebuildSummaryFromEntries(userId: string): Promise<void> {
     }
   }
 
-  await summaryRef.set({
-    userId,
-    totalIncome,
-    totalExpenses,
-    totalSalary,
-    entryCount: snap.size,
-    months,
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  // Read-check-write in a transaction so a recompute triggered by an OLDER
+  // entry-write event can't clobber one already written from a NEWER event.
+  // Without this, two near-simultaneous writes can each read-all then each set,
+  // leaving the summary reflecting whichever set happened to land last (review
+  // M5). The heavy entries read stays outside the transaction; the ordering
+  // guard (lastEventMillis) ensures the newest event's snapshot — which read the
+  // most complete data — wins. `eventMillis` is omitted by manual rebuilds,
+  // which always write (and stamp "now") since they are deliberate repairs.
+  await db.runTransaction(async (tx) => {
+    const cur = await tx.get(summaryRef);
+    if (eventMillis !== undefined && cur.exists) {
+      const stored = (cur.data() as { lastEventMillis?: number } | undefined)?.lastEventMillis;
+      if (typeof stored === "number" && stored > eventMillis) return; // a newer recompute already won
+    }
+
+    // No entries left (e.g. after a reset or account deletion) — remove the doc
+    // rather than leave an empty summary behind. (Residual edge: a concurrent
+    // stale setter could briefly revive it; self-heals on the next mutation.)
+    if (snap.empty) {
+      if (cur.exists) tx.delete(summaryRef);
+      return;
+    }
+
+    tx.set(summaryRef, {
+      userId,
+      totalIncome,
+      totalExpenses,
+      totalSalary,
+      entryCount: snap.size,
+      months,
+      lastEventMillis: eventMillis ?? Date.now(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
   });
 }
 
@@ -1683,7 +1701,10 @@ export const maintainFinancialSummary = onDocumentWritten(
     const after = event.data?.after?.data() as { userId?: string } | undefined;
     const userId = after?.userId ?? before?.userId;
     if (!userId) return;
-    await rebuildSummaryFromEntries(userId);
+    // event.time is the entry-write commit time; use it to order concurrent
+    // recomputes (see rebuildSummaryFromEntries / review M5).
+    const eventMillis = event.time ? new Date(event.time).getTime() : Date.now();
+    await rebuildSummaryFromEntries(userId, Number.isFinite(eventMillis) ? eventMillis : Date.now());
   }
 );
 

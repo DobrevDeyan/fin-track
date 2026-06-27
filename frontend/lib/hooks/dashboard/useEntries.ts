@@ -5,11 +5,12 @@
  * All mutations atomically update the financial summary.
  */
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { Timestamp } from "firebase/firestore"
 import {
   createEntry,
   getUserEntries,
+  getAllUserEntries,
   deleteEntry,
   updateEntry
 } from "@/lib/firestore-entries"
@@ -36,7 +37,6 @@ export function useEntries({
   onSummaryRefresh
 }: UseEntriesOptions) {
   const [entries, setEntries] = useState<Entry[]>([])
-  const [filteredEntries, setFilteredEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -45,6 +45,16 @@ export function useEntries({
   const [lastVisible, setLastVisible] = useState<unknown>(null)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Full entry history, loaded lazily only when the transactions filter/search
+  // is active so that filtering covers the whole dataset, not just the first
+  // paginated page (see review M1). `null` = not loaded yet.
+  const [allEntries, setAllEntries] = useState<Entry[] | null>(null)
+  const [loadingAllEntries, setLoadingAllEntries] = useState(false)
+  // Guards the lazy full-history load so a failed fetch doesn't get retried in a
+  // tight loop by the caller's effect. Reset to false only on cache invalidation
+  // (a create/edit), which lets the next active-filter render refetch.
+  const allEntriesAttemptedRef = useRef(false)
 
   // Stored amounts are canonical EUR; the form works in the user's display currency.
   // Convert display → EUR on the way into Firestore.
@@ -80,7 +90,6 @@ export function useEntries({
       }))
 
       setEntries(convertedEntries)
-      setFilteredEntries(convertedEntries)
       setLastVisible(newLastVisible)
       setHasMore(firestoreEntries.length === 20)
     } catch (err) {
@@ -113,7 +122,6 @@ export function useEntries({
       }))
 
       setEntries((prev) => [...prev, ...convertedEntries])
-      setFilteredEntries((prev) => [...prev, ...convertedEntries])
 
       setLastVisible(newLastVisible)
       setHasMore(firestoreEntries.length === 20)
@@ -123,6 +131,44 @@ export function useEntries({
       setIsLoadingMore(false)
     }
   }, [userId, lastVisible, isLoadingMore])
+
+  // Invalidate the cached full history so the next active-filter render refetches.
+  const invalidateAllEntries = useCallback(() => {
+    allEntriesAttemptedRef.current = false
+    setAllEntries(null)
+  }, [])
+
+  // Load the full entry history for filtering/search. Lazy + cached + self-
+  // guarding: safe to call on every render while a filter is active. It fetches
+  // at most once per cache generation (success OR failure) so a failed fetch is
+  // not retried in a loop; a create/edit invalidates the cache to allow a fresh
+  // attempt. A delete mirrors the removal in-place (see handleDelete).
+  const loadAllEntries = useCallback(async () => {
+    if (!userId || allEntriesAttemptedRef.current) return
+    allEntriesAttemptedRef.current = true
+    setLoadingAllEntries(true)
+    try {
+      const firestoreEntries = await getAllUserEntries(userId)
+      const converted: Entry[] = firestoreEntries.map((entry) => ({
+        id: entry.id,
+        description: entry.description,
+        amount: entry.amount,
+        category: entry.category,
+        date: toISOString(entry.date) || "",
+        type: entry.type,
+        currency: entry.currency,
+        notes: entry.notes,
+        tags: entry.tags,
+        receiptUrl: entry.receiptUrl,
+      }))
+      setAllEntries(converted)
+    } catch (err) {
+      logger.error("Error loading full entry history for filtering", err)
+      // Leave allEntries as-is; the view falls back to the paginated list.
+    } finally {
+      setLoadingAllEntries(false)
+    }
+  }, [userId])
 
   const handleAdd = useCallback(async (data: EntryFormData) => {
     if (!userId) return
@@ -151,6 +197,7 @@ export function useEntries({
         })
 
         await loadEntries()
+        invalidateAllEntries() // full-history cache is stale after an edit
         if (onSummaryRefresh) await onSummaryRefresh()
         toast.success(SUCCESS_MESSAGES.ENTRY_UPDATED)
         setEditingEntry(null)
@@ -185,6 +232,7 @@ export function useEntries({
         }
 
         await loadEntries()
+        invalidateAllEntries() // full-history cache is stale after a new entry
         if (onSummaryRefresh) await onSummaryRefresh()
         toast.success(SUCCESS_MESSAGES.ENTRY_ADDED(data.type))
       }
@@ -194,7 +242,7 @@ export function useEntries({
       toast.error(errorMessage)
       throw error
     }
-  }, [userId, editingEntry, loadEntries, onSavingsReload, onSummaryRefresh, toBaseCurrency])
+  }, [userId, editingEntry, loadEntries, invalidateAllEntries, onSavingsReload, onSummaryRefresh, toBaseCurrency])
 
   const handleEdit = useCallback((id: string) => {
     const entry = entries.find((e) => e.id === id)
@@ -224,7 +272,7 @@ export function useEntries({
       }
 
       setEntries((prev) => prev.filter((e) => e.id !== id))
-      setFilteredEntries((prev) => prev.filter((e) => e.id !== id))
+      setAllEntries((prev) => (prev ? prev.filter((e) => e.id !== id) : prev))
       if (onSummaryRefresh) await onSummaryRefresh()
       toast.success("Entry deleted successfully!")
     } catch (error) {
@@ -242,8 +290,9 @@ export function useEntries({
 
   return {
     entries,
-    filteredEntries,
-    setFilteredEntries,
+    allEntries,
+    loadAllEntries,
+    loadingAllEntries,
     loading,
     error,
     dialogOpen,

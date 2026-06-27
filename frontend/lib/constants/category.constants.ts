@@ -21,6 +21,11 @@ export const CATEGORY_COLORS: Record<string, string> = {
   "Gifts & Donations":"bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
   "Goal Contribution":"bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
   "Salary":           "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  // Income categories (DEFAULT_INCOME_CATEGORIES) — previously fell through to
+  // the gray default badge (see review M4).
+  "Freelance":        "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
+  "Investment":       "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  "Gift":             "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/40 dark:text-fuchsia-300",
   "Other":            "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
 } as const;
 

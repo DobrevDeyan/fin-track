@@ -127,6 +127,8 @@
     "noEntriesYet": "No entries yet. Add your first entry to get started!",
     "noEntriesDescription": "Track your income and expenses by adding your first transaction.",
     "addFirstEntry": "Add First Entry",
+    "noFilterResults": "No matching transactions",
+    "noFilterResultsDescription": "No transactions match your current filters. Try adjusting or clearing them.",
     "showingEntries": "Showing {from} to {to} of {total} entries",
     "receipt": "Receipt",
     "receiptOptional": "Receipt (Optional)",

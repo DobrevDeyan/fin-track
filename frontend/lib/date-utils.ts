@@ -65,68 +65,65 @@ export interface DateRange {
   end: Date;
 }
 
+// Build a UTC instant at the start/end of a calendar day. Entry dates are
+// stored at UTC midnight of the user's picked day, so range bounds must also be
+// UTC-anchored — otherwise users west of UTC lose first-of-period entries and
+// users east of UTC pull in neighbour days (see review M2). `Date.UTC`
+// normalizes overflow (e.g. day 0 = last day of previous month).
+function utcStartOfDay(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+}
+function utcEndOfDay(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+}
+
 /**
- * Get date range for common filter options
+ * Get date range for common filter options.
+ *
+ * The period is anchored to the viewer's LOCAL calendar (their "today"/"this
+ * month"), but the returned bounds are UTC instants of those calendar days to
+ * match how entry dates are stored.
  */
 export function getDateRange(filter: string): DateRange | null {
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
 
   switch (filter) {
-    case "today": {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-      return { start, end };
-    }
-    case "thisWeek": {
-      const start = new Date(now);
-      start.setDate(now.getDate() - now.getDay());
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-      return { start, end };
-    }
-    case "thisMonth": {
-      const start = new Date(currentYear, currentMonth, 1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(currentYear, currentMonth + 1, 0);
-      end.setHours(23, 59, 59, 999);
-      return { start, end };
-    }
+    case "today":
+      return { start: utcStartOfDay(y, m, d), end: utcEndOfDay(y, m, d) };
+    case "thisWeek":
+      // Week starts on Sunday (now.getDay() === 0); Date.UTC normalizes the
+      // possibly-negative day-of-month back into the correct month/year.
+      return { start: utcStartOfDay(y, m, d - now.getDay()), end: utcEndOfDay(y, m, d) };
+    case "thisMonth":
+      return { start: utcStartOfDay(y, m, 1), end: utcEndOfDay(y, m + 1, 0) };
     case "lastMonth": {
-      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-      const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-      const start = new Date(lastMonthYear, lastMonth, 1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(lastMonthYear, lastMonth + 1, 0);
-      end.setHours(23, 59, 59, 999);
-      return { start, end };
+      const lastMonth = m === 0 ? 11 : m - 1;
+      const lastMonthYear = m === 0 ? y - 1 : y;
+      return {
+        start: utcStartOfDay(lastMonthYear, lastMonth, 1),
+        end: utcEndOfDay(lastMonthYear, lastMonth + 1, 0),
+      };
     }
-    case "thisYear": {
-      const start = new Date(currentYear, 0, 1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(currentYear, 11, 31);
-      end.setHours(23, 59, 59, 999);
-      return { start, end };
-    }
+    case "thisYear":
+      return { start: utcStartOfDay(y, 0, 1), end: utcEndOfDay(y, 11, 31) };
     default:
       return null;
   }
 }
 
 /**
- * Get date range for custom date filter
+ * Get date range for custom date filter. Inputs are "YYYY-MM-DD" calendar days;
+ * bounds are UTC instants of those days (see getDateRange / review M2).
  */
 export function getCustomDateRange(startDate: string, endDate: string): DateRange | null {
   if (!startDate || !endDate) return null;
 
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(endDate);
-  end.setHours(23, 59, 59, 999);
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T23:59:59.999Z`);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
   return { start, end };
 }
 

@@ -17,9 +17,11 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'diner', 'eatery', 'bakery', 'pizzeria', 'sushi', 'chinese', 'thai',
     'indian', 'mexican', 'italian', 'food', 'kitchen', 'tavern', 'pub',
     // Grocery Stores
-    'grocery', 'supermarket', 'market', 'lidl', 'aldi', 'tesco',
+    // ('market' / 'fresh' removed — they matched common words like "stock
+    //  market", "marketing", "fresh start"; 'supermarket' still matches. See M3.)
+    'grocery', 'supermarket', 'lidl', 'aldi', 'tesco',
     'sainsbury', 'waitrose', 'morrisons', 'asda', 'whole foods', 'trader joe',
-    'kaufland', 'billa', 'carrefour', 'fresh', 'organic',
+    'kaufland', 'billa', 'carrefour', 'organic',
     // Delivery
     'uber eats', 'deliveroo', 'just eat', 'doordash', 'grubhub', 'foodpanda',
   ],
@@ -38,10 +40,12 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   ],
   'Transportation': [
     // Gas & Fuel
+    // ('total' removed — the Total fuel brand matched the ordinary word "total"
+    //  in receipt totals; 'subway' removed here to de-dupe with Food. See M3.)
     'shell', 'bp', 'exxon', 'mobil', 'chevron', 'texaco', 'petrol', 'gas station',
-    'fuel', 'diesel', 'gasoline', 'lukoil', 'total', 'eni', 'petrom', 'omv',
+    'fuel', 'diesel', 'gasoline', 'lukoil', 'eni', 'petrom', 'omv',
     // Public Transit
-    'uber', 'lyft', 'taxi', 'cab', 'transit', 'metro', 'subway', 'bus',
+    'uber', 'lyft', 'taxi', 'cab', 'transit', 'metro', 'bus',
     'train', 'railway', 'airline', 'flight', 'parking', 'toll',
     // Car Services
     'car wash', 'auto', 'mechanic', 'tire', 'service center', 'repair',
@@ -61,9 +65,8 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     // Insurance
     'insurance', 'insure', 'policy', 'coverage', 'premium', 'geico', 'allstate',
     'progressive', 'state farm', 'liberty mutual', 'axa', 'allianz',
-    // Health Insurance
-    'health', 'medical', 'dental', 'vision', 'healthcare',
-    // Taxes
+    // Taxes (health terms relocated to Health & Pharmacy; 'vision' dropped — it
+    //  matched "television". See M3.)
     'tax', 'irs', 'hmrc', 'revenue', 'government', 'council',
   ],
   'Entertainment': [
@@ -77,9 +80,29 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'golf', 'tennis', 'swimming', 'bowling',
     // Subscriptions
     'subscription', 'membership', 'patreon',
-    // Travel & Leisure
-    'hotel', 'airbnb', 'booking', 'expedia', 'trip', 'vacation', 'resort',
-    'museum', 'zoo', 'park', 'attraction', 'tour',
+    // Leisure (travel-specific terms relocated to Travel & Vacation. See M3.)
+    'museum', 'zoo', 'park', 'attraction',
+  ],
+  // Previously unreachable categories — keyword sets added so auto-detection can
+  // actually return them (see M3). Health/Travel terms relocated here out of
+  // Taxes & Insurance / Entertainment so they are no longer shadowed.
+  'Health & Pharmacy': [
+    'pharmacy', 'pharmacie', 'apotheke', 'drugstore', 'cvs', 'walgreens', 'boots',
+    'clinic', 'hospital', 'doctor', 'dentist', 'dental', 'medical', 'health',
+    'healthcare', 'prescription', 'optician',
+  ],
+  'Education': [
+    'school', 'university', 'college', 'tuition', 'udemy', 'coursera', 'textbook',
+  ],
+  'Travel & Vacation': [
+    'hotel', 'motel', 'hostel', 'airbnb', 'booking', 'expedia', 'resort',
+    'vacation', 'trip', 'tour', 'cruise',
+  ],
+  'Gifts & Donations': [
+    'gift', 'donation', 'donate', 'charity', 'gofundme', 'unicef', 'red cross',
+  ],
+  'Goal Contribution': [
+    'goal contribution',
   ],
   'Salary': [
     'salary', 'payroll', 'wage', 'income', 'payment', 'employer',
