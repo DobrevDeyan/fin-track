@@ -171,6 +171,7 @@ export const ERROR_MESSAGES = {
   // Budgets
   BUDGET_SAVE_FAILED: "error.budgetSaveFailed",
   BUDGET_DELETE_FAILED: "error.budgetDeleteFailed",
+  BUDGET_LOAD_FAILED: "error.budgetLoadFailed",
 
   // Goals
   GOAL_SAVE_FAILED: "error.goalSaveFailed",

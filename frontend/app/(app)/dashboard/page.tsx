@@ -379,7 +379,6 @@ function DashboardInnerContent() {
                             <BudgetProgressBar
                               monthlyBudget={adjustedBaseBudget}
                               currentMonthExpenses={Math.max(0, adjustedSpent)}
-                              userCurrency={userCurrency}
                             />
                         </SectionErrorBoundary>
                     </div>

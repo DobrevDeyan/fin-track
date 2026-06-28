@@ -463,10 +463,12 @@ async function sendPushToUser(
  * Checks if any of the user's active budgets has crossed the 80% or 100% threshold
  * for the current month and sends a push notification if so.
  */
-export const checkBudgetOnEntry = onDocumentCreated(
+export const checkBudgetOnEntry = onDocumentWritten(
   { document: "entries/{entryId}", region: "europe-west4" },
   async (event) => {
-    const data = event.data?.data();
+    // Re-evaluate on create AND update (e.g. an edited amount or category that
+    // pushes a budget over threshold). Deletes have no `after` → skipped.
+    const data = event.data?.after?.data();
     if (!data || data.type !== "expense") return;
 
     const userId = data.userId as string;
@@ -485,6 +487,9 @@ export const checkBudgetOnEntry = onDocumentCreated(
     for (const budgetDoc of budgetsSnap.docs) {
       try {
         const budget = budgetDoc.data();
+
+        // Skip budgets with no positive limit (legacy/corrupt docs) to avoid /0.
+        if (typeof budget.amount !== "number" || budget.amount <= 0) continue;
 
         const budgetStart: admin.firestore.Timestamp = budget.startDate;
         const budgetEnd: admin.firestore.Timestamp = budget.endDate;
@@ -511,7 +516,13 @@ export const checkBudgetOnEntry = onDocumentCreated(
           .reduce((sum, e) => sum + (e.data().amount as number), 0);
 
         const pct = Math.round((spent / budget.amount) * 100);
-        const threshold = budget.alertThreshold ?? 80;
+        // Treat 0 / missing / out-of-range threshold as the 80% default so a
+        // stray 0 doesn't fire an alert on every single expense.
+        const rawThreshold = budget.alertThreshold;
+        const threshold =
+          typeof rawThreshold === "number" && rawThreshold > 0 && rawThreshold <= 100
+            ? rawThreshold
+            : 80;
 
         if (pct < threshold) continue;
 

@@ -8,7 +8,6 @@ import { useTranslations } from "next-intl"
 interface BudgetProgressBarProps {
   monthlyBudget: number
   currentMonthExpenses: number
-  userCurrency: string
 }
 
 export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses }: BudgetProgressBarProps) {
@@ -25,7 +24,7 @@ export function BudgetProgressBar({ monthlyBudget, currentMonthExpenses }: Budge
 
   const barColor = isOverBudget
     ? "bg-red-500"
-    : percentage > 75
+    : percentage >= 80
       ? "bg-amber-500"
       : "bg-emerald-500"
 

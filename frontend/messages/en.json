@@ -232,8 +232,13 @@
     "validation": {
       "nameRequired": "Budget name is required",
       "categoryRequired": "Please select a category",
-      "amountRequired": "Enter a valid amount greater than 0"
+      "amountRequired": "Enter a valid amount greater than 0",
+      "amountTooLarge": "Amount is too large",
+      "endDateAfterStart": "End date must be after the start date",
+      "thresholdRange": "Alert threshold must be between 0 and 100"
     },
+    "loadError": "Couldn't load your budgets",
+    "retry": "Retry",
     "spent": "Spent",
     "used": "used",
     "remainingAmount": "remaining",
@@ -603,6 +608,7 @@
     "transactionDeleteFailed": "Failed to delete transaction. Please try again.",
     "budgetSaveFailed": "Failed to save budget. Please try again.",
     "budgetDeleteFailed": "Failed to delete budget. Please try again.",
+    "budgetLoadFailed": "Failed to load budgets. Please try again.",
     "goalSaveFailed": "Failed to save goal. Please try again.",
     "goalDeleteFailed": "Failed to delete goal. Please try again.",
     "goalAddFundsFailed": "Failed to add funds to goal. Please try again.",

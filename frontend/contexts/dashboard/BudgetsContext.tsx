@@ -52,6 +52,7 @@ interface BudgetsContextValue {
   // State
   budgets: Budget[]
   loading: boolean
+  error: string | null
   dialogOpen: boolean
   editingBudget: Budget | null
 
@@ -76,9 +77,13 @@ interface BudgetsProviderProps {
 export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const hasLoadedRef = useRef(false)
+  // Pending optimistic deletes keyed by budgetId, so we can cancel them on Undo
+  // and flush them on unmount instead of leaking timers / updating after unmount.
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   useEffect(() => {
     if (!userId) {
@@ -88,11 +93,25 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
     }
   }, [userId])
 
+  // On unmount, fire any still-pending deletes immediately (honors the user's
+  // intent) without touching React state afterwards.
+  useEffect(() => {
+    const pending = pendingDeletesRef.current
+    return () => {
+      pending.forEach((timer, budgetId) => {
+        clearTimeout(timer)
+        deleteBudget(budgetId).catch((err) => logger.error("Error flushing budget delete", err))
+      })
+      pending.clear()
+    }
+  }, [])
+
   const loadBudgets = useCallback(async () => {
     if (!userId) return
 
     try {
       setLoading(true)
+      setError(null)
       const firestoreBudgets = await getUserBudgets(userId)
 
       const convertedBudgets: Budget[] = firestoreBudgets.map((budget) => ({
@@ -110,9 +129,10 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
 
       setBudgets(convertedBudgets)
       hasLoadedRef.current = true
-    } catch (error) {
-      logger.error("Error loading budgets", error)
+    } catch (err) {
+      logger.error("Error loading budgets", err)
       setBudgets([])
+      setError(ERROR_MESSAGES.BUDGET_LOAD_FAILED)
     } finally {
       setLoading(false)
     }
@@ -184,6 +204,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
       setBudgets(prev => prev.filter(b => b.id !== budgetId))
 
       const timer = setTimeout(async () => {
+        pendingDeletesRef.current.delete(budgetId)
         try {
           await deleteBudget(budgetId)
         } catch (error) {
@@ -192,9 +213,17 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
           toast.error(ERROR_MESSAGES.BUDGET_DELETE_FAILED)
         }
       }, 5000)
+      pendingDeletesRef.current.set(budgetId, timer)
 
       toast.success("Budget deleted", {
-        action: { label: "Undo", onClick: () => { clearTimeout(timer); loadBudgets() } },
+        action: {
+          label: "Undo",
+          onClick: () => {
+            clearTimeout(timer)
+            pendingDeletesRef.current.delete(budgetId)
+            loadBudgets()
+          },
+        },
         duration: 5000,
       })
     },
@@ -230,6 +259,7 @@ export function BudgetsProvider({ children, userId }: BudgetsProviderProps) {
   const value: BudgetsContextValue = {
     budgets,
     loading,
+    error,
     dialogOpen,
     editingBudget,
     loadBudgets,

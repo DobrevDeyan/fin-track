@@ -38,10 +38,11 @@ export function BudgetCard({ budget, spent, onEdit, onDelete, onRenew }: BudgetC
   const tCommon = useTranslations("common")
   const { format } = useMoney()
 
+  const hasAmount = budget.amount > 0
   const remaining = budget.amount - spent
-  const percentage = Math.min((spent / budget.amount) * 100, 100)
-  const isOverBudget = spent > budget.amount
-  const isNearThreshold = budget.alertThreshold && percentage >= budget.alertThreshold
+  const percentage = hasAmount ? Math.min((spent / budget.amount) * 100, 100) : 0
+  const isOverBudget = hasAmount && spent > budget.amount
+  const isNearThreshold = hasAmount && budget.alertThreshold && percentage >= budget.alertThreshold
 
   // Format dates (always strings when loaded)
   const startDate = new Date(budget.startDate)

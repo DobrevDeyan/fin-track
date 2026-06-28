@@ -96,7 +96,12 @@
       "Bash(python -c \"import json; d=json.load\\(open\\('en.json',encoding='utf-8'\\)\\); print\\(json.dumps\\(d.get\\('recurring',{}\\),ensure_ascii=False,indent=1\\)\\)\")",
       "Bash(python -c \"import json; d=json.load\\(open\\('bg.json',encoding='utf-8'\\)\\); print\\(json.dumps\\(d.get\\('recurring',{}\\),ensure_ascii=False,indent=1\\)\\)\")",
       "Bash(cat)",
-      "Bash(node /tmp/dr.mjs)"
+      "Bash(node /tmp/dr.mjs)",
+      "PowerShell(Remove-Item -Path \"d:\\\\repos\\\\fin-track\\\\frontend\\\\lib\\\\hooks\\\\dashboard\\\\useBudgets.ts\" -Force; Write-Output \"deleted: $\\(-not \\(Test-Path 'd:\\\\repos\\\\fin-track\\\\frontend\\\\lib\\\\hooks\\\\dashboard\\\\useBudgets.ts'\\)\\)\")",
+      "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx tsc --noEmit; $code = $LASTEXITCODE; Pop-Location; Write-Output \"FRONTEND_TSC_EXIT=$code\")",
+      "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\functions\"; npx tsc --noEmit; $code = $LASTEXITCODE; Pop-Location; Write-Output \"FUNCTIONS_TSC_EXIT=$code\")",
+      "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest __tests__/components/BudgetCard.test.tsx __tests__/components/sections/BudgetsSection.test.tsx --silent 2>&1 | Select-Object -Last 30; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")",
+      "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest BudgetCard \"sections/BudgetsSection\" 2>&1 | Select-Object -Last 35; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")"
     ]
   }
 }

@@ -17,6 +17,7 @@ import type { Budget, BudgetFormData } from "./BudgetsContext"
 interface HouseholdBudgetsContextValue {
   budgets: Budget[]
   loading: boolean
+  error: string | null
   dialogOpen: boolean
   editingBudget: Budget | null
   loadBudgets: () => Promise<void>
@@ -39,9 +40,11 @@ interface Props {
 export function HouseholdBudgetsProvider({ children, householdId }: Props) {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const hasLoadedRef = useRef(false)
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   // Reset when household changes so new household data loads fresh
   useEffect(() => {
@@ -49,10 +52,24 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
     setBudgets([])
   }, [householdId])
 
+  // On unmount, fire any still-pending deletes immediately (honors intent)
+  // without touching React state afterwards.
+  useEffect(() => {
+    const pending = pendingDeletesRef.current
+    return () => {
+      pending.forEach((timer, budgetId) => {
+        clearTimeout(timer)
+        deleteHouseholdBudget(budgetId).catch((err) => logger.error("Error flushing shared budget delete", err))
+      })
+      pending.clear()
+    }
+  }, [])
+
   const loadBudgets = useCallback(async () => {
     if (!householdId) return
     try {
       setLoading(true)
+      setError(null)
       const raw = await getHouseholdBudgets(householdId)
       const converted: Budget[] = raw.map((b) => ({
         id: b.id,
@@ -68,9 +85,10 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
       }))
       setBudgets(converted)
       hasLoadedRef.current = true
-    } catch (error) {
-      logger.error("Error loading household budgets", error)
+    } catch (err) {
+      logger.error("Error loading household budgets", err)
       setBudgets([])
+      setError("load_failed")
     } finally {
       setLoading(false)
     }
@@ -131,6 +149,7 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
       if (!deleted) return
       setBudgets((prev) => prev.filter((b) => b.id !== budgetId))
       const timer = setTimeout(async () => {
+        pendingDeletesRef.current.delete(budgetId)
         try {
           await deleteHouseholdBudget(budgetId)
         } catch {
@@ -138,8 +157,16 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
           toast.error("Failed to delete shared budget")
         }
       }, 5000)
+      pendingDeletesRef.current.set(budgetId, timer)
       toast.success("Shared budget deleted", {
-        action: { label: "Undo", onClick: () => { clearTimeout(timer); loadBudgets() } },
+        action: {
+          label: "Undo",
+          onClick: () => {
+            clearTimeout(timer)
+            pendingDeletesRef.current.delete(budgetId)
+            loadBudgets()
+          },
+        },
         duration: 5000,
       })
     },
@@ -171,7 +198,7 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
 
   return (
     <HouseholdBudgetsContext.Provider value={{
-      budgets, loading, dialogOpen, editingBudget,
+      budgets, loading, error, dialogOpen, editingBudget,
       loadBudgets, ensureBudgetsLoaded, handleSubmit,
       handleEdit, handleDelete, handleRenew, handleDialogClose, openDialog,
     }}>

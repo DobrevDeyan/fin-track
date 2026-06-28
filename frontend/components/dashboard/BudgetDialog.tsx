@@ -81,13 +81,20 @@ export function BudgetDialog({
   const [isActive, setIsActive] = useState(true)
   const [alertThreshold, setAlertThreshold] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount", string>>>({})
+  const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount" | "endDate" | "alertThreshold", string>>>({})
 
   const validate = () => {
     const e: typeof errors = {}
     if (!name.trim()) e.name = t("validation.nameRequired")
     if (!category) e.category = t("validation.categoryRequired")
-    if (!amount || parseFloat(amount) <= 0) e.amount = t("validation.amountRequired")
+    const amt = parseFloat(amount)
+    if (!amount || Number.isNaN(amt) || amt <= 0) e.amount = t("validation.amountRequired")
+    else if (amt > AMOUNT_RULES.MAX) e.amount = t("validation.amountTooLarge")
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) e.endDate = t("validation.endDateAfterStart")
+    if (alertThreshold) {
+      const th = parseFloat(alertThreshold)
+      if (Number.isNaN(th) || th < 0 || th > 100) e.alertThreshold = t("validation.thresholdRange")
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -109,20 +116,24 @@ export function BudgetDialog({
       setCategory("")
       setAmount("")
       setPeriod("monthly")
-      const now = new Date()
-      const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", now)
+      const start = DateRangeCalculator.getPeriodStart("monthly", new Date())
+      const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", start)
       setStartDate(dates.start)
       setEndDate(dates.end)
       setIsActive(true)
       setAlertThreshold("")
     }
     setErrors({})
-  }, [editingBudget, open, fromBase])
+    // `fromBase` intentionally excluded: it changes identity when exchange
+    // rates load, and re-running this effect would wipe in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingBudget, open])
 
   // Update end date when period or start date changes (for new budgets)
   useEffect(() => {
     if (!editingBudget && startDate && period) {
-      const start = new Date(startDate)
+      // Parse as LOCAL midnight (append time) so the date doesn't shift a day.
+      const start = new Date(startDate + "T00:00:00")
       const dates = DateRangeCalculator.calculatePeriodRangeISO(period, start)
       setEndDate(dates.end)
     }
@@ -152,8 +163,8 @@ export function BudgetDialog({
       setCategory("")
       setAmount("")
       setPeriod("monthly")
-      const now = new Date()
-      const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", now)
+      const start = DateRangeCalculator.getPeriodStart("monthly", new Date())
+      const dates = DateRangeCalculator.calculatePeriodRangeISO("monthly", start)
       setStartDate(dates.start)
       setEndDate(dates.end)
       setIsActive(true)
@@ -229,7 +240,15 @@ export function BudgetDialog({
               <Label htmlFor="period">{t("period")}</Label>
               <Select
                 value={period}
-                onValueChange={(value: BudgetPeriod) => setPeriod(value)}
+                onValueChange={(value: BudgetPeriod) => {
+                  setPeriod(value)
+                  // Snap start to the new period's natural boundary (new budgets only);
+                  // the effect above recomputes the matching end date.
+                  if (!editingBudget) {
+                    const start = DateRangeCalculator.getPeriodStart(value, new Date())
+                    setStartDate(DateRangeCalculator.toLocalISODate(start))
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -260,11 +279,13 @@ export function BudgetDialog({
                   id="endDate"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => { setEndDate(e.target.value); if (errors.endDate) setErrors(prev => ({ ...prev, endDate: undefined })) }}
                   min={startDate}
+                  className={errors.endDate ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
               </div>
             </div>
+            {errors.endDate && <p className="text-xs text-red-500">{errors.endDate}</p>}
 
             <div className="grid gap-2">
               <Label htmlFor="alertThreshold">{t("alertThreshold")}</Label>
@@ -276,8 +297,10 @@ export function BudgetDialog({
                 step="1"
                 placeholder="80"
                 value={alertThreshold}
-                onChange={(e) => setAlertThreshold(e.target.value)}
+                onChange={(e) => { setAlertThreshold(e.target.value); if (errors.alertThreshold) setErrors(prev => ({ ...prev, alertThreshold: undefined })) }}
+                className={errors.alertThreshold ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.alertThreshold && <p className="text-xs text-red-500">{errors.alertThreshold}</p>}
               <p className="text-xs text-muted-foreground">
                 {t("alertThresholdDesc")}
               </p>

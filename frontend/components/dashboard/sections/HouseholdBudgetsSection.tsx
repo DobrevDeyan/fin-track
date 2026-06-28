@@ -16,8 +16,8 @@ interface Props {
 
 export function HouseholdBudgetsSection({ householdEntries, categories }: Props) {
   const {
-    budgets, loading, dialogOpen, editingBudget,
-    ensureBudgetsLoaded, handleDialogClose, handleSubmit,
+    budgets, loading, error, dialogOpen, editingBudget,
+    ensureBudgetsLoaded, loadBudgets, handleDialogClose, handleSubmit,
     handleEdit, handleDelete, handleRenew, openDialog,
   } = useHouseholdBudgetsContext()
 
@@ -49,6 +49,16 @@ export function HouseholdBudgetsSection({ householdEntries, categories }: Props)
                 <Skeleton className="h-8 w-full mt-2" />
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="rounded-full bg-muted p-4 mb-4">
+              <Wallet className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-sm mb-1">Couldn&apos;t load shared budgets</p>
+            <Button size="sm" variant="outline" onClick={() => loadBudgets()}>
+              Retry
+            </Button>
           </div>
         ) : budgets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

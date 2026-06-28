@@ -19,7 +19,7 @@ interface BudgetsSectionProps {
 
 export function BudgetsSection({ categories }: BudgetsSectionProps) {
     const { user } = useAuth();
-    const { budgets, loading, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleRenew, openDialog } = useBudgetsContext();
+    const { budgets, loading, error, loadBudgets, dialogOpen, editingBudget, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleRenew, openDialog } = useBudgetsContext();
 
     const t = useTranslations("budgets");
 
@@ -85,6 +85,16 @@ export function BudgetsSection({ categories }: BudgetsSectionProps) {
                                     <Skeleton className="h-8 w-full mt-2" />
                                 </div>
                             ))}
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="rounded-full bg-muted p-4 mb-4">
+                                <Wallet className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="font-medium text-sm mb-1">{t("loadError")}</p>
+                            <Button size="sm" variant="outline" onClick={() => loadBudgets()}>
+                                {t("retry")}
+                            </Button>
                         </div>
                     ) : budgets.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center">

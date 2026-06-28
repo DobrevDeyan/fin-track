@@ -227,6 +227,9 @@ export async function getActiveBudgets(userId: string): Promise<(BudgetDocument 
       })
     })
 
+    // Sort client-side so order is stable even when the index-fallback path ran
+    budgets.sort((a, b) => getDateMillis(b.startDate) - getDateMillis(a.startDate))
+
     return budgets
   } catch (error) {
     logger.error("Error fetching active budgets", error)
@@ -278,6 +281,9 @@ export async function getBudgetsByCategory(
         id: docSnap.id,
       })
     })
+
+    // Sort client-side so order is stable even when the index-fallback path ran
+    budgets.sort((a, b) => getDateMillis(b.startDate) - getDateMillis(a.startDate))
 
     return budgets
   } catch (error) {
