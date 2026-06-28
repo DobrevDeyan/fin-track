@@ -111,7 +111,10 @@ export default function NetWorthPage() {
   }, [authLoading, load])
 
   // ── Computed totals ────────────────────────────────────────────────────────
-  const savingsTotal = savingsAccounts.reduce((s, a) => s + a.balance, 0)
+  // Only active savings count toward net worth, matching the dashboard's
+  // calculateTotalSavings (review S-15); inactive pots are excluded everywhere.
+  const activeSavingsAccounts = savingsAccounts.filter((a) => a.isActive)
+  const savingsTotal = activeSavingsAccounts.reduce((s, a) => s + a.balance, 0)
   const debtTotal = debts.reduce((s, d) => s + d.balance, 0)
   const totalAssets = assets.filter((a) => !a.isLiability).reduce((s, a) => s + a.value, 0) + savingsTotal
   const totalLiabilities = assets.filter((a) => a.isLiability).reduce((s, a) => s + a.value, 0) + debtTotal
@@ -214,7 +217,7 @@ export default function NetWorthPage() {
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{t("totalAssets")}</p>
             <p className="text-2xl font-bold text-green-600">{format(totalAssets)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t("itemCount", { count: assetList.length + savingsAccounts.length })}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("itemCount", { count: assetList.length + activeSavingsAccounts.length })}</p>
           </CardContent>
         </Card>
         <Card>
@@ -226,7 +229,7 @@ export default function NetWorthPage() {
         </Card>
       </div>
 
-      {assets.length === 0 && savingsAccounts.length === 0 && debts.length === 0 ? (
+      {assets.length === 0 && activeSavingsAccounts.length === 0 && debts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Landmark className="h-16 w-16 text-muted-foreground/30 mb-4" />
           <h2 className="text-lg font-semibold mb-1">{t("noAssets")}</h2>
@@ -250,21 +253,21 @@ export default function NetWorthPage() {
                 <Plus className="h-4 w-4 mr-1" />{t("addAsset")}
               </Button>
             </div>
-            {assetList.length === 0 && savingsAccounts.length === 0 ? (
+            {assetList.length === 0 && activeSavingsAccounts.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">{t("noAssets")}</p>
             ) : (
               <div className="space-y-2">
                 {assetList.map((asset) => (
                   <AssetRow key={asset.id} asset={asset} userCurrency={userCurrency} t={t} onEdit={openEdit} onDelete={setDeleteId} />
                 ))}
-                {savingsAccounts.length > 0 && (
+                {activeSavingsAccounts.length > 0 && (
                   <>
                     <p className="text-xs text-muted-foreground pt-1 pb-0.5 flex items-center gap-1">
                       <span className="h-px flex-1 bg-border" />
                       {t("fromSavings")} · {t("autoIncluded")}
                       <span className="h-px flex-1 bg-border" />
                     </p>
-                    {savingsAccounts.map((acc) => (
+                    {activeSavingsAccounts.map((acc) => (
                       <div key={acc.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                         <div className="p-2 rounded-md bg-green-100 dark:bg-green-950">
                           <PiggyBank className="h-4 w-4 text-green-600" />

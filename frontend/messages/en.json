@@ -277,6 +277,18 @@
     "notePlaceholder": "Add a note about this savings account...",
     "icon": "Icon",
     "color": "Color",
+    "currentBalance": "Current Balance",
+    "addTo": "Add to {name}",
+    "withdrawFrom": "Withdraw from {name}",
+    "processing": "Processing…",
+    "processFailed": "Failed to process transaction",
+    "insufficientBalance": "Insufficient balance",
+    "ratesNotReady": "Exchange rates are still loading. Please try again in a moment.",
+    "editAria": "Edit {name}",
+    "deleteAria": "Delete {name}",
+    "deleteConfirmTitle": "Delete savings account?",
+    "deleteConfirmDesc": "This will permanently delete \"{name}\".",
+    "deleteConfirmBalanceWarning": "This account still holds {balance}. Deleting it removes that amount from your tracked net worth and cannot be undone.",
     "validation": {
       "nameRequired": "Account name is required",
       "balanceNegative": "Balance cannot be negative"

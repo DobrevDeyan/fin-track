@@ -70,6 +70,11 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<SavingsAccount | null>(null)
   const hasLoadedRef = useRef(false)
+  // Accounts pending an optimistic (debounced) delete. Kept in a ref so any
+  // concurrent reload can filter them out — otherwise a reload during the 5s
+  // undo window would re-fetch the not-yet-deleted account and resurrect it
+  // in the UI (review S-4).
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   useEffect(() => {
     if (!userId) {
@@ -85,7 +90,8 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
     try {
       setLoading(true)
       const accounts = await getUserSavingsAccounts(userId)
-      setSavingsAccounts(accounts)
+      // Never re-surface an account that is mid optimistic-delete (review S-4).
+      setSavingsAccounts(accounts.filter((a) => !pendingDeletesRef.current.has(a.id)))
       hasLoadedRef.current = true
     } catch (error) {
       logger.error(t(ERROR_MESSAGES.LOAD_FAILED), error) // Use translated error
@@ -155,20 +161,36 @@ export function SavingsProvider({ children, userId }: SavingsProviderProps) {
       const deletedAccount = savingsAccounts.find(a => a.id === accountId)
       if (!deletedAccount) return
 
+      // Optimistically remove, then commit the delete after a grace period so
+      // the user can undo. The id is tracked in pendingDeletesRef so reloads
+      // can't resurrect it (review S-4).
       setSavingsAccounts(prev => prev.filter(a => a.id !== accountId))
 
       const timer = setTimeout(async () => {
         try {
           await deleteSavingsAccount(accountId)
+          pendingDeletesRef.current.delete(accountId)
         } catch (error) {
+          // Clear the pending flag BEFORE reloading so the failed-delete account
+          // is allowed to reappear.
+          pendingDeletesRef.current.delete(accountId)
           logger.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED), error)
-          await loadSavingsAccounts()
           toast.error(t(ERROR_MESSAGES.SAVINGS_DELETE_FAILED))
+          await loadSavingsAccounts()
         }
       }, 5000)
+      pendingDeletesRef.current.set(accountId, timer)
 
       toast.success(t("toast.savings.deleted"), {
-        action: { label: t("toast.undo"), onClick: () => { clearTimeout(timer); loadSavingsAccounts() } },
+        action: {
+          label: t("toast.undo"),
+          onClick: () => {
+            const pending = pendingDeletesRef.current.get(accountId)
+            if (pending) clearTimeout(pending)
+            pendingDeletesRef.current.delete(accountId)
+            loadSavingsAccounts()
+          },
+        },
         duration: 5000,
       })
     },

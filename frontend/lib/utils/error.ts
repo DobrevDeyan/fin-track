@@ -140,10 +140,12 @@ export function isAuthError(error: unknown): boolean {
  */
 export function isInsufficientBalanceError(error: unknown): boolean {
   const message = getErrorMessage(error, "").toLowerCase()
+  // Match only phrases that specifically denote insufficient funds. A bare
+  // "balance" substring was too broad and mislabelled unrelated errors that
+  // merely mention a balance (review S-13).
   return (
     message.includes("insufficient") ||
-    message.includes("not enough") ||
-    message.includes("balance")
+    message.includes("not enough")
   )
 }
 

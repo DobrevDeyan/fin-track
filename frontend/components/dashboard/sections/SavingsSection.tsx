@@ -7,11 +7,10 @@ import { SavingsAccountList } from "@/components/dashboard/SavingsAccountList";
 import { SavingsAccountDialog } from "@/components/dashboard/SavingsAccountDialog";
 import { calculateTotalSavings } from "@/lib/firestore-savings";
 import { useSavingsContext } from "@/contexts/dashboard/SavingsContext";
-import { useCurrency, useMoney } from "@/contexts/CurrencyContext";
+import { useMoney } from "@/contexts/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function SavingsSection() {
-    const { userCurrency } = useCurrency();
     const { format } = useMoney();
     const { savingsAccounts, loading, dialogOpen, editingAccount, handleDialogClose, handleSubmit, handleEdit, handleDelete, handleAddMoney, handleWithdrawMoney, openDialog } = useSavingsContext();
 
@@ -55,12 +54,12 @@ export function SavingsSection() {
                             </Button>
                         </div>
                     ) : (
-                        <SavingsAccountList accounts={savingsAccounts} onAdd={openDialog} onEdit={handleEdit} onDelete={handleDelete} onAddMoney={handleAddMoney} onWithdrawMoney={handleWithdrawMoney} defaultCurrency={userCurrency} hideHeader={true} />
+                        <SavingsAccountList accounts={savingsAccounts} onEdit={handleEdit} onDelete={handleDelete} onAddMoney={handleAddMoney} onWithdrawMoney={handleWithdrawMoney} />
                     )}
                 </div>
             </div>
 
-            <SavingsAccountDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingAccount={editingAccount} defaultCurrency={userCurrency} />
+            <SavingsAccountDialog open={dialogOpen} onOpenChange={handleDialogClose} onSubmit={handleSubmit} editingAccount={editingAccount} />
         </>
     );
 }

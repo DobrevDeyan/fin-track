@@ -277,6 +277,18 @@
     "notePlaceholder": "Добавете бележка за тази спестовна сметка...",
     "icon": "Икона",
     "color": "Цвят",
+    "currentBalance": "Текущ баланс",
+    "addTo": "Добавяне към {name}",
+    "withdrawFrom": "Теглене от {name}",
+    "processing": "Обработка…",
+    "processFailed": "Неуспешна транзакция",
+    "insufficientBalance": "Недостатъчен баланс",
+    "ratesNotReady": "Обменните курсове все още се зареждат. Моля, опитайте отново след малко.",
+    "editAria": "Редактиране на {name}",
+    "deleteAria": "Изтриване на {name}",
+    "deleteConfirmTitle": "Изтриване на спестовна сметка?",
+    "deleteConfirmDesc": "Това ще изтрие безвъзвратно „{name}“.",
+    "deleteConfirmBalanceWarning": "Тази сметка все още съдържа {balance}. Изтриването ѝ премахва тази сума от проследяваното ви нетно състояние и не може да бъде отменено.",
     "validation": {
       "nameRequired": "Името на сметката е задължително",
       "balanceNegative": "Балансът не може да бъде отрицателен"

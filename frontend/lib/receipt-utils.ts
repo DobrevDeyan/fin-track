@@ -53,23 +53,29 @@ export async function uploadReceipt(
  * @param receiptUrl - URL of the receipt to delete
  */
 export async function deleteReceipt(receiptUrl: string): Promise<void> {
+  if (!receiptUrl) return
   try {
-    // Extract the storage path from the URL
-    // Firebase Storage URLs look like: https://firebasestorage.googleapis.com/v0/b/[bucket]/o/[path]?...
-    const url = new URL(receiptUrl)
-    const pathMatch = url.pathname.match(/\/o\/(.+)\?/)
-    
-    if (!pathMatch) {
-      throw new Error("Invalid receipt URL")
+    // Firebase download URLs look like:
+    //   https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<ENCODED_PATH>?alt=media&token=...
+    // The encoded object path lives in the URL *pathname*; the ?alt=media&token
+    // part is the query string (url.search), NOT the pathname — so the path must
+    // be matched to the end of the pathname, not up to a "?" (previous regex
+    // never matched and every delete threw "Invalid receipt URL").
+    let storagePathOrUrl = receiptUrl
+    if (/^https?:\/\//i.test(receiptUrl)) {
+      const match = new URL(receiptUrl).pathname.match(/\/o\/(.+)$/)
+      if (match) {
+        storagePathOrUrl = decodeURIComponent(match[1])
+      }
     }
 
-    // Decode the path (URL encoded)
-    const storagePath = decodeURIComponent(pathMatch[1])
-    const storageRef = ref(storage, storagePath)
-
-    // Delete the file
-    await deleteObject(storageRef)
-  } catch (error) {
+    // ref() accepts a bare storage path or a gs:// URL directly.
+    await deleteObject(ref(storage, storagePathOrUrl))
+  } catch (error: unknown) {
+    // A receipt that is already gone is not an error — nothing left to delete.
+    if ((error as { code?: string })?.code === "storage/object-not-found") {
+      return
+    }
     logger.error("Error deleting receipt", error)
     throw error
   }

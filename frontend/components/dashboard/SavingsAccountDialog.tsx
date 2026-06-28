@@ -20,14 +20,12 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { SUPPORTED_CURRENCIES, CURRENCY_DISPLAY_NAMES } from "@/lib/constants/currency.constants"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
 import { useTranslations } from "next-intl"
 import { useMoney } from "@/contexts/CurrencyContext"
 
-
-const currencies = SUPPORTED_CURRENCIES
 
 interface SavingsAccountData {
   name: string
@@ -53,7 +51,6 @@ interface SavingsAccountDialogProps {
     icon?: string
     isActive: boolean
   } | null
-  defaultCurrency?: string
 }
 
 const SAVINGS_ICONS = [
@@ -82,11 +79,9 @@ export function SavingsAccountDialog({
   onOpenChange,
   onSubmit,
   editingAccount,
-  defaultCurrency = "EUR",
 }: SavingsAccountDialogProps) {
   const [name, setName] = useState("")
   const [balance, setBalance] = useState("")
-  const [currency, setCurrency] = useState(defaultCurrency)
   const [description, setDescription] = useState("")
   const [color, setColor] = useState("#000000")
   const [icon, setIcon] = useState("piggy-bank")
@@ -98,14 +93,14 @@ export function SavingsAccountDialog({
   const tCommon = useTranslations("common")
   // Stored balances are canonical base currency (EUR); the form works in the
   // user's display currency. Convert display->base on save, base->display on edit.
-  const { toBase, fromBase } = useMoney()
+  const { toBase, fromBase, currency, ratesReady } = useMoney()
+  const isEditing = !!editingAccount
 
   // Populate form when editing
   useEffect(() => {
     if (editingAccount) {
       setName(editingAccount.name)
       setBalance(fromBase(editingAccount.balance).toFixed(2))
-      setCurrency(editingAccount.currency)
       setDescription(editingAccount.description || "")
       setColor(editingAccount.color || "#000000")
       setIcon(editingAccount.icon || "piggy-bank")
@@ -114,7 +109,6 @@ export function SavingsAccountDialog({
       // Reset form for new account
       setName("")
       setBalance("0")
-      setCurrency(defaultCurrency)
       setDescription("")
       setColor("#000000")
       setIcon("piggy-bank")
@@ -122,7 +116,7 @@ export function SavingsAccountDialog({
     }
     setNameError("")
     setBalanceError("")
-  }, [editingAccount, defaultCurrency, open])
+  }, [editingAccount, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,14 +131,25 @@ export function SavingsAccountDialog({
       setBalanceError(t("validation.balanceNegative"))
       valid = false
     }
+    // On create with a non-EUR display currency, the initial balance must be
+    // converted to base — block until live fixings have loaded (review S-16).
+    if (!isEditing && balanceNum > 0 && currency !== BASE_CURRENCY && !ratesReady) {
+      setBalanceError(t("ratesNotReady"))
+      valid = false
+    }
     if (!valid) return
 
     setIsSubmitting(true)
     try {
       await onSubmit({
         name: name.trim(),
-        balance: toBase(balanceNum),
-        currency,
+        // On edit the balance is locked and only mutated via add/withdraw, so
+        // pass the stored base value through untouched — never re-convert it
+        // (avoids rounding drift and accidental overwrites, review S-12).
+        balance: isEditing ? editingAccount!.balance : toBase(balanceNum),
+        // Balances are stored in base currency; per-account currency is no longer
+        // a user choice (review S-3).
+        currency: BASE_CURRENCY,
         description: description.trim() || undefined,
         color,
         icon,
@@ -164,10 +169,10 @@ export function SavingsAccountDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
-              {editingAccount ? t("editAccount") : t("createAccount")}
+              {isEditing ? t("editAccount") : t("createAccount")}
             </DialogTitle>
             <DialogDescription>
-              {editingAccount ? t("editAccountDesc") : t("createAccountDesc")}
+              {isEditing ? t("editAccountDesc") : t("createAccountDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -183,37 +188,23 @@ export function SavingsAccountDialog({
               {nameError && <p className="text-xs text-red-500">{nameError}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="balance">{t("initialBalance")}</Label>
-                <Input
-                  id="balance"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max={AMOUNT_RULES.MAX}
-                  placeholder="0.00"
-                  value={balance}
-                  onChange={(e) => { setBalance(e.target.value); if (balanceError) setBalanceError("") }}
-                  className={balanceError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                />
-                {balanceError && <p className="text-xs text-red-500">{balanceError}</p>}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="currency">{tCommon("currency")}</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger id="currency">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencies.map((curr) => (
-                      <SelectItem key={curr} value={curr}>
-                        {curr} - {CURRENCY_DISPLAY_NAMES[curr]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="balance">{isEditing ? t("currentBalance") : t("initialBalance")}</Label>
+              <Input
+                id="balance"
+                type="number"
+                step="0.01"
+                min="0"
+                max={AMOUNT_RULES.MAX}
+                placeholder="0.00"
+                value={balance}
+                onChange={(e) => { setBalance(e.target.value); if (balanceError) setBalanceError("") }}
+                // On edit the balance is read-only — it can only change via the
+                // Add/Withdraw flow, which is transactional (review S-12).
+                disabled={isEditing}
+                className={balanceError ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {balanceError && <p className="text-xs text-red-500">{balanceError}</p>}
             </div>
 
             <div className="grid gap-2">
@@ -270,7 +261,7 @@ export function SavingsAccountDialog({
               {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {editingAccount ? tCommon("update") : tCommon("create")}
+              {isEditing ? tCommon("update") : tCommon("create")}
             </Button>
           </DialogFooter>
         </form>
@@ -278,4 +269,3 @@ export function SavingsAccountDialog({
     </Dialog>
   )
 }
-

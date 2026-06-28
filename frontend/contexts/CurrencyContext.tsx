@@ -155,7 +155,16 @@ export function useCurrency() {
  *  - `currency` → the user's current display currency.
  */
 export function useMoney() {
-  const { formatMoney, toBaseCurrency, convertFromBase, userCurrency } = useCurrency()
-  return { format: formatMoney, toBase: toBaseCurrency, fromBase: convertFromBase, currency: userCurrency }
+  const { formatMoney, toBaseCurrency, convertFromBase, userCurrency, exchangeRates } = useCurrency()
+  return {
+    format: formatMoney,
+    toBase: toBaseCurrency,
+    fromBase: convertFromBase,
+    currency: userCurrency,
+    // False until live fixings have loaded. While false, toBase/fromBase are
+    // identity, so callers that need an accurate conversion (non-EUR display)
+    // should wait before persisting an amount (review S-16).
+    ratesReady: exchangeRates !== null,
+  }
 }
 

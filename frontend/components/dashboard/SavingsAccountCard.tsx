@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Pencil, Trash2, Plus, Minus } from "lucide-react"
 import { useMoney } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import {
   Dialog,
@@ -13,9 +14,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { logger } from "@/lib/utils/logger"
@@ -47,6 +59,10 @@ const getIconEmoji = (icon?: string) => {
   return iconMap[icon || "piggy-bank"] || "💰"
 }
 
+// Floor a display amount to whole cents so a preset can never round UP past the
+// real balance (which would trip the insufficient-balance guard) — review S-6.
+const floorCents = (n: number) => Math.floor(n * 100) / 100
+
 export function SavingsAccountCard({
   account,
   onEdit,
@@ -54,15 +70,21 @@ export function SavingsAccountCard({
   onAddMoney,
   onWithdrawMoney,
 }: SavingsAccountCardProps) {
-  const { format, toBase, fromBase, currency } = useMoney()
+  const t = useTranslations("savings")
+  const tc = useTranslations("common")
+  const { format, toBase, fromBase, currency, ratesReady } = useMoney()
   const displayBalance = fromBase(account.balance)
   const fmtAmt = (n: number) =>
-    new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(n)
+    new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(n)
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false)
   const [transactionType, setTransactionType] = useState<"add" | "withdraw">("add")
   const [amount, setAmount] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successPulse, setSuccessPulse] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  // Treat sub-cent balances as empty so float drift can't leave the Withdraw
+  // button enabled on an effectively un-withdrawable amount (review S-7).
+  const isEmpty = account.balance < 0.005
 
   const handleTransaction = async () => {
     const amountNum = parseFloat(amount)
@@ -70,8 +92,15 @@ export function SavingsAccountCard({
       return
     }
 
-    if (transactionType === "withdraw" && toBase(amountNum) > account.balance) {
-      toast.error("Insufficient balance")
+    // A non-EUR amount must be converted to base before persisting; block until
+    // live fixings have loaded so we never store an unconverted value (S-16).
+    if (currency !== BASE_CURRENCY && !ratesReady) {
+      toast.error(t("ratesNotReady"))
+      return
+    }
+
+    if (transactionType === "withdraw" && toBase(amountNum) > account.balance + 0.005) {
+      toast.error(t("insufficientBalance"))
       return
     }
 
@@ -88,7 +117,7 @@ export function SavingsAccountCard({
       setTimeout(() => setSuccessPulse(false), 700)
     } catch (error) {
       logger.error("Error processing transaction", error)
-      toast.error("Failed to process transaction")
+      toast.error(t("processFailed"))
     } finally {
       setIsSubmitting(false)
     }
@@ -128,16 +157,16 @@ export function SavingsAccountCard({
                 size="icon"
                 onClick={() => onEdit(account)}
                 className="h-8 w-8"
-                aria-label={`Edit ${account.name}`}
+                aria-label={t("editAria", { name: account.name })}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDelete(account.id)}
+                onClick={() => setConfirmDeleteOpen(true)}
                 className="h-8 w-8 text-destructive"
-                aria-label={`Delete ${account.name}`}
+                aria-label={t("deleteAria", { name: account.name })}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -147,7 +176,7 @@ export function SavingsAccountCard({
         <CardContent>
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Balance</p>
+              <p className="text-sm text-muted-foreground mb-1">{t("accountBalance")}</p>
               <p className="text-2xl font-bold">
                 {format(account.balance)}
               </p>
@@ -163,7 +192,7 @@ export function SavingsAccountCard({
                 }}
               >
                 <Plus className="h-4 w-4 mr-1.5" />
-                Add
+                {tc("add")}
               </Button>
               <Button
                 variant="outline"
@@ -173,10 +202,10 @@ export function SavingsAccountCard({
                   setTransactionType("withdraw")
                   setTransactionDialogOpen(true)
                 }}
-                disabled={account.balance === 0}
+                disabled={isEmpty}
               >
                 <Minus className="h-4 w-4 mr-1.5" />
-                Withdraw
+                {t("withdraw")}
               </Button>
             </div>
           </div>
@@ -190,21 +219,21 @@ export function SavingsAccountCard({
             <DialogTitle className="flex items-center gap-2">
               {transactionType === "add" ? (
                 <span className="flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-emerald-500" /> Add to {account.name}
+                  <Plus className="h-4 w-4 text-emerald-500" /> {t("addTo", { name: account.name })}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Minus className="h-4 w-4 text-red-500" /> Withdraw from {account.name}
+                  <Minus className="h-4 w-4 text-red-500" /> {t("withdrawFrom", { name: account.name })}
                 </span>
               )}
             </DialogTitle>
             <DialogDescription>
-              Balance: <span className="font-medium text-foreground">{format(account.balance)}</span>
+              {t("accountBalance")}: <span className="font-medium text-foreground">{format(account.balance)}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
-              <Label htmlFor="amount">Amount ({currency})</Label>
+              <Label htmlFor="amount">{tc("amount")} ({currency})</Label>
               <Input
                 id="amount"
                 type="number"
@@ -222,9 +251,9 @@ export function SavingsAccountCard({
             {/* Quick presets */}
             <div className="flex gap-2 flex-wrap">
               {(transactionType === "add" ? [10, 50, 100, 500] : [
-                ...(displayBalance >= 100 ? [Math.round(displayBalance * 0.25)] : []),
-                ...(displayBalance >= 50 ? [Math.round(displayBalance * 0.5)] : []),
-                Math.round(displayBalance),
+                ...(displayBalance >= 100 ? [floorCents(displayBalance * 0.25)] : []),
+                ...(displayBalance >= 50 ? [floorCents(displayBalance * 0.5)] : []),
+                floorCents(displayBalance),
               ].filter((v, i, a) => v > 0 && a.indexOf(v) === i)).map((preset) => (
                 <button
                   key={preset}
@@ -246,7 +275,7 @@ export function SavingsAccountCard({
               }}
               disabled={isSubmitting}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button
               onClick={handleTransaction}
@@ -255,12 +284,36 @@ export function SavingsAccountCard({
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                 : "bg-red-500 hover:bg-red-600 text-white"}
             >
-              {isSubmitting ? "Processing…" : transactionType === "add" ? "Add" : "Withdraw"}
+              {isSubmitting ? t("processing") : transactionType === "add" ? tc("add") : t("withdraw")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("deleteConfirmDesc", { name: account.name })}
+              {!isEmpty && (
+                <span className="mt-2 block font-medium text-destructive">
+                  {t("deleteConfirmBalanceWarning", { balance: format(account.balance) })}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onDelete(account.id)}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {tc("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
-

@@ -16,19 +16,38 @@ import {
   getDocs,
   Timestamp,
   serverTimestamp,
-  getDoc,
   increment,
   runTransaction,
 } from "firebase/firestore"
 import { db } from "./firebase"
 import { SavingsAccountDocument } from "./firestore-types"
 import { logger } from "./utils/logger"
+import { AMOUNT_RULES } from "./constants/validation.constants"
 
 export type CreateSavingsAccountInput = Omit<
   SavingsAccountDocument,
   "userId" | "createdAt" | "updatedAt"
 > & {
   userId: string
+}
+
+/** Round a monetary value to 2 decimals, avoiding IEEE-754 drift from repeated
+ * increment() operations (review S-10). */
+function roundMoney(amount: number): number {
+  return Math.round((amount + Number.EPSILON) * 100) / 100
+}
+
+/** Validate a deposit/withdrawal amount before it touches Firestore (review S-10).
+ * The client UI caps amounts, but the API is the real boundary. Returns the
+ * rounded amount or throws on a non-positive / oversized value. */
+function sanitizeAmount(amount: number): number {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be greater than 0")
+  }
+  if (amount > AMOUNT_RULES.MAX) {
+    throw new Error(`Amount cannot exceed ${AMOUNT_RULES.MAX}`)
+  }
+  return roundMoney(amount)
 }
 
 /**
@@ -42,9 +61,9 @@ export async function createSavingsAccount(
     const accountsRef = collection(db, "savingsAccounts")
     
     // Build the account object, only including fields that are not undefined
-    const newAccount: any = {
+    const newAccount: Record<string, unknown> = {
       name: accountData.name.trim(),
-      balance: accountData.balance ?? 0,
+      balance: roundMoney(accountData.balance ?? 0),
       currency: accountData.currency,
       isActive: accountData.isActive ?? true,
       createdAt: serverTimestamp() as Timestamp,
@@ -123,32 +142,6 @@ export async function getUserSavingsAccounts(
 }
 
 /**
- * Get active savings accounts for a user
- */
-export async function getActiveSavingsAccounts(
-  userId: string
-): Promise<(SavingsAccountDocument & { id: string })[]> {
-  try {
-    const accountsRef = collection(db, "savingsAccounts")
-    const q = query(
-      accountsRef,
-      where("userId", "==", userId),
-      where("isActive", "==", true),
-      orderBy("createdAt", "desc")
-    )
-    
-    const querySnapshot = await getDocs(q)
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as (SavingsAccountDocument & { id: string })[]
-  } catch (error) {
-    logger.error("Error fetching active savings accounts", error)
-    throw error
-  }
-}
-
-/**
  * Update a savings account
  */
 export async function updateSavingsAccount(
@@ -158,15 +151,15 @@ export async function updateSavingsAccount(
   try {
     const accountRef = doc(db, "savingsAccounts", accountId)
     
-    const cleanUpdateData: any = {
+    const cleanUpdateData: Record<string, unknown> = {
       updatedAt: serverTimestamp(),
     }
-    
+
     if (updateData.name !== undefined) {
       cleanUpdateData.name = updateData.name.trim()
     }
     if (updateData.balance !== undefined) {
-      cleanUpdateData.balance = updateData.balance
+      cleanUpdateData.balance = roundMoney(updateData.balance)
     }
     if (updateData.currency !== undefined) {
       cleanUpdateData.currency = updateData.currency
@@ -205,9 +198,10 @@ export async function addToSavingsAccount(
   amount: number
 ): Promise<void> {
   try {
+    const safeAmount = sanitizeAmount(amount)
     const accountRef = doc(db, "savingsAccounts", accountId)
     await updateDoc(accountRef, {
-      balance: increment(amount),
+      balance: increment(safeAmount),
       updatedAt: serverTimestamp(),
     })
   } catch (error) {
@@ -224,6 +218,7 @@ export async function withdrawFromSavingsAccount(
   amount: number
 ): Promise<void> {
   try {
+    const safeAmount = sanitizeAmount(amount)
     const accountRef = doc(db, "savingsAccounts", accountId)
     // Read-check-write inside a transaction so two concurrent withdrawals can't
     // both pass the balance check and overdraw the account (see review S3).
@@ -233,11 +228,18 @@ export async function withdrawFromSavingsAccount(
         throw new Error("Savings account not found")
       }
       const currentBalance = accountDoc.data().balance as number
-      if (currentBalance < amount) {
+      // Tolerate sub-cent float drift so a "withdraw all" can fully empty the
+      // account instead of being rejected by a rounding artefact (review S-6/S-10).
+      if (currentBalance + 0.005 < safeAmount) {
         throw new Error("Insufficient balance in savings account")
       }
+      // Write an explicit, rounded, non-negative balance rather than a raw
+      // decrement: this fully empties the account on "withdraw all", heals any
+      // accumulated float drift, and never produces the tiny negative that the
+      // balance >= 0 security rule would reject (review S-6/S-10/S-14).
+      const newBalance = roundMoney(Math.max(0, currentBalance - safeAmount))
       txn.update(accountRef, {
-        balance: increment(-amount),
+        balance: newBalance,
         updatedAt: serverTimestamp(),
       })
     })
@@ -256,30 +258,6 @@ export async function deleteSavingsAccount(accountId: string): Promise<void> {
     await deleteDoc(accountRef)
   } catch (error) {
     logger.error("Error deleting savings account", error)
-    throw error
-  }
-}
-
-/**
- * Get a single savings account by ID
- */
-export async function getSavingsAccount(
-  accountId: string
-): Promise<(SavingsAccountDocument & { id: string }) | null> {
-  try {
-    const accountRef = doc(db, "savingsAccounts", accountId)
-    const docSnapshot = await getDoc(accountRef)
-    
-    if (!docSnapshot.exists()) {
-      return null
-    }
-    
-    return {
-      id: docSnapshot.id,
-      ...docSnapshot.data(),
-    } as SavingsAccountDocument & { id: string }
-  } catch (error) {
-    logger.error("Error fetching savings account", error)
     throw error
   }
 }

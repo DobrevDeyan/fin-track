@@ -308,13 +308,14 @@ export async function deleteUserData(userId: string): Promise<void> {
     }
   }
 
-  // 3. Delete Firebase Storage receipts before removing Firestore entries
+  // 3. Delete Firebase Storage receipts before removing Firestore entries.
+  //    Query only by userId (no composite index needed) and filter receiptUrl in
+  //    memory — a "receiptUrl != null" query requires a composite index that may
+  //    not exist, which would silently skip receipt cleanup entirely.
   try {
     const { deleteReceipt } = await import("./receipt-utils")
     const entriesRef = collection(db, "entries")
-    const receiptSnap = await getDocs(
-      query(entriesRef, where("userId", "==", userId), where("receiptUrl", "!=", null))
-    )
+    const receiptSnap = await getDocs(query(entriesRef, where("userId", "==", userId)))
     const receiptUrls = receiptSnap.docs
       .map((d) => d.data().receiptUrl as string | undefined)
       .filter((url): url is string => !!url)
@@ -325,7 +326,11 @@ export async function deleteUserData(userId: string): Promise<void> {
     // Non-fatal — continue deletion
   }
 
-  // 4. Delete all documents in each collection that belong to this user
+  // 4. Best-effort client-side cleanup of user-owned collections.
+  //    The deleteMyAccount CF (step 6) is a full Admin-SDK backstop that re-deletes
+  //    every collection below server-side, so a permission hiccup or stale rule
+  //    here must NEVER abort before the CF runs — otherwise the Auth account is
+  //    left intact and the user can't actually delete it (review: deletion abort).
   const userOwnedCollections = [
     "entries",
     "budgets",
@@ -337,33 +342,37 @@ export async function deleteUserData(userId: string): Promise<void> {
   ]
 
   for (const collectionName of userOwnedCollections) {
-    const colRef = collection(db, collectionName)
-    const q = query(colRef, where("userId", "==", userId))
-    const snapshot = await getDocs(q)
+    try {
+      const colRef = collection(db, collectionName)
+      const q = query(colRef, where("userId", "==", userId))
+      const snapshot = await getDocs(q)
 
-    for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
-      const chunk = snapshot.docs.slice(i, i + BATCH_SIZE)
-      const batch = writeBatch(db)
-      chunk.forEach((d) => batch.delete(d.ref))
-      await batch.commit()
+      for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
+        const chunk = snapshot.docs.slice(i, i + BATCH_SIZE)
+        const batch = writeBatch(db)
+        chunk.forEach((d) => batch.delete(d.ref))
+        await batch.commit()
+      }
+    } catch (err) {
+      logger.error(`Client cleanup of ${collectionName} failed during account deletion (CF will backstop)`, err)
     }
   }
 
-  // 5. Delete single-document records keyed by userId.
-  //    NOTE: scanUsage and leaderboardProfiles are admin-write-only (firestore.rules
-  //    `allow write: if false`), so the client cannot delete them — the deleteMyAccount
-  //    CF (step 6) removes them server-side. Deleting them here would reject with
-  //    permission-denied and abort the whole Promise.all before the CF ever runs.
-  await Promise.all([
+  // 5. Best-effort single-document cleanup keyed by userId. allSettled so one
+  //    rejected delete (e.g. a stale rule) can't abort the rest or step 6; the
+  //    CF backstop removes any that fail here.
+  await Promise.allSettled([
     deleteDoc(doc(db, "financialSummaries", userId)),
     deleteDoc(doc(db, "aiInsights", userId)),
     deleteDoc(doc(db, "userDebts", userId)),
     deleteDoc(doc(db, "users", userId)),
   ])
 
-  // 6. Call the server-side CF to delete admin-only data and the Auth account.
-  //    This covers: auditLog, customers/ (Stripe), rateLimits, householdInvites,
-  //    notifications subcollection, and finally admin.auth().deleteUser().
+  // 6. AUTHORITATIVE deletion. The server-side CF (Admin SDK, bypasses rules)
+  //    deletes every user collection plus admin-only data (auditLog, customers/
+  //    Stripe, rateLimits, householdInvites, scanUsage, leaderboardProfiles,
+  //    notifications) and finally admin.auth().deleteUser(). This is the step
+  //    that MUST succeed — its failure is a real, surfaced error.
   const { getFunctions, httpsCallable } = await import("firebase/functions")
   const { app } = await import("./firebase")
   const fns = getFunctions(app, "europe-west4")
