@@ -13,6 +13,8 @@ import {
 } from "@/lib/firestore-household-goals"
 import { createEntry } from "@/lib/firestore-entries"
 import { logger } from "@/lib/utils/logger"
+import { useCurrency } from "@/contexts/CurrencyContext"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import type { GoalFormData } from "./GoalsContext"
 
 export type { HouseholdGoal }
@@ -20,6 +22,7 @@ export type { HouseholdGoal }
 interface HouseholdGoalsContextValue {
   goals: HouseholdGoal[]
   loading: boolean
+  error: string | null
   dialogOpen: boolean
   editingGoal: HouseholdGoal | null
   loadGoals: () => Promise<void>
@@ -42,28 +45,46 @@ interface Props {
   displayName?: string
 }
 
-export function HouseholdGoalsProvider({ children, householdId, userId, userCurrency, displayName }: Props) {
+export function HouseholdGoalsProvider({ children, householdId, userId, displayName }: Props) {
+  const { toBaseCurrency } = useCurrency()
   const [goals, setGoals] = useState<HouseholdGoal[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<HouseholdGoal | null>(null)
   const hasLoadedRef = useRef(false)
+  // Pending optimistic deletes keyed by goalId — cancel on Undo, flush on unmount.
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   useEffect(() => {
     hasLoadedRef.current = false
     setGoals([])
   }, [householdId])
 
+  // On unmount, fire any still-pending deletes immediately without touching state.
+  useEffect(() => {
+    const pending = pendingDeletesRef.current
+    return () => {
+      pending.forEach((timer, goalId) => {
+        clearTimeout(timer)
+        deleteHouseholdGoal(goalId).catch((err) => logger.error("Error flushing household goal delete", err))
+      })
+      pending.clear()
+    }
+  }, [])
+
   const loadGoals = useCallback(async () => {
     if (!householdId) return
     try {
       setLoading(true)
+      setError(null)
       const raw = await getHouseholdGoals(householdId)
       setGoals(raw)
       hasLoadedRef.current = true
     } catch (error) {
       logger.error("Error loading household goals", error)
       setGoals([])
+      setError("Failed to load shared goals")
     } finally {
       setLoading(false)
     }
@@ -131,6 +152,7 @@ export function HouseholdGoalsProvider({ children, householdId, userId, userCurr
       if (!deleted) return
       setGoals((prev) => prev.filter((g) => g.id !== goalId))
       const timer = setTimeout(async () => {
+        pendingDeletesRef.current.delete(goalId)
         try {
           await deleteHouseholdGoal(goalId)
         } catch {
@@ -138,8 +160,16 @@ export function HouseholdGoalsProvider({ children, householdId, userId, userCurr
           toast.error("Failed to delete shared goal")
         }
       }, 5000)
+      pendingDeletesRef.current.set(goalId, timer)
       toast.success("Shared goal deleted", {
-        action: { label: "Undo", onClick: () => { clearTimeout(timer); loadGoals() } },
+        action: {
+          label: "Undo",
+          onClick: () => {
+            clearTimeout(timer)
+            pendingDeletesRef.current.delete(goalId)
+            loadGoals()
+          },
+        },
         duration: 5000,
       })
     },
@@ -151,21 +181,24 @@ export function HouseholdGoalsProvider({ children, householdId, userId, userCurr
       if (!userId) return
       const goal = goals.find((g) => g.id === goalId)
       if (!goal) return
+      // Convert the member's display-currency input to EUR base ONCE so the
+      // expense entry, the goal total, and the contribution record all agree.
+      const baseAmount = toBaseCurrency(amount)
       try {
         // Record personal expense for the contributing member
         await createEntry(userId, {
           type: "expense",
-          amount,
-          currency: userCurrency,
+          amount: baseAmount,
+          currency: BASE_CURRENCY,
           description: `Shared goal: ${goal.name}`,
           category: "Goal Contribution",
           date: new Date().toISOString(),
         })
-        // Update goal total + contribution record
-        await addFundsToHouseholdGoal(goalId, goal.currentAmount, amount, {
+        // Update goal total + contribution record (all EUR base)
+        await addFundsToHouseholdGoal(goalId, goal.currentAmount, baseAmount, {
           uid: userId,
           displayName: displayName || "Member",
-          amount,
+          amount: baseAmount,
           addedAt: new Date().toISOString(),
         })
         await loadGoals()
@@ -175,7 +208,7 @@ export function HouseholdGoalsProvider({ children, householdId, userId, userCurr
         toast.error("Failed to add funds")
       }
     },
-    [userId, userCurrency, displayName, goals, loadGoals]
+    [userId, displayName, goals, loadGoals, toBaseCurrency]
   )
 
   const handleDialogClose = useCallback((open: boolean) => {
@@ -190,7 +223,7 @@ export function HouseholdGoalsProvider({ children, householdId, userId, userCurr
 
   return (
     <HouseholdGoalsContext.Provider value={{
-      goals, loading, dialogOpen, editingGoal,
+      goals, loading, error, dialogOpen, editingGoal,
       loadGoals, ensureGoalsLoaded, handleSubmit, handleEdit, handleDelete,
       handleAddFunds, handleDialogClose, openDialog,
     }}>

@@ -14,6 +14,7 @@ import { HouseholdGoalCard } from "@/components/dashboard/HouseholdGoalCard"
 import { useHouseholdGoalsContext, type HouseholdGoal } from "@/contexts/dashboard/HouseholdGoalsContext"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { motion } from "framer-motion"
+import { useTranslations } from "next-intl"
 
 interface Props {
   categories: string[]
@@ -21,8 +22,11 @@ interface Props {
 }
 
 export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
+  const t = useTranslations("household")
+  const tg = useTranslations("goals")
+  const tCommon = useTranslations("common")
   const {
-    goals, loading, dialogOpen, editingGoal,
+    goals, loading, error, dialogOpen, editingGoal,
     ensureGoalsLoaded, loadGoals, handleDialogClose, handleSubmit,
     handleEdit, handleDelete, handleAddFunds, openDialog,
   } = useHouseholdGoalsContext()
@@ -65,11 +69,11 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
       <div className="py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <p className="text-sm text-muted-foreground">
-            Shared savings goals the whole household works toward together.
+            {t("goals.description")}
           </p>
           <Button onClick={openDialog} className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Add Shared Goal
+            {t("goals.addGoal")}
           </Button>
         </div>
 
@@ -84,18 +88,28 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="rounded-full bg-muted p-4 mb-4">
+              <Target className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-sm mb-1">{t("goals.loadError")}</p>
+            <Button size="sm" variant="outline" onClick={() => loadGoals()}>
+              {t("tryAgain")}
+            </Button>
+          </div>
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="rounded-full bg-muted p-4 mb-4">
               <Target className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-medium text-sm mb-1">No shared goals yet</p>
+            <p className="font-medium text-sm mb-1">{t("goals.emptyTitle")}</p>
             <p className="text-xs text-muted-foreground mb-4 max-w-xs">
-              Create a shared goal like a vacation fund or emergency savings that the whole household contributes to.
+              {t("goals.emptyDescription")}
             </p>
             <Button size="sm" onClick={openDialog}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Shared Goal
+              {t("goals.addGoal")}
             </Button>
           </div>
         ) : (
@@ -132,12 +146,12 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
       <Dialog open={addFundsOpen} onOpenChange={setAddFundsOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Add Funds — {selectedGoal?.name}</DialogTitle>
+            <DialogTitle>{t("goals.addFundsTitle", { name: selectedGoal?.name ?? "" })}</DialogTitle>
           </DialogHeader>
           <form onSubmit={onAddFundsSubmit}>
             <div className="py-4 space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="fundAmount">Amount ({userCurrency})</Label>
+                <Label htmlFor="fundAmount">{tCommon("amount")} ({userCurrency})</Label>
                 <Input
                   id="fundAmount"
                   type="number"
@@ -152,16 +166,16 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                This will be recorded as a personal expense and added to the shared goal.
+                {t("goals.addFundsHint")}
               </p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAddFundsOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Add Funds
+                {tg("addFunds")}
               </Button>
             </DialogFooter>
           </form>

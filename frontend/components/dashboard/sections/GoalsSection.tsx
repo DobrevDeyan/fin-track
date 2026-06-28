@@ -17,7 +17,7 @@ interface GoalsSectionProps {
 }
 
 export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
-    const { goals, loading, dialogOpen, editingGoal, handleDialogClose, handleSubmit, handleEdit, handleDelete, openDialog, handleAddFunds } = useGoalsContext();
+    const { goals, loading, error, loadGoals, dialogOpen, editingGoal, handleDialogClose, handleSubmit, handleEdit, handleDelete, openDialog, handleAddFunds } = useGoalsContext();
     const [addFundsOpen, setAddFundsOpen] = useState(false);
     const [selectedGoal, setSelectedGoal] = useState<(GoalDocument & { id: string }) | null>(null);
 
@@ -49,6 +49,16 @@ export function GoalsSection({ categories, userCurrency }: GoalsSectionProps) {
                                     <Skeleton className="h-8 w-full mt-2" />
                                 </div>
                             ))}
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="rounded-full bg-muted p-4 mb-4">
+                                <Target className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="font-medium text-sm mb-1">{t("loadError")}</p>
+                            <Button size="sm" variant="outline" onClick={() => loadGoals()}>
+                                {t("retry")}
+                            </Button>
                         </div>
                     ) : goals.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center">

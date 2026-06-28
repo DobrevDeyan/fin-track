@@ -7,7 +7,7 @@
  * Adding funds to a goal now creates an expense entry for proper accounting.
  */
 
-import { createContext, useContext, ReactNode, useCallback, useState, useEffect } from "react"
+import { createContext, useContext, ReactNode, useCallback, useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { Timestamp } from "firebase/firestore"
 import { useTranslations } from "next-intl"
@@ -45,6 +45,7 @@ interface GoalsContextValue {
   // State
   goals: Goal[]
   loading: boolean
+  error: string | null
   dialogOpen: boolean
   editingGoal: Goal | null
 
@@ -71,8 +72,13 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
   const { refreshSummary } = useFinancialSummary()
   const [goals, setGoals] = useState<Goal[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+
+  // Pending optimistic deletes keyed by goalId, so we can cancel them on Undo
+  // and flush them on unmount instead of leaking timers / updating after unmount.
+  const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   useEffect(() => {
     if (!userId) {
@@ -81,16 +87,31 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
     }
   }, [userId])
 
+  // On unmount, fire any still-pending deletes immediately (honors the user's
+  // intent) without touching React state afterwards.
+  useEffect(() => {
+    const pending = pendingDeletesRef.current
+    return () => {
+      pending.forEach((timer, goalId) => {
+        clearTimeout(timer)
+        deleteGoal(goalId).catch((err) => logger.error("Error flushing goal delete", err))
+      })
+      pending.clear()
+    }
+  }, [])
+
   const loadGoals = useCallback(async () => {
     if (!userId) return
 
     try {
       setLoading(true)
+      setError(null)
       const firestoreGoals = await getUserGoals(userId)
       setGoals(firestoreGoals)
     } catch (error) {
       logger.error(t(ERROR_MESSAGES.LOAD_FAILED), error)
       setGoals([])
+      setError(ERROR_MESSAGES.LOAD_FAILED)
     } finally {
       setLoading(false)
     }
@@ -155,6 +176,7 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
       setGoals(prev => prev.filter(g => g.id !== goalId))
 
       const timer = setTimeout(async () => {
+        pendingDeletesRef.current.delete(goalId)
         try {
           await deleteGoal(goalId)
         } catch (error) {
@@ -163,9 +185,17 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
           toast.error(t(ERROR_MESSAGES.GOAL_DELETE_FAILED))
         }
       }, 5000)
+      pendingDeletesRef.current.set(goalId, timer)
 
       toast.success(t("toast.goals.deleted"), {
-        action: { label: t("toast.undo"), onClick: () => { clearTimeout(timer); loadGoals() } },
+        action: {
+          label: t("toast.undo"),
+          onClick: () => {
+            clearTimeout(timer)
+            pendingDeletesRef.current.delete(goalId)
+            loadGoals()
+          },
+        },
         duration: 5000,
       })
     },
@@ -179,20 +209,23 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
       const goal = goals.find(g => g.id === goalId)
       if (!goal) return
 
+      // Convert the user-entered (display-currency) amount to EUR base ONCE, so
+      // the expense entry and the goal's currentAmount stay in agreement.
+      const baseAmount = toBaseCurrency(amount)
+
       try {
         // 1. Create an expense entry for proper accounting
-        //    Amount must be converted to EUR base before storage.
         await createEntry(userId, {
           type: "expense",
-          amount: toBaseCurrency(amount),
+          amount: baseAmount,
           currency: BASE_CURRENCY,
           description: `Goal contribution: ${goal.name}`,
           category: "Goal Contribution",
           date: new Date().toISOString(),
         })
 
-        // 2. Update the goal's currentAmount
-        const newAmount = goal.currentAmount + amount
+        // 2. Update the goal's currentAmount (also EUR base)
+        const newAmount = goal.currentAmount + baseAmount
         await updateGoal(goalId, {
           currentAmount: newAmount,
         })
@@ -223,6 +256,7 @@ export function GoalsProvider({ children, userId }: GoalsProviderProps) {
   const value: GoalsContextValue = {
     goals,
     loading,
+    error,
     dialogOpen,
     editingGoal,
     loadGoals,

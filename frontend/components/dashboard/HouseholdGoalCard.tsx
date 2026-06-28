@@ -6,7 +6,7 @@ import { Edit, Trash2, Target, Calendar, Plus } from "lucide-react"
 import { useMoney } from "@/contexts/CurrencyContext"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
 import { motion } from "framer-motion"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import type { HouseholdGoal } from "@/contexts/dashboard/HouseholdGoalsContext"
 
 const MEMBER_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#3b82f6"]
@@ -21,13 +21,16 @@ interface Props {
 export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props) {
   const t = useTranslations("goals")
   const tCommon = useTranslations("common")
+  const locale = useLocale()
   const { format } = useMoney()
   const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount)
   const remaining = goal.targetAmount - goal.currentAmount
   const isComplete = progress >= 100
 
+  // Deadlines are stored at UTC midnight; render in UTC so the calendar date
+  // never drifts a day in negative-offset timezones.
   const deadlineText = goal.deadline
-    ? goal.deadline.toDate().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? goal.deadline.toDate().toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     : null
 
   const progressColor = isComplete
@@ -76,7 +79,14 @@ export function HouseholdGoalCard({ goal, onEdit, onDelete, onAddFunds }: Props)
               <span className="text-sm text-muted-foreground">{t("progress")}</span>
               <span className="text-sm font-semibold">{progress.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+            <div
+              className="w-full bg-muted rounded-full h-3 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t("progress")}
+            >
               <div
                 className={`h-full ${progressColor} transition-all duration-300`}
                 style={{ width: `${Math.min(progress, 100)}%` }}

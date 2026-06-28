@@ -8,6 +8,7 @@ import { useMoney } from "@/contexts/CurrencyContext"
 import { calculateGoalProgress } from "@/lib/firestore-goals"
 import { getBadgeStatusColor } from "@/lib/constants/ui.constants"
 import { motion } from "framer-motion"
+import { useTranslations, useLocale } from "next-intl"
 
 interface GoalCardProps {
   goal: GoalDocument & { id: string }
@@ -17,16 +18,22 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) {
+  const t = useTranslations("goals")
+  const tCommon = useTranslations("common")
+  const locale = useLocale()
   const { format } = useMoney()
   const progress = calculateGoalProgress(goal.currentAmount, goal.targetAmount)
   const remaining = goal.targetAmount - goal.currentAmount
   const isComplete = progress >= 100
 
+  // Deadlines are stored at UTC midnight; render in UTC so the calendar date
+  // never drifts a day in negative-offset timezones.
   const deadlineText = goal.deadline
-    ? goal.deadline.toDate().toLocaleDateString("en-US", {
+    ? goal.deadline.toDate().toLocaleDateString(locale, {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: "UTC",
       })
     : null
 
@@ -54,12 +61,12 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
           </div>
           {!goal.isActive && (
             <span className={`text-xs ${getBadgeStatusColor("inactive")} px-2 py-1 rounded`}>
-              Inactive
+              {t("inactive")}
             </span>
           )}
           {isComplete && (
             <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded">
-              Complete!
+              {t("complete")}
             </span>
           )}
         </div>
@@ -68,10 +75,17 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Progress</span>
+              <span className="text-sm text-muted-foreground">{t("progress")}</span>
               <span className="text-sm font-semibold">{progress.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+            <div
+              className="w-full bg-muted rounded-full h-3 overflow-hidden"
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t("progress")}
+            >
               <div
                 className={`h-full ${progressColor} transition-all duration-300`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -81,18 +95,18 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Current</span>
+              <span className="text-muted-foreground">{t("current")}</span>
               <p className="font-semibold">{format(goal.currentAmount)}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">Target</span>
+              <span className="text-muted-foreground">{t("target")}</span>
               <p className="font-semibold">{format(goal.targetAmount)}</p>
             </div>
           </div>
 
           {remaining > 0 && (
             <div className="text-sm">
-              <span className="text-muted-foreground">Remaining: </span>
+              <span className="text-muted-foreground">{t("remainingAmount")}: </span>
               <span className="font-semibold">{format(remaining)}</span>
             </div>
           )}
@@ -100,7 +114,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
           {deadlineText && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Deadline: {deadlineText}</span>
+              <span>{t("deadline")}: {deadlineText}</span>
             </div>
           )}
 
@@ -116,7 +130,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
               onClick={() => onAddFunds(goal)}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Funds
+              {t("addFunds")}
             </Button>
             <div className="flex gap-2 flex-1">
               <Button
@@ -126,7 +140,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
                 onClick={() => onEdit(goal)}
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {tCommon("edit")}
               </Button>
               <Button
                 variant="outline"
@@ -135,7 +149,7 @@ export function GoalCard({ goal, onEdit, onDelete, onAddFunds }: GoalCardProps) 
                 onClick={() => onDelete(goal.id)}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {tCommon("delete")}
               </Button>
             </div>
           </div>

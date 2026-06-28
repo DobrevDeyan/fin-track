@@ -353,10 +353,16 @@
     "emptyTitle": "No goals yet",
     "emptyDescription": "Set a savings goal to track your progress toward something that matters.",
     "contributions": "Contributions",
+    "inactive": "Inactive",
+    "saving": "Saving...",
+    "loadError": "Couldn't load your goals",
+    "retry": "Retry",
     "validation": {
       "nameRequired": "Goal name is required",
       "targetAmountRequired": "Enter a target amount greater than 0",
-      "amountRequired": "Enter an amount greater than 0"
+      "amountRequired": "Enter an amount greater than 0",
+      "currentAmountInvalid": "Enter a valid current amount (0 or more)",
+      "deadlineInPast": "Deadline can't be in the past"
     }
   },
   "calendar": {
@@ -592,7 +598,16 @@
     "loading": "Loading…",
     "refresh": "Refresh",
     "tryAgain": "Try again",
-    "noTransactions": "No transactions yet from family members."
+    "noTransactions": "No transactions yet from family members.",
+    "goals": {
+      "description": "Shared savings goals the whole household works toward together.",
+      "addGoal": "Add Shared Goal",
+      "emptyTitle": "No shared goals yet",
+      "emptyDescription": "Create a shared goal like a vacation fund or emergency savings that the whole household contributes to.",
+      "loadError": "Couldn't load shared goals",
+      "addFundsTitle": "Add Funds — {name}",
+      "addFundsHint": "This will be recorded as a personal expense and added to the shared goal."
+    }
   },
   "error": {
     "unexpected": "An unexpected error occurred. Please try again.",

@@ -269,7 +269,11 @@ export async function getGoal(
  * Calculate goal progress percentage
  */
 export function calculateGoalProgress(currentAmount: number, targetAmount: number): number {
-  if (targetAmount === 0) return 0
-  return Math.min((currentAmount / targetAmount) * 100, 100)
+  if (!Number.isFinite(currentAmount) || !Number.isFinite(targetAmount) || targetAmount <= 0) {
+    return 0
+  }
+  const pct = (currentAmount / targetAmount) * 100
+  if (!Number.isFinite(pct) || pct < 0) return 0
+  return Math.min(pct, 100)
 }
 

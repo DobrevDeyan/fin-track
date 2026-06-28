@@ -101,7 +101,9 @@
       "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx tsc --noEmit; $code = $LASTEXITCODE; Pop-Location; Write-Output \"FRONTEND_TSC_EXIT=$code\")",
       "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\functions\"; npx tsc --noEmit; $code = $LASTEXITCODE; Pop-Location; Write-Output \"FUNCTIONS_TSC_EXIT=$code\")",
       "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest __tests__/components/BudgetCard.test.tsx __tests__/components/sections/BudgetsSection.test.tsx --silent 2>&1 | Select-Object -Last 30; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")",
-      "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest BudgetCard \"sections/BudgetsSection\" 2>&1 | Select-Object -Last 35; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")"
+      "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest BudgetCard \"sections/BudgetsSection\" 2>&1 | Select-Object -Last 35; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }
