@@ -85,7 +85,12 @@ interface RecurringTransaction {
 }
 
 /**
- * Calculate the next occurrence date based on frequency
+ * Calculate the next occurrence date based on frequency.
+ *
+ * KEEP IN SYNC with the frontend copy in
+ * frontend/lib/firestore-recurring.ts (calculateNextDate). The two packages
+ * deploy independently, so this logic is intentionally duplicated — any change
+ * to month-end / leap-year handling must be mirrored in both.
  */
 function calculateNextDate(
   currentDate: Date,
@@ -120,81 +125,100 @@ function calculateNextDate(
 }
 
 /**
- * Process a single recurring transaction:
- * 1. Check idempotency — skip if an entry already exists for this date
- * 2. Create an entry in the entries collection
- * 3. Update the nextDate to the next occurrence
+ * Process a single recurring transaction, catching up EVERY missed occurrence
+ * whose date is due (<= now), not just the earliest one (review R5-3).
+ *
+ * Each occurrence is created in its own transaction keyed by a deterministic
+ * entry ID (`rec_{id}_{YYYY-MM-DD}`), so concurrent executions converge on the
+ * same document instead of double-writing — closing the old read-then-write gap.
+ * A safety cap bounds how many entries one run can mint.
  */
 async function processRecurringTransaction(
   recurringId: string,
   recurring: RecurringTransaction
 ): Promise<void> {
-  // Use a deterministic entry ID so concurrent executions target the same
-  // document. Firestore transactions detect the write conflict and abort one,
-  // which then retries, sees the entry already exists, and exits cleanly.
-  // This replaces the old getDocs idempotency check which had a read-then-write
-  // gap where two executions could both pass the check before either committed.
-  const dateStr = recurring.nextDate.toDate().toISOString().slice(0, 10); // "YYYY-MM-DD"
-  const entryId = `rec_${recurringId}_${dateStr}`;
-  const entryRef  = db.collection("entries").doc(entryId);
   const recurringRef = db.collection("recurringTransactions").doc(recurringId);
+  const now = admin.firestore.Timestamp.now();
+  // Bound catch-up so a wildly back-dated nextDate (e.g. a weekly item set years
+  // ago) can't mint an unbounded number of entries in a single run. Any
+  // remainder is processed on subsequent daily runs.
+  const MAX_CATCHUP = 60;
 
-  await db.runTransaction(async (txn) => {
-    const [entrySnap, recurringSnap] = await Promise.all([
-      txn.get(entryRef),
-      txn.get(recurringRef),
-    ]);
+  // Cursor over the due occurrence dates. Each iteration creates one entry for
+  // the cursor date and advances by one period until we reach a future date.
+  let cursor = recurring.nextDate;
 
-    // Already created by a concurrent or previous execution — nothing to do.
-    if (entrySnap.exists) {
-      logger.info(`Skipping duplicate recurring transaction: ${recurring.name}`, {
-        recurringId,
-        entryId,
+  for (let i = 0; i < MAX_CATCHUP; i++) {
+    if (cursor.toMillis() > now.toMillis()) break;
+
+    const dateStr = cursor.toDate().toISOString().slice(0, 10); // "YYYY-MM-DD"
+    const entryId = `rec_${recurringId}_${dateStr}`;
+    const entryRef = db.collection("entries").doc(entryId);
+
+    const next = await db.runTransaction<admin.firestore.Timestamp | null>(async (txn) => {
+      const [entrySnap, recurringSnap] = await Promise.all([
+        txn.get(entryRef),
+        txn.get(recurringRef),
+      ]);
+
+      const latest = recurringSnap.data() as RecurringTransaction | undefined;
+      // Paused or deleted mid-run — stop catching up.
+      if (!latest?.isActive) return null;
+
+      // Another execution already advanced past our cursor — resync to the
+      // authoritative nextDate and continue from there (no double write).
+      if (latest.nextDate.toMillis() !== cursor.toMillis()) {
+        return latest.nextDate;
+      }
+
+      const advanced = admin.firestore.Timestamp.fromDate(
+        calculateNextDate(cursor.toDate(), latest.frequency)
+      );
+
+      // Use the freshly-read document for the entry payload so a concurrent edit
+      // to amount/category/name isn't lost (review R5-9).
+      if (!entrySnap.exists) {
+        txn.set(entryRef, {
+          userId: latest.userId,
+          type: latest.type,
+          amount: latest.amount,
+          currency: "EUR",
+          description: latest.name,
+          category: latest.category,
+          date: cursor,
+          recurring: true,
+          recurringId,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        logger.info(`Processed recurring transaction: ${latest.name}`, {
+          recurringId,
+          entryId,
+          userId: latest.userId,
+          amount: latest.amount,
+          type: latest.type,
+          newNextDate: advanced.toDate().toISOString(),
+        });
+      } else {
+        // Entry already exists (a prior partial run created it); still advance
+        // nextDate so we make progress and don't loop on the same date.
+        logger.info(`Recurring entry already exists, advancing nextDate: ${latest.name}`, {
+          recurringId,
+          entryId,
+        });
+      }
+
+      txn.update(recurringRef, {
+        nextDate: advanced,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-      return;
-    }
 
-    // Guard against stale data: verify nextDate hasn't already been advanced by
-    // another execution that completed between when we queried and now.
-    const latestRecurring = recurringSnap.data() as RecurringTransaction | undefined;
-    if (!latestRecurring?.isActive) return;
-    if (latestRecurring.nextDate.toDate().getTime() !== recurring.nextDate.toDate().getTime()) {
-      logger.info(`Skipping stale recurring transaction: ${recurring.name} — nextDate already advanced`, {
-        recurringId,
-      });
-      return;
-    }
-
-    const newNextDate = calculateNextDate(recurring.nextDate.toDate(), recurring.frequency);
-
-    txn.set(entryRef, {
-      userId: recurring.userId,
-      type: recurring.type,
-      amount: recurring.amount,
-      currency: "EUR",
-      description: recurring.name,
-      category: recurring.category,
-      date: recurring.nextDate,
-      recurring: true,
-      recurringId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      return advanced;
     });
 
-    txn.update(recurringRef, {
-      nextDate: admin.firestore.Timestamp.fromDate(newNextDate),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    logger.info(`Processed recurring transaction: ${recurring.name}`, {
-      recurringId,
-      entryId,
-      userId: recurring.userId,
-      amount: recurring.amount,
-      type: recurring.type,
-      newNextDate: newNextDate.toISOString(),
-    });
-  });
+    if (next === null) break; // inactive/deleted mid-run
+    cursor = next;
+  }
 }
 
 /**

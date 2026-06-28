@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
-import { calculateNextDate } from "@/lib/firestore-recurring"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
 import { useTranslations } from "next-intl"
@@ -60,18 +59,26 @@ export function RecurringTransactionDialog({
   const [nextDate, setNextDate] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount", string>>>({})
+  const [errors, setErrors] = useState<Partial<Record<"name" | "category" | "amount" | "nextDate", string>>>({})
   const t = useTranslations("recurring")
   const tCommon = useTranslations("common")
   // Stored amounts are canonical base currency (EUR); the form works in the
   // user's display currency. Convert base->display on edit, display->base on save.
   const { toBase, fromBase } = useMoney()
 
+  // Minimum selectable next-occurrence date — today (UTC, matching the default
+  // values set below). Past dates are rejected so the scheduler never back-dates
+  // a flood of catch-up entries (review R5-1).
+  const minDate = new Date().toISOString().split("T")[0]
+
   const validate = () => {
     const e: typeof errors = {}
     if (!name.trim()) e.name = t("validation.nameRequired")
     if (!category) e.category = t("validation.categoryRequired")
-    if (!amount || parseFloat(amount) <= 0) e.amount = t("validation.amountRequired")
+    const amt = parseFloat(amount)
+    if (!amount || isNaN(amt) || amt <= 0) e.amount = t("validation.amountRequired")
+    else if (amt > AMOUNT_RULES.MAX) e.amount = t("validation.amountTooLarge", { max: AMOUNT_RULES.MAX })
+    if (!nextDate || nextDate < minDate) e.nextDate = t("validation.dateInFuture")
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -102,15 +109,6 @@ export function RecurringTransactionDialog({
     }
     setErrors({})
   }, [editingRecurring, open])
-
-  // Auto-update next date when frequency changes (for new transactions)
-  useEffect(() => {
-    if (!editingRecurring && nextDate && frequency) {
-      const currentDate = new Date(nextDate)
-      const calculatedNext = calculateNextDate(currentDate, frequency)
-      setNextDate(calculatedNext.toISOString().split("T")[0])
-    }
-  }, [frequency, editingRecurring])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -246,9 +244,12 @@ export function RecurringTransactionDialog({
               <Input
                 id="nextDate"
                 type="date"
+                min={minDate}
                 value={nextDate}
-                onChange={(e) => setNextDate(e.target.value)}
+                onChange={(e) => { setNextDate(e.target.value); if (errors.nextDate) setErrors(prev => ({ ...prev, nextDate: undefined })) }}
+                className={errors.nextDate ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {errors.nextDate && <p className="text-xs text-red-500">{errors.nextDate}</p>}
               <p className="text-xs text-muted-foreground">
                 {t("nextOccurrenceHint")}
               </p>

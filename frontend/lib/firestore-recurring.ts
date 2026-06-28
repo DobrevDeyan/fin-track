@@ -252,7 +252,12 @@ export async function getRecurringTransaction(
 }
 
 /**
- * Calculate next occurrence date based on frequency
+ * Calculate next occurrence date based on frequency.
+ *
+ * KEEP IN SYNC with the Cloud Functions copy in functions/src/index.ts
+ * (calculateNextDate). The two packages deploy independently, so this logic is
+ * intentionally duplicated — any change to month-end / leap-year handling must
+ * be mirrored in both.
  */
 export function calculateNextDate(
   currentDate: Date,

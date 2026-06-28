@@ -296,9 +296,6 @@
     "transactionNamePlaceholder": "e.g., Netflix Subscription",
     "nextDate": "Next Date",
     "nextDue": "Next due",
-    "lastProcessed": "Last processed",
-    "neverProcessed": "Never",
-    "autoProcess": "Auto-process",
     "isActive": "Is Active",
     "enabled": "Enabled",
     "disabled": "Disabled",
@@ -314,7 +311,9 @@
     "validation": {
       "nameRequired": "Transaction name is required",
       "categoryRequired": "Please select a category",
-      "amountRequired": "Enter a valid amount greater than 0"
+      "amountRequired": "Enter a valid amount greater than 0",
+      "amountTooLarge": "Amount cannot exceed {max}",
+      "dateInFuture": "Next date can't be in the past"
     }
   },
   "goals": {

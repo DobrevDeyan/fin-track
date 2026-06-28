@@ -48,6 +48,7 @@ interface RecurringContextValue {
   handleSubmit: (data: RecurringFormData) => Promise<void>
   handleEdit: (recurring: RecurringTransaction) => void
   handleDelete: (recurringId: string) => Promise<void>
+  toggleActive: (recurringId: string, nextActive: boolean) => Promise<void>
   handleDialogClose: (open: boolean) => void
   openDialog: () => void
 }
@@ -65,6 +66,9 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null)
   const hasLoadedRef = useRef(false)
+  // Tracks in-flight optimistic-delete timers so they can be flushed on unmount
+  // instead of firing against an unmounted component (review R5-10).
+  const pendingDeletes = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
 
   useEffect(() => {
     if (!userId) {
@@ -73,6 +77,21 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
       hasLoadedRef.current = false
     }
   }, [userId])
+
+  // On unmount, commit any pending optimistic deletes immediately so the user's
+  // delete intent isn't dropped and no timer leaks (review R5-10).
+  useEffect(() => {
+    const timers = pendingDeletes.current
+    return () => {
+      timers.forEach((timer, id) => {
+        clearTimeout(timer)
+        deleteRecurringTransaction(id).catch((err) =>
+          logger.error("Error flushing pending recurring delete on unmount", err)
+        )
+      })
+      timers.clear()
+    }
+  }, [])
 
   const loadRecurringTransactions = useCallback(async () => {
     if (!userId) return
@@ -152,6 +171,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
       setRecurringTransactions(prev => prev.filter(r => r.id !== recurringId))
 
       const timer = setTimeout(async () => {
+        pendingDeletes.current.delete(recurringId)
         try {
           await deleteRecurringTransaction(recurringId)
         } catch (error) {
@@ -160,13 +180,45 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
           toast.error(ERROR_MESSAGES.RECURRING_DELETE_FAILED)
         }
       }, 5000)
+      pendingDeletes.current.set(recurringId, timer)
 
       toast.success("Recurring transaction deleted", {
-        action: { label: "Undo", onClick: () => { clearTimeout(timer); loadRecurringTransactions() } },
+        action: {
+          label: "Undo",
+          onClick: () => {
+            const pending = pendingDeletes.current.get(recurringId)
+            if (pending) {
+              clearTimeout(pending)
+              pendingDeletes.current.delete(recurringId)
+            }
+            loadRecurringTransactions()
+          },
+        },
         duration: 5000,
       })
     },
     [userId, recurringTransactions, loadRecurringTransactions]
+  )
+
+  const toggleActive = useCallback(
+    async (recurringId: string, nextActive: boolean) => {
+      // Optimistic flip on the shared cache so the dashboard and the
+      // subscriptions page stay in sync from one source of truth (review R5-6).
+      setRecurringTransactions(prev =>
+        prev.map(r => (r.id === recurringId ? { ...r, isActive: nextActive } : r))
+      )
+      try {
+        await updateRecurringTransaction(recurringId, { isActive: nextActive })
+      } catch (error) {
+        // Revert on failure
+        setRecurringTransactions(prev =>
+          prev.map(r => (r.id === recurringId ? { ...r, isActive: !nextActive } : r))
+        )
+        logger.error("Error toggling recurring transaction", error)
+        throw error
+      }
+    },
+    []
   )
 
   const handleDialogClose = useCallback((open: boolean) => {
@@ -191,6 +243,7 @@ export function RecurringProvider({ children, userId }: RecurringProviderProps) 
     handleSubmit,
     handleEdit,
     handleDelete,
+    toggleActive,
     handleDialogClose,
     openDialog,
   }

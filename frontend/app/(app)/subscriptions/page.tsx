@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { useAuth } from "@/contexts/AuthContext"
 import { useMoney } from "@/contexts/CurrencyContext"
 import { useTranslations } from "next-intl"
-import { getUserRecurringTransactions, updateRecurringTransaction } from "@/lib/firestore-recurring"
+import { useRecurringContext } from "@/contexts/dashboard/RecurringContext"
 import type { RecurringEntryDocument } from "@/lib/firestore-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,8 +19,12 @@ import { cn } from "@/lib/utils"
 type RecurringTx = RecurringEntryDocument & { id: string }
 type SortKey = "cost" | "name" | "nextDate"
 
+// Weekly→monthly uses 52/12 so that toMonthly(x) * 12 === toAnnual(x) for every
+// frequency, keeping the monthly and annual totals internally consistent (R5-7).
+const WEEKS_PER_MONTH = 52 / 12
+
 function toMonthly(amount: number, frequency: RecurringTx["frequency"]): number {
-  if (frequency === "weekly") return amount * 4.33
+  if (frequency === "weekly") return amount * WEEKS_PER_MONTH
   if (frequency === "yearly") return amount / 12
   return amount
 }
@@ -52,22 +55,17 @@ function categoryColor(cat: string) {
 }
 
 export default function SubscriptionsPage() {
-  const { user } = useAuth()
   const { format: fmt } = useMoney()
   const t = useTranslations("subscriptions")
-  const [items, setItems] = useState<RecurringTx[]>([])
-  const [loading, setLoading] = useState(true)
+  // Read from the shared recurring context so pause/resume here and on the
+  // dashboard stay in sync from one source of truth (review R5-6).
+  const { recurringTransactions: items, loading, ensureRecurringLoaded, toggleActive } = useRecurringContext()
   const [sortKey, setSortKey] = useState<SortKey>("cost")
   const [toggling, setToggling] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!user) return
-    setLoading(true)
-    getUserRecurringTransactions(user.uid)
-      .then(setItems)
-      .catch(() => toast.error(t("failedToLoad")))
-      .finally(() => setLoading(false))
-  }, [user, t])
+    ensureRecurringLoaded()
+  }, [ensureRecurringLoaded])
 
   const subscriptions = useMemo(
     () => items.filter((t) => t.type === "expense"),
@@ -98,14 +96,24 @@ export default function SubscriptionsPage() {
     return Object.entries(map).sort((a, b) => b[1] - a[1])
   }, [active])
 
+  // Most expensive active subscription by monthly cost, independent of the
+  // current sort order, for the savings tip (review R5-8).
+  const priciestActive = useMemo(
+    () =>
+      active.reduce<RecurringTx | null>(
+        (max, s) =>
+          !max || toMonthly(s.amount, s.frequency) > toMonthly(max.amount, max.frequency) ? s : max,
+        null
+      ),
+    [active]
+  )
+
   const handleToggle = async (item: RecurringTx) => {
     setToggling(item.id)
+    const nextActive = !item.isActive
     try {
-      await updateRecurringTransaction(item.id, { isActive: !item.isActive })
-      setItems((prev) =>
-        prev.map((tx) => (tx.id === item.id ? { ...tx, isActive: !tx.isActive } : tx))
-      )
-      toast.success(item.isActive ? t("pausedSuccess") : t("resumedSuccess"))
+      await toggleActive(item.id, nextActive)
+      toast.success(nextActive ? t("resumedSuccess") : t("pausedSuccess"))
     } catch {
       toast.error(t("failedToUpdate"))
     } finally {
@@ -283,9 +291,7 @@ export default function SubscriptionsPage() {
             <TrendingDown className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
               {t("savingsTip", {
-                amount: fmt(sorted.find((s) => s.isActive)
-                  ? toAnnual(sorted.filter((s) => s.isActive)[0].amount, sorted.filter((s) => s.isActive)[0].frequency)
-                  : 0),
+                amount: fmt(priciestActive ? toAnnual(priciestActive.amount, priciestActive.frequency) : 0),
               })}
             </p>
           </CardContent>

@@ -296,9 +296,6 @@
     "transactionNamePlaceholder": "напр., Абонамент за Netflix",
     "nextDate": "Следваща дата",
     "nextDue": "Следващо плащане",
-    "lastProcessed": "Последно обработено",
-    "neverProcessed": "Никога",
-    "autoProcess": "Автоматична обработка",
     "isActive": "Активна",
     "enabled": "Включено",
     "disabled": "Изключено",
@@ -314,7 +311,9 @@
     "validation": {
       "nameRequired": "Името на транзакцията е задължително",
       "categoryRequired": "Моля изберете категория",
-      "amountRequired": "Въведете сума по-голяма от 0"
+      "amountRequired": "Въведете сума по-голяма от 0",
+      "amountTooLarge": "Сумата не може да надвишава {max}",
+      "dateInFuture": "Следващата дата не може да е в миналото"
     }
   },
   "goals": {
