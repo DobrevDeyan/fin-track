@@ -1,4 +1,8 @@
 #!/bin/bash
+# Stop on the first error so a failed gcloud step can't sail through to a false
+# "Deployment complete!" with a blank URL (every gcloud call used to fail silently
+# when run under bash without a working Python — see CLOUDSDK_PYTHON below).
+set -e
 
 # Configuration
 PROJECT_ID="fin-track-adc2c"
@@ -9,14 +13,14 @@ PROCESSOR_ID="566b35e21d475435"
 # Your Firebase Hosting URLs + local dev (Cloud Run needs to allow CORS from these)
 FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000"
 
-# Gemini AI key (free tier from aistudio.google.com).
-# Never hardcode the key here (this script is committed to git). Instead put it in
-# an untracked ml-service/.env.deploy file (gitignored) and this script loads it,
-# so future deploys are just: bash deploy.sh
-#   echo 'GEMINI_API_KEY=your_key' > .env.deploy
-# An exported GEMINI_API_KEY in the environment still takes precedence if set.
+# Load local, untracked deploy config (gitignored) so future deploys are just
+# `bash deploy.sh` with nothing to remember. It holds:
+#   GEMINI_API_KEY=...      the Gemini key (never hardcode it in this committed file)
+#   CLOUDSDK_PYTHON=...     path to gcloud's Python — REQUIRED on this machine, where
+#                           bash can't find Python and gcloud would otherwise fail
+#                           silently (Windows Store python stub).
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ -z "$GEMINI_API_KEY" ] && [ -f "$SCRIPT_DIR/.env.deploy" ]; then
+if [ -f "$SCRIPT_DIR/.env.deploy" ]; then
   set -a
   . "$SCRIPT_DIR/.env.deploy"
   set +a

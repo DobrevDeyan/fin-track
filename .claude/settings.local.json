@@ -103,7 +103,12 @@
       "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest __tests__/components/BudgetCard.test.tsx __tests__/components/sections/BudgetsSection.test.tsx --silent 2>&1 | Select-Object -Last 30; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")",
       "PowerShell(Push-Location \"d:\\\\repos\\\\fin-track\\\\frontend\"; npx jest BudgetCard \"sections/BudgetsSection\" 2>&1 | Select-Object -Last 35; $code = $LASTEXITCODE; Pop-Location; Write-Output \"JEST_EXIT=$code\")",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(bash /d/repos/fin-track/ml-service/deploy.sh)",
+      "Bash(curl -s -m 20 -w \"\\\\nHTTP %{http_code}\\\\n\" https://ml-service-185936461123.europe-west1.run.app/api/health)",
+      "Bash(curl -s -m 20 -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST https://ml-service-185936461123.europe-west1.run.app/api/insights/digest)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{}' https://ml-service-185936461123.europe-west1.run.app/api/insights/digest)",
+      "Bash(CLOUDSDK_PYTHON='C:/Users/dobre/AppData/Local/Google/Cloud SDK/google-cloud-sdk/platform/bundledpython/python.exe' gcloud run services describe ml-service --project fin-track-adc2c --region europe-west1 '--format=value\\(spec.template.spec.containers[0].env[].name\\)')"
     ]
   }
 }
