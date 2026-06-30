@@ -11,6 +11,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import {
   Sheet,
   SheetContent,
@@ -29,18 +30,19 @@ import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
-const SUGGESTED_PROMPTS = [
-  "Why am I running out of money mid-month?",
-  "Which category should I cut back on?",
-  "Am I on track to meet my savings goals?",
-  "How does my spending compare to last month?",
-]
-
 export function AIChatDrawer() {
   const [open, setOpen] = useState(false)
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [input, setInput] = useState("")
   const { isPro, loading: subscriptionLoading } = useSubscription()
+  const t = useTranslations("insights")
+
+  const SUGGESTED_PROMPTS = [
+    t("suggestedPrompts.midMonth"),
+    t("suggestedPrompts.cutBack"),
+    t("suggestedPrompts.goals"),
+    t("suggestedPrompts.lastMonth"),
+  ]
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -110,8 +112,8 @@ export function AIChatDrawer() {
         <DialogContent className="max-w-xs p-0" aria-describedby={undefined}>
           <UpgradePrompt
             mode="card"
-            feature="AI Budget Coach"
-            description="Chat with Gemini about your finances. Ask why you're overspending or how to reach your goals."
+            feature={t("chatFeature")}
+            description={t("chatUpgradeDesc")}
           />
         </DialogContent>
       </Dialog>
@@ -132,8 +134,8 @@ export function AIChatDrawer() {
                 <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <SheetTitle className="text-sm font-semibold">AI Budget Coach</SheetTitle>
-                <p className="text-xs text-muted-foreground">Powered by Gemini</p>
+                <SheetTitle className="text-sm font-semibold">{t("chatTitle")}</SheetTitle>
+                <p className="text-xs text-muted-foreground">{t("chatPoweredBy")}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -144,7 +146,7 @@ export function AIChatDrawer() {
                   className="h-7 text-xs text-muted-foreground"
                   onClick={clearChat}
                 >
-                  Clear
+                  {t("chatClear")}
                 </Button>
               )}
               <Button
@@ -152,7 +154,7 @@ export function AIChatDrawer() {
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => setOpen(false)}
-                aria-label="Close"
+                aria-label={t("chatClose")}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -160,7 +162,7 @@ export function AIChatDrawer() {
           </SheetHeader>
 
           {/* Messages */}
-          <div data-scrollable className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 min-h-0">
+          <div data-scrollable aria-live="polite" className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4 min-h-0">
             {chatMessages.length === 0 && !chatLoading && (
               <div className="space-y-4">
                 {/* Welcome message */}
@@ -171,20 +173,14 @@ export function AIChatDrawer() {
                   <div className="flex-1 rounded-2xl rounded-tl-none bg-muted px-3 py-2.5 text-sm">
                     {chatNotConfigured ? (
                       <p>
-                        AI features need a{" "}
-                        <span className="font-medium">Gemini API key</span>. Get one
-                        free at{" "}
-                        <code className="text-xs bg-background px-1 rounded">
-                          aistudio.google.com
-                        </code>{" "}
-                        and add it to the ML service.
+                        {t.rich("chatNotConfigured", {
+                          code: (chunks) => (
+                            <code className="text-xs bg-background px-1 rounded">{chunks}</code>
+                          ),
+                        })}
                       </p>
                     ) : (
-                      <p>
-                        Hi! I&apos;m your AI Budget Coach. Ask me anything about
-                        your finances — I&apos;m grounded in your actual spending
-                        data.
-                      </p>
+                      <p>{t("chatWelcome")}</p>
                     )}
                   </div>
                 </div>
@@ -193,7 +189,7 @@ export function AIChatDrawer() {
                 {!chatNotConfigured && (
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground px-0.5">
-                      Try asking:
+                      {t("chatTryAsking")}
                     </p>
                     {SUGGESTED_PROMPTS.map((prompt) => (
                       <button
@@ -264,7 +260,7 @@ export function AIChatDrawer() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about your finances…"
+              placeholder={t("chatPlaceholder")}
               disabled={chatLoading || chatNotConfigured}
               className="flex-1 text-sm"
             />
@@ -273,7 +269,7 @@ export function AIChatDrawer() {
               onClick={handleSend}
               disabled={!input.trim() || chatLoading || chatNotConfigured}
               className="bg-purple-600 hover:bg-purple-700 text-white flex-shrink-0"
-              aria-label="Send"
+              aria-label={t("chatSend")}
             >
               <Send className="h-4 w-4" />
             </Button>

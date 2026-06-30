@@ -19,7 +19,7 @@ import { formatSavingsRate } from "@/lib/metrics-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
 import { fetchAIDigest } from "@/lib/insights-api"
-import { buildSpendingContext } from "@/lib/insights-engine"
+import { buildSpendingContext, computeDigestFingerprint, getCurrentMonthKey } from "@/lib/insights-engine"
 import { auth } from "@/lib/firebase"
 import { Sparkles, Calendar, FileText, FileSpreadsheet, Info, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
@@ -68,7 +68,7 @@ export default function ReportsPage() {
   const locale = useLocale()
   const { user, loading } = useAuth()
   const { isPro } = useSubscription()
-  const { format, currency: userCurrency, fromBase } = useMoney()
+  const { format, currency: userCurrency, fromBase, ratesReady } = useMoney()
   const { summary } = useFinancialSummary()
   const { budgets } = useBudgetsContext()
   const { goals } = useGoalsContext()
@@ -101,7 +101,9 @@ export default function ReportsPage() {
   // Load cached AI digest for the current month (display only — never generates)
   useEffect(() => {
     if (!user) return
-    const monthKey = new Date().toISOString().slice(0, 7)
+    // Use the same local month key the dashboard writes with, so the read can't miss
+    // a freshly-generated digest at a month boundary. (I9-2)
+    const monthKey = getCurrentMonthKey()
     setDigestLoading(true)
     getAIDigest(user.uid, monthKey).then((text) => {
       setDigestText(text)
@@ -123,16 +125,21 @@ export default function ReportsPage() {
       // Build the digest context from the server-maintained financial summary
       // (full history) rather than the range-limited reports entries — otherwise
       // a narrowed date range yields an empty 0/0 digest that gets cached. (RA-7)
-      const context = buildSpendingContext(summary, budgets, goals, anomalies)
+      // Amounts are converted to the display currency + labelled so the AI doesn't
+      // narrate raw EUR figures. (I9-1)
+      const context = buildSpendingContext(summary, budgets, goals, anomalies, {
+        convert: fromBase,
+        currency: ratesReady ? userCurrency : "EUR",
+      })
       if (!context) return
 
-      const now = new Date()
-      const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+      const curMonth = getCurrentMonthKey()
+      const fingerprint = computeDigestFingerprint(context)
       const token = await auth.currentUser?.getIdToken()
-      const text = token ? await fetchAIDigest(context, token) : null
-      if (text) {
-        await saveAIDigest(user.uid, curMonth, text)
-        setDigestText(text)
+      const result = token ? await fetchAIDigest(context, token) : null
+      if (result?.ok) {
+        await saveAIDigest(user.uid, curMonth, result.data, fingerprint)
+        setDigestText(result.data)
       }
     } finally {
       setDigestLoading(false)

@@ -48,6 +48,8 @@ export interface ForecastPoint {
 
 export interface SpendingContext {
   month: string
+  /** Display currency code (e.g. "EUR", "USD") the amounts below are expressed in. */
+  currency: string
   currentMonth: { totalIncome: number; totalExpenses: number; savingsRate: string }
   previousMonth: { totalIncome: number; totalExpenses: number; savingsRate: string }
   topSpendingCategories: Array<{ name: string; amount: number; percentOfTotal: number }>
@@ -74,7 +76,28 @@ function stdDev(values: number[]): number {
   return Math.sqrt(variance)
 }
 
-function getCurrentMonthKey(): string {
+/**
+ * Sample standard deviation (Bessel's n-1 correction). Used only for anomaly
+ * z-scores, where the sample is small and the population stdDev() understates the
+ * spread → false positives. The population stdDev() above is intentionally kept for
+ * the health-score / forecast paths so they stay in parity with the server scorer
+ * (computeHealthScore in functions/src/index.ts); do not swap them. (I9-9)
+ */
+function sampleStdDev(values: number[]): number {
+  if (values.length < 2) return 0
+  const avg = mean(values)
+  const variance =
+    values.reduce((sum, v) => sum + (v - avg) ** 2, 0) / (values.length - 1)
+  return Math.sqrt(variance)
+}
+
+/**
+ * Current month key "YYYY-MM" in the viewer's LOCAL calendar — this matches the
+ * month buckets the server writes into financialSummaries and is the single source
+ * of truth for "this month" across the insights surface (digest cache key, anomaly
+ * window, dismissal fingerprint). Keep all consumers on this one helper. (I9-2)
+ */
+export function getCurrentMonthKey(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
 }
@@ -228,6 +251,11 @@ export function calculateHealthScore(
 
 // ─── Feature 2: Anomaly Detection ────────────────────────────────────────────
 
+// Minimum spend to flag a brand-new category as an anomaly. Expressed in EUR base
+// because anomaly math runs on the EUR-base summary; the UI converts to the display
+// currency when rendering, so the effective cutoff shifts slightly per currency. (I9-7)
+const NEW_CATEGORY_MIN_EUR = 10
+
 export function detectAnomalies(
   summary: FinancialSummaryDocument | null
 ): Anomaly[] {
@@ -254,7 +282,7 @@ export function detectAnomalies(
 
     if (avg === 0) {
       // New category this month with meaningful spend
-      if (current > 10 && pastKeys.length >= 3) {
+      if (current > NEW_CATEGORY_MIN_EUR && pastKeys.length >= 3) {
         anomalies.push({
           category,
           current,
@@ -266,12 +294,14 @@ export function detectAnomalies(
       continue
     }
 
-    const sd = stdDev(pastAmounts)
+    const sd = sampleStdDev(pastAmounts)
     const z = sd > 0 ? (current - avg) / sd : 0
     const changePct = ((current - avg) / avg) * 100
 
-    // Flag if statistically unusual or > 50% above average (with ≥ 3 months history)
-    if (z > 1.8 || (changePct > 50 && pastKeys.length >= 3)) {
+    // Flag if statistically unusual or > 50% above average. Both require >= 3 months
+    // of history: over < 3 samples the z-score is too noisy and fires on ordinary
+    // variation, producing false-positive banners for new users. (I9-9)
+    if (pastKeys.length >= 3 && (z > 1.8 || changePct > 50)) {
       anomalies.push({
         category,
         current,
@@ -348,8 +378,10 @@ export function generateCashFlowForecast(
     const pastKeys = getLastNMonthKeys(summary.months, 3, currentKey)
     if (pastKeys.length > 0) {
       const daysInMonth = (key: string) => {
+        // Use UTC so the day count doesn't shift by one near DST/timezone edges,
+        // consistent with the UTC day-stepping used elsewhere here. (I9-6)
         const [y, m] = key.split("-").map(Number)
-        return new Date(y, m, 0).getDate()
+        return new Date(Date.UTC(y, m, 0)).getUTCDate()
       }
       const dailyDiscretionary = pastKeys.map((k) =>
         Math.max(0, summary.months[k].expenses - monthlyRecurringExpense) / daysInMonth(k)
@@ -424,9 +456,21 @@ export function buildSpendingContext(
   summary: FinancialSummaryDocument | null,
   budgets: Budget[],
   goals: Goal[],
-  anomalies: Anomaly[]
+  anomalies: Anomaly[],
+  opts?: {
+    /** Convert an EUR-base amount → the user's display currency. Defaults to identity. */
+    convert?: (eurAmount: number) => number
+    /** Display currency code the converted amounts are in. Defaults to "EUR". */
+    currency?: string
+  }
 ): SpendingContext | null {
   if (!summary?.months) return null
+
+  // Amounts in the summary are EUR base. Convert them to the user's display currency
+  // and tell the model which currency it is, otherwise the AI narrates raw EUR figures
+  // labelled as the user's money (e.g. a USD user gets EUR numbers). (I9-1)
+  const convert = opts?.convert ?? ((n: number) => n)
+  const currency = opts?.currency ?? "EUR"
 
   const currentKey = getCurrentMonthKey()
   const prevDate = new Date()
@@ -450,7 +494,7 @@ export function buildSpendingContext(
     .slice(0, 5)
     .map(([name, amount]) => ({
       name,
-      amount: Math.round(amount),
+      amount: Math.round(convert(amount)),
       percentOfTotal:
         cur.expenses > 0 ? Math.round((amount / cur.expenses) * 100) : 0,
     }))
@@ -481,14 +525,15 @@ export function buildSpendingContext(
 
   return {
     month: `${monthName} ${now.getFullYear()}`,
+    currency,
     currentMonth: {
-      totalIncome: Math.round(cur.income),
-      totalExpenses: Math.round(cur.expenses),
+      totalIncome: Math.round(convert(cur.income)),
+      totalExpenses: Math.round(convert(cur.expenses)),
       savingsRate: savingsRateCur,
     },
     previousMonth: {
-      totalIncome: Math.round(prev.income),
-      totalExpenses: Math.round(prev.expenses),
+      totalIncome: Math.round(convert(prev.income)),
+      totalExpenses: Math.round(convert(prev.expenses)),
       savingsRate: savingsRatePrev,
     },
     topSpendingCategories: topCategories,
@@ -497,8 +542,36 @@ export function buildSpendingContext(
     unusualSpending: anomalies.map((a) => ({
       category: a.category,
       changePercent: `+${Math.round(a.changePercent)}%`,
-      current: Math.round(a.current),
-      average: Math.round(a.average),
+      current: Math.round(convert(a.current)),
+      average: Math.round(convert(a.average)),
     })),
   }
+}
+
+/**
+ * Stable short fingerprint of the data a digest was generated from. Stored alongside
+ * the cached digest so it can be invalidated when the underlying numbers change within
+ * the same month (otherwise a stale digest is served as "fresh" all month). (I9-3)
+ */
+export function computeDigestFingerprint(context: SpendingContext): string {
+  const parts = [
+    context.currency,
+    context.currentMonth.totalIncome,
+    context.currentMonth.totalExpenses,
+    context.previousMonth.totalIncome,
+    context.previousMonth.totalExpenses,
+    ...context.topSpendingCategories.map((c) => `${c.name}:${c.amount}`),
+    context.budgetSummary,
+    typeof context.goalsSummary === "string"
+      ? context.goalsSummary
+      : context.goalsSummary.map((g) => `${g.name}:${g.progress}`).join(","),
+    ...context.unusualSpending.map((u) => `${u.category}:${u.current}`),
+  ].join("|")
+
+  // djb2 → unsigned base36 (short, deterministic, no crypto needed)
+  let h = 5381
+  for (let i = 0; i < parts.length; i++) {
+    h = ((h << 5) + h + parts.charCodeAt(i)) | 0
+  }
+  return (h >>> 0).toString(36)
 }

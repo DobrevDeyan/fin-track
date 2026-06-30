@@ -10,7 +10,7 @@
 
 import { Router, Request, Response } from "express";
 import { generateDigest, generateChatResponse, type ChatMessage } from "./gemini-handler";
-import { checkSubscriptionTier } from "./firestore-quota";
+import { checkSubscriptionTier, checkAndIncrementInsightsQuota } from "./firestore-quota";
 
 const router = Router();
 
@@ -43,6 +43,17 @@ router.post("/digest", async (req: Request, res: Response) => {
   const { context } = req.body;
   if (!context) {
     res.status(400).json({ success: false, error: "Missing context" });
+    return;
+  }
+
+  // Per-user daily cap (I9-5) — after body validation so a 400 doesn't burn a slot.
+  const quota = await checkAndIncrementInsightsQuota(req.uid!, tier);
+  if (!quota.allowed) {
+    res.status(429).json({
+      success: false,
+      error: "RateLimited",
+      message: `Daily AI insight limit reached (${quota.limit}/day). Try again tomorrow.`,
+    });
     return;
   }
 
@@ -84,6 +95,17 @@ router.post("/chat", async (req: Request, res: Response) => {
   const { message, context, history } = req.body;
   if (!message || !context) {
     res.status(400).json({ success: false, error: "Missing message or context" });
+    return;
+  }
+
+  // Per-user daily cap (I9-5) — after body validation so a 400 doesn't burn a slot.
+  const quota = await checkAndIncrementInsightsQuota(req.uid!, tier);
+  if (!quota.allowed) {
+    res.status(429).json({
+      success: false,
+      error: "RateLimited",
+      message: `Daily AI insight limit reached (${quota.limit}/day). Try again tomorrow.`,
+    });
     return;
   }
 

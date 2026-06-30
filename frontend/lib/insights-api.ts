@@ -11,10 +11,33 @@ import { logger } from "./utils/logger"
 const ML_SERVICE_URL =
   process.env.NEXT_PUBLIC_ML_SERVICE_URL || "http://localhost:8000"
 
+// Surface a misconfigured deploy loudly instead of silently calling localhost (which
+// just looks like "AI not configured" to the user). (I9-13)
+if (
+  typeof window !== "undefined" &&
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_ML_SERVICE_URL
+) {
+  logger.warn(
+    "[insights-api] NEXT_PUBLIC_ML_SERVICE_URL is not set — AI insights will call localhost:8000 and fail."
+  )
+}
+
 export interface ChatMessage {
   role: "user" | "assistant"
   content: string
 }
+
+/**
+ * Result of an AI call. `not_configured` means the service has no Gemini key (HTTP
+ * 503) — a permanent state to message the user about. `error` means a transient
+ * failure (network, 5xx, malformed body) the user can retry. Collapsing the two to
+ * `null` (the old behaviour) made transient failures look like misconfiguration and
+ * vice versa. (I9-8 / I9-10)
+ */
+export type AIResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; reason: "not_configured" | "error" }
 
 interface DigestResponse {
   success: boolean
@@ -26,14 +49,11 @@ interface ChatResponse {
   response?: string
 }
 
-/**
- * Request an AI-generated monthly financial digest.
- * Returns null if the service is unavailable or not configured.
- */
+/** Request an AI-generated monthly financial digest. */
 export async function fetchAIDigest(
   context: SpendingContext,
   token: string
-): Promise<string | null> {
+): Promise<AIResult<string>> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}/api/insights/digest`, {
       method: "POST",
@@ -44,27 +64,27 @@ export async function fetchAIDigest(
       body: JSON.stringify({ context }),
     })
 
-    if (res.status === 503) return null // AI not configured
-    if (!res.ok) return null
+    if (res.status === 503) return { ok: false, reason: "not_configured" }
+    if (!res.ok) return { ok: false, reason: "error" }
 
     const data = await res.json() as DigestResponse
-    return data.success && typeof data.digest === "string" ? data.digest : null
+    if (data.success && typeof data.digest === "string") {
+      return { ok: true, data: data.digest }
+    }
+    return { ok: false, reason: "error" }
   } catch (err) {
     logger.error("[insights-api] fetchAIDigest error", err)
-    return null
+    return { ok: false, reason: "error" }
   }
 }
 
-/**
- * Send a chat message and receive an AI response grounded in the user's data.
- * Returns null if the service is unavailable or not configured.
- */
+/** Send a chat message and receive an AI response grounded in the user's data. */
 export async function fetchAIChatResponse(
   message: string,
   context: SpendingContext,
   history: ChatMessage[],
   token: string
-): Promise<string | null> {
+): Promise<AIResult<string>> {
   try {
     const res = await fetch(`${ML_SERVICE_URL}/api/insights/chat`, {
       method: "POST",
@@ -75,13 +95,16 @@ export async function fetchAIChatResponse(
       body: JSON.stringify({ message, context, history }),
     })
 
-    if (res.status === 503) return null
-    if (!res.ok) return null
+    if (res.status === 503) return { ok: false, reason: "not_configured" }
+    if (!res.ok) return { ok: false, reason: "error" }
 
     const data = await res.json() as ChatResponse
-    return data.success && typeof data.response === "string" ? data.response : null
+    if (data.success && typeof data.response === "string") {
+      return { ok: true, data: data.response }
+    }
+    return { ok: false, reason: "error" }
   } catch (err) {
     logger.error("[insights-api] fetchAIChatResponse error", err)
-    return null
+    return { ok: false, reason: "error" }
   }
 }

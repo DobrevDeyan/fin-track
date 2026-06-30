@@ -23,6 +23,16 @@ export const SCAN_LIMITS: Record<PlanTier, number> = {
   business: 50,
 };
 
+// Per-user DAILY cap on AI insight calls (digest + chat combined). The IP-based
+// limiter in api-server.ts is too coarse (shared NAT punishes innocents, and one
+// Pro user can still run up cost); this bounds spend per account. Free tier is
+// already blocked upstream by the tier check. (I9-5)
+export const INSIGHTS_DAILY_LIMITS: Record<PlanTier, number> = {
+  free: 0,
+  pro: 50,
+  business: 200,
+};
+
 /**
  * Resolves the user's current subscription tier by querying
  * the customers/{uid}/subscriptions sub-collection (written by the
@@ -113,6 +123,58 @@ export async function checkAndIncrementScanQuota(
   } catch (err: any) {
     console.error('[quota] checkAndIncrementScanQuota error:', err.message);
     // On transaction failure, block the scan — safer than allowing unlimited usage
+    return { allowed: false, count: 0, limit };
+  }
+}
+
+/**
+ * Atomically checks and increments the user's DAILY AI-insights counter.
+ * Returns { allowed: false } when at/over the per-tier daily limit. Mirrors the
+ * scan-quota transaction but keyed by day ("YYYY-MM-DD") since AI calls are bursty.
+ * (I9-5)
+ */
+export async function checkAndIncrementInsightsQuota(
+  uid: string,
+  tier: PlanTier
+): Promise<QuotaResult> {
+  const limit = INSIGHTS_DAILY_LIMITS[tier];
+  const docRef = db.collection('insightsUsage').doc(uid);
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+  if (limit <= 0) {
+    return { allowed: false, count: 0, limit: 0 };
+  }
+
+  try {
+    return await db.runTransaction(async (tx) => {
+      const doc = await tx.get(docRef);
+
+      let count = 0;
+      if (doc.exists) {
+        const data = doc.data()!;
+        count = data.day === today ? (data.count ?? 0) : 0;
+      }
+
+      if (count >= limit) {
+        return { allowed: false, count, limit };
+      }
+
+      const newCount = count + 1;
+      tx.set(
+        docRef,
+        {
+          count: newCount,
+          day: today,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      return { allowed: true, count: newCount, limit };
+    });
+  } catch (err: any) {
+    console.error('[quota] checkAndIncrementInsightsQuota error:', err.message);
+    // On transaction failure, block — safer than allowing unmetered AI usage.
     return { allowed: false, count: 0, limit };
   }
 }

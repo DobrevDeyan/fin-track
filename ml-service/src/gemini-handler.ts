@@ -50,6 +50,8 @@ function sanitizeLabel(input: unknown): string {
 
 interface SpendingContext {
   month: string;
+  /** Display currency code the amounts are expressed in (e.g. "EUR", "USD"). */
+  currency?: string;
   currentMonth: { totalIncome: number; totalExpenses: number; savingsRate: string };
   previousMonth: { totalIncome: number; totalExpenses: number; savingsRate: string };
   topSpendingCategories: Array<{ name: string; amount: number; percentOfTotal: number }>;
@@ -94,7 +96,9 @@ export async function generateDigest(context: SpendingContext): Promise<string> 
     average: u.average,
   }));
 
-  const prompt = `Here is the financial data for ${sanitizeLabel(context.month)}:
+  const currency = sanitizeLabel(context.currency || "EUR");
+
+  const prompt = `Here is the financial data for ${sanitizeLabel(context.month)}. All monetary amounts are in ${currency} — use that currency in your response:
 
 Current month: Income ${context.currentMonth.totalIncome}, Expenses ${context.currentMonth.totalExpenses}, Savings rate ${sanitizeLabel(context.currentMonth.savingsRate)}
 Previous month: Income ${context.previousMonth.totalIncome}, Expenses ${context.previousMonth.totalExpenses}, Savings rate ${sanitizeLabel(context.previousMonth.savingsRate)}
@@ -151,7 +155,9 @@ export async function generateChatResponse(
     ? sanitizeInput(context.goalsSummary, 300)
     : context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }));
 
-  const contextSummary = `User's financial context (${sanitizeLabel(context.month)}):
+  const currency = sanitizeLabel(context.currency || "EUR");
+
+  const contextSummary = `User's financial context (${sanitizeLabel(context.month)}). All amounts are in ${currency} — use that currency in your answers:
 Income: ${context.currentMonth.totalIncome}, Expenses: ${context.currentMonth.totalExpenses}, Savings rate: ${sanitizeLabel(context.currentMonth.savingsRate)}
 Top categories: ${sanitizedCategories.map(c => `${c.name}: ${c.amount}`).join(", ")}
 Budgets: ${sanitizedBudgetSummary}
@@ -168,8 +174,9 @@ Goals: ${typeof sanitizedGoals === "string" ? sanitizedGoals : sanitizedGoals.ma
       role: "model" as const,
       parts: [{ text: "Got it, I have your financial context. How can I help you?" }],
     },
-    // Previous chat history (sanitise each message)
-    ...history.map((m) => ({
+    // Previous chat history — cap to the last 10 turns so the payload (and Gemini
+    // cost/latency) can't grow unbounded over a long session. (I9-12)
+    ...history.slice(-10).map((m) => ({
       role: m.role === "user" ? ("user" as const) : ("model" as const),
       parts: [{ text: sanitizeInput(m.content, 500) }],
     })),

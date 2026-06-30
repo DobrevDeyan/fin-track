@@ -179,6 +179,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // AI insights daily quota - document ID is userId, written only by Admin SDK
+    match /insightsUsage/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
     // Debt Payoff Planner — one document per user, owner-only access
     match /userDebts/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
