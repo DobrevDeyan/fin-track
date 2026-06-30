@@ -47,6 +47,12 @@ export default function ReceiptsPage() {
   // Lightbox state
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
+  // Track receipts whose Storage image failed to load (deleted/forbidden) so we
+  // can show a placeholder instead of a blank tile (review RCP-11).
+  const [brokenIds, setBrokenIds] = useState<Set<string>>(new Set())
+  const markBroken = (id: string) =>
+    setBrokenIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)))
+
   const load = useCallback(async () => {
     if (!user) return
     try {
@@ -115,7 +121,7 @@ export default function ReceiptsPage() {
                   <span className="text-sm font-medium">{t("scanQuotaLabel")}</span>
                   <span className="text-sm text-muted-foreground">{count} / {limit}</span>
                 </div>
-                <Progress value={limit > 0 ? (count / limit) * 100 : 0} className="h-1.5" />
+                <Progress value={limit > 0 ? Math.min(100, (count / limit) * 100) : 0} className="h-1.5" />
               </div>
               <Badge variant={remaining === 0 ? "destructive" : remaining <= 5 ? "secondary" : "outline"} className="shrink-0">
                 {t("scansLeft", { count: remaining })}
@@ -152,13 +158,21 @@ export default function ReceiptsPage() {
                 onClick={() => openLightbox(index)}
                 className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={entry.receiptUrl!}
-                  alt={entry.description}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                  loading="lazy"
-                />
+                {brokenIds.has(entry.id) ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground/60">
+                    <Receipt className="h-8 w-8" />
+                    <span className="text-[10px] px-1 text-center">{t("imageUnavailable")}</span>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={entry.receiptUrl!}
+                    alt={entry.description}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    loading="lazy"
+                    onError={() => markBroken(entry.id)}
+                  />
+                )}
                 {/* Overlay with info */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex flex-col justify-end p-2 opacity-0 group-hover:opacity-100">
                   <p className="text-white text-xs font-medium truncate">{entry.description}</p>
@@ -193,13 +207,21 @@ export default function ReceiptsPage() {
               </DialogHeader>
 
               {/* Receipt image */}
-              <div className="relative bg-muted max-h-[60vh] overflow-auto flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeLightboxEntry.receiptUrl!}
-                  alt={activeLightboxEntry.description}
-                  className="max-w-full object-contain"
-                />
+              <div className="relative bg-muted max-h-[60vh] min-h-[160px] overflow-auto flex items-center justify-center">
+                {brokenIds.has(activeLightboxEntry.id) ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground/60">
+                    <Receipt className="h-12 w-12" />
+                    <span className="text-sm">{t("imageUnavailable")}</span>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={activeLightboxEntry.receiptUrl!}
+                    alt={activeLightboxEntry.description}
+                    className="max-w-full object-contain"
+                    onError={() => markBroken(activeLightboxEntry.id)}
+                  />
+                )}
               </div>
 
               {/* Meta + actions */}
@@ -236,7 +258,7 @@ export default function ReceiptsPage() {
                     className="pointer-events-auto p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 disabled:opacity-30 disabled:cursor-not-allowed"
                     onClick={prevReceipt}
                     disabled={lightboxIndex === 0}
-                    aria-label="Previous receipt"
+                    aria-label={t("prevReceipt")}
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -244,7 +266,7 @@ export default function ReceiptsPage() {
                     className="pointer-events-auto p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 disabled:opacity-30 disabled:cursor-not-allowed"
                     onClick={nextReceipt}
                     disabled={lightboxIndex === entries.length - 1}
-                    aria-label="Next receipt"
+                    aria-label={t("nextReceipt")}
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>

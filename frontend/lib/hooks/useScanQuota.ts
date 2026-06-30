@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { doc, onSnapshot, Timestamp } from "firebase/firestore"
+import { doc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSubscription } from "./useSubscription"
@@ -33,24 +33,27 @@ export function useScanQuota(): ScanQuotaReturn {
       return
     }
 
+    // The quota month is keyed in UTC ("YYYY-MM") to match the server
+    // (firestore-quota.ts), so the reset is the start of the next UTC month.
+    // The server doesn't persist a resetAt field, so derive it client-side
+    // instead of reading the always-absent doc field (review RCP-9).
+    const now = new Date()
+    const nextReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+
     const docRef = doc(db, "scanUsage", user.uid)
     const unsubscribe = onSnapshot(
       docRef,
       (snap) => {
         if (snap.exists()) {
           const data = snap.data()
-          const currentMonth = new Date().toISOString().slice(0, 7)
+          const currentMonth = now.toISOString().slice(0, 7)
           // If the doc is from a previous month, treat count as 0
           const storedCount = data.month === currentMonth ? (data.count ?? 0) : 0
           setCount(storedCount)
-          const ra = data.resetAt
-          setResetAt(
-            ra instanceof Timestamp ? ra.toDate() : ra ? new Date(ra.seconds * 1000) : null
-          )
         } else {
           setCount(0)
-          setResetAt(null)
         }
+        setResetAt(nextReset)
         setLoading(false)
       },
       (err) => {

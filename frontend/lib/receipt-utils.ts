@@ -118,10 +118,13 @@ export function validateReceiptFile(file: File): string | null {
     return "File must be an image (JPG, PNG, etc.)"
   }
 
-  // Check file size (max 5MB)
-  const maxSize = 5 * 1024 * 1024 // 5MB
+  // Check file size (max 10MB). Kept in sync with the scan path
+  // (receipt-scanner-api) and storage.rules so a file that scans can also be
+  // uploaded — a 5MB cap here previously rejected images the scanner accepted
+  // (review RCP-12).
+  const maxSize = 10 * 1024 * 1024 // 10MB
   if (file.size > maxSize) {
-    return "File size must be less than 5MB"
+    return "File size must be less than 10MB"
   }
 
   return null

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Camera, SwitchCamera, X, Loader2, AlertCircle } from "lucide-react"
 import { hasCameraSupport } from "@/lib/device-utils"
@@ -16,6 +17,7 @@ type CameraState = "initializing" | "ready" | "error" | "capturing"
 type FacingMode = "environment" | "user"
 
 export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
+  const t = useTranslations("receipts")
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -25,21 +27,23 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
   const [errorMessage, setErrorMessage] = useState<string>("")
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false)
 
-  // Check for multiple cameras
-  useEffect(() => {
-    async function checkCameras() {
-      if (!hasCameraSupport()) return
-
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        const videoDevices = devices.filter(d => d.kind === "videoinput")
-        setHasMultipleCameras(videoDevices.length > 1)
-      } catch {
-        // Ignore - will just not show switch button
-      }
+  // Enumerate video inputs. Before permission is granted, device labels are
+  // empty and some browsers report only one input even when two exist, so we
+  // re-run this after the stream starts as well (review RCP-16).
+  const checkCameras = useCallback(async () => {
+    if (!hasCameraSupport()) return
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(d => d.kind === "videoinput")
+      setHasMultipleCameras(videoDevices.length > 1)
+    } catch {
+      // Ignore - will just not show switch button
     }
-    checkCameras()
   }, [])
+
+  useEffect(() => {
+    checkCameras()
+  }, [checkCameras])
 
   // Initialize camera stream
   const startCamera = useCallback(async (facing: FacingMode) => {
@@ -53,7 +57,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
     }
 
     if (!hasCameraSupport()) {
-      setErrorMessage("Camera is not supported on this device or browser.")
+      setErrorMessage(t("scanner.camera.notSupported"))
       setCameraState("error")
       return
     }
@@ -75,17 +79,20 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
         setCameraState("ready")
+        // Labels are populated now that permission is granted — re-check so the
+        // switch-camera button appears on multi-camera devices (RCP-16).
+        checkCameras()
       }
     } catch (error: unknown) {
       logger.error("Camera capture error", error)
       const err = error as { name?: string }
 
       if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-        setErrorMessage("Camera access was denied. Please enable camera permissions in your browser settings.")
+        setErrorMessage(t("scanner.camera.denied"))
       } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-        setErrorMessage("No camera found on this device.")
+        setErrorMessage(t("scanner.camera.notFound"))
       } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-        setErrorMessage("Camera is in use by another application.")
+        setErrorMessage(t("scanner.camera.inUse"))
       } else if (err.name === "OverconstrainedError") {
         // Try again with basic constraints
         try {
@@ -95,18 +102,19 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
             videoRef.current.srcObject = basicStream
             await videoRef.current.play()
             setCameraState("ready")
+            checkCameras()
             return
           }
         } catch {
-          setErrorMessage("Could not access camera with requested settings.")
+          setErrorMessage(t("scanner.camera.constraints"))
         }
       } else {
-        setErrorMessage("Failed to access camera. Please try again.")
+        setErrorMessage(t("scanner.camera.failed"))
       }
 
       setCameraState("error")
     }
-  }, [])
+  }, [checkCameras, t])
 
   // Start camera on mount
   useEffect(() => {
@@ -164,13 +172,13 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
           onCapture(file)
         } else {
           setCameraState("ready")
-          setErrorMessage("Failed to capture photo. Please try again.")
+          setErrorMessage(t("scanner.camera.captureFailed"))
         }
       },
       "image/jpeg",
       0.92 // High quality JPEG
     )
-  }, [cameraState, onCapture])
+  }, [cameraState, onCapture, t])
 
   // Handle cancel
   const handleCancel = useCallback(() => {
@@ -190,7 +198,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         {cameraState === "initializing" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
             <Loader2 className="h-10 w-10 animate-spin text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground">Starting camera...</p>
+            <p className="text-sm text-muted-foreground">{t("scanner.camera.starting")}</p>
           </div>
         )}
 
@@ -200,10 +208,10 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
             <p className="text-sm text-center text-muted-foreground mb-4">{errorMessage}</p>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => startCamera(facingMode)}>
-                Try Again
+                {t("scanner.camera.tryAgain")}
               </Button>
               <Button variant="outline" size="sm" onClick={handleCancel}>
-                Cancel
+                {t("scanner.camera.cancel")}
               </Button>
             </div>
           </div>
@@ -239,6 +247,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
               size="icon"
               className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30"
               onClick={handleCancel}
+              aria-label={t("scanner.camera.cancel")}
             >
               <X className="h-6 w-6 text-white" />
             </Button>
@@ -249,6 +258,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
               size="icon"
               className="h-16 w-16 rounded-full bg-white hover:bg-white/90 shadow-lg"
               onClick={handleCapture}
+              aria-label={t("scanner.camera.capture")}
             >
               <Camera className="h-8 w-8 text-black" />
             </Button>
@@ -261,6 +271,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
                 size="icon"
                 className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30"
                 onClick={handleSwitchCamera}
+                aria-label={t("scanner.camera.switch")}
               >
                 <SwitchCamera className="h-6 w-6 text-white" />
               </Button>
@@ -274,7 +285,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
       {/* Instructions */}
       {cameraState === "ready" && (
         <p className="text-center text-sm text-muted-foreground mt-3">
-          Position the receipt within the frame and tap the capture button
+          {t("scanner.camera.instructions")}
         </p>
       )}
     </div>

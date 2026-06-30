@@ -1,0 +1,4 @@
+# Shell scripts must stay LF so they run under bash. This repo has
+# core.autocrlf=true, which otherwise rewrites them to CRLF on checkout and
+# breaks `bash deploy.sh` with "$'\r': command not found" errors.
+*.sh text eol=lf

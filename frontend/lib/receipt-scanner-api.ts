@@ -13,12 +13,19 @@ const ML_SERVICE_URL = process.env.NEXT_PUBLIC_ML_SERVICE_URL || 'http://localho
 export interface ExtractedReceiptData {
   merchant: string;
   amount: number;
+  /** ISO-4217 code of the currency printed on the receipt (e.g. "EUR", "USD"),
+   * if detected. The `amount` is in this currency — convert before storing (RCP-1). */
+  currency?: string;
   date: string;
   items: string[];
   rawText: string;
   confidence: number;
   rawEntities: Record<string, string>;
 }
+
+/** Hard ceiling on how long we wait for the ML service + Document AI before
+ * giving up, so a hung service can't pin the dialog in "Processing…" forever. */
+const SCAN_TIMEOUT_MS = 60_000;
 
 /**
  * API response structure from the ML service
@@ -62,7 +69,12 @@ export async function validateMagicBytes(file: File): Promise<boolean> {
  * @returns Extracted receipt data
  * @throws Error if the scan fails
  */
-export async function scanReceipt(file: File, token: string, userId?: string): Promise<ExtractedReceiptData> {
+export async function scanReceipt(
+  file: File,
+  token: string,
+  userId?: string,
+  signal?: AbortSignal,
+): Promise<ExtractedReceiptData> {
   // Validate file type
   const allowedTypes = [
     'image/jpeg',
@@ -102,11 +114,26 @@ export async function scanReceipt(file: File, token: string, userId?: string): P
     formData.append('userId', userId);
   }
 
+  // Abort the request on either a timeout or the caller's cancel signal so the
+  // promise never hangs indefinitely (review RCP-4).
+  let timedOut = false;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, SCAN_TIMEOUT_MS);
+  const onExternalAbort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener('abort', onExternalAbort, { once: true });
+  }
+
   try {
     const response = await fetch(`${ML_SERVICE_URL}/api/upload-bill`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
+      signal: controller.signal,
     });
 
     const result: ScanReceiptResponse = await response.json();
@@ -124,11 +151,22 @@ export async function scanReceipt(file: File, token: string, userId?: string): P
 
     return result.data;
   } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      if (timedOut) {
+        throw new Error('The scan timed out. The service may be busy — please try again.');
+      }
+      // Caller-initiated cancel (dialog closed / unmounted): re-throw so the
+      // caller can recognise and silently ignore it.
+      throw error;
+    }
     // Handle network errors
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error('Unable to connect to the scanning service. Please make sure the ML service is running.');
     }
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    if (signal) signal.removeEventListener('abort', onExternalAbort);
   }
 }
 
@@ -153,59 +191,6 @@ export async function checkMLServiceHealth(): Promise<boolean> {
   }
 }
 
-/**
- * Transaction data structure for creating entries
- */
-export interface TransactionData {
-  description: string;
-  amount: number;
-  category: string;
-  type: 'income' | 'expense';
-  date: string;
-  notes?: string;
-  tags?: string[];
-}
-
-/**
- * Map extracted receipt data to transaction data
- * @param extracted - Extracted receipt data from ML service
- * @param category - Category to assign to the transaction
- * @returns Transaction data ready to save
- */
-function filterMeaningfulItems(items: string[]): string[] {
-  return items
-    .map((i) => i.trim())
-    .filter((i) =>
-      i.length >= 3 &&
-      !/^\d+([.,]\d+)?$/.test(i) &&
-      !i.startsWith('#') &&
-      !/^[A-Z0-9\/\-]{6,}$/.test(i)
-    )
-    .filter((i, idx, arr) => arr.indexOf(i) === idx)
-}
-
-export function mapToTransactionData(
-  extracted: ExtractedReceiptData,
-  category: string
-): TransactionData {
-  // Build notes from meaningful extracted items only
-  const meaningful = filterMeaningfulItems(extracted.items ?? [])
-  let notes = meaningful.length > 0 ? `Items: ${meaningful.join(', ')}` : '';
-
-  // Add confidence info to notes if it's low
-  if (extracted.confidence < 0.7 && notes) {
-    notes += ` (OCR confidence: ${Math.round(extracted.confidence * 100)}%)`;
-  } else if (extracted.confidence < 0.7) {
-    notes = `OCR confidence: ${Math.round(extracted.confidence * 100)}%`;
-  }
-
-  return {
-    description: extracted.merchant && extracted.merchant !== 'Unknown Merchant' ? extracted.merchant : 'Scanned Receipt',
-    amount: extracted.amount,
-    category,
-    type: 'expense',
-    date: extracted.date,
-    notes: notes || undefined,
-    tags: ['scanned-receipt'],
-  };
-}
+// NOTE: the previous `mapToTransactionData` / `filterMeaningfulItems` helpers were
+// dead code — the scanner dialog builds its own transaction payload (see
+// ReceiptScannerDialog.handleSave + getMeaningfulItems). Removed (review RCP-13).

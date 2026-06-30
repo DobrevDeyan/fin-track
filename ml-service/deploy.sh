@@ -10,9 +10,18 @@ PROCESSOR_ID="566b35e21d475435"
 FRONTEND_URL="https://fin-track-adc2c.web.app,https://fin-track-adc2c.firebaseapp.com,http://localhost:3001,http://localhost:3000"
 
 # Gemini AI key (free tier from aistudio.google.com).
-# Provide via env — never hardcode a key here (this script is committed to git):
-#   export GEMINI_API_KEY=your_key   # then run ./deploy.sh
-GEMINI_API_KEY="${GEMINI_API_KEY:?Set GEMINI_API_KEY before deploying, e.g. export GEMINI_API_KEY=your_key}"
+# Never hardcode the key here (this script is committed to git). Instead put it in
+# an untracked ml-service/.env.deploy file (gitignored) and this script loads it,
+# so future deploys are just: bash deploy.sh
+#   echo 'GEMINI_API_KEY=your_key' > .env.deploy
+# An exported GEMINI_API_KEY in the environment still takes precedence if set.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -z "$GEMINI_API_KEY" ] && [ -f "$SCRIPT_DIR/.env.deploy" ]; then
+  set -a
+  . "$SCRIPT_DIR/.env.deploy"
+  set +a
+fi
+GEMINI_API_KEY="${GEMINI_API_KEY:?Set GEMINI_API_KEY (export it, or put GEMINI_API_KEY=your_key in ml-service/.env.deploy) before deploying}"
 
 echo "Deploying $SERVICE_NAME to Google Cloud Run..."
 

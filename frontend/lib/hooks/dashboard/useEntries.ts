@@ -15,6 +15,7 @@ import {
   updateEntry
 } from "@/lib/firestore-entries"
 import { addToSavingsAccount } from "@/lib/firestore-savings"
+import { deleteReceipt } from "@/lib/receipt-utils"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { toast } from "sonner"
 import { toISOString } from "@/lib/utils/timestamp"
@@ -269,6 +270,17 @@ export function useEntries({
       } else {
         // Fallback: delete without summary update (summary will self-heal)
         await deleteEntry(id)
+      }
+
+      // Best-effort cleanup of the attached receipt image so it doesn't orphan
+      // in Storage after its transaction is gone (review RCP-10). Non-fatal:
+      // the entry is already deleted; a stuck image shouldn't surface an error.
+      if (entry?.receiptUrl) {
+        try {
+          await deleteReceipt(entry.receiptUrl)
+        } catch (receiptError) {
+          logger.error("Failed to delete receipt image for deleted entry", receiptError)
+        }
       }
 
       setEntries((prev) => prev.filter((e) => e.id !== id))

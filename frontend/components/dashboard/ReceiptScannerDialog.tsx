@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,6 +22,11 @@ import {
 import { Label } from "@/components/ui/label"
 import { TRANSACTION_CATEGORIES } from "@/lib/categories"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import {
+  SUPPORTED_CURRENCIES,
+  isSupportedCurrency,
+  type SupportedCurrency,
+} from "@/lib/constants/currency.constants"
 import { logger } from "@/lib/utils/logger"
 
 import { formatDateForInput } from "@/lib/date-utils"
@@ -32,6 +38,7 @@ import { isMobileDevice, hasCameraSupport } from "@/lib/device-utils"
 import { CameraCapture } from "./CameraCapture"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { useCurrency } from "@/contexts/CurrencyContext"
 import { auth } from "@/lib/firebase"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { useScanQuota } from "@/lib/hooks/useScanQuota"
@@ -57,11 +64,16 @@ interface ReceiptScannerDialogProps {
 type ScanState = "idle" | "uploading" | "processing" | "success" | "error"
 type InputMode = "select" | "upload" | "camera"
 
+// File accepted by both the client validator, the ML service and Document AI.
+const ACCEPTED_FILE_TYPES = "image/jpeg,image/png,image/webp,image/gif,application/pdf"
+
 export function ReceiptScannerDialog({
   open,
   onOpenChange,
   onSubmit,
 }: ReceiptScannerDialogProps) {
+  const t = useTranslations("receipts")
+
   // State
   const [scanState, setScanState] = useState<ScanState>("idle")
   const [inputMode, setInputMode] = useState<InputMode>("select")
@@ -76,6 +88,19 @@ export function ReceiptScannerDialog({
   const { isPro, loading: subscriptionLoading } = useSubscription()
   const { remaining, limit } = useScanQuota()
 
+  // Currency: the scanned amount is in the receipt's printed currency, which may
+  // differ from the user's display currency. We convert it explicitly (RCP-1).
+  const { convertAmount, userCurrency, exchangeRates } = useCurrency()
+  const ratesReady = exchangeRates !== null
+
+  // True once the user has used up their monthly scan quota — block scanning
+  // before the round-trip rather than burning a doomed request (RCP-3).
+  const atLimit = limit > 0 && remaining <= 0
+
+  // Abort controller for an in-flight scan so it can be cancelled on
+  // close/unmount and never hang the dialog (RCP-4).
+  const scanAbortRef = useRef<AbortController | null>(null)
+
   // Device capabilities
   const [isMobile, setIsMobile] = useState(false)
   const [canUseCamera, setCanUseCamera] = useState(false)
@@ -83,6 +108,7 @@ export function ReceiptScannerDialog({
   // Editable form fields
   const [merchant, setMerchant] = useState("")
   const [amount, setAmount] = useState("")
+  const [receiptCurrency, setReceiptCurrency] = useState<SupportedCurrency>(userCurrency)
   const [date, setDate] = useState(formatDateForInput(new Date()))
   const [category, setCategory] = useState("")
 
@@ -92,9 +118,16 @@ export function ReceiptScannerDialog({
     setCanUseCamera(hasCameraSupport())
   }, [])
 
+  // Abort any in-flight scan if the component unmounts.
+  useEffect(() => {
+    return () => scanAbortRef.current?.abort()
+  }, [])
+
   // Reset state when dialog closes
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
+      scanAbortRef.current?.abort()
+      scanAbortRef.current = null
       setScanState("idle")
       setInputMode("select")
       setSelectedFile(null)
@@ -103,6 +136,7 @@ export function ReceiptScannerDialog({
       setErrorMessage("")
       setMerchant("")
       setAmount("")
+      setReceiptCurrency(userCurrency)
       setDate(formatDateForInput(new Date()))
       setCategory("")
     }
@@ -111,6 +145,16 @@ export function ReceiptScannerDialog({
 
   // Handle file selection (from upload or camera)
   const handleFileSelect = useCallback(async (file: File) => {
+    // HEIC/HEIF (common from iOS) is not processable by Document AI — give a
+    // clear, actionable message instead of the generic "invalid type" (RCP-8).
+    const isHeic =
+      /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name)
+    if (isHeic) {
+      setErrorMessage(t("scanner.errors.heicUnsupported"))
+      setScanState("error")
+      return
+    }
+
     // Validate file type
     const allowedTypes = [
       "image/jpeg",
@@ -121,7 +165,7 @@ export function ReceiptScannerDialog({
     ]
 
     if (!allowedTypes.includes(file.type)) {
-      setErrorMessage("Invalid file type. Please upload an image (JPEG, PNG, WebP, GIF) or PDF.")
+      setErrorMessage(t("scanner.errors.invalidType"))
       setScanState("error")
       return
     }
@@ -129,7 +173,7 @@ export function ReceiptScannerDialog({
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
-      setErrorMessage("File size must be less than 10MB.")
+      setErrorMessage(t("scanner.errors.tooLarge"))
       setScanState("error")
       return
     }
@@ -137,7 +181,7 @@ export function ReceiptScannerDialog({
     // Validate actual file content via magic bytes
     const validBytes = await validateMagicBytes(file)
     if (!validBytes) {
-      setErrorMessage("File content does not match its type. Please upload a valid image or PDF.")
+      setErrorMessage(t("scanner.errors.contentMismatch"))
       setScanState("error")
       return
     }
@@ -158,7 +202,7 @@ export function ReceiptScannerDialog({
       // For PDFs, show a placeholder
       setFilePreview(null)
     }
-  }, [])
+  }, [t])
 
   // Handle camera capture
   const handleCameraCapture = useCallback((file: File) => {
@@ -208,7 +252,12 @@ export function ReceiptScannerDialog({
 
   // Scan the receipt
   const handleScan = async () => {
-    if (!selectedFile) return
+    if (!selectedFile || atLimit) return
+
+    // Cancel any previous in-flight scan and start a fresh controller.
+    scanAbortRef.current?.abort()
+    const controller = new AbortController()
+    scanAbortRef.current = controller
 
     setScanState("processing")
     setErrorMessage("")
@@ -217,15 +266,22 @@ export function ReceiptScannerDialog({
       const token = await auth.currentUser?.getIdToken()
       if (!token) {
         setScanState("error")
-        setErrorMessage("Not authenticated. Please sign in again.")
+        setErrorMessage(t("scanner.errors.notAuthenticated"))
         return
       }
-      const data = await scanReceipt(selectedFile, token, user?.uid)
+      const data = await scanReceipt(selectedFile, token, user?.uid, controller.signal)
       setExtractedData(data)
 
       // Populate form fields — treat "Unknown Merchant" as blank so user fills it in
       setMerchant(data.merchant && data.merchant !== "Unknown Merchant" ? data.merchant : "")
       setAmount(data.amount > 0 ? data.amount.toString() : "")
+      // Use the detected currency when it's one we support, otherwise assume the
+      // user's display currency (RCP-1).
+      setReceiptCurrency(
+        data.currency && isSupportedCurrency(data.currency)
+          ? (data.currency as SupportedCurrency)
+          : userCurrency
+      )
       setDate(data.date || formatDateForInput(new Date()))
 
       // Auto-detect category based on merchant name
@@ -234,14 +290,19 @@ export function ReceiptScannerDialog({
 
       setScanState("success")
     } catch (error: any) {
+      // A deliberate cancel (dialog closed / new scan) is not an error.
+      if (error?.name === "AbortError") return
+
       logger.error("Error scanning receipt", error)
       const isQuotaError = error?.status === 402 || error?.errorCode === "QuotaExceeded"
       setErrorMessage(
         isQuotaError
-          ? "You've used all your receipt scans for this month. Upgrade your plan to get more."
-          : error.message || "Failed to scan receipt. Please try again."
+          ? t("scanner.errors.quotaExceeded")
+          : error.message || t("scanner.errors.scanFailed")
       )
       setScanState("error")
+    } finally {
+      if (scanAbortRef.current === controller) scanAbortRef.current = null
     }
   }
 
@@ -261,7 +322,14 @@ export function ReceiptScannerDialog({
   // Save as expense
   const handleSave = async () => {
     if (!amount || !category) {
-      setErrorMessage("Please fill in all required fields (amount, category)")
+      setErrorMessage(t("scanner.errors.missingFields"))
+      return
+    }
+
+    // If the receipt currency differs from the display currency we need live
+    // exchange rates to convert correctly; block until they're loaded (RCP-1).
+    if (receiptCurrency !== userCurrency && !ratesReady) {
+      setErrorMessage(t("scanner.errors.ratesLoading"))
       return
     }
 
@@ -270,6 +338,15 @@ export function ReceiptScannerDialog({
 
     const meaningfulItems = getMeaningfulItems(extractedData?.items ?? [])
     const description = merchant && merchant !== "Unknown Merchant" ? merchant : "Scanned Receipt"
+
+    // Convert the entered amount from the receipt's currency into the user's
+    // display currency. onSubmit (handleAdd) then converts display → base (EUR)
+    // for storage, so the stored amount reflects the real receipt value (RCP-1).
+    const enteredAmount = parseFloat(amount)
+    const amountInDisplayCurrency =
+      receiptCurrency === userCurrency
+        ? enteredAmount
+        : convertAmount(enteredAmount, receiptCurrency, userCurrency)
 
     try {
       // Upload the receipt image to Firebase Storage
@@ -285,12 +362,12 @@ export function ReceiptScannerDialog({
 
       await onSubmit({
         description,
-        amount: parseFloat(amount),
+        amount: amountInDisplayCurrency,
         category,
         type: "expense",
         date,
         notes: meaningfulItems.length > 0
-          ? `Items: ${meaningfulItems.join(", ")}`
+          ? t("scanner.itemsNote", { items: meaningfulItems.join(", ") })
           : undefined,
         tags: ["scanned-receipt"],
         receiptUrl,
@@ -299,7 +376,7 @@ export function ReceiptScannerDialog({
       // Close dialog and reset state
       handleOpenChange(false)
     } catch (error: any) {
-      setErrorMessage(error.message || "Failed to save expense. Please try again.")
+      setErrorMessage(error.message || t("scanner.errors.saveFailed"))
     } finally {
       setIsSaving(false)
     }
@@ -307,6 +384,8 @@ export function ReceiptScannerDialog({
 
   // Clear selected file
   const handleClearFile = () => {
+    scanAbortRef.current?.abort()
+    scanAbortRef.current = null
     setSelectedFile(null)
     setFilePreview(null)
     setExtractedData(null)
@@ -315,14 +394,25 @@ export function ReceiptScannerDialog({
     setInputMode("select")
   }
 
+  // Banner shown when the monthly scan quota is exhausted (RCP-3).
+  const renderLimitBanner = () =>
+    atLimit ? (
+      <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+        <span className="text-xs text-yellow-700 dark:text-yellow-400">
+          {t("scanner.limitReached")}
+        </span>
+      </div>
+    ) : null
+
   // Render input mode selection
   const renderModeSelection = () => (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground text-center">
-        Choose how to add your receipt
+        {t("scanner.chooseMethod")}
       </p>
 
-      <div className={`grid gap-4 ${isMobile && canUseCamera ? "grid-cols-1" : "grid-cols-1"}`}>
+      <div className="grid gap-4 grid-cols-1">
         {/* Camera option - shown prominently on mobile */}
         {canUseCamera && (
           <>
@@ -332,27 +422,29 @@ export function ReceiptScannerDialog({
               variant="outline"
               className="h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed hover:border-primary hover:bg-primary/5"
               onClick={() => setInputMode("camera")}
+              disabled={atLimit}
             >
               <Camera className="h-10 w-10 text-primary" />
               <div className="text-center">
-                <p className="font-medium">Take Photo</p>
-                <p className="text-xs text-muted-foreground">Use camera with live preview</p>
+                <p className="font-medium">{t("scanner.takePhoto")}</p>
+                <p className="text-xs text-muted-foreground">{t("scanner.takePhotoHint")}</p>
               </div>
             </Button>
 
             {/* Quick capture option for mobile */}
             {isMobile && (
-              <label className="h-20 flex items-center justify-center gap-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+              <label className={`h-20 flex items-center justify-center gap-3 border-2 border-dashed rounded-lg transition-colors ${atLimit ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary hover:bg-primary/5"}`}>
                 <Camera className="h-6 w-6 text-muted-foreground" />
                 <div>
-                  <p className="font-medium text-sm">Quick Capture</p>
-                  <p className="text-xs text-muted-foreground">Open native camera</p>
+                  <p className="font-medium text-sm">{t("scanner.quickCapture")}</p>
+                  <p className="text-xs text-muted-foreground">{t("scanner.quickCaptureHint")}</p>
                 </div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={ACCEPTED_FILE_TYPES}
                   capture="environment"
                   className="hidden"
+                  disabled={atLimit}
                   onChange={handleMobileCameraInput}
                 />
               </label>
@@ -362,19 +454,20 @@ export function ReceiptScannerDialog({
 
         {/* Upload option */}
         <label
-          className="h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+          className={`h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-lg transition-colors ${atLimit ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary hover:bg-primary/5"}`}
         >
           <Upload className="h-10 w-10 text-muted-foreground" />
           <div className="text-center">
-            <p className="font-medium">Upload File</p>
+            <p className="font-medium">{t("scanner.uploadFile")}</p>
             <p className="text-xs text-muted-foreground">
-              PNG, JPG, WebP, GIF or PDF (MAX. 10MB)
+              {t("scanner.fileTypes")}
             </p>
           </div>
           <input
             type="file"
             className="hidden"
-            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            accept={ACCEPTED_FILE_TYPES}
+            disabled={atLimit}
             onChange={handleInputChange}
           />
         </label>
@@ -405,17 +498,17 @@ export function ReceiptScannerDialog({
           <div className="flex flex-col items-center justify-center py-6">
             <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
             <p className="mb-2 text-sm text-muted-foreground">
-              <span className="font-semibold">Click to upload</span> or drag and drop
+              <span className="font-semibold">{t("scanner.clickToUpload")}</span> {t("scanner.orDragDrop")}
             </p>
             <p className="text-xs text-muted-foreground">
-              PNG, JPG, WebP, GIF or PDF (MAX. 10MB)
+              {t("scanner.fileTypes")}
             </p>
           </div>
           <input
             id="receipt-upload"
             type="file"
             className="hidden"
-            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            accept={ACCEPTED_FILE_TYPES}
             onChange={handleInputChange}
           />
         </label>
@@ -423,9 +516,10 @@ export function ReceiptScannerDialog({
         <div className="border rounded-lg p-4">
           <div className="flex items-start gap-4">
             {filePreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={filePreview}
-                alt="Receipt preview"
+                alt={t("scanner.title")}
                 className="w-24 h-24 object-cover rounded-md border"
               />
             ) : (
@@ -443,9 +537,9 @@ export function ReceiptScannerDialog({
                   type="button"
                   size="sm"
                   onClick={handleScan}
-                  disabled={scanState !== "idle"}
+                  disabled={scanState !== "idle" || atLimit}
                 >
-                  Scan Receipt
+                  {t("scanner.scanButton")}
                 </Button>
                 <Button
                   type="button"
@@ -470,7 +564,7 @@ export function ReceiptScannerDialog({
           className="mt-2"
           onClick={() => setInputMode("select")}
         >
-          Back to options
+          {t("scanner.backToOptions")}
         </Button>
       )}
     </div>
@@ -480,13 +574,13 @@ export function ReceiptScannerDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden overscroll-none">
         <DialogHeader>
-          <DialogTitle>Scan Receipt</DialogTitle>
+          <DialogTitle>{t("scanner.title")}</DialogTitle>
           <DialogDescription>
             {inputMode === "camera"
-              ? "Point your camera at the receipt and capture"
+              ? t("scanner.descCamera")
               : inputMode === "select"
-              ? "Take a photo or upload a receipt to extract expense details"
-              : "Upload a receipt or bill image to automatically extract expense details"
+              ? t("scanner.descSelect")
+              : t("scanner.descUpload")
             }
           </DialogDescription>
         </DialogHeader>
@@ -500,8 +594,8 @@ export function ReceiptScannerDialog({
           <div className="py-4">
             <UpgradePrompt
               mode="card"
-              feature="Receipt Scanning"
-              description="Automatically extract expense details from photos and PDFs using AI."
+              feature={t("scanner.feature")}
+              description={t("scanner.featureDescription")}
             />
           </div>
         ) : (
@@ -509,7 +603,7 @@ export function ReceiptScannerDialog({
         {/* Quota indicator for paying users */}
         {limit > 0 && (
           <div className="text-xs text-muted-foreground text-right pb-1">
-            {remaining} / {limit} scans remaining this month
+            {t("scanner.scansRemaining", { remaining, limit })}
           </div>
         )}
 
@@ -517,6 +611,7 @@ export function ReceiptScannerDialog({
           {/* Mode Selection / Camera / Upload Section */}
           {scanState === "idle" && !extractedData && (
             <>
+              {inputMode !== "camera" && renderLimitBanner()}
               {inputMode === "select" && renderModeSelection()}
               {inputMode === "camera" && renderCameraView()}
               {inputMode === "upload" && renderUploadView()}
@@ -527,8 +622,8 @@ export function ReceiptScannerDialog({
           {scanState === "processing" && (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="text-sm text-muted-foreground">Processing receipt...</p>
-              <p className="text-xs text-muted-foreground mt-1">This may take a few moments</p>
+              <p className="text-sm text-muted-foreground">{t("scanner.processing")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("scanner.processingHint")}</p>
             </div>
           )}
 
@@ -537,7 +632,7 @@ export function ReceiptScannerDialog({
             <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
               <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-destructive">Scan Failed</p>
+                <p className="text-sm font-medium text-destructive">{t("scanner.scanFailed")}</p>
                 <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
                 <Button
                   type="button"
@@ -546,7 +641,7 @@ export function ReceiptScannerDialog({
                   className="mt-2"
                   onClick={handleClearFile}
                 >
-                  Try Again
+                  {t("scanner.tryAgain")}
                 </Button>
               </div>
             </div>
@@ -558,7 +653,7 @@ export function ReceiptScannerDialog({
               <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                 <Check className="h-5 w-5 text-green-500" />
                 <span className="text-sm text-green-700 dark:text-green-400">
-                  Receipt scanned successfully! Review and edit the details below.
+                  {t("scanner.success")}
                 </span>
               </div>
 
@@ -567,7 +662,7 @@ export function ReceiptScannerDialog({
                 <div className="flex items-center gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                   <AlertCircle className="h-4 w-4 text-yellow-600" />
                   <span className="text-xs text-yellow-700 dark:text-yellow-400">
-                    Low confidence scan ({Math.round(extractedData.confidence * 100)}%). Please verify the details.
+                    {t("scanner.lowConfidence", { percent: Math.round(extractedData.confidence * 100) })}
                   </span>
                 </div>
               )}
@@ -575,35 +670,53 @@ export function ReceiptScannerDialog({
               {/* Editable Fields */}
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="merchant">Merchant / Description</Label>
+                  <Label htmlFor="merchant">{t("scanner.merchantLabel")}</Label>
                   <Input
                     id="merchant"
-                    placeholder="e.g., Grocery Store"
+                    placeholder={t("scanner.merchantPlaceholder")}
                     value={merchant}
                     onChange={(e) => setMerchant(e.target.value)}
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount *</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    max={AMOUNT_RULES.MAX}
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                  />
+                  <Label htmlFor="amount">{t("scanner.amountLabel")} *</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={AMOUNT_RULES.MAX}
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="flex-1"
+                      required
+                    />
+                    <Select
+                      value={receiptCurrency}
+                      onValueChange={(v) => setReceiptCurrency(v as SupportedCurrency)}
+                    >
+                      <SelectTrigger className="w-24" aria-label={t("scanner.currencyLabel")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SUPPORTED_CURRENCIES.map((cur) => (
+                          <SelectItem key={cur} value={cur}>
+                            {cur}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">{t("scanner.categoryLabel")} *</Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t("scanner.categoryPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {TRANSACTION_CATEGORIES.map((cat) => (
@@ -616,7 +729,7 @@ export function ReceiptScannerDialog({
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="date">Date</Label>
+                  <Label htmlFor="date">{t("scanner.dateLabel")}</Label>
                   <Input
                     id="date"
                     type="date"
@@ -629,7 +742,7 @@ export function ReceiptScannerDialog({
               {/* Extracted Items Preview */}
               {extractedData.items && extractedData.items.length > 0 && (
                 <div className="text-sm text-muted-foreground">
-                  <p className="font-medium mb-1">Detected Items:</p>
+                  <p className="font-medium mb-1">{t("scanner.detectedItems")}</p>
                   <ul className="list-disc list-inside">
                     {extractedData.items.slice(0, 5).map((item, index) => (
                       <li key={index} className="truncate">
@@ -637,7 +750,7 @@ export function ReceiptScannerDialog({
                       </li>
                     ))}
                     {extractedData.items.length > 5 && (
-                      <li>...and {extractedData.items.length - 5} more</li>
+                      <li>{t("scanner.andMore", { count: extractedData.items.length - 5 })}</li>
                     )}
                   </ul>
                 </div>
@@ -647,7 +760,7 @@ export function ReceiptScannerDialog({
               {Object.keys(extractedData.rawEntities).length > 0 && (
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer hover:text-foreground">
-                    View raw extracted data
+                    {t("scanner.viewRaw")}
                   </summary>
                   <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-32">
                     {JSON.stringify(extractedData.rawEntities, null, 2)}
@@ -665,11 +778,11 @@ export function ReceiptScannerDialog({
           ) : (
             <>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancel
+                {t("scanner.cancel")}
               </Button>
               {scanState === "success" && (
                 <Button type="button" onClick={handleSave} disabled={!amount || !category || isSaving}>
-                  {isSaving ? "Saving..." : "Save as Expense"}
+                  {isSaving ? t("scanner.saving") : t("scanner.save")}
                 </Button>
               )}
             </>
