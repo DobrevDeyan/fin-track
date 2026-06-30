@@ -57,6 +57,12 @@ export const callLeaveHousehold = (householdId: string) =>
     "leaveHousehold"
   )({ householdId })
 
+export const callRemoveHouseholdMember = (householdId: string, memberUid: string) =>
+  httpsCallable<{ householdId: string; memberUid: string }, { ok: boolean }>(
+    functions,
+    "removeHouseholdMember"
+  )({ householdId, memberUid })
+
 export const callUpdateHouseholdMemberName = (displayName: string) =>
   httpsCallable<{ displayName: string }, { ok: boolean }>(
     functions,

@@ -36,6 +36,20 @@ service cloud.firestore {
         && d.isActive is bool;
     }
 
+    // Validates shared-budget fields on the resulting document (review H7-1).
+    // householdGoals already validate via validGoalData, but householdBudgets
+    // previously only checked membership — letting any member persist a
+    // negative/oversized/garbage amount that corrupts the shared spent-vs-limit
+    // math for everyone. amount cap mirrors AMOUNT_RULES.MAX (1,000,000).
+    function validBudgetData(d) {
+      return d.name is string && d.name.size() > 0
+        && d.category is string && d.category.size() > 0
+        && d.amount is number && d.amount > 0 && d.amount <= 1000000
+        && d.period in ['weekly', 'monthly', 'yearly']
+        && d.currency is string && d.currency.size() > 0
+        && d.isActive is bool;
+    }
+
     // Users can only access their own data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -226,9 +240,11 @@ service cloud.firestore {
     // Shared household budgets — any member can read/write; householdId is immutable on update
     match /householdBudgets/{budgetId} {
       allow read: if isHouseholdMember(resource.data.householdId);
-      allow create: if isHouseholdMember(request.resource.data.householdId);
+      allow create: if isHouseholdMember(request.resource.data.householdId)
+                    && validBudgetData(request.resource.data);
       allow update: if isHouseholdMember(resource.data.householdId)
-                    && request.resource.data.householdId == resource.data.householdId;
+                    && request.resource.data.householdId == resource.data.householdId
+                    && validBudgetData(request.resource.data);
       allow delete: if isHouseholdMember(resource.data.householdId);
     }
 

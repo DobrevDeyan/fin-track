@@ -27,7 +27,7 @@ interface DashboardProviderProps {
 export function DashboardProvider({ children }: DashboardProviderProps) {
   const { user } = useAuth()
   const { householdId } = useHousehold()
-  const { userCurrency, displayName } = useCurrency()
+  const { displayName } = useCurrency()
   const userId = user?.uid
 
   return (
@@ -41,7 +41,6 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
                   <HouseholdGoalsProvider
                     householdId={householdId}
                     userId={userId}
-                    userCurrency={userCurrency}
                     displayName={displayName}
                   >
                     {children}

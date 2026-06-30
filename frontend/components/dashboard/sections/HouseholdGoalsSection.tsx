@@ -13,6 +13,8 @@ import { GoalDialog } from "@/components/dashboard/GoalDialog"
 import { HouseholdGoalCard } from "@/components/dashboard/HouseholdGoalCard"
 import { useHouseholdGoalsContext, type HouseholdGoal } from "@/contexts/dashboard/HouseholdGoalsContext"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
+import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
+import { useMoney } from "@/contexts/CurrencyContext"
 import { motion } from "framer-motion"
 import { useTranslations } from "next-intl"
 
@@ -25,6 +27,10 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
   const t = useTranslations("household")
   const tg = useTranslations("goals")
   const tCommon = useTranslations("common")
+  const { ratesReady, currency } = useMoney()
+  // H7-11: until live fixings load, toBase() is identity — block non-EUR users
+  // from persisting an add-funds amount that would be stored unconverted.
+  const ratesBlocked = !ratesReady && currency !== BASE_CURRENCY
   const {
     goals, loading, error, dialogOpen, editingGoal,
     ensureGoalsLoaded, loadGoals, handleDialogClose, handleSubmit,
@@ -94,6 +100,9 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
               <Target className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="font-medium text-sm mb-1">{t("goals.loadError")}</p>
+            {error && (
+              <p className="text-xs text-muted-foreground mb-3 max-w-xs break-words">{error}</p>
+            )}
             <Button size="sm" variant="outline" onClick={() => loadGoals()}>
               {t("tryAgain")}
             </Button>
@@ -168,12 +177,15 @@ export function HouseholdGoalsSection({ categories, userCurrency }: Props) {
               <p className="text-xs text-muted-foreground">
                 {t("goals.addFundsHint")}
               </p>
+              {ratesBlocked && (
+                <p className="text-xs text-amber-600">{tCommon("ratesLoading")}</p>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAddFundsOpen(false)}>
                 {tCommon("cancel")}
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting || ratesBlocked}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 {tg("addFunds")}
               </Button>

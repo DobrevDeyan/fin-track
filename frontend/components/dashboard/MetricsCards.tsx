@@ -88,13 +88,15 @@ interface MetricsCardsProps {
   incomeChange: { change: string; trend: "up" | "down" | "neutral" }
   spendingChange: { change: string; trend: "up" | "down" | "neutral" }
   cashFlowChange: { change: string; trend: "up" | "down" | "neutral" }
-  /** @deprecated amounts are now formatted via useMoney(); kept for caller compatibility */
-  userCurrency?: string
 }
 
 function TrendBadge({ change, trend }: { change: string; trend: "up" | "down" | "neutral" }) {
+  const t = useTranslations("dashboard")
   if (change === "No change") return null
   const Icon = trend === "up" ? ArrowUp : trend === "down" ? ArrowDown : Minus
+  // "new" is the no-baseline sentinel from calculateChange (RA-12) — translate it;
+  // percentage strings ("+12.3%") are locale-neutral and pass through.
+  const label = change === "new" ? t("new") : change
   return (
     <span
       className={cn(
@@ -103,7 +105,7 @@ function TrendBadge({ change, trend }: { change: string; trend: "up" | "down" | 
       )}
     >
       <Icon className="h-2.5 w-2.5" />
-      {change}
+      {label}
     </span>
   )
 }

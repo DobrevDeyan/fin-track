@@ -77,10 +77,11 @@ export function calculateChange(current: number, previous: number): ChangeMetric
     if (current === 0) {
       return { change: "No change", trend: "neutral" };
     }
-    return {
-      change: current > 0 ? "+100%" : "-100%",
-      trend: current > 0 ? "up" : "down",
-    };
+    // No baseline to compute a percentage against. Returning a fabricated
+    // "±100%" falsely implies a doubling, so report the value as "new" instead.
+    // The UI translates the "new" sentinel (TrendBadge); trend is neutral
+    // because a missing baseline tells us nothing about good vs bad. (RA-12)
+    return { change: "new", trend: "neutral" };
   }
 
   const percentChange = ((current - previous) / Math.abs(previous)) * 100;
@@ -93,6 +94,20 @@ export function calculateChange(current: number, previous: number): ChangeMetric
   } else {
     return { change: "No change", trend: "neutral" };
   }
+}
+
+/**
+ * Format a savings rate for display, consistently across the reports page, the
+ * shareable achievement card, and the PDF export. (RA-10)
+ *  - No income → "—" (a rate can't be computed without income).
+ *  - Overspent (negative rate) → "—" rather than a jarring value like "-400%".
+ *  - Otherwise the rounded percentage, e.g. "23%".
+ */
+export function formatSavingsRate(income: number, expenses: number): string {
+  if (!(income > 0)) return "—";
+  const rate = Math.round(((income - expenses) / income) * 100);
+  if (rate < 0) return "—";
+  return `${rate}%`;
 }
 
 /**

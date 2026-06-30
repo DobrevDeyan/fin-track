@@ -3,9 +3,10 @@
 /**
  * Year-over-Year Chart
  *
- * Compares monthly income and expenses across the current year
- * versus the previous year, using entries already loaded by the
- * reports page (no extra Firestore calls).
+ * Compares monthly income and expenses across the current year versus the
+ * previous year. Reads from the server-maintained financialSummaries months
+ * map (full history) rather than the reports page's range-limited entries, so
+ * it never under-counts. (RA-11)
  */
 
 import {
@@ -18,66 +19,72 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
+import { useTranslations, useLocale } from "next-intl"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMoney } from "@/contexts/CurrencyContext"
-
-interface Entry {
-  id: string
-  date: string
-  type: "income" | "expense"
-  amount: number
-  category: string
-}
+import type { MonthlyData } from "@/lib/firestore-types"
 
 interface YearOverYearChartProps {
-  entries: Entry[]
-  userCurrency?: string
+  months: Record<string, MonthlyData> | undefined
 }
 
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+interface TooltipPayloadItem {
+  name: string
+  value: number
+  fill: string
+}
 
-export function YearOverYearChart({ entries, userCurrency }: YearOverYearChartProps) {
+export function YearOverYearChart({ months }: YearOverYearChartProps) {
+  const t = useTranslations("reports")
+  const locale = useLocale()
   const { format } = useMoney()
   const currentYear = new Date().getFullYear()
   const previousYear = currentYear - 1
 
-  // Build month buckets for both years
-  const buckets: Record<number, Record<number, { income: number; expenses: number }>> = {
-    [currentYear]: {},
-    [previousYear]: {},
-  }
+  const monthLabel = (monthIndex: number) =>
+    new Date(Date.UTC(2000, monthIndex, 1)).toLocaleDateString(locale, {
+      month: "short",
+      timeZone: "UTC",
+    })
 
-  for (const entry of entries) {
-    const d = new Date(entry.date)
-    const year = d.getFullYear()
-    const month = d.getMonth() // 0-indexed
-    if (year !== currentYear && year !== previousYear) continue
-    if (!buckets[year][month]) buckets[year][month] = { income: 0, expenses: 0 }
-    if (entry.type === "income") buckets[year][month].income += entry.amount
-    else buckets[year][month].expenses += entry.amount
-  }
+  const curIncomeName = `${currentYear} ${t("income")}`
+  const curExpensesName = `${currentYear} ${t("expenses")}`
+  const prevIncomeName = `${previousYear} ${t("income")}`
+  const prevExpensesName = `${previousYear} ${t("expenses")}`
 
-  // Build chart data — one row per month
-  const data = MONTH_LABELS.map((month, i) => ({
-    month,
-    [`${currentYear} Income`]: buckets[currentYear][i]?.income ?? 0,
-    [`${currentYear} Expenses`]: buckets[currentYear][i]?.expenses ?? 0,
-    [`${previousYear} Income`]: buckets[previousYear][i]?.income ?? 0,
-    [`${previousYear} Expenses`]: buckets[previousYear][i]?.expenses ?? 0,
-  }))
+  // One row per month, pulling income/expenses for both years from the summary.
+  const data = Array.from({ length: 12 }, (_, i) => {
+    const mm = String(i + 1).padStart(2, "0")
+    const cur = months?.[`${currentYear}-${mm}`]
+    const prev = months?.[`${previousYear}-${mm}`]
+    return {
+      month: monthLabel(i),
+      curIncome: cur?.income ?? 0,
+      curExpenses: cur?.expenses ?? 0,
+      prevIncome: prev?.income ?? 0,
+      prevExpenses: prev?.expenses ?? 0,
+    }
+  })
 
-  // Check if there's any previous-year data to show
-  const hasPreviousYear = entries.some((e) => new Date(e.date).getFullYear() === previousYear)
+  const hasPreviousYear = data.some((d) => d.prevIncome > 0 || d.prevExpenses > 0)
 
   const formatTick = (value: number) =>
     format(value, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean
+    payload?: TooltipPayloadItem[]
+    label?: string
+  }) => {
     if (!active || !payload?.length) return null
     return (
       <div className="bg-background border border-border rounded-lg shadow-lg p-3 text-sm">
         <p className="font-semibold mb-2">{label}</p>
-        {payload.map((p: any) => (
+        {payload.map((p) => (
           <div key={p.name} className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: p.fill }} />
@@ -93,10 +100,10 @@ export function YearOverYearChart({ entries, userCurrency }: YearOverYearChartPr
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Year-over-Year Comparison</CardTitle>
+        <CardTitle>{t("yearOverYear")}</CardTitle>
         <CardDescription>
-          Monthly income and expenses: {currentYear} vs {previousYear}
-          {!hasPreviousYear && " — add transactions from last year to see the comparison"}
+          {t("yearOverYearDesc", { current: String(currentYear), previous: String(previousYear) })}
+          {!hasPreviousYear && ` — ${t("yearOverYearHint")}`}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -107,12 +114,12 @@ export function YearOverYearChart({ entries, userCurrency }: YearOverYearChartPr
             <YAxis tickFormatter={formatTick} tick={{ fontSize: 11 }} width={72} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-            <Bar dataKey={`${currentYear} Income`} fill="#22c55e" radius={[3, 3, 0, 0]} />
-            <Bar dataKey={`${currentYear} Expenses`} fill="#ef4444" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="curIncome" name={curIncomeName} fill="#22c55e" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="curExpenses" name={curExpensesName} fill="#ef4444" radius={[3, 3, 0, 0]} />
             {hasPreviousYear && (
               <>
-                <Bar dataKey={`${previousYear} Income`} fill="#86efac" radius={[3, 3, 0, 0]} />
-                <Bar dataKey={`${previousYear} Expenses`} fill="#fca5a5" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="prevIncome" name={prevIncomeName} fill="#86efac" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="prevExpenses" name={prevExpensesName} fill="#fca5a5" radius={[3, 3, 0, 0]} />
               </>
             )}
           </BarChart>

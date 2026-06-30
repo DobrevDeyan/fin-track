@@ -1,6 +1,6 @@
 import {
   collection, addDoc, getDocs, query, where,
-  doc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, deleteField, FieldValue,
+  doc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, deleteField, increment, FieldValue,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { HouseholdGoalDocument, HouseholdGoalContribution } from "@/lib/firestore-types"
@@ -71,13 +71,15 @@ export async function deleteHouseholdGoal(goalId: string): Promise<void> {
 
 export async function addFundsToHouseholdGoal(
   goalId: string,
-  currentAmount: number,
   amount: number,
   contribution: HouseholdGoalContribution
 ): Promise<void> {
   try {
+    // H7-13: use a server-side atomic increment (not a client read-modify-write)
+    // so concurrent contributions from different members can't clobber each other
+    // and leave currentAmount out of sync with the contributions array.
     await updateDoc(doc(db, "householdGoals", goalId), {
-      currentAmount: currentAmount + amount,
+      currentAmount: increment(amount),
       contributions: arrayUnion(contribution),
       updatedAt: serverTimestamp(),
     })

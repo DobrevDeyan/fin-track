@@ -21,16 +21,19 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import { memo } from "react"
+import { useTranslations, useLocale } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Info } from "lucide-react"
+import { TrendingUp, TrendingDown } from "lucide-react"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
 import { useMoney } from "@/contexts/CurrencyContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { UpgradePrompt } from "@/components/ui/UpgradePrompt"
 
-function formatAxisDate(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00")
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+// Forecast date keys are UTC civil days (see generateCashFlowForecast); parse and
+// render them in UTC so the axis labels don't shift a day in non-UTC timezones.
+function formatAxisDate(dateStr: string, locale: string): string {
+  const d = new Date(dateStr + "T00:00:00Z")
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric", timeZone: "UTC" })
 }
 
 interface TooltipPayloadItem {
@@ -46,6 +49,8 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   const { format } = useMoney()
+  const t = useTranslations("insights")
+  const locale = useLocale()
   if (!active || !payload?.length) return null
   const balance = payload.find((p) => p.dataKey === "balance")?.value
   const lower = payload.find((p) => p.dataKey === "lower")?.value
@@ -53,13 +58,13 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 
   return (
     <div className="rounded-lg border bg-popover text-popover-foreground p-3 shadow-md text-xs">
-      <p className="font-medium mb-1">{label ? formatAxisDate(label) : ""}</p>
+      <p className="font-medium mb-1">{label ? formatAxisDate(label, locale) : ""}</p>
       <p className="text-foreground font-semibold">
         {format(balance ?? 0)}
       </p>
       {lower !== undefined && upper !== undefined && (
         <p className="text-muted-foreground">
-          Range: {format(lower)} – {format(upper)}
+          {t("range")}: {format(lower)} – {format(upper)}
         </p>
       )}
     </div>
@@ -69,6 +74,8 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
   const { cashFlowData } = useInsightsContext()
   const { isPro, loading: subscriptionLoading } = useSubscription()
   const { format } = useMoney()
+  const t = useTranslations("insights")
+  const locale = useLocale()
 
   if (subscriptionLoading) {
     return (
@@ -76,7 +83,7 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            Cash Flow Forecast — Next 90 Days
+            {t("cashFlowForecastTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -92,14 +99,14 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            Cash Flow Forecast — Next 90 Days
+            {t("cashFlowForecastTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <UpgradePrompt
             mode="card"
-            feature="90-Day Cash Flow Forecast"
-            description="See a projection of your balance for the next 90 days based on your recurring transactions and spending patterns."
+            feature={t("cashFlowUpgradeFeature")}
+            description={t("cashFlowUpgradeDesc")}
           />
         </CardContent>
       </Card>
@@ -112,9 +119,9 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
         <CardContent className="flex items-center gap-3 py-4 px-4">
           <TrendingUp className="h-5 w-5 text-muted-foreground/50 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground/70">90-Day Cash Flow Forecast</p>
+            <p className="text-sm font-medium text-foreground/70">{t("cashFlowForecastShort")}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Add a recurring transaction and 2+ months of history to unlock your forecast.
+              {t("cashFlowUnlock")}
             </p>
           </div>
         </CardContent>
@@ -143,9 +150,9 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
             ) : (
               <TrendingDown className="h-4 w-4 text-red-500" />
             )}
-            Cash Flow Forecast — Next 90 Days
+            {t("cashFlowForecastTitle")}
           </CardTitle>
-          <span className="text-xs text-muted-foreground">Based on recurring transactions</span>
+          <span className="text-xs text-muted-foreground">{t("cashFlowBasedOn")}</span>
         </div>
       </CardHeader>
 
@@ -170,7 +177,7 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
               <XAxis
                 dataKey="date"
-                tickFormatter={formatAxisDate}
+                tickFormatter={(v) => formatAxisDate(v, locale)}
                 tick={{ fontSize: 10 }}
                 className="text-muted-foreground"
                 interval={Math.floor(cashFlowData.length / 4)}
@@ -190,11 +197,15 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
                 fill="url(#bandGrad)"
                 strokeWidth={0}
               />
+              {/* Mask the area below `lower` with the card background so only the
+                  band between lower and upper shows. Must track the theme
+                  background, not hardcoded white, or it paints a white wedge in
+                  dark mode. (RA-15) */}
               <Area
                 type="monotone"
                 dataKey="lower"
                 stroke="transparent"
-                fill="white"
+                fill="hsl(var(--background))"
                 strokeWidth={0}
               />
               {/* Main balance line */}
@@ -214,9 +225,9 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
         {/* Summary pills */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "30 days", point: d30 },
-            { label: "60 days", point: d60 },
-            { label: "90 days", point: d90 },
+            { label: t("daysLabel", { count: 30 }), point: d30 },
+            { label: t("daysLabel", { count: 60 }), point: d60 },
+            { label: t("daysLabel", { count: 90 }), point: d90 },
           ].map(({ label, point }) => (
             <div
               key={label}
@@ -235,8 +246,7 @@ export const CashFlowForecast = memo(function CashFlowForecast(_: { userCurrency
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Projection based on active recurring transactions and your average daily spending.
-          Shaded band shows uncertainty range.
+          {t("cashFlowFootnote")}
         </p>
       </CardContent>
     </Card>

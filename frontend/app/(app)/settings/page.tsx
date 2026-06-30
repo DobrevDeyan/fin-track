@@ -27,6 +27,7 @@ import {
   callCreateHousehold,
   callSendHouseholdInvite,
   callLeaveHousehold,
+  callRemoveHouseholdMember,
 } from "@/lib/firestore-household"
 import { setLeaderboardOptIn } from "@/lib/firestore-leaderboard"
 import { collection, addDoc, doc, onSnapshot } from "firebase/firestore"
@@ -58,6 +59,8 @@ const PRO_FEATURES = [
 
 export default function SettingsPage() {
   const t = useTranslations("settings")
+  const th = useTranslations("household.manage")
+  const tCommon = useTranslations("common")
   const { user } = useAuth()
   const router = useRouter()
   const { tier, subscription, loading: subscriptionLoading } = useSubscription()
@@ -134,18 +137,22 @@ export default function SettingsPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [leavingHousehold, setLeavingHousehold] = useState(false)
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState<{ uid: string; displayName: string } | null>(null)
+  const [removingMember, setRemovingMember] = useState(false)
+
+  const isHouseholdOwner = !!household && household.ownerUid === user?.uid
 
   const handleCreateHousehold = async () => {
     if (!user) return
     setCreatingHousehold(true)
     try {
       await callCreateHousehold(householdName.trim() || "My Family")
-      toast.success("Household created!")
+      toast.success(th("createdToast"))
       setHouseholdName("")
       // Force a page reload so HouseholdContext re-reads the user doc
       window.location.reload()
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to create household.")
+    } catch (err) {
+      toast.error((err as { message?: string })?.message ?? th("createError"))
     } finally {
       setCreatingHousehold(false)
     }
@@ -160,11 +167,26 @@ export default function SettingsPage() {
       const link = `${window.location.origin}/household/accept?token=${result.data.token}`
       setInviteLink(link)
       setInviteEmail("")
-      toast.success("Invite link generated — copy and share it.")
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to generate invite.")
+      toast.success(th("inviteGenerated"))
+    } catch (err) {
+      toast.error((err as { message?: string })?.message ?? th("inviteError"))
     } finally {
       setSendingInvite(false)
+    }
+  }
+
+  const handleRemoveMember = async () => {
+    if (!user || !householdId || !memberToRemove) return
+    setRemovingMember(true)
+    try {
+      await callRemoveHouseholdMember(householdId, memberToRemove.uid)
+      toast.success(th("memberRemoved"))
+      setMemberToRemove(null)
+      await refreshHousehold()
+    } catch (err) {
+      toast.error((err as { message?: string })?.message ?? th("removeMemberError"))
+    } finally {
+      setRemovingMember(false)
     }
   }
 
@@ -173,11 +195,11 @@ export default function SettingsPage() {
     setLeavingHousehold(true)
     try {
       await callLeaveHousehold(householdId)
-      toast.success("You left the household.")
+      toast.success(th("leftToast"))
       setLeaveDialogOpen(false)
       window.location.reload()
-    } catch (err: any) {
-      toast.error(err?.message ?? "Failed to leave household.")
+    } catch (err) {
+      toast.error((err as { message?: string })?.message ?? th("leaveError"))
     } finally {
       setLeavingHousehold(false)
     }
@@ -449,10 +471,10 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Family Budgeting
+            {th("title")}
           </CardTitle>
           <CardDescription>
-            Share your financial view with a partner or family member. Each person keeps their own account — you just see a merged view.
+            {th("description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -467,34 +489,48 @@ export default function SettingsPage() {
                   <button
                     onClick={() => refreshHousehold()}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    title="Refresh member list"
+                    title={th("refreshTitle")}
                   >
-                    ↻ Refresh
+                    ↻ {th("refresh")}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {household.members.length} member{household.members.length !== 1 ? "s" : ""}
+                  {th("memberCount", { count: household.members.length })}
                 </p>
                 <ul className="text-xs text-muted-foreground space-y-0.5 mt-1">
                   {household.members.map((m) => (
                     <li key={m.uid} className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                      {m.displayName} {m.uid === user?.uid ? "(you)" : ""}
+                      <span className="flex-1">
+                        {m.displayName}
+                        {m.uid === user?.uid ? ` ${th("you")}` : ""}
+                        {m.uid === household.ownerUid ? ` · ${th("owner")}` : ""}
+                      </span>
+                      {isHouseholdOwner && m.uid !== user?.uid && (
+                        <button
+                          onClick={() => setMemberToRemove({ uid: m.uid, displayName: m.displayName })}
+                          className="shrink-0 text-destructive/70 hover:text-destructive transition-colors"
+                          title={th("removeMemberTitleLabel")}
+                        >
+                          {th("removeMemberConfirm")}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Invite form */}
+              {/* Invite form — owner only */}
+              {isHouseholdOwner && (
               <div className="space-y-2">
-                <Label className="text-xs">Invite a family member</Label>
+                <Label className="text-xs">{th("inviteLabel")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Enter their email, generate an invite link, then send it to them however you like.
+                  {th("inviteHint")}
                 </p>
                 <div className="flex gap-2">
                   <Input
                     type="email"
-                    placeholder="partner@email.com"
+                    placeholder={th("emailPlaceholder")}
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleSendInvite() }}
@@ -511,20 +547,20 @@ export default function SettingsPage() {
                     ) : (
                       <UserPlus className="h-4 w-4 mr-1" />
                     )}
-                    Generate link
+                    {th("generateLink")}
                   </Button>
                 </div>
                 {inviteLink && (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Share this link with your family member:</p>
+                    <p className="text-xs font-medium text-muted-foreground">{th("shareLinkLabel")}</p>
                     <div className="flex items-center gap-2 rounded-md border p-2 text-xs bg-muted">
                       <span className="truncate flex-1 text-muted-foreground">{inviteLink}</span>
                       <button
                         className="shrink-0 hover:text-foreground"
-                        title="Copy link"
+                        title={th("copyLinkTitle")}
                         onClick={() => {
                           navigator.clipboard.writeText(inviteLink)
-                          toast.success("Link copied!")
+                          toast.success(th("linkCopied"))
                         }}
                       >
                         <Copy className="h-3.5 w-3.5" />
@@ -538,14 +574,14 @@ export default function SettingsPage() {
                           className="flex-1"
                           onClick={() =>
                             navigator.share({
-                              title: `Join ${household?.name ?? "my household"}`,
-                              text: `You've been invited to join my household on Pocket. Tap the link to accept.`,
+                              title: th("shareTitle", { name: household?.name ?? "" }),
+                              text: th("shareText"),
                               url: inviteLink,
                             }).catch(() => {/* user cancelled — no-op */})
                           }
                         >
                           <Share2 className="h-3.5 w-3.5 mr-1.5" />
-                          Share via…
+                          {th("shareVia")}
                         </Button>
                       )}
                       <Button
@@ -554,16 +590,17 @@ export default function SettingsPage() {
                         className="flex-1"
                         onClick={() => {
                           navigator.clipboard.writeText(inviteLink)
-                          toast.success("Link copied!")
+                          toast.success(th("linkCopied"))
                         }}
                       >
                         <Copy className="h-3.5 w-3.5 mr-1.5" />
-                        Copy link
+                        {th("copyLink")}
                       </Button>
                     </div>
                   </div>
                 )}
               </div>
+              )}
 
               {/* Leave household */}
               <Button
@@ -572,16 +609,16 @@ export default function SettingsPage() {
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => setLeaveDialogOpen(true)}
               >
-                Leave household
+                {th("leave")}
               </Button>
             </>
           ) : (
             /* No household yet — create one */
             <div className="space-y-2">
-              <Label className="text-xs">Household name (optional)</Label>
+              <Label className="text-xs">{th("createNameLabel")}</Label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="My Family"
+                  placeholder={th("createNamePlaceholder")}
                   value={householdName}
                   onChange={(e) => setHouseholdName(e.target.value)}
                   className="h-8 text-sm"
@@ -594,12 +631,12 @@ export default function SettingsPage() {
                   {creatingHousehold ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Create"
+                    th("create")
                   )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Or accept an invite link from a family member to join their household.
+                {th("createHint")}
               </p>
             </div>
           )}
@@ -610,24 +647,46 @@ export default function SettingsPage() {
       <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Leave household?</DialogTitle>
+            <DialogTitle>{th("leaveTitle")}</DialogTitle>
             <DialogDescription>
-              You will lose access to the Family view. Your personal transactions are not affected.
+              {th("leaveDescription")}
               {household?.ownerUid === user?.uid && household && household.members.length > 1 && (
                 <span className="block mt-1 text-amber-600">
-                  Ownership will transfer to another member.
+                  {th("ownershipTransfer")}
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLeaveDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setLeaveDialogOpen(false)}>{tCommon("cancel")}</Button>
             <Button
               variant="destructive"
               disabled={leavingHousehold}
               onClick={handleLeaveHousehold}
             >
-              {leavingHousehold ? <Loader2 className="h-4 w-4 animate-spin" /> : "Leave"}
+              {leavingHousehold ? <Loader2 className="h-4 w-4 animate-spin" /> : th("leaveConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove member confirmation dialog (owner only) */}
+      <Dialog open={!!memberToRemove} onOpenChange={(open) => { if (!open) setMemberToRemove(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{th("removeMemberTitle")}</DialogTitle>
+            <DialogDescription>
+              {th("removeMemberDescription", { name: memberToRemove?.displayName ?? "" })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMemberToRemove(null)}>{tCommon("cancel")}</Button>
+            <Button
+              variant="destructive"
+              disabled={removingMember}
+              onClick={handleRemoveMember}
+            >
+              {removingMember ? <Loader2 className="h-4 w-4 animate-spin" /> : th("removeMemberConfirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

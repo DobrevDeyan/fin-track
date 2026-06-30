@@ -48,20 +48,23 @@ export class DateRangeCalculator {
     periodType: BudgetPeriod,
     start: Date
   ): { start: Date; end: Date } {
-    const end = new Date(start);
+    let end: Date;
 
     switch (periodType) {
       case "weekly":
+        end = new Date(start);
         end.setDate(start.getDate() + 6); // 7 days total (including start day)
         break;
       case "monthly":
-        end.setMonth(start.getMonth() + 1);
-        end.setDate(end.getDate() - 1); // Day before the same day next month
+        // Day before the same day-of-month next month, clamped for short months.
+        end = endOfFullPeriod(start, start.getFullYear(), start.getMonth() + 1);
         break;
       case "yearly":
-        end.setFullYear(start.getFullYear() + 1);
-        end.setDate(end.getDate() - 1); // Day before the same day next year
+        // Day before the same day-of-month next year, clamped (Feb 29 → Feb 28).
+        end = endOfFullPeriod(start, start.getFullYear() + 1, start.getMonth());
         break;
+      default:
+        end = new Date(start);
     }
 
     return { start, end };
@@ -104,6 +107,33 @@ export class DateRangeCalculator {
         return 30; // Approximate
       case "yearly":
         return 365;
+      default:
+        // Defensive: never return undefined for an unexpected period. (RA-9)
+        return 30;
     }
   }
+}
+
+/**
+ * The last day of a "full" period that began on `start`: the day before the
+ * same day-of-month recurs in the target month. When the target month is
+ * shorter than start's day-of-month (e.g. a monthly period starting Jan 31, or
+ * a yearly one starting Feb 29), the anniversary day doesn't exist, so the
+ * period ends on the last day of that month instead of spilling into the next
+ * one. (RA-8)
+ */
+function endOfFullPeriod(
+  start: Date,
+  targetYear: number,
+  targetMonthIndex: number
+): Date {
+  // Normalise month index so December + 1 wraps into the next January.
+  const year = targetYear + Math.floor(targetMonthIndex / 12);
+  const month = ((targetMonthIndex % 12) + 12) % 12;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const startDay = start.getDate();
+  if (startDay > lastDay) {
+    return new Date(year, month, lastDay);
+  }
+  return new Date(year, month, startDay - 1);
 }

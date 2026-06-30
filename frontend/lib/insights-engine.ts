@@ -305,8 +305,12 @@ export function generateCashFlowForecast(
   summary: FinancialSummaryDocument | null,
   startingBalance: number
 ): ForecastPoint[] {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // Anchor "today" at UTC midnight of the user's local calendar day. Entry and
+  // recurring dates are stored at UTC midnight and the day-stepping below is done
+  // in UTC (which has no DST), so the +86_400_000ms steps always land on the
+  // correct civil day and recurring events aren't missed or doubled. (RA-13)
+  const now = new Date()
+  const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
   const DAYS = 90
 
@@ -371,12 +375,13 @@ export function generateCashFlowForecast(
         cashFlows.set(dk, (cashFlows.get(dk) ?? 0) + sign * r.amount)
       }
 
-      // Advance to next occurrence
+      // Advance to next occurrence in UTC so the date key stays on the same
+      // civil day regardless of the viewer's timezone / DST. (RA-13)
       const advanced = new Date(next)
-      if (r.frequency === "weekly") advanced.setDate(advanced.getDate() + 7)
-      else if (r.frequency === "monthly") advanced.setMonth(advanced.getMonth() + 1)
+      if (r.frequency === "weekly") advanced.setUTCDate(advanced.getUTCDate() + 7)
+      else if (r.frequency === "monthly") advanced.setUTCMonth(advanced.getUTCMonth() + 1)
       else {
-        advanced.setFullYear(advanced.getFullYear() + 1)
+        advanced.setUTCFullYear(advanced.getUTCFullYear() + 1)
         break // only one yearly event in 90 days
       }
       next = advanced

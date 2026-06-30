@@ -3,6 +3,7 @@
  */
 
 import { formatCurrency } from './currency-utils'
+import { formatSavingsRate } from './metrics-utils'
 
 interface Entry {
   id: string
@@ -32,14 +33,18 @@ interface PDFExportOptions {
   reportType: 'yearly' | 'monthly' | 'custom'
   userEmail?: string
   currency?: string
+  /** Convert a stored EUR-base amount to the display currency. Identity if omitted. (RA-1) */
+  convertFromBase?: (eurAmount: number) => number
+  /** BCP-47 locale for date/number formatting. (RA-20) */
+  locale?: string
 }
 
 /**
  * Format date for display
  */
-function formatDate(dateString: string): string {
+function formatDate(dateString: string, locale: string): string {
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -49,15 +54,30 @@ function formatDate(dateString: string): string {
 /**
  * Format date range for display
  */
-function formatDateRange(startDate: string, endDate: string): string {
-  return `${formatDate(startDate)} - ${formatDate(endDate)}`
+function formatDateRange(startDate: string, endDate: string, locale: string): string {
+  return `${formatDate(startDate, locale)} - ${formatDate(endDate, locale)}`
 }
 
 /**
  * Export report to PDF
  */
 export async function exportReportToPDF(options: PDFExportOptions): Promise<void> {
-  const { entries, metrics, startDate, endDate, reportType, userEmail, currency = 'EUR' } = options
+  const {
+    entries,
+    metrics,
+    startDate,
+    endDate,
+    reportType,
+    userEmail,
+    currency = 'EUR',
+    convertFromBase = (x: number) => x,
+    locale = 'en-US',
+  } = options
+
+  // Amounts in `metrics`/`entries` are stored in EUR base; convert to the
+  // display currency before formatting so the PDF matches the on-screen cards. (RA-1)
+  const money = (eurAmount: number) =>
+    formatCurrency(convertFromBase(eurAmount), { currency, locale })
 
   // Dynamically import heavy PDF libraries only when needed
   const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
@@ -109,15 +129,15 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
     reportType === 'yearly' ? 'This Year' : reportType === 'monthly' ? 'This Month' : 'Custom Range'
   doc.text(`Period: ${reportTypeLabel}`, margin, yPosition)
   yPosition += 5
-  doc.text(formatDateRange(startDate, endDate), margin, yPosition)
+  doc.text(formatDateRange(startDate, endDate, locale), margin, yPosition)
   yPosition += 5
   if (userEmail) {
     doc.text(`Generated for: ${userEmail}`, margin, yPosition)
     yPosition += 5
   }
-  doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
+  doc.text(`Generated on: ${new Date().toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
@@ -134,14 +154,14 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   const metricsData: Array<[string, string, [number, number, number]]> = [
-    ['Total Income', formatCurrency(metrics.income, { currency }), successColor],
-    ['Total Expenses', formatCurrency(metrics.expenses, { currency }), dangerColor],
+    ['Total Income', money(metrics.income), successColor],
+    ['Total Expenses', money(metrics.expenses), dangerColor],
     [
       'Net Balance',
-      formatCurrency(metrics.balance, { currency }),
+      money(metrics.balance),
       metrics.balance >= 0 ? successColor : dangerColor,
     ],
-    ['Savings Rate', `${metrics.savingsRate.toFixed(1)}%`, textColor],
+    ['Savings Rate', formatSavingsRate(metrics.income, metrics.expenses), textColor],
     ['Total Transactions', metrics.totalTransactions.toString(), textColor],
   ]
 
@@ -171,8 +191,9 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
     const categoryData = Object.entries(metrics.categoryBreakdown)
       .sort(([, a], [, b]) => b - a)
       .map(([category, amount]) => {
-        const percentage = ((amount / metrics.expenses) * 100).toFixed(1)
-        return [category, formatCurrency(amount, { currency }), `${percentage}%`]
+        // Guard divide-by-zero (e.g. a 0-amount expense) → "0.0%" not "NaN%". (RA-14)
+        const percentage = metrics.expenses > 0 ? ((amount / metrics.expenses) * 100).toFixed(1) : '0.0'
+        return [category, money(amount), `${percentage}%`]
       })
 
     autoTable(doc, {
@@ -213,16 +234,16 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([monthKey, data]) => {
         const [year, month] = monthKey.split('-')
-        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', {
+        const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(locale, {
           month: 'long',
           year: 'numeric',
         })
         const net = data.income - data.expenses
         return [
           monthName,
-          formatCurrency(data.income, { currency }),
-          formatCurrency(data.expenses, { currency }),
-          formatCurrency(net, { currency }),
+          money(data.income),
+          money(data.expenses),
+          money(net),
         ]
       })
 
@@ -266,12 +287,12 @@ export async function exportReportToPDF(options: PDFExportOptions): Promise<void
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 50) // Limit to 50 transactions
       .map((entry) => {
-        const date = new Date(entry.date).toLocaleDateString('en-US', {
+        const date = new Date(entry.date).toLocaleDateString(locale, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
         })
-        const amount = formatCurrency(entry.amount, { currency })
+        const amount = money(entry.amount)
         const type = entry.type === 'income' ? 'Income' : 'Expense'
         const description = entry.description.length > 30 ? entry.description.substring(0, 30) + '...' : entry.description
         return [date, type, description, entry.category, amount]

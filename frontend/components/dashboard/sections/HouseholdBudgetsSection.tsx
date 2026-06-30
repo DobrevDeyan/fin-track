@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Plus, Wallet } from "lucide-react"
 import { BudgetList } from "@/components/dashboard/BudgetList"
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function HouseholdBudgetsSection({ householdEntries, categories }: Props) {
+  const t = useTranslations("household")
   const {
     budgets, loading, error, dialogOpen, editingBudget,
     ensureBudgetsLoaded, loadBudgets, handleDialogClose, handleSubmit,
@@ -31,11 +33,11 @@ export function HouseholdBudgetsSection({ householdEntries, categories }: Props)
       <div className="py-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
           <p className="text-sm text-muted-foreground">
-            Shared spending limits tracked across all family members.
+            {t("budgets.description")}
           </p>
           <Button onClick={openDialog} className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
-            Add Shared Budget
+            {t("budgets.addBudget")}
           </Button>
         </div>
 
@@ -55,9 +57,12 @@ export function HouseholdBudgetsSection({ householdEntries, categories }: Props)
             <div className="rounded-full bg-muted p-4 mb-4">
               <Wallet className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-medium text-sm mb-1">Couldn&apos;t load shared budgets</p>
+            <p className="font-medium text-sm mb-1">{t("budgets.loadError")}</p>
+            {error !== "load_failed" && (
+              <p className="text-xs text-muted-foreground mb-3 max-w-xs break-words">{error}</p>
+            )}
             <Button size="sm" variant="outline" onClick={() => loadBudgets()}>
-              Retry
+              {t("tryAgain")}
             </Button>
           </div>
         ) : budgets.length === 0 ? (
@@ -65,13 +70,13 @@ export function HouseholdBudgetsSection({ householdEntries, categories }: Props)
             <div className="rounded-full bg-muted p-4 mb-4">
               <Wallet className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="font-medium text-sm mb-1">No shared budgets yet</p>
+            <p className="font-medium text-sm mb-1">{t("budgets.emptyTitle")}</p>
             <p className="text-xs text-muted-foreground mb-4 max-w-xs">
-              Create a shared budget to track spending across all household members.
+              {t("budgets.emptyDescription")}
             </p>
             <Button size="sm" onClick={openDialog}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Shared Budget
+              {t("budgets.addBudget")}
             </Button>
           </div>
         ) : (

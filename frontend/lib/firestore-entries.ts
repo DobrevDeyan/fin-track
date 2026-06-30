@@ -295,8 +295,11 @@ export async function getUserEntriesByDateRange(
 ): Promise<(EntryDocument & { id: string })[]> {
   try {
     const entriesRef = collection(db, "entries")
-    const start = Timestamp.fromDate(new Date(startDate + "T00:00:00"))
-    const end = Timestamp.fromDate(new Date(endDate + "T23:59:59"))
+    // Anchor bounds at UTC midnight to match how entry dates are stored
+    // (UTC-midnight Timestamps) and getCustomDateRange in date-utils. Using
+    // local time here dropped/pulled boundary-day entries for non-UTC users. (RA-5)
+    const start = Timestamp.fromDate(new Date(startDate + "T00:00:00.000Z"))
+    const end = Timestamp.fromDate(new Date(endDate + "T23:59:59.999Z"))
 
     const q = query(
       entriesRef,

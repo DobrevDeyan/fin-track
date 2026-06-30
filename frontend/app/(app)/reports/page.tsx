@@ -1,45 +1,32 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { useSubscription } from "@/lib/hooks/useSubscription"
 import { useMoney } from "@/contexts/CurrencyContext"
+import { useFinancialSummary } from "@/contexts/dashboard/FinancialSummaryContext"
+import { useBudgetsContext } from "@/contexts/dashboard/BudgetsContext"
+import { useGoalsContext } from "@/contexts/dashboard/GoalsContext"
+import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getUserEntriesByDateRange } from "@/lib/firestore-entries"
 import { formatDateForInput } from "@/lib/date-utils"
+import { formatSavingsRate } from "@/lib/metrics-utils"
 import { exportEntriesToCSV } from "@/lib/export-utils"
 import { getAIDigest, saveAIDigest } from "@/lib/firestore-insights"
 import { fetchAIDigest } from "@/lib/insights-api"
+import { buildSpendingContext } from "@/lib/insights-engine"
 import { auth } from "@/lib/firebase"
-import type { SpendingContext } from "@/lib/insights-engine"
 import { Sparkles, Calendar, FileText, FileSpreadsheet, Info, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { Skeleton } from "@/components/ui/skeleton"
 import dynamic from "next/dynamic"
 import { logger } from "@/lib/utils/logger"
 
-
-// ─── Module-level cache ────────────────────────────────────────────────────────
-// Survives bottom-nav navigation (component unmount/remount), cleared on hard refresh.
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
-
-interface CacheEntry<T> { data: T; ts: number }
-const entryCache = new Map<string, CacheEntry<Entry[]>>()
-const yoyCache   = new Map<string, CacheEntry<Entry[]>>()
-
-function getCached<T>(map: Map<string, CacheEntry<T>>, key: string): T | null {
-  const hit = map.get(key)
-  if (!hit) return null
-  if (Date.now() - hit.ts > CACHE_TTL) { map.delete(key); return null }
-  return hit.data
-}
-function setCached<T>(map: Map<string, CacheEntry<T>>, key: string, data: T) {
-  map.set(key, { data, ts: Date.now() })
-}
 
 // Lazy load charts
 const ChartSkeleton = ({ height = 400 }: { height?: number }) => (
@@ -78,11 +65,15 @@ interface Entry {
 
 export default function ReportsPage() {
   const t = useTranslations("reports")
+  const locale = useLocale()
   const { user, loading } = useAuth()
   const { isPro } = useSubscription()
-  const { format, currency: userCurrency } = useMoney()
+  const { format, currency: userCurrency, fromBase } = useMoney()
+  const { summary } = useFinancialSummary()
+  const { budgets } = useBudgetsContext()
+  const { goals } = useGoalsContext()
+  const { anomalies } = useInsightsContext()
   const [entries, setEntries] = useState<Entry[]>([])
-  const [yoyEntries, setYoyEntries] = useState<Entry[]>([])
   const [entriesLoading, setEntriesLoading] = useState(false)
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -107,35 +98,7 @@ export default function ReportsPage() {
     }
   }, [user, loading, debouncedDates])
 
-  // Load 2-year entries for YearOverYearChart once on mount (independent of filter)
-  /* useEffect(() => {
-    if (!loading && user) {
-      const now = new Date()
-      const twoYearStart = formatDateForInput(new Date(now.getFullYear() - 1, 0, 1))
-      const today = formatDateForInput(now)
-      const cacheKey = `${user.uid}:yoy:${today}`
-      const cached = getCached(yoyCache, cacheKey)
-      if (cached) { setYoyEntries(cached); return }
-
-      getUserEntriesByDateRange(user.uid, twoYearStart, today).then((firestoreEntries) => {
-        const converted = firestoreEntries.map((entry) => ({
-          id: entry.id,
-          description: entry.description,
-          amount: entry.amount,
-          category: entry.category,
-          date: entry.date instanceof Date
-            ? entry.date.toISOString()
-            : entry.date.toDate().toISOString(),
-          type: entry.type,
-          notes: entry.notes,
-        }))
-        setCached(yoyCache, cacheKey, converted)
-        setYoyEntries(converted)
-      })
-    }
-  }, [user, loading]) */
-
-  // Load cached AI digest
+  // Load cached AI digest for the current month (display only — never generates)
   useEffect(() => {
     if (!user) return
     const monthKey = new Date().toISOString().slice(0, 7)
@@ -149,61 +112,22 @@ export default function ReportsPage() {
   const generateDigest = async () => {
     if (!user || digestLoading) return
     if (!isPro) {
-      toast.error("Pro feature", { description: "AI Monthly Summary requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/?landing#pricing" } })
+      toast.error(t("proFeature"), {
+        description: t("proFeatureAiDesc"),
+        action: { label: t("upgrade"), onClick: () => (window.location.href = "/?landing#pricing") },
+      })
       return
     }
     setDigestLoading(true)
     try {
+      // Build the digest context from the server-maintained financial summary
+      // (full history) rather than the range-limited reports entries — otherwise
+      // a narrowed date range yields an empty 0/0 digest that gets cached. (RA-7)
+      const context = buildSpendingContext(summary, budgets, goals, anomalies)
+      if (!context) return
+
       const now = new Date()
       const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-      const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`
-
-      const filterByMonth = (key: string) =>
-        entries.filter((e) => e.date.slice(0, 7) === key)
-
-      const curEntries = filterByMonth(curMonth)
-      const prevEntries = filterByMonth(prevMonth)
-
-      const sumIncome = (arr: typeof entries) => arr.filter(e => e.type === "income").reduce((s, e) => s + e.amount, 0)
-      const sumExpenses = (arr: typeof entries) => arr.filter(e => e.type === "expense").reduce((s, e) => s + e.amount, 0)
-
-      const curInc = sumIncome(curEntries)
-      const curExp = sumExpenses(curEntries)
-      const prevInc = sumIncome(prevEntries)
-      const prevExp = sumExpenses(prevEntries)
-
-      const categoryTotals: Record<string, number> = {}
-      curEntries.filter(e => e.type === "expense").forEach(e => {
-        categoryTotals[e.category] = (categoryTotals[e.category] ?? 0) + e.amount
-      })
-      const topSpendingCategories = Object.entries(categoryTotals)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([name, amount]) => ({
-          name,
-          amount,
-          percentOfTotal: curExp > 0 ? Math.round((amount / curExp) * 100) : 0,
-        }))
-
-      const context: SpendingContext = {
-        month: curMonth,
-        currentMonth: {
-          totalIncome: curInc,
-          totalExpenses: curExp,
-          savingsRate: curInc > 0 ? `${Math.round(((curInc - curExp) / curInc) * 100)}%` : "0%",
-        },
-        previousMonth: {
-          totalIncome: prevInc,
-          totalExpenses: prevExp,
-          savingsRate: prevInc > 0 ? `${Math.round(((prevInc - prevExp) / prevInc) * 100)}%` : "0%",
-        },
-        topSpendingCategories,
-        budgetSummary: "No budget data available on reports page",
-        goalsSummary: "No goals data available on reports page",
-        unusualSpending: [],
-      }
-
       const token = await auth.currentUser?.getIdToken()
       const text = token ? await fetchAIDigest(context, token) : null
       if (text) {
@@ -217,10 +141,6 @@ export default function ReportsPage() {
 
   const loadEntries = async (start: string, end: string) => {
     if (!user) return
-    const cacheKey = `${user.uid}:${start}:${end}`
-    const cached = getCached(entryCache, cacheKey)
-    if (cached) { setEntries(cached); return }
-
     try {
       setEntriesLoading(true)
       const firestoreEntries = await getUserEntriesByDateRange(user.uid, start, end)
@@ -237,7 +157,6 @@ export default function ReportsPage() {
         notes: entry.notes,
       }))
 
-      setCached(entryCache, cacheKey, convertedEntries)
       setEntries(convertedEntries)
     } catch (error) {
       logger.error("Error loading report entries", error)
@@ -302,7 +221,10 @@ export default function ReportsPage() {
 
   const handleExportPDF = async () => {
     if (!isPro) {
-      toast.error("Pro feature", { description: "PDF export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/?landing#pricing" } })
+      toast.error(t("proFeature"), {
+        description: t("proFeaturePdfDesc"),
+        action: { label: t("upgrade"), onClick: () => (window.location.href = "/?landing#pricing") },
+      })
       return
     }
     try {
@@ -320,6 +242,8 @@ export default function ReportsPage() {
         reportType,
         userEmail: user?.email || undefined,
         currency: userCurrency,
+        convertFromBase: fromBase,
+        locale,
       })
     } catch (error) {
       logger.error("Error exporting PDF report", error)
@@ -329,7 +253,10 @@ export default function ReportsPage() {
 
   const handleExportCSV = () => {
     if (!isPro) {
-      toast.error("Pro feature", { description: "CSV export requires a Pro or Business subscription.", action: { label: "Upgrade", onClick: () => window.location.href = "/?landing#pricing" } })
+      toast.error(t("proFeature"), {
+        description: t("proFeatureCsvDesc"),
+        action: { label: t("upgrade"), onClick: () => (window.location.href = "/?landing#pricing") },
+      })
       return
     }
     try {
@@ -339,7 +266,11 @@ export default function ReportsPage() {
       }
 
       const filename = `fintrack-report-${startDate}-to-${endDate}.csv`
-      exportEntriesToCSV(entries, filename)
+      exportEntriesToCSV(entries, filename, {
+        convertFromBase: fromBase,
+        currency: userCurrency,
+        locale,
+      })
     } catch (error) {
       logger.error("Error exporting CSV report", error)
       toast.error(t("exportCSVFailed"))
@@ -490,7 +421,7 @@ export default function ReportsPage() {
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("savingsRate")}</p>
                   <p className="text-xl font-bold">
-                    {metrics.savingsRate.toFixed(1)}%
+                    {formatSavingsRate(metrics.income, metrics.expenses)}
                   </p>
                 </div>
               </div>
@@ -504,7 +435,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-purple-500" />
-                AI Monthly Summary — {new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}
+                {t("aiMonthlySummary")} — {new Date().toLocaleString(locale, { month: "long", year: "numeric" })}
               </CardTitle>
               {digestText && (
                 <Button
@@ -515,7 +446,7 @@ export default function ReportsPage() {
                   disabled={digestLoading}
                 >
                   <RefreshCw className={`h-3 w-3 mr-1 ${digestLoading ? "animate-spin" : ""}`} />
-                  Refresh
+                  {t("refresh")}
                 </Button>
               )}
             </div>
@@ -532,14 +463,14 @@ export default function ReportsPage() {
                 <p className="text-sm leading-relaxed">{digestText}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
-                  Generated by Gemini AI · Based on your transaction history
+                  {t("aiGeneratedBy")}
                 </p>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-start gap-3 text-sm text-muted-foreground py-1">
                   <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  <p>No AI summary for this month yet.</p>
+                  <p>{t("noAiSummary")}</p>
                 </div>
                 <Button
                   size="sm"
@@ -548,7 +479,7 @@ export default function ReportsPage() {
                   className="flex-shrink-0"
                 >
                   <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                  Generate
+                  {t("generate")}
                 </Button>
               </div>
             )}
@@ -557,18 +488,18 @@ export default function ReportsPage() {
 
         {/* 4. Spending Over Time */}
         <div className="mb-6">
-          <SpendingChart entries={entries} />
+          <SpendingChart entries={entries} startDate={startDate} endDate={endDate} />
         </div>
 
         {/* 5. Spending by Category */}
         <div className="mb-6">
-          <CategoryChart entries={entries} userCurrency={userCurrency} />
+          <CategoryChart entries={entries} />
         </div>
 
         {/* 6. Year-over-Year Comparison */}
-        {/* <div className="mb-2">
-          <YearOverYearChart entries={yoyEntries} userCurrency={userCurrency} />
-        </div> */}
+        <div className="mb-2">
+          <YearOverYearChart months={summary?.months} />
+        </div>
 
       </div>
     </div>

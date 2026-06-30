@@ -9,18 +9,11 @@
  */
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { Card, CardContent } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useInsightsContext } from "@/contexts/dashboard/InsightsContext"
 import { TrendingUp, Wallet, Target, Shield, Activity } from "lucide-react"
-
-const TIER_LABELS = {
-  critical: "Critical",
-  "needs-work": "Needs Work",
-  good: "Good",
-  excellent: "Excellent",
-  outstanding: "Outstanding",
-}
 
 const TIER_COLORS = {
   critical: { stroke: "#ef4444", text: "text-red-500", bg: "bg-red-50 dark:bg-red-950" },
@@ -30,12 +23,13 @@ const TIER_COLORS = {
   outstanding: { stroke: "#3b82f6", text: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-950" },
 }
 
-const BREAKDOWN_LABELS = [
-  { key: "savingsRate",        label: "Savings Rate",        max: 30, icon: TrendingUp, tip: "Save more than you spend. Aim for 20%+ of income." },
-  { key: "budgetAdherence",    label: "Budget Discipline",   max: 25, icon: Wallet,     tip: "Stay within your monthly budget limits." },
-  { key: "goalProgress",       label: "Goal Progress",       max: 20, icon: Target,     tip: "Add funds to your savings goals regularly." },
-  { key: "incomeStability",    label: "Income Stability",    max: 15, icon: Shield,     tip: "Consistent income each month boosts this score." },
-  { key: "spendingRegularity", label: "Spending Regularity", max: 10, icon: Activity,   tip: "Smooth, predictable spending patterns score higher." },
+// `key` indexes the score breakdown; `tKey` selects the i18n label/tip. (RA-6)
+const BREAKDOWN_META = [
+  { key: "savingsRate",        tKey: "savingsRate", max: 30, icon: TrendingUp },
+  { key: "budgetAdherence",    tKey: "budget",      max: 25, icon: Wallet },
+  { key: "goalProgress",       tKey: "goal",        max: 20, icon: Target },
+  { key: "incomeStability",    tKey: "income",      max: 15, icon: Shield },
+  { key: "spendingRegularity", tKey: "spending",    max: 10, icon: Activity },
 ] as const
 
 function getBarColor(pct: number) {
@@ -52,6 +46,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 export function HealthScoreCard() {
   const { healthScore } = useInsightsContext()
+  const t = useTranslations("insights")
   const [open, setOpen] = useState(false)
   const [displayScore, setDisplayScore] = useState(0)
   const [animatedOffset, setAnimatedOffset] = useState(CIRCUMFERENCE)
@@ -78,7 +73,7 @@ export function HealthScoreCard() {
       <Card className="drop-shadow-xl shadow-black/10 flex-1">
         <CardContent className="flex items-center justify-center h-full min-h-[140px]">
           <div className="text-center text-muted-foreground">
-            <div className="text-sm">Add transactions to see your Financial Health Score</div>
+            <div className="text-sm">{t("addTransactionsHealth")}</div>
           </div>
         </CardContent>
       </Card>
@@ -89,8 +84,8 @@ export function HealthScoreCard() {
   const colors = TIER_COLORS[tier]
 
   // Weakest metric for focus tip
-  const weakest = [...BREAKDOWN_LABELS]
-    .map(({ key, label, max }) => ({ label, pct: (breakdown[key] / max) * 100 }))
+  const weakest = [...BREAKDOWN_META]
+    .map(({ key, tKey, max }) => ({ label: t(`healthBreakdown.${tKey}.label`), pct: (breakdown[key] / max) * 100 }))
     .sort((a, b) => a.pct - b.pct)[0]
 
   return (
@@ -101,7 +96,7 @@ export function HealthScoreCard() {
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === "Enter" && setOpen(true)}
-          aria-label="Financial Health Score — click for breakdown"
+          aria-label={t("healthAriaLabel")}
         >
           <CardContent className="flex items-center gap-4 py-4 px-5">
             {/* Score Ring with glow */}
@@ -154,14 +149,14 @@ export function HealthScoreCard() {
             {/* Labels + mini bars */}
             <div className="flex flex-col gap-1 min-w-0">
               <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                Financial Health
+                {t("financialHealth")}
               </div>
               <div className={`text-xl font-bold ${colors.text}`}>
-                {TIER_LABELS[tier]}
+                {t(`tiers.${tier}`)}
               </div>
               {/* Mini color-coded bar preview */}
               <div className="flex gap-1 mt-1.5">
-                {BREAKDOWN_LABELS.map(({ key, max }) => {
+                {BREAKDOWN_META.map(({ key, max }) => {
                   const pct = (breakdown[key] / max) * 100
                   return (
                     <div
@@ -173,7 +168,7 @@ export function HealthScoreCard() {
                 })}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Tap for breakdown
+                {t("tapForBreakdown")}
               </div>
             </div>
           </CardContent>
@@ -183,14 +178,14 @@ export function HealthScoreCard() {
       <PopoverContent className="w-72" align="start">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-semibold text-sm">Score Breakdown</h4>
+            <h4 className="font-semibold text-sm">{t("scoreBreakdown")}</h4>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
               {score}/100
             </span>
           </div>
 
           <div className="space-y-3">
-            {BREAKDOWN_LABELS.map(({ key, label, max, icon: Icon, tip }) => {
+            {BREAKDOWN_META.map(({ key, tKey, max, icon: Icon }) => {
               const val = breakdown[key]
               const pct = Math.round((val / max) * 100)
               const barColor = getBarColor(pct)
@@ -199,7 +194,7 @@ export function HealthScoreCard() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       <Icon className="h-3 w-3" />
-                      {label}
+                      {t(`healthBreakdown.${tKey}.label`)}
                     </span>
                     <span className="font-semibold tabular-nums">{val}/{max}</span>
                   </div>
@@ -209,7 +204,7 @@ export function HealthScoreCard() {
                       style={{ width: `${pct}%`, backgroundColor: barColor }}
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground/70 leading-tight">{tip}</p>
+                  <p className="text-[10px] text-muted-foreground/70 leading-tight">{t(`healthBreakdown.${tKey}.tip`)}</p>
                 </div>
               )
             })}
@@ -218,8 +213,8 @@ export function HealthScoreCard() {
           {weakest.pct < 80 && (
             <div className="pt-2 border-t">
               <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Focus area: </span>
-                {weakest.label} — improving this will boost your score the most.
+                <span className="font-medium text-foreground">{t("focusArea")}: </span>
+                {weakest.label} — {t("focusAreaHint")}
               </p>
             </div>
           )}

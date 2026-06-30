@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -21,7 +22,6 @@ interface Entry {
 
 interface CategoryChartProps {
   entries: Entry[]
-  userCurrency?: string
 }
 
 const categoryColors: Record<string, string> = {
@@ -45,38 +45,27 @@ const chartConfig = {
   },
 } satisfies Record<string, { label: string }>
 
-export function CategoryChart({ entries, userCurrency }: CategoryChartProps) {
+export function CategoryChart({ entries }: CategoryChartProps) {
+  const t = useTranslations("reports")
   const { format } = useMoney()
-  // Calculate spending by category for current month
+
+  // Spending by category across the SELECTED range (entries are already filtered
+  // to it by the page). Previously this re-filtered to the current calendar
+  // month, so any non-current range rendered empty. (RA-3)
   const categoryData = useMemo(() => {
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-
-    // Filter expenses from current month
-    const currentMonthExpenses = entries.filter((entry) => {
-      if (entry.type !== "expense") return false
-      const entryDate = new Date(entry.date)
-      return entryDate.getMonth() === currentMonth && entryDate.getFullYear() === currentYear
-    })
-
-    // Group by category
     const categoryMap = new Map<string, number>()
-    currentMonthExpenses.forEach((entry) => {
-      const current = categoryMap.get(entry.category) || 0
-      categoryMap.set(entry.category, current + entry.amount)
-    })
+    for (const entry of entries) {
+      if (entry.type !== "expense") continue
+      categoryMap.set(entry.category, (categoryMap.get(entry.category) ?? 0) + entry.amount)
+    }
 
-    // Convert to array and sort by amount
-    const data = Array.from(categoryMap.entries())
+    return Array.from(categoryMap.entries())
       .map(([name, value]) => ({
         name,
         value,
         color: categoryColors[name] || categoryColors["Other"],
       }))
       .sort((a, b) => b.value - a.value)
-
-    return data
   }, [entries])
 
   const total = categoryData.reduce((sum, item) => sum + item.value, 0)
@@ -85,14 +74,14 @@ export function CategoryChart({ entries, userCurrency }: CategoryChartProps) {
     <Card className="drop-shadow-xl shadow-black/10 w-full overflow-hidden">
       <CardHeader>
         <CardTitle className="text-xl font-bold text-foreground">
-          Spending by Category
+          {t("categoryBreakdown")}
         </CardTitle>
-        <CardDescription>Breakdown of your expenses this month</CardDescription>
+        <CardDescription>{t("categoryBreakdownDesc")}</CardDescription>
       </CardHeader>
       <CardContent>
         {categoryData.length === 0 ? (
           <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-            No expense data for this month
+            {t("noExpenseData")}
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -149,4 +138,3 @@ export function CategoryChart({ entries, userCurrency }: CategoryChartProps) {
     </Card>
   )
 }
-

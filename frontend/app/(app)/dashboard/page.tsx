@@ -345,7 +345,6 @@ function DashboardInnerContent() {
                                 incomeChange={incomeChange}
                                 spendingChange={expensesChange}
                                 cashFlowChange={balanceChange}
-                                userCurrency={userCurrency}
                             />
                         )}
                     </SectionErrorBoundary>

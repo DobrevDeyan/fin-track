@@ -41,7 +41,6 @@ interface Props {
   children: ReactNode
   householdId: string | null | undefined
   userId: string | undefined
-  userCurrency: string
   displayName?: string
 }
 
@@ -53,24 +52,24 @@ export function HouseholdGoalsProvider({ children, householdId, userId, displayN
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<HouseholdGoal | null>(null)
   const hasLoadedRef = useRef(false)
-  // Pending optimistic deletes keyed by goalId — cancel on Undo, flush on unmount.
+  // Pending optimistic deletes keyed by goalId — cancelled on Undo.
   const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  // Tracks whether the provider is still mounted so timers that fire after
+  // unmount (H7-7) still COMMIT the delete but skip any state updates.
+  const mountedRef = useRef(true)
 
   useEffect(() => {
     hasLoadedRef.current = false
     setGoals([])
   }, [householdId])
 
-  // On unmount, fire any still-pending deletes immediately without touching state.
+  // H7-7: don't flush pending deletes on unmount — that committed a delete the
+  // instant the user left Family view, silently cutting the 5s undo window short.
+  // Instead let each timer run to completion (the global toast keeps Undo live
+  // across navigation); we only guard against state updates after unmount.
   useEffect(() => {
-    const pending = pendingDeletesRef.current
-    return () => {
-      pending.forEach((timer, goalId) => {
-        clearTimeout(timer)
-        deleteHouseholdGoal(goalId).catch((err) => logger.error("Error flushing household goal delete", err))
-      })
-      pending.clear()
-    }
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
   }, [])
 
   const loadGoals = useCallback(async () => {
@@ -84,7 +83,9 @@ export function HouseholdGoalsProvider({ children, householdId, userId, displayN
     } catch (error) {
       logger.error("Error loading household goals", error)
       setGoals([])
-      setError("Failed to load shared goals")
+      // H7-8: surface the real cause (permission-denied, missing index, …) rather
+      // than masking every failure behind a generic message.
+      setError(error instanceof Error ? error.message : "Failed to load shared goals")
     } finally {
       setLoading(false)
     }
@@ -156,6 +157,7 @@ export function HouseholdGoalsProvider({ children, householdId, userId, displayN
         try {
           await deleteHouseholdGoal(goalId)
         } catch {
+          if (!mountedRef.current) return
           await loadGoals()
           toast.error("Failed to delete shared goal")
         }
@@ -194,8 +196,10 @@ export function HouseholdGoalsProvider({ children, householdId, userId, displayN
           category: "Goal Contribution",
           date: new Date().toISOString(),
         })
-        // Update goal total + contribution record (all EUR base)
-        await addFundsToHouseholdGoal(goalId, goal.currentAmount, baseAmount, {
+        // Update goal total + contribution record (all EUR base). currentAmount
+        // is incremented atomically server-side (H7-13), so we don't pass a
+        // client-read base value that a concurrent contribution could clobber.
+        await addFundsToHouseholdGoal(goalId, baseAmount, {
           uid: userId,
           displayName: displayName || "Member",
           amount: baseAmount,

@@ -45,6 +45,9 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
   const hasLoadedRef = useRef(false)
   const pendingDeletesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  // Tracks mount state so a delete timer that fires after unmount (H7-7) still
+  // COMMITS the delete but skips state updates.
+  const mountedRef = useRef(true)
 
   // Reset when household changes so new household data loads fresh
   useEffect(() => {
@@ -52,17 +55,13 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
     setBudgets([])
   }, [householdId])
 
-  // On unmount, fire any still-pending deletes immediately (honors intent)
-  // without touching React state afterwards.
+  // H7-7: don't flush pending deletes on unmount (that cut the 5s undo window
+  // short the moment the user left Family view). Let each timer run to
+  // completion — the global toast keeps Undo live across navigation — and only
+  // guard against post-unmount state updates.
   useEffect(() => {
-    const pending = pendingDeletesRef.current
-    return () => {
-      pending.forEach((timer, budgetId) => {
-        clearTimeout(timer)
-        deleteHouseholdBudget(budgetId).catch((err) => logger.error("Error flushing shared budget delete", err))
-      })
-      pending.clear()
-    }
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
   }, [])
 
   const loadBudgets = useCallback(async () => {
@@ -88,7 +87,8 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
     } catch (err) {
       logger.error("Error loading household budgets", err)
       setBudgets([])
-      setError("load_failed")
+      // H7-8: surface the real cause instead of a generic "load_failed" sentinel.
+      setError(err instanceof Error ? err.message : "load_failed")
     } finally {
       setLoading(false)
     }
@@ -153,6 +153,7 @@ export function HouseholdBudgetsProvider({ children, householdId }: Props) {
         try {
           await deleteHouseholdBudget(budgetId)
         } catch {
+          if (!mountedRef.current) return
           await loadBudgets()
           toast.error("Failed to delete shared budget")
         }

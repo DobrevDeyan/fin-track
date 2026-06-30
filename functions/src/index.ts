@@ -1021,6 +1021,13 @@ interface HouseholdDocument {
  * the householdId pointer on their user doc if it is missing.
  * Returns { householdId, name } or { householdId: null }.
  */
+/**
+ * Maximum members per household. Enforced at invite-accept time so the merged
+ * getHouseholdEntries query (which chunks member UIDs in groups of 10 and caps
+ * each chunk independently) never silently truncates a member's entries.
+ */
+const MAX_HOUSEHOLD_MEMBERS = 10;
+
 export const getMyHousehold = onCall(
   { region: "europe-west4" },
   async (request) => {
@@ -1054,9 +1061,20 @@ export const getMyHousehold = onCall(
     };
     if (existingId) {
       const hSnap = await db.collection("households").doc(existingId).get();
-      if (hSnap.exists) {
+      // H7-4: only trust the user-doc pointer if the caller is STILL a member.
+      // A stale pointer (e.g. after a future remove-member, or a partial-failure)
+      // must not hand an ex-member the full roster — fall through to a fresh search
+      // and clear the dangling pointer.
+      const stillMember = hSnap.exists
+        && (((hSnap.data()?.memberUids as string[] | undefined)?.includes(userId))
+          ?? (hSnap.data()?.members as HouseholdMember[] | undefined)?.some((m) => m.uid === userId)
+          ?? false);
+      if (stillMember) {
         return buildPayload(hSnap);
       }
+      await db.collection("users").doc(userId).update({
+        householdId: admin.firestore.FieldValue.delete(),
+      });
     }
 
     // Not on user doc — search by ownerUid
@@ -1163,16 +1181,31 @@ export const sendHouseholdInvite = onCall(
       throw new HttpsError("invalid-argument", "householdId and invitedEmail are required");
     }
 
+    // H7-6: reject malformed emails up front so we don't mint an invite that can
+    // never be accepted (and burn a rate-limit slot doing it).
+    const normalizedEmail = invitedEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      throw new HttpsError("invalid-argument", "Please enter a valid email address");
+    }
+
     const householdRef = db.collection("households").doc(householdId);
     const householdSnap = await householdRef.get();
     if (!householdSnap.exists) throw new HttpsError("not-found", "Household not found");
 
     const household = householdSnap.data() as HouseholdDocument;
-    const isMember = household.members.some((m) => m.uid === userId);
-    if (!isMember) throw new HttpsError("permission-denied", "You are not a member of this household");
+    // H7-5: only the household owner can invite new members.
+    if (household.ownerUid !== userId) {
+      throw new HttpsError("permission-denied", "Only the household owner can invite members");
+    }
+
+    // H7-2: don't invite past the member cap (pending invites aren't reserved,
+    // so this is a best-effort guard; the hard cap is enforced on accept).
+    if (household.members.length >= MAX_HOUSEHOLD_MEMBERS) {
+      throw new HttpsError("failed-precondition", `This household is full (maximum ${MAX_HOUSEHOLD_MEMBERS} members)`);
+    }
 
     // Check invitee isn't already a member
-    const alreadyMember = household.members.some((m) => m.email === invitedEmail.toLowerCase());
+    const alreadyMember = household.members.some((m) => m.email === normalizedEmail);
     if (alreadyMember) throw new HttpsError("already-exists", "That person is already in this household");
 
     const userSnap = await db.collection("users").doc(userId).get();
@@ -1182,7 +1215,7 @@ export const sendHouseholdInvite = onCall(
     const staleSnap = await db
       .collection("householdInvites")
       .where("householdId", "==", householdId)
-      .where("invitedEmail", "==", invitedEmail.toLowerCase())
+      .where("invitedEmail", "==", normalizedEmail)
       .where("status", "==", "pending")
       .get();
 
@@ -1197,7 +1230,7 @@ export const sendHouseholdInvite = onCall(
     batch.set(inviteRef, {
       householdId,
       householdName: household.name,
-      invitedEmail: invitedEmail.toLowerCase(),
+      invitedEmail: normalizedEmail,
       invitedBy: userId,
       inviterName,
       token,
@@ -1252,64 +1285,85 @@ export const acceptHouseholdInvite = onCall(
     const inviteDoc = inviteSnap.docs[0];
     const invite = inviteDoc.data();
 
-    // Validate expiry
+    // Validate expiry (committed outside the transaction so the "expired" mark
+    // sticks even though we then abort by throwing).
     if (invite.expiresAt.toDate() < new Date()) {
       await inviteDoc.ref.update({ status: "expired" });
       throw new HttpsError("deadline-exceeded", "This invite link has expired");
     }
 
-    // Validate the caller's email matches the invite
+    // Validate the caller's email matches the invite. The machine-readable
+    // `reason`/`invitedEmail` in `details` lets the client render a translated
+    // message instead of string-matching this English text (review H7-3).
     if (callerEmail.toLowerCase() !== invite.invitedEmail) {
       throw new HttpsError(
         "permission-denied",
-        `This invite was sent to ${invite.invitedEmail}. Please log in with that email address.`
+        `This invite was sent to ${invite.invitedEmail}. Please log in with that email address.`,
+        { reason: "wrong_email", invitedEmail: invite.invitedEmail }
       );
     }
 
+    // H7-14: do the find-validate-add atomically so two concurrent accepts of
+    // the same invite can't both append a member (arrayUnion wouldn't dedup the
+    // member objects — their joinedAt timestamps differ) or exceed the cap.
     const householdRef = db.collection("households").doc(invite.householdId);
-    const householdSnap = await householdRef.get();
-    if (!householdSnap.exists) {
-      throw new HttpsError("not-found", "Household no longer exists");
-    }
+    const userRef = db.collection("users").doc(userId);
 
-    const household = householdSnap.data() as HouseholdDocument;
-    const alreadyMember = household.members.some((m) => m.uid === userId);
-    if (alreadyMember) {
-      await inviteDoc.ref.update({ status: "accepted" });
-      return { householdId: invite.householdId, householdName: invite.householdName };
-    }
+    await db.runTransaction(async (tx) => {
+      const freshInvite = await tx.get(inviteDoc.ref);
+      // Single-use: if a racing accept already consumed it, bail out.
+      if (!freshInvite.exists || freshInvite.data()?.status !== "pending") {
+        throw new HttpsError("not-found", "Invite not found or already used");
+      }
 
-    const userSnap = await db.collection("users").doc(userId).get();
-    const userData = userSnap.data();
+      const householdSnap = await tx.get(householdRef);
+      if (!householdSnap.exists) {
+        throw new HttpsError("not-found", "Household no longer exists");
+      }
+      const household = householdSnap.data() as HouseholdDocument;
 
-    // H2: single-household guard — users can only belong to one household at a time
-    if (userData?.householdId && userData.householdId !== invite.householdId) {
-      throw new HttpsError(
-        "failed-precondition",
-        "You are already a member of another household. Leave it before accepting this invite."
-      );
-    }
+      if (household.members.some((m) => m.uid === userId)) {
+        tx.update(inviteDoc.ref, { status: "accepted" });
+        return;
+      }
 
-    const displayName = userData?.displayName || userData?.username || callerEmail;
+      // H7-2: enforce the member cap before adding.
+      if (household.members.length >= MAX_HOUSEHOLD_MEMBERS) {
+        throw new HttpsError(
+          "failed-precondition",
+          `This household is full (maximum ${MAX_HOUSEHOLD_MEMBERS} members).`
+        );
+      }
 
-    const newMember: HouseholdMember = {
-      uid: userId,
-      displayName,
-      email: callerEmail.toLowerCase(),
-      joinedAt: admin.firestore.Timestamp.now(),
-    };
+      const userSnap = await tx.get(userRef);
+      const userData = userSnap.data();
 
-    const batch = db.batch();
-    batch.update(householdRef, {
-      members: admin.firestore.FieldValue.arrayUnion(newMember),
-      memberUids: admin.firestore.FieldValue.arrayUnion(userId),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      // H2: single-household guard — users can only belong to one household.
+      if (userData?.householdId && userData.householdId !== invite.householdId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "You are already a member of another household. Leave it before accepting this invite."
+        );
+      }
+
+      const displayName = userData?.displayName || userData?.username || callerEmail;
+      const newMember: HouseholdMember = {
+        uid: userId,
+        displayName,
+        email: callerEmail.toLowerCase(),
+        joinedAt: admin.firestore.Timestamp.now(),
+      };
+      const existingUids = (household.memberUids as string[] | undefined)
+        ?? household.members.map((m) => m.uid);
+
+      tx.update(householdRef, {
+        members: [...household.members, newMember],
+        memberUids: existingUids.includes(userId) ? existingUids : [...existingUids, userId],
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      tx.update(inviteDoc.ref, { status: "accepted" });
+      tx.update(userRef, { householdId: invite.householdId });
     });
-    batch.update(inviteDoc.ref, { status: "accepted" });
-    // Store householdId on the user for quick lookup
-    batch.update(db.collection("users").doc(userId), { householdId: invite.householdId });
-
-    await batch.commit();
 
     await logAuditEvent(userId, "household.invite_accepted", {
       householdId: invite.householdId,
@@ -1504,6 +1558,60 @@ export const updateHouseholdMemberName = onCall(
       members: updatedMembers,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+
+    return { ok: true };
+  }
+);
+
+/**
+ * Remove another member from the household. Owner-only (H7-5).
+ * Atomically updates members/memberUids and clears the removed user's
+ * householdId pointer. The owner cannot remove themselves here — they use
+ * leaveHousehold (which handles ownership transfer / dissolution).
+ */
+export const removeHouseholdMember = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    await checkRateLimit(userId, "removeHouseholdMember");
+
+    const { householdId, memberUid } = request.data as { householdId: string; memberUid: string };
+    if (!householdId || !memberUid) {
+      throw new HttpsError("invalid-argument", "householdId and memberUid are required");
+    }
+    if (memberUid === userId) {
+      throw new HttpsError("failed-precondition", "Use leave household to remove yourself");
+    }
+
+    const householdRef = db.collection("households").doc(householdId);
+
+    await db.runTransaction(async (tx) => {
+      const householdSnap = await tx.get(householdRef);
+      if (!householdSnap.exists) throw new HttpsError("not-found", "Household not found");
+
+      const household = householdSnap.data() as HouseholdDocument;
+      if (household.ownerUid !== userId) {
+        throw new HttpsError("permission-denied", "Only the household owner can remove members");
+      }
+      if (!household.members.some((m) => m.uid === memberUid)) {
+        throw new HttpsError("not-found", "That member is not in this household");
+      }
+
+      const remainingMembers = household.members.filter((m) => m.uid !== memberUid);
+      tx.update(householdRef, {
+        members: remainingMembers,
+        memberUids: remainingMembers.map((m) => m.uid),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      // Clear the removed member's pointer so getMyHousehold stops returning this household.
+      tx.update(db.collection("users").doc(memberUid), {
+        householdId: admin.firestore.FieldValue.delete(),
+      });
+    });
+
+    await logAuditEvent(userId, "household.member_removed", { householdId, memberUid });
 
     return { ok: true };
   }

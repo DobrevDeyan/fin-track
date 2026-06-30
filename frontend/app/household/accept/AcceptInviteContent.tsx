@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { callAcceptHouseholdInvite } from "@/lib/firestore-household"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,7 @@ export function AcceptInviteContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const t = useTranslations("household.accept")
 
   const token = searchParams.get("token")
 
@@ -31,49 +33,43 @@ export function AcceptInviteContent() {
         setHouseholdName(result.data.householdName)
         setStatus("success")
       })
-      .catch((err: any) => {
-        const msg: string = err?.message ?? "Something went wrong."
-        if (msg.includes("log in with that email")) {
+      .catch((err: unknown) => {
+        // Prefer the machine-readable reason from the Cloud Function (H7-3) over
+        // string-matching the English message.
+        const details = (err as { details?: { reason?: string; invitedEmail?: string } })?.details
+        if (details?.reason === "wrong_email") {
           setStatus("wrong-email")
-          setErrorMessage(msg)
+          setErrorMessage(t("wrongEmail", { email: details.invitedEmail ?? "" }))
         } else {
           setStatus("error")
-          setErrorMessage(msg)
+          const msg = (err as { message?: string })?.message
+          setErrorMessage(msg || t("genericError"))
         }
       })
-  }, [authLoading, user, token, status])
+  }, [authLoading, user, token, status, t])
 
   if (!authLoading && !user) {
+    const returnUrl = encodeURIComponent(`/household/accept?token=${token ?? ""}`)
     return (
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-          <CardTitle>Family invite</CardTitle>
-          <CardDescription>
-            Sign in to accept this household invite. The invite will be applied automatically after you log in.
-          </CardDescription>
+          <CardTitle>{t("familyInvite")}</CardTitle>
+          <CardDescription>{t("signInPrompt")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <Button
             className="w-full"
-            onClick={() =>
-              router.push(
-                `/auth/login?returnUrl=${encodeURIComponent(`/household/accept?token=${token}`)}`
-              )
-            }
+            onClick={() => router.push(`/auth/login?returnUrl=${returnUrl}`)}
           >
-            Sign in
+            {t("signIn")}
           </Button>
           <Button
             variant="outline"
             className="w-full"
-            onClick={() =>
-              router.push(
-                `/auth/register?returnUrl=${encodeURIComponent(`/household/accept?token=${token}`)}`
-              )
-            }
+            onClick={() => router.push(`/auth/register?returnUrl=${returnUrl}`)}
           >
-            Create an account
+            {t("createAccount")}
           </Button>
         </CardContent>
       </Card>
@@ -93,16 +89,16 @@ export function AcceptInviteContent() {
 
         <CardTitle>
           {status === "success"
-            ? `Joined ${householdName}`
+            ? t("joinedTitle", { name: householdName })
             : status === "error" || status === "wrong-email"
-            ? "Could not accept invite"
-            : "Joining household…"}
+            ? t("couldNotAccept")
+            : t("joiningTitle")}
         </CardTitle>
 
         <CardDescription>
-          {status === "success" && "You now have access to the Family view. Switch to it from the dashboard."}
+          {status === "success" && t("successDescription")}
           {(status === "error" || status === "wrong-email") && errorMessage}
-          {(status === "loading" || status === "idle") && "Please wait while we verify your invite."}
+          {(status === "loading" || status === "idle") && t("verifying")}
         </CardDescription>
       </CardHeader>
 
@@ -111,11 +107,11 @@ export function AcceptInviteContent() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         ) : status === "success" ? (
           <Button onClick={() => { window.location.href = "/dashboard" }}>
-            Go to dashboard
+            {t("goToDashboard")}
           </Button>
         ) : (
           <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Back to dashboard
+            {t("backToDashboard")}
           </Button>
         )}
       </CardContent>
