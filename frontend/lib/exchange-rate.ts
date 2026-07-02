@@ -59,7 +59,11 @@ export async function fetchExchangeRates(): Promise<ExchangeRates> {
   const usdToEur = 1 / eurToUsd
   const rates: ExchangeRates = { eurToUsd, usdToEur }
 
-  setCachedRates(data.date, rates)
+  // Cache under TODAY's date, not the API's fixing date — on weekends/holidays
+  // (and before the ECB's ~16:00 CET publish) the fixing date is in the past,
+  // which made getCachedRates() miss every time and refetch on every call.
+  const today = new Date().toISOString().split("T")[0]
+  setCachedRates(today, rates)
   return rates
 }
 

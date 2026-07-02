@@ -22,7 +22,6 @@ const CashFlowForecast = dynamic(
 )
 import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
 import { PullToRefresh } from "@/components/PullToRefresh";
-import { QuickExpenseSheet } from "@/components/dashboard/QuickExpenseSheet"
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
 import { TransactionFilters, type TransactionFilterCriteria } from "@/components/dashboard/TransactionFilters";
 import { filterAndSortTransactions } from "@/lib/transaction-filters";
@@ -120,14 +119,6 @@ function DashboardInnerContent() {
     const { budgets, loadBudgets, ensureBudgetsLoaded } = useBudgetsContext();
     const { recurringTransactions, loadRecurringTransactions, ensureRecurringLoaded } = useRecurringContext();
 
-    // Quick add sheet state (opened from BottomNav + button)
-    const [quickAddOpen, setQuickAddOpen] = useState(false);
-
-    useEffect(() => {
-      const handler = () => setQuickAddOpen(true)
-      window.addEventListener("pocket:openQuickAdd", handler)
-      return () => window.removeEventListener("pocket:openQuickAdd", handler)
-    }, [])
 
 
     // Receipt scanner state
@@ -208,6 +199,14 @@ function DashboardInnerContent() {
             refreshSummary();
         }
     }, [user, entriesHook.loadEntries, ensureBudgetsLoaded, ensureRecurringLoaded, ensureSavingsLoaded, refreshSummary]);
+
+    // Refresh the transactions list when the global quick-add sheet (mounted in
+    // the app layout) records a new entry while this page is open
+    useEffect(() => {
+        const handler = () => { entriesHook.loadEntries() }
+        window.addEventListener("pocket:entriesChanged", handler)
+        return () => window.removeEventListener("pocket:entriesChanged", handler)
+    }, [entriesHook.loadEntries])
 
     // Handle checkout success redirect from Stripe
     useEffect(() => {
@@ -308,7 +307,7 @@ function DashboardInnerContent() {
                                     }`}
                                 >
                                     <User className="h-3.5 w-3.5" />
-                                    Personal
+                                    {tHousehold("personal")}
                                 </button>
                                 <button
                                     onClick={() => setIsHouseholdMode(true)}
@@ -319,7 +318,7 @@ function DashboardInnerContent() {
                                     }`}
                                 >
                                     <Users className="h-3.5 w-3.5" />
-                                    Family
+                                    {tHousehold("family")}
                                 </button>
                             </div>
                         )}
@@ -359,7 +358,7 @@ function DashboardInnerContent() {
                             <button
                                 onClick={() => setShareCardOpen(true)}
                                 className="absolute top-2 right-2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                                title="Share your stats"
+                                title={t("shareStats")}
                             >
                                 <Share2 className="h-3.5 w-3.5" />
                             </button>
@@ -595,14 +594,6 @@ function DashboardInnerContent() {
                         entriesHook.loadEntries();
                         refreshSummary();
                     }}
-                />
-
-                {/* Quick Add Sheet — triggered by BottomNav + button */}
-                <QuickExpenseSheet
-                  open={quickAddOpen}
-                  onOpenChange={setQuickAddOpen}
-                  onSubmit={entriesHook.handleAdd}
-                  savingsAccounts={activeSavingsAccounts}
                 />
 
                 {/* AI Budget Coach Chat — full mode only */}

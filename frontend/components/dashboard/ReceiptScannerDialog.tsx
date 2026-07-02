@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { TRANSACTION_CATEGORIES } from "@/lib/categories"
+import { EXPENSE_CATEGORIES } from "@/lib/categories"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import {
   SUPPORTED_CURRENCIES,
@@ -719,7 +719,7 @@ export function ReceiptScannerDialog({
                       <SelectValue placeholder={t("scanner.categoryPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {TRANSACTION_CATEGORIES.map((cat) => (
+                      {EXPENSE_CATEGORIES.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>

@@ -14,8 +14,26 @@ import { checkSubscriptionTier, checkAndIncrementInsightsQuota } from "./firesto
 
 const router = Router();
 
+// A client can't be trusted to bound the history it sends; without a cap a
+// single request could stuff hundreds of messages into the Gemini prompt and
+// burn through the daily token quota.
+const MAX_HISTORY_MESSAGES = 10;
+
 function isConfigured(): boolean {
   return !!process.env.GEMINI_API_KEY;
+}
+
+// Minimal shape check so malformed payloads get a 400 instead of a 500 from a
+// TypeError deep inside the prompt builder.
+function isValidContext(context: unknown): boolean {
+  if (!context || typeof context !== "object") return false;
+  const c = context as Record<string, unknown>;
+  return (
+    Array.isArray(c.topSpendingCategories) &&
+    typeof c.currentMonth === "object" && c.currentMonth !== null &&
+    typeof c.previousMonth === "object" && c.previousMonth !== null &&
+    (c.unusualSpending === undefined || Array.isArray(c.unusualSpending))
+  );
 }
 
 // ── POST /api/insights/digest ──────────────────────────────────────────────
@@ -41,8 +59,8 @@ router.post("/digest", async (req: Request, res: Response) => {
   }
 
   const { context } = req.body;
-  if (!context) {
-    res.status(400).json({ success: false, error: "Missing context" });
+  if (!isValidContext(context)) {
+    res.status(400).json({ success: false, error: "Missing or invalid context" });
     return;
   }
 
@@ -93,10 +111,18 @@ router.post("/chat", async (req: Request, res: Response) => {
   }
 
   const { message, context, history } = req.body;
-  if (!message || !context) {
+  if (!message || typeof message !== "string" || !isValidContext(context)) {
     res.status(400).json({ success: false, error: "Missing message or context" });
     return;
   }
+
+  const boundedHistory = (Array.isArray(history) ? history : [])
+    .filter((m): m is ChatMessage =>
+      !!m && typeof m === "object" &&
+      (m.role === "user" || m.role === "assistant") &&
+      typeof m.content === "string"
+    )
+    .slice(-MAX_HISTORY_MESSAGES);
 
   // Per-user daily cap (I9-5) — after body validation so a 400 doesn't burn a slot.
   const quota = await checkAndIncrementInsightsQuota(req.uid!, tier);
@@ -113,7 +139,7 @@ router.post("/chat", async (req: Request, res: Response) => {
     const response = await generateChatResponse(
       message,
       context,
-      (history ?? []) as ChatMessage[]
+      boundedHistory
     );
     res.json({ success: true, response });
   } catch (err: any) {

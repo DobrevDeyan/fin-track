@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label"
 import { RecurringEntryDocument } from "@/lib/firestore-types"
 import { AMOUNT_RULES } from "@/lib/constants/validation.constants"
 import { logger } from "@/lib/utils/logger"
+import { INCOME_CATEGORIES } from "@/lib/categories"
 import { useTranslations } from "next-intl"
 import { useMoney } from "@/contexts/CurrencyContext"
 
@@ -144,12 +145,10 @@ export function RecurringTransactionDialog({
     }
   }
 
-  // Filter categories based on type
-  const filteredCategories = categories.filter((cat) => {
-    // This is a simple filter - you might want to enhance this
-    // For now, we'll show all categories
-    return true
-  })
+  // Income and expense have different category lists — a recurring income
+  // (e.g. Salary) must offer income categories, not the expense set.
+  const filteredCategories =
+    type === "income" ? INCOME_CATEGORIES : categories
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -178,7 +177,14 @@ export function RecurringTransactionDialog({
 
             <div className="grid gap-2">
               <Label htmlFor="type">{tCommon("type")}</Label>
-              <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
+              <Select
+                value={type}
+                onValueChange={(value: "income" | "expense") => {
+                  setType(value)
+                  // Different category list per type — clear a stale selection
+                  setCategory("")
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

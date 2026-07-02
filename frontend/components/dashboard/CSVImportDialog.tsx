@@ -17,7 +17,7 @@ import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { createEntry } from "@/lib/firestore-entries"
-import { TRANSACTION_CATEGORIES } from "@/lib/categories"
+import { getCategoriesForType } from "@/lib/categories"
 import { logger } from "@/lib/utils/logger"
 
 import { Button } from "@/components/ui/button"
@@ -313,9 +313,10 @@ export function CSVImportDialog({ open, onOpenChange, onImportComplete }: CSVImp
         description: description || null,
         amount,
         type,
-        category: TRANSACTION_CATEGORIES.includes(category as typeof TRANSACTION_CATEGORIES[number])
-          ? category
-          : null,
+        // Validate against the list for THIS row's type — income categories
+        // like "Freelance" were previously coerced to "Other" because the
+        // check only knew expense names.
+        category: getCategoriesForType(type).includes(category) ? category : null,
         notes: notes || null,
         valid,
       }

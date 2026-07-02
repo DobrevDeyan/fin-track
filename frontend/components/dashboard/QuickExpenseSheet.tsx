@@ -493,7 +493,7 @@ export function QuickExpenseSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="!h-[95dvh] max-h-[95dvh] rounded-t-3xl flex flex-col p-0 overflow-hidden"
+        className="!h-[95dvh] max-h-[95dvh] rounded-t-3xl flex flex-col p-0 overflow-hidden md:max-w-lg md:mx-auto md:!h-[min(44rem,90dvh)] md:!max-h-[min(44rem,90dvh)]"
         style={{ height: '95dvh', maxHeight: '95dvh' }}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >

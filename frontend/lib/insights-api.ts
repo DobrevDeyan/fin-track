@@ -37,7 +37,7 @@ export interface ChatMessage {
  */
 export type AIResult<T> =
   | { ok: true; data: T }
-  | { ok: false; reason: "not_configured" | "error" }
+  | { ok: false; reason: "not_configured" | "subscription_required" | "error" }
 
 interface DigestResponse {
   success: boolean
@@ -65,6 +65,7 @@ export async function fetchAIDigest(
     })
 
     if (res.status === 503) return { ok: false, reason: "not_configured" }
+    if (res.status === 403) return { ok: false, reason: "subscription_required" }
     if (!res.ok) return { ok: false, reason: "error" }
 
     const data = await res.json() as DigestResponse
@@ -96,6 +97,7 @@ export async function fetchAIChatResponse(
     })
 
     if (res.status === 503) return { ok: false, reason: "not_configured" }
+    if (res.status === 403) return { ok: false, reason: "subscription_required" }
     if (!res.ok) return { ok: false, reason: "error" }
 
     const data = await res.json() as ChatResponse

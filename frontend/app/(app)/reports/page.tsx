@@ -140,6 +140,11 @@ export default function ReportsPage() {
       if (result?.ok) {
         await saveAIDigest(user.uid, curMonth, result.data, fingerprint)
         setDigestText(result.data)
+      } else if (result?.reason === "subscription_required") {
+        toast.error(t("proFeature"), {
+          description: t("proFeatureAiDesc"),
+          action: { label: t("upgrade"), onClick: () => (window.location.href = "/?landing#pricing") },
+        })
       }
     } finally {
       setDigestLoading(false)

@@ -1,8 +1,13 @@
 /**
  * Transaction categories constants
+ *
+ * SINGLE SOURCE OF TRUTH for category names. Every picker, validator, icon map
+ * and color map must key off these lists — do not fork category name lists in
+ * components. Icons live in the shared CATEGORY_ICONS maps, colors in
+ * lib/constants/category.constants.ts (CATEGORY_COLORS covers every name here).
  */
 
-export const TRANSACTION_CATEGORIES = [
+export const EXPENSE_CATEGORIES = [
   "Food & Dining",
   "Shopping",
   "Transportation",
@@ -14,11 +19,33 @@ export const TRANSACTION_CATEGORIES = [
   "Travel & Vacation",
   "Gifts & Donations",
   "Goal Contribution",
-  "Salary",
   "Other",
 ] as const;
 
-export type TransactionCategory = typeof TRANSACTION_CATEGORIES[number];
+export const INCOME_CATEGORIES = [
+  "Salary",
+  "Freelance",
+  "Investment",
+  "Gift",
+  "Other",
+] as const;
+
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+export type IncomeCategory = (typeof INCOME_CATEGORIES)[number];
+export type TransactionCategory = ExpenseCategory | IncomeCategory;
+
+/** Every known category name (expense + income), for type-agnostic lookups. */
+export const TRANSACTION_CATEGORIES: readonly TransactionCategory[] = [
+  ...EXPENSE_CATEGORIES,
+  ...INCOME_CATEGORIES.filter(
+    (c) => !(EXPENSE_CATEGORIES as readonly string[]).includes(c)
+  ),
+];
+
+/** The valid category list for a given transaction type. */
+export function getCategoriesForType(type: "income" | "expense"): readonly string[] {
+  return type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+}
 
 /**
  * Quick expense categories with icons and colors

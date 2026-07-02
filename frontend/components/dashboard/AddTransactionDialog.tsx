@@ -24,7 +24,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { TRANSACTION_CATEGORIES } from "@/lib/categories"
+import { EXPENSE_CATEGORIES } from "@/lib/categories"
 import { DEFAULT_INCOME_CATEGORIES } from "@/lib/firestore-types"
 import { formatDateForInput } from "@/lib/date-utils"
 import { Badge } from "@/components/ui/badge"
@@ -322,7 +322,15 @@ export function AddTransactionDialog({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="type">{tCommon("type")}</Label>
-              <Select value={type} onValueChange={(value: "income" | "expense") => setType(value)}>
+              <Select
+                value={type}
+                onValueChange={(value: "income" | "expense") => {
+                  setType(value)
+                  // Income and expense use different category lists — a stale
+                  // selection from the other list would otherwise submit fine
+                  setCategory("")
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("selectType")} />
                 </SelectTrigger>
@@ -377,7 +385,7 @@ export function AddTransactionDialog({
                 <SelectContent>
                   {type === "expense" ? (
                     <>
-                      {TRANSACTION_CATEGORIES.map((cat) => (
+                      {EXPENSE_CATEGORIES.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>

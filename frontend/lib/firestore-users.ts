@@ -153,7 +153,13 @@ export async function completeOnboarding(
     // Auto-create Recurring Salary Transaction if they set a budget and a date
     if (data.monthlyBudget > 0 && data.salaryDate) {
       const now = new Date()
-      const thisMonthDate = new Date(now.getFullYear(), now.getMonth(), data.salaryDate)
+      // Clamp the salary day to the target month's length so e.g. day 31 in a
+      // 30-day month doesn't roll into the 1st of the following month.
+      const clampedDay = (year: number, month: number) =>
+        Math.min(data.salaryDate!, new Date(year, month + 1, 0).getDate())
+      const thisMonthDate = new Date(
+        now.getFullYear(), now.getMonth(), clampedDay(now.getFullYear(), now.getMonth())
+      )
 
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const salaryIsToday = thisMonthDate.getTime() === today.getTime()
@@ -163,7 +169,10 @@ export async function completeOnboarding(
       // If it already passed (but not today), just schedule next month — don't backdate.
       const nextDate = thisMonthDate > now
         ? thisMonthDate
-        : new Date(now.getFullYear(), now.getMonth() + 1, data.salaryDate)
+        : new Date(
+            now.getFullYear(), now.getMonth() + 1,
+            clampedDay(now.getFullYear(), now.getMonth() + 1)
+          )
 
       const { Timestamp } = await import("firebase/firestore")
 
@@ -246,6 +255,15 @@ export async function resetFinancialData(userId: string): Promise<void> {
     // Non-fatal — continue reset
   }
 
+  // Delete the summary doc BEFORE the entries: the maintainFinancialSummary
+  // trigger fast-skips entry deletes when the summary is already gone, so the
+  // batch delete below doesn't fan out into N full recomputes (each of which
+  // would re-read the whole entries collection).
+  await Promise.all([
+    deleteDoc(doc(db, "financialSummaries", userId)),
+    deleteDoc(doc(db, "aiInsights", userId)),
+  ])
+
   const userOwnedCollections = [
     "entries",
     "budgets",
@@ -268,11 +286,6 @@ export async function resetFinancialData(userId: string): Promise<void> {
       await batch.commit()
     }
   }
-
-  await Promise.all([
-    deleteDoc(doc(db, "financialSummaries", userId)),
-    deleteDoc(doc(db, "aiInsights", userId)),
-  ])
 }
 
 /**
@@ -326,7 +339,21 @@ export async function deleteUserData(userId: string): Promise<void> {
     // Non-fatal — continue deletion
   }
 
-  // 4. Best-effort client-side cleanup of user-owned collections.
+  // 4. Best-effort single-document cleanup keyed by userId, BEFORE the entries
+  //    batch: with the summary doc already gone, the maintainFinancialSummary
+  //    trigger fast-skips each entry delete instead of re-reading the whole
+  //    collection. allSettled so one rejected delete (e.g. a stale rule) can't
+  //    abort the rest; the CF backstop (step 6) removes any that fail here.
+  //    NOTE: scanUsage and leaderboardProfiles are admin-write-only — only the
+  //    deleteMyAccount CF can remove them.
+  await Promise.allSettled([
+    deleteDoc(doc(db, "financialSummaries", userId)),
+    deleteDoc(doc(db, "aiInsights", userId)),
+    deleteDoc(doc(db, "userDebts", userId)),
+    deleteDoc(doc(db, "users", userId)),
+  ])
+
+  // 5. Best-effort client-side cleanup of user-owned collections.
   //    The deleteMyAccount CF (step 6) is a full Admin-SDK backstop that re-deletes
   //    every collection below server-side, so a permission hiccup or stale rule
   //    here must NEVER abort before the CF runs — otherwise the Auth account is
@@ -357,16 +384,6 @@ export async function deleteUserData(userId: string): Promise<void> {
       logger.error(`Client cleanup of ${collectionName} failed during account deletion (CF will backstop)`, err)
     }
   }
-
-  // 5. Best-effort single-document cleanup keyed by userId. allSettled so one
-  //    rejected delete (e.g. a stale rule) can't abort the rest or step 6; the
-  //    CF backstop removes any that fail here.
-  await Promise.allSettled([
-    deleteDoc(doc(db, "financialSummaries", userId)),
-    deleteDoc(doc(db, "aiInsights", userId)),
-    deleteDoc(doc(db, "userDebts", userId)),
-    deleteDoc(doc(db, "users", userId)),
-  ])
 
   // 6. AUTHORITATIVE deletion. The server-side CF (Admin SDK, bypasses rules)
   //    deletes every user collection plus admin-only data (auditLog, customers/

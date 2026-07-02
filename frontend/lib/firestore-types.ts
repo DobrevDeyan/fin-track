@@ -222,23 +222,9 @@ export interface FinancialSummaryDocument {
   updatedAt: Timestamp
 }
 
-// Default Categories
-export const DEFAULT_EXPENSE_CATEGORIES = [
-  "Food & Dining",
-  "Shopping",
-  "Transportation",
-  "Bills & Utilities",
-  "Entertainment",
-  "Other",
-]
-
-export const DEFAULT_INCOME_CATEGORIES = [
-  "Salary",
-  "Freelance",
-  "Investment",
-  "Gift",
-  "Other",
-]
+// Default Categories — the canonical lists live in lib/categories.ts; this
+// re-export keeps existing import sites working.
+export { INCOME_CATEGORIES as DEFAULT_INCOME_CATEGORIES } from "./categories"
 
 // ─── Debt Payoff Planner ─────────────────────────────────────────────────────
 

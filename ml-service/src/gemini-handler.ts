@@ -31,6 +31,7 @@ function getModel() {
  * and collapsing excessive whitespace.
  */
 function sanitizeInput(input: string, maxLength = 500): string {
+  if (typeof input !== "string") return "";
   return input
     .slice(0, maxLength)
     // Strip null bytes and non-printable ASCII control characters (except \t and \n)
@@ -88,7 +89,9 @@ export async function generateDigest(context: SpendingContext): Promise<string> 
   const sanitizedBudgetSummary = sanitizeInput(context.budgetSummary, 300);
   const sanitizedGoals = typeof context.goalsSummary === "string"
     ? sanitizeInput(context.goalsSummary, 300)
-    : context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }));
+    : Array.isArray(context.goalsSummary)
+      ? context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }))
+      : "";
   const sanitizedUnusual = context.unusualSpending.map(u => ({
     category: sanitizeLabel(u.category),
     changePercent: sanitizeLabel(u.changePercent),
@@ -153,7 +156,9 @@ export async function generateChatResponse(
   const sanitizedBudgetSummary = sanitizeInput(context.budgetSummary, 300);
   const sanitizedGoals = typeof context.goalsSummary === "string"
     ? sanitizeInput(context.goalsSummary, 300)
-    : context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }));
+    : Array.isArray(context.goalsSummary)
+      ? context.goalsSummary.map(g => ({ name: sanitizeLabel(g.name), progress: sanitizeLabel(g.progress) }))
+      : "";
 
   const currency = sanitizeLabel(context.currency || "EUR");
 

@@ -107,8 +107,9 @@ function calculatePayoff(debts: DebtItem[], extraPayment: number, strategy: Stra
 
     if (month % 3 === 0 || month === 1) {
       const total = balances.reduce((s, d) => s + Math.max(0, d.balance), 0)
-      const date = new Date()
-      date.setMonth(date.getMonth() + month)
+      // Anchor to day 1 — adding months to the 29th–31st overflows short months
+      const now = new Date()
+      const date = new Date(now.getFullYear(), now.getMonth() + month, 1)
       timeline.push({
         month,
         label: date.toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
@@ -124,8 +125,8 @@ function calculatePayoff(debts: DebtItem[], extraPayment: number, strategy: Stra
 }
 
 function debtFreeDate(months: number, locale: string): string {
-  const d = new Date()
-  d.setMonth(d.getMonth() + months)
+  const now = new Date()
+  const d = new Date(now.getFullYear(), now.getMonth() + months, 1)
   return d.toLocaleDateString(locale, { month: "long", year: "numeric" })
 }
 

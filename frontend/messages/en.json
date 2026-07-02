@@ -59,7 +59,9 @@
     "accountSettings": "Account Settings",
     "receipts": "Receipts",
     "netWorth": "Net Worth",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "add": "Add",
+    "addTransaction": "Add transaction"
   },
   "auth": {
     "login": "Login",
@@ -194,7 +196,8 @@
       "categorySelectFirst": "Please select a category first",
       "amountPositive": "Please enter an amount greater than 0"
     },
-    "new": "New"
+    "new": "New",
+    "shareStats": "Share your stats"
   },
   "onboarding": {
     "title": "Welcome to Pocket!",
@@ -701,7 +704,9 @@
       "removeMemberConfirm": "Remove",
       "memberRemoved": "Member removed.",
       "removeMemberError": "Failed to remove member."
-    }
+    },
+    "personal": "Personal",
+    "family": "Family"
   },
   "error": {
     "unexpected": "An unexpected error occurred. Please try again.",
@@ -1131,6 +1136,7 @@
       "cutBack": "Which category should I cut back on?",
       "goals": "Am I on track to meet my savings goals?",
       "lastMonth": "How does my spending compare to last month?"
-    }
+    },
+    "subscriptionRequired": "AI insights require a Pro or Business subscription."
   }
 }

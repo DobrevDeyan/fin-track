@@ -8,6 +8,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard"
 import { SwipeBackNavigator } from "@/components/navigation/SwipeBackNavigator"
 import { NotificationListener } from "@/components/NotificationListener"
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider"
+import { GlobalQuickAdd } from "@/components/dashboard/GlobalQuickAdd"
 import { UIComplexityProvider } from "@/contexts/UIComplexityContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </div>
         <BottomNav />
+        <GlobalQuickAdd />
       </SwipeBackNavigator>
       </DashboardProvider>
       </UIComplexityProvider>

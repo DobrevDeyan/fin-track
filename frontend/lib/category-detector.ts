@@ -104,10 +104,8 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   'Goal Contribution': [
     'goal contribution',
   ],
-  'Salary': [
-    'salary', 'payroll', 'wage', 'income', 'payment', 'employer',
-    'compensation', 'bonus', 'commission',
-  ],
+  // No 'Salary' keywords: this detector only categorises scanned receipts,
+  // which are always expenses — Salary is an income-only category.
 };
 
 /**

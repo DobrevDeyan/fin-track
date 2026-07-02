@@ -13,7 +13,7 @@ import {
   Menu, LogOut, X, Globe, Info, LayoutDashboard,
   Calendar as CalendarIcon, FileText, Settings, Receipt,
   Landmark, ChevronDown, DollarSign, Sparkles, ChevronRight, MessageSquare,
-  ChevronLeft, Trophy, Repeat, TrendingDown,
+  ChevronLeft, Trophy, Repeat, TrendingDown, Plus,
 } from "lucide-react"
 import { useInAppNotifications } from "@/lib/hooks/useInAppNotifications"
 import { MobileBell, NotificationBell } from "@/components/notifications/NotificationBell"
@@ -601,6 +601,15 @@ export const AppNavbar = () => {
 
           {/* Desktop right — consolidated currency/language + avatar */}
           <div className="hidden md:flex items-center gap-2">
+            <Button
+              size="sm"
+              className="gap-1.5"
+              title={`${t("addTransaction")} (N)`}
+              onClick={() => window.dispatchEvent(new CustomEvent("pocket:openQuickAdd"))}
+            >
+              <Plus className="h-4 w-4" />
+              {t("add")}
+            </Button>
             <UIModeToggle variant="pill" />
             <NotificationBell variant="desktop" />
             <DropdownMenu>

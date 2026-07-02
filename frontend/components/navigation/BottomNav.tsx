@@ -64,10 +64,10 @@ export function BottomNav() {
         <button
           onClick={openQuickAdd}
           className="flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 bg-primary/10 text-primary hover:bg-primary/20 min-w-0"
-          aria-label="Add transaction"
+          aria-label={t("addTransaction")}
         >
           <Plus className="h-5 w-5 shrink-0" strokeWidth={2} />
-          <span className="text-[10px] font-semibold truncate">Add</span>
+          <span className="text-[10px] font-semibold truncate">{t("add")}</span>
         </button>
       </div>
     </nav>

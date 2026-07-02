@@ -480,6 +480,29 @@ async function sendPushToUser(
   }
 }
 
+// ─── Entry-Write Change Detection ─────────────────────────────────────────────
+
+/**
+ * True when an entry update touched a field that feeds the financial summary
+ * or budget totals (type, amount, category, categoryId, date). Edits to notes,
+ * tags, description, receiptUrl etc. can't change any aggregate, so triggers
+ * skip the expensive recompute for them.
+ */
+function summaryRelevantFieldsChanged(
+  before: Record<string, unknown>,
+  after: Record<string, unknown>
+): boolean {
+  if (before.type !== after.type) return true;
+  if (before.amount !== after.amount) return true;
+  if (before.category !== after.category) return true;
+  if (before.categoryId !== after.categoryId) return true;
+  if (before.userId !== after.userId) return true;
+  const beforeDate = before.date as admin.firestore.Timestamp | undefined;
+  const afterDate = after.date as admin.firestore.Timestamp | undefined;
+  if (!beforeDate || !afterDate) return beforeDate !== afterDate;
+  return beforeDate.toMillis() !== afterDate.toMillis();
+}
+
 // ─── Budget Alert Trigger ─────────────────────────────────────────────────────
 
 /**
@@ -495,9 +518,20 @@ export const checkBudgetOnEntry = onDocumentWritten(
     const data = event.data?.after?.data();
     if (!data || data.type !== "expense") return;
 
+    // Skip updates that can't change any budget total (notes edit, receipt
+    // attach, tag change…) — each skipped run saves the budgets query plus an
+    // entries query per budget.
+    const before = event.data?.before?.data();
+    if (before && !summaryRelevantFieldsChanged(before, data)) return;
+
     const userId = data.userId as string;
     const entryDate: admin.firestore.Timestamp = data.date;
     const entryTs = entryDate.toDate();
+    const entryCategory = data.category as string | undefined;
+    // On a category change, re-evaluate budgets for BOTH the old and new category
+    const affectedCategories = new Set<string>();
+    if (typeof entryCategory === "string") affectedCategories.add(entryCategory);
+    if (typeof before?.category === "string") affectedCategories.add(before.category);
 
     // Fetch all active budgets for this user
     const budgetsSnap = await db
@@ -515,6 +549,13 @@ export const checkBudgetOnEntry = onDocumentWritten(
         // Skip budgets with no positive limit (legacy/corrupt docs) to avoid /0.
         if (typeof budget.amount !== "number" || budget.amount <= 0) continue;
 
+        // Only budgets watching this entry's category can be affected. Budgets
+        // without a category never matched any entry in the old sum-filter
+        // either, so skipping them preserves behaviour.
+        if (typeof budget.category !== "string" || !affectedCategories.has(budget.category)) {
+          continue;
+        }
+
         const budgetStart: admin.firestore.Timestamp = budget.startDate;
         const budgetEnd: admin.firestore.Timestamp = budget.endDate;
         // Dedup key tied to THIS budget period instance (its startDate), so alert
@@ -525,18 +566,19 @@ export const checkBudgetOnEntry = onDocumentWritten(
         // Skip if the triggering entry falls outside this budget's period
         if (entryTs < budgetStart.toDate() || entryTs > budgetEnd.toDate()) continue;
 
-        // Query all expenses within this budget's exact date range
+        // Query only THIS category's expenses within the budget's date range —
+        // reads just the matching docs instead of every expense in the period
+        // (uses the userId+type+category+date composite index).
         const expensesSnap = await db
           .collection("entries")
           .where("userId", "==", userId)
           .where("type", "==", "expense")
+          .where("category", "==", budget.category)
           .where("date", ">=", budgetStart)
           .where("date", "<=", budgetEnd)
           .get();
 
-        // Sum only expenses matching this budget's category
         const spent = expensesSnap.docs
-          .filter((e) => e.data().category === budget.category)
           .reduce((sum, e) => sum + (e.data().amount as number), 0);
 
         const pct = Math.round((spent / budget.amount) * 100);
@@ -784,7 +826,7 @@ function lbPercentile(sorted: number[], pct: number): number {
 
 /**
  * Scheduled leaderboard aggregation.
- * Runs on the 2nd of each month at 02:00 UTC, after monthly resets settle.
+ * Runs daily at 03:00 UTC.
  * Only includes users who have opted in (leaderboardOptIn: true).
  * Produces leaderboardProfiles/{userId} (owner-read) and leaderboardStats/current (public read).
  */
@@ -1706,15 +1748,8 @@ export const deleteMyAccount = onCall(
 
     // 5b. Backstop: delete client-owned data too, in case the frontend pre-delete
     //     step failed or was skipped — leaves no orphaned documents under this uid.
-    await Promise.all([
-      deleteQueryBatched(db.collection("entries").where("userId", "==", userId)),
-      deleteQueryBatched(db.collection("budgets").where("userId", "==", userId)),
-      deleteQueryBatched(db.collection("goals").where("userId", "==", userId)),
-      deleteQueryBatched(db.collection("savingsAccounts").where("userId", "==", userId)),
-      deleteQueryBatched(db.collection("categories").where("userId", "==", userId)),
-      deleteQueryBatched(db.collection("recurringTransactions").where("userId", "==", userId)),
-      deleteQueryBatched(db.collection("assets").where("userId", "==", userId)),
-    ]);
+    //     The summary doc goes FIRST so the maintainFinancialSummary trigger
+    //     fast-skips the entry-delete storm instead of recomputing per delete.
     await Promise.all([
       db.collection("financialSummaries").doc(userId).delete(),
       db.collection("aiInsights").doc(userId).delete(),
@@ -1724,6 +1759,15 @@ export const deleteMyAccount = onCall(
       // users/{uid} — deleted by the client first, but ensure the CF is self-sufficient
       // if invoked standalone (e.g., admin repair). Firestore delete is idempotent.
       db.collection("users").doc(userId).delete(),
+    ]);
+    await Promise.all([
+      deleteQueryBatched(db.collection("entries").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("budgets").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("goals").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("savingsAccounts").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("categories").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("recurringTransactions").where("userId", "==", userId)),
+      deleteQueryBatched(db.collection("assets").where("userId", "==", userId)),
     ]);
 
     // 6. Delete the Firebase Auth account last — once gone, no token is valid
@@ -1840,10 +1884,24 @@ async function rebuildSummaryFromEntries(userId: string, eventMillis?: number): 
 export const maintainFinancialSummary = onDocumentWritten(
   { document: "entries/{entryId}", region: "europe-west4" },
   async (event) => {
-    const before = event.data?.before?.data() as { userId?: string } | undefined;
-    const after = event.data?.after?.data() as { userId?: string } | undefined;
-    const userId = after?.userId ?? before?.userId;
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    const userId = (after?.userId ?? before?.userId) as string | undefined;
     if (!userId) return;
+
+    // Update that didn't touch any aggregated field (notes/tags/receipt edit) —
+    // skip the full recompute, which reads the user's ENTIRE entries collection.
+    if (before && after && !summaryRelevantFieldsChanged(before, after)) return;
+
+    // Delete with no summary doc present: the client removes the summary doc
+    // first during "reset all data" / account deletion, so each of the N entry
+    // deletes in that storm costs 1 read here instead of a full O(N) rebuild
+    // (which previously made bulk deletes O(N²) reads in total).
+    if (before && !after) {
+      const summarySnap = await db.collection("financialSummaries").doc(userId).get();
+      if (!summarySnap.exists) return;
+    }
+
     // event.time is the entry-write commit time; use it to order concurrent
     // recomputes (see rebuildSummaryFromEntries / review M5).
     const eventMillis = event.time ? new Date(event.time).getTime() : Date.now();

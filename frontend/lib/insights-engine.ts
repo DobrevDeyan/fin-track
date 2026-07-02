@@ -411,8 +411,16 @@ export function generateCashFlowForecast(
       // civil day regardless of the viewer's timezone / DST. (RA-13)
       const advanced = new Date(next)
       if (r.frequency === "weekly") advanced.setUTCDate(advanced.getUTCDate() + 7)
-      else if (r.frequency === "monthly") advanced.setUTCMonth(advanced.getUTCMonth() + 1)
-      else {
+      else if (r.frequency === "monthly") {
+        // Clamp like calculateNextDate: Jan 31 + 1 month is Feb 28, not Mar 3
+        const day = advanced.getUTCDate()
+        advanced.setUTCDate(1)
+        advanced.setUTCMonth(advanced.getUTCMonth() + 1)
+        const maxDay = new Date(
+          Date.UTC(advanced.getUTCFullYear(), advanced.getUTCMonth() + 1, 0)
+        ).getUTCDate()
+        advanced.setUTCDate(Math.min(day, maxDay))
+      } else {
         advanced.setUTCFullYear(advanced.getUTCFullYear() + 1)
         break // only one yearly event in 90 days
       }
@@ -473,8 +481,10 @@ export function buildSpendingContext(
   const currency = opts?.currency ?? "EUR"
 
   const currentKey = getCurrentMonthKey()
-  const prevDate = new Date()
-  prevDate.setMonth(prevDate.getMonth() - 1)
+  // Anchor to day 1 before stepping back a month — setMonth(-1) on the 29th–31st
+  // overflows the shorter month and lands back in the current one.
+  const now_ = new Date()
+  const prevDate = new Date(now_.getFullYear(), now_.getMonth() - 1, 1)
   const previousKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`
 
   const cur = summary.months[currentKey] ?? { income: 0, expenses: 0, expensesByCategory: {} }
@@ -500,9 +510,13 @@ export function buildSpendingContext(
     }))
 
   const activeBudgets = budgets.filter((b) => b.isActive)
-  const budgetsExceeded = activeBudgets.filter(
-    (b) => (cur.expensesByCategory?.[b.category] ?? 0) > b.amount
-  ).length
+  const budgetsExceeded = activeBudgets.filter((b) => {
+    // Normalise weekly/yearly limits to a monthly equivalent — same convention
+    // as the health score's budget adherence — since spend here is per-month
+    const monthlyEquiv =
+      b.period === "yearly" ? b.amount / 12 : b.period === "weekly" ? b.amount * 4.33 : b.amount
+    return (cur.expensesByCategory?.[b.category] ?? 0) > monthlyEquiv
+  }).length
   const budgetSummary =
     activeBudgets.length > 0
       ? `${activeBudgets.length - budgetsExceeded} of ${activeBudgets.length} budgets within limit`

@@ -158,6 +158,7 @@ export function InsightsProvider({ children }: InsightsProviderProps) {
           // Only flag "not configured" for an actual 503; a transient failure gets a
           // retryable error toast instead of a misleading "add an API key". (I9-10)
           if (result.reason === "not_configured") setDigestNotConfigured(true)
+          else if (result.reason === "subscription_required") toast.error(t("subscriptionRequired"))
           else toast.error(t("digestFailed"))
           return
         }
@@ -206,6 +207,11 @@ export function InsightsProvider({ children }: InsightsProviderProps) {
             setChatMessages((prev) => [
               ...prev,
               { role: "assistant", content: t("chatNotConfiguredBubble") },
+            ])
+          } else if (result.reason === "subscription_required") {
+            setChatMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: t("subscriptionRequired") },
             ])
           } else {
             // Transient failure (network error, rate limit, etc.) — retryable.
