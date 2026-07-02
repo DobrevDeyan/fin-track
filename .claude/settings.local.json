@@ -129,7 +129,10 @@
       "Bash(git stash *)",
       "Bash(git checkout *)",
       "Bash(awk '/ *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(echo \"frontend tsc: $?\")",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
