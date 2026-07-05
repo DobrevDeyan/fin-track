@@ -60,7 +60,7 @@ export const HeroCards = () => {
           <Card className="w-60 drop-shadow-xl shadow-black/10 overflow-hidden p-0 shrink-0">
             <div className="relative w-full h-[170px]">
               <Image
-                src="/images/dashboard_mob.png"
+                src="/images/dashboard_mob.webp"
                 alt="Pocket mobile dashboard"
                 fill
                 priority
@@ -109,7 +109,7 @@ export const HeroCards = () => {
         <Card className="absolute right-0 top-2 lg:w-56 xl:w-64 drop-shadow-xl shadow-black/10 overflow-hidden p-0">
           <div className="relative w-full lg:h-[160px] xl:h-[185px]">
             <Image
-              src="/images/dashboard_mob.png"
+              src="/images/dashboard_mob.webp"
               alt="Pocket mobile dashboard"
               fill
               priority

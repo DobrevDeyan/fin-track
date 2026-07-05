@@ -197,7 +197,7 @@ export function SavingsAccountCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-medium"
+                className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50 dark:hover:border-red-800 font-medium"
                 onClick={() => {
                   setTransactionType("withdraw")
                   setTransactionDialogOpen(true)

@@ -206,8 +206,11 @@
     "nameQuestion": "What should we call you?",
     "namePlaceholder": "Your name",
     "currencyQuestion": "Choose your currency",
-    "budgetQuestion": "What's your monthly budget?",
-    "budgetHint": "This helps track how much you have left each month",
+    "budgetQuestion": "What's your expected monthly salary?",
+    "budgetHint": "This helps track your budget and automate your income.",
+    "salaryDateQuestion": "What day of the month do you receive it? (1-28)",
+    "salaryDateError": "Please enter a day between 1 and 28.",
+    "skipFinish": "Skip & Finish",
     "next": "Next",
     "finish": "Get Started",
     "saving": "Saving..."
@@ -463,8 +466,8 @@
   },
   "landing": {
     "hero": {
-      "tagline": "Snap a receipt. Budget done.",
-      "description": "Track expenses, set budgets, and let AI do the heavy lifting. Free forever — upgrade to Pro for receipt scanning and an AI coach that knows your actual numbers.",
+      "tagline": "Snap a receipt. We do the rest.",
+      "description": "Log an expense in seconds, snap receipts instead of typing them, and see exactly where your money goes. Free forever — Pro adds receipt scanning and an AI coach that knows your actual numbers.",
       "goToDashboard": "Go to Dashboard",
       "getStarted": "Get Started Free",
       "learnMore": "Learn More"
@@ -472,10 +475,10 @@
     "heroCards": {
       "testimonial": "Finally a finance app I actually use every week.",
       "productManager": "Freelance designer",
-      "buildingFuture": "Your finances, clear and under control",
+      "buildingFuture": "Know where every euro goes",
       "startFreeTrial": "Start for Free",
       "smartInsights": "Health Score",
-      "smartInsightsDesc": "A real-time score based on your savings rate, budget adherence, and goal progress.",
+      "smartInsightsDesc": "One live score for your finances — savings rate, budgets, and goals rolled into a single number.",
       "benefit1": "Financial health score",
       "benefit2": "Spending anomaly alerts",
       "benefit3": "Real-time analytics",
@@ -500,7 +503,7 @@
     "about": {
       "title": "About",
       "pocket": "Pocket",
-      "description": "Pocket is a personal finance tracker built around one idea: tracking your money should take seconds, not minutes. Snap a receipt, categorize it, and move on. No spreadsheets, no manual data entry.",
+      "description": "Pocket is built around one idea: tracking your money should take seconds, not evenings. Snap a receipt, confirm the category, and get on with your day. No spreadsheets, no manual entry, no digging through statements at the end of the month.",
       "visualPlaceholder": "Visual content placeholder"
     },
     "howItWorks": {
@@ -513,7 +516,7 @@
       "step3Title": "Categorize",
       "step3Desc": "Organize entries by category — budgets and goals update automatically",
       "step4Title": "Track",
-      "step4Desc": "See your health score, anomaly alerts, and spending trends in real-time",
+      "step4Desc": "Watch your health score, alerts, and spending trends update as you go",
       "step5Title": "Ask",
       "step5Desc": "Ask your AI coach why you're over budget — it knows your actual numbers"
     },
@@ -521,25 +524,25 @@
       "title": "Everything You",
       "features": "Need",
       "feature1Title": "Budgets, Goals & Tracking",
-      "feature1Desc": "Log income and expenses, organize by category, set budgets and savings goals. Your financial health score updates in real-time as you track.",
+      "feature1Desc": "Log income and expenses, set budgets and savings goals, and watch your financial health score react in real time.",
       "feature2Title": "Receipt Scanning",
-      "feature2Desc": "Snap a photo or upload a PDF — AI extracts merchant, amount, and date automatically. No more manual entry for receipts. Available on Pro.",
+      "feature2Desc": "Snap a photo or upload a PDF — AI pulls out the merchant, amount, and date for you. Stop typing receipts. Available on Pro.",
       "feature3Title": "AI Budget Coach",
-      "feature3Desc": "Ask questions about your own finances and get specific, data-backed answers. Not generic advice — answers based on your actual spending. Available on Pro."
+      "feature3Desc": "Ask questions about your own money and get specific, data-backed answers — not generic advice. It reads your actual spending. Available on Pro."
     },
     "services": {
-      "title": "Our",
-      "services": "Services",
+      "title": "What's",
+      "services": "Inside",
       "service1Title": "Expense Tracking",
-      "service1Desc": "Track all your income and expenses in one place",
+      "service1Desc": "Every income and expense in one clean timeline, organized by category",
       "service2Title": "Budget Planning",
-      "service2Desc": "Create and manage budgets for different categories",
+      "service2Desc": "Set monthly limits per category and get warned before you cross them",
       "service3Title": "Financial Reports",
-      "service3Desc": "Generate detailed reports and insights"
+      "service3Desc": "Monthly trends, category breakdowns, and one-click PDF or CSV export"
     },
     "cta": {
-      "title": "Start tracking in under a minute.",
-      "description": "Free plan. No credit card. No setup fee. Just sign up and start.",
+      "title": "Your first expense takes 30 seconds.",
+      "description": "Free plan. No credit card. Nothing to install. Sign up and see for yourself.",
       "button": "Get Started Free"
     },
     "testimonials": {
@@ -590,7 +593,7 @@
     },
     "newsletter": {
       "title": "Start for Free Today",
-      "description": "Create your account in seconds. Free plan includes expense tracking, budgets, goals, health score, and 3 receipt scans — no credit card required.",
+      "description": "Create your account in seconds. The free plan covers tracking, budgets, goals, your health score, and 3 receipt scans a month — no credit card required.",
       "cta": "Create Free Account"
     },
     "faq": {
@@ -603,11 +606,11 @@
       "q3": "Can I use Pocket on mobile?",
       "a3": "Yes. Pocket is an installable PWA — add it to your home screen directly from the browser. No app store needed, works on iOS and Android.",
       "q4": "What are the free plan limits?",
-      "a4": "Free includes 50 transactions/month, 3 budgets, 2 savings goals, 1 savings account, 3 recurring transactions, a financial health score, anomaly alerts, and 3 receipt scans/month as a teaser. Upgrade to Pro for €2.99/month to remove all limits and unlock the AI coach."
+      "a4": "Free includes 50 transactions/month, 3 budgets, 2 savings goals, 1 savings account, 3 recurring transactions, a financial health score, anomaly alerts, and 3 receipt scans/month. Upgrade to Pro for €2.99/month to remove all limits and unlock the AI coach."
     },
     "footer": {
-      "tagline": "Smart financial management made easy.",
-      "interactiveLayer": "The interactive layer for your financial tracking and budgeting.",
+      "tagline": "Money tracking that takes seconds, not evenings.",
+      "interactiveLayer": "Track spending, plan budgets, and reach your goals — all in one pocket-sized app.",
       "product": "Product",
       "solutions": "Solutions",
       "resources": "Resources",

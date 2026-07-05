@@ -26,7 +26,7 @@ export function Toast({ message, type = "success", onClose, duration = 3000 }: T
         "fixed top-4 right-4 z-50 flex items-start gap-3 p-3 rounded-lg shadow-lg border-2 animate-in slide-in-from-top-5",
         "sm:top-6 sm:right-6 sm:max-w-md sm:p-4",
         type === "success"
-          ? "bg-green-50 border-green-200 text-green-800"
+          ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-900 dark:text-green-300"
           : "bg-destructive/10 border-destructive/20 text-destructive"
       )}
     >

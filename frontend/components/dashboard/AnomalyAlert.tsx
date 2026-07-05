@@ -90,7 +90,7 @@ export const AnomalyAlert = memo(function AnomalyAlert({ className }: { userCurr
         <Button
           variant="ghost"
           size="icon"
-          className="flex-shrink-0 h-6 w-6 text-amber-600 hover:text-amber-800 hover:bg-amber-100 dark:text-amber-400"
+          className="flex-shrink-0 h-6 w-6 text-amber-600 hover:text-amber-800 hover:bg-amber-100 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-950/50"
           onClick={dismiss}
           aria-label={t("dismissAria")}
         >

@@ -114,7 +114,7 @@ export function CalendarEventPopover({
             {recurringItems.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2 rounded-md border border-dashed border-blue-300 bg-blue-50/50"
+                className="flex items-center justify-between p-2 rounded-md border border-dashed border-blue-300 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <Badge variant="outline" className={getCategoryColor(item.category)}>

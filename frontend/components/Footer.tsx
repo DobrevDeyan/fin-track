@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link";
-import { LogoIcon } from "./Icons";
+import { PocketLogo } from "./PocketLogo";
 import { useTranslations } from "next-intl";
 
 export const Footer = () => {
@@ -18,7 +18,7 @@ export const Footer = () => {
               href="/"
               className="inline-flex items-center gap-2 mb-4"
             >
-              <LogoIcon />
+              <PocketLogo width={28} height={28} className="w-6 h-6" />
               <span className="font-semibold text-xl text-foreground">
                 Pocket
               </span>
@@ -40,19 +40,19 @@ export const Footer = () => {
             <h3 className="font-semibold text-sm text-foreground">{t("product")}</h3>
             <div className="flex flex-col gap-2">
               <Link
-                href="#features"
+                href="/#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {tNav("features")}
               </Link>
               <Link
-                href="#pricing"
+                href="/#pricing"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {tNav("pricing")}
               </Link>
               <Link
-                href="#faq"
+                href="/#faq"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {tNav("faq")}
@@ -71,19 +71,19 @@ export const Footer = () => {
             <h3 className="font-semibold text-sm text-foreground">{t("solutions")}</h3>
             <div className="flex flex-col gap-2">
               <Link
-                href="#features"
+                href="/#about"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("personalFinance")}
               </Link>
               <Link
-                href="#features"
+                href="/#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("budgetTracking")}
               </Link>
               <Link
-                href="#features"
+                href="/#how-it-works"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("expenseManagement")}
@@ -96,19 +96,19 @@ export const Footer = () => {
             <h3 className="font-semibold text-sm text-foreground">{t("company")}</h3>
             <div className="flex flex-col gap-2">
               <Link
-                href="#about"
+                href="/#about"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("about")}
               </Link>
               <Link
-                href="#"
+                href="/privacy"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("privacyPolicy")}
               </Link>
               <Link
-                href="#"
+                href="/terms"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("termsOfService")}

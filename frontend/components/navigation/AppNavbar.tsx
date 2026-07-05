@@ -388,13 +388,13 @@ export const AppNavbar = () => {
                         onClick={() => { setIsOpen(false); setOptimisticPath(href) }}
                         className={cn(
                           "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
-                          isActive ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
+                          isActive ? "text-emerald-700 dark:text-emerald-400" : "text-foreground/65 hover:text-foreground"
                         )}
                       >
                         <div className={cn(
                           "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
                           isActive
-                            ? "bg-emerald-100 text-emerald-600"
+                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
                             : "bg-background text-muted-foreground"
                         )}>
                           <Icon className="h-4 w-4" />
@@ -430,7 +430,7 @@ export const AppNavbar = () => {
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-purple-100 text-purple-600 shrink-0">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400 shrink-0">
                     <Sparkles className="h-4 w-4" />
                   </div>
                   <span className="flex-1 text-left">AI Budget Coach</span>
@@ -444,7 +444,7 @@ export const AppNavbar = () => {
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-foreground/65 hover:text-foreground transition-colors duration-150"
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 shrink-0">
                     <MessageSquare className="h-4 w-4" />
                   </div>
                   <span className="flex-1">Send Feedback</span>
@@ -470,13 +470,13 @@ export const AppNavbar = () => {
                   onClick={() => { setIsOpen(false); setOptimisticPath("/settings") }}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
-                    activePath === "/settings" ? "text-emerald-700" : "text-foreground/65 hover:text-foreground"
+                    activePath === "/settings" ? "text-emerald-700 dark:text-emerald-400" : "text-foreground/65 hover:text-foreground"
                   )}
                 >
                   <div className={cn(
                     "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
                     activePath === "/settings"
-                      ? "bg-emerald-100 text-emerald-600"
+                      ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
                       : "bg-background text-muted-foreground"
                   )}>
                     <Settings className="h-4 w-4" />
@@ -530,9 +530,9 @@ export const AppNavbar = () => {
               <div className="rounded-2xl overflow-hidden bg-muted/50">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-red-600 hover:text-red-700 transition-colors duration-150"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-150"
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-50 text-red-500 shrink-0">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-50 text-red-500 dark:bg-red-950 dark:text-red-400 shrink-0">
                     <LogOut className="h-4 w-4" />
                   </div>
                   <span className="flex-1 text-left">{t("logout")}</span>
@@ -644,7 +644,7 @@ export const AppNavbar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                  <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-emerald-200 transition-all">
+                  <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-emerald-200 dark:hover:ring-emerald-800 transition-all">
                     <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
                     <AvatarFallback className="bg-emerald-600 text-white text-sm font-semibold">
                       {getUserInitials(user)}
@@ -692,7 +692,7 @@ export const AppNavbar = () => {
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:text-red-400 dark:focus:text-red-400 dark:focus:bg-red-950">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{t("logout")}</span>
                 </DropdownMenuItem>

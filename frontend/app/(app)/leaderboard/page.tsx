@@ -210,7 +210,7 @@ export default function LeaderboardPage() {
 
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-amber-100 text-amber-600 shrink-0">
+        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400 shrink-0">
           <Trophy className="h-5 w-5" />
         </div>
         <div className="flex-1">
@@ -348,7 +348,7 @@ export default function LeaderboardPage() {
             size="sm"
             onClick={handleToggleOptIn}
             disabled={toggling}
-            className={cn("gap-2", optedIn && "border-emerald-300 text-emerald-700 hover:bg-emerald-50")}
+            className={cn("gap-2", optedIn && "border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950")}
           >
             {optedIn
               ? <><CheckCircle2 className="h-4 w-4" /> Opted in — click to opt out</>

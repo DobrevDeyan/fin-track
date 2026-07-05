@@ -19,7 +19,7 @@ export const About = () => {
         </div>
         <div className="flex justify-center">
           <Image
-            src="/images/dashboard.png"
+            src="/images/dashboard.webp"
             alt="Pocket dashboard"
             width={600}
             height={380}

@@ -11,7 +11,9 @@ const CACHE_KEY = "fin_track_exchange_rate"
 // Frankfurter is a public, CORS-enabled API (ECB data, no key required), so we call
 // it directly from the browser. A Next.js API route can't serve this on a static
 // export deployed to Firebase Hosting. The CSP `connect-src` already allows it.
-const FRANKFURTER_URL = "https://api.frankfurter.app/latest?from=EUR&to=USD"
+// NOTE: the old api.frankfurter.app domain 301-redirects without CORS headers,
+// which browsers block — only the .dev domain works from the browser.
+const FRANKFURTER_URL = "https://api.frankfurter.dev/v1/latest?from=EUR&to=USD"
 
 interface RateCache {
   date: string

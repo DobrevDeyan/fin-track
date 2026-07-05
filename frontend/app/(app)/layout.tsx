@@ -9,6 +9,7 @@ import { SwipeBackNavigator } from "@/components/navigation/SwipeBackNavigator"
 import { NotificationListener } from "@/components/NotificationListener"
 import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider"
 import { GlobalQuickAdd } from "@/components/dashboard/GlobalQuickAdd"
+import { InstallPrompt } from "@/components/InstallPrompt"
 import { UIComplexityProvider } from "@/contexts/UIComplexityContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <BottomNav />
         <GlobalQuickAdd />
+        <InstallPrompt />
       </SwipeBackNavigator>
       </DashboardProvider>
       </UIComplexityProvider>

@@ -26,12 +26,12 @@ function relativeTime(ts: AppNotification["createdAt"]): string {
 
 function TypeIcon({ type }: { type: AppNotification["type"] }) {
   if (type === "budget") return (
-    <span className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-600 shrink-0">
+    <span className="flex items-center justify-center h-8 w-8 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400 shrink-0">
       <TriangleAlert className="h-4 w-4" />
     </span>
   )
   if (type === "test") return (
-    <span className="flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 shrink-0">
+    <span className="flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400 shrink-0">
       <FlaskConical className="h-4 w-4" />
     </span>
   )

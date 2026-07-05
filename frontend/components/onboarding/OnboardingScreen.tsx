@@ -184,8 +184,8 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             {step === 3 && (
               <div className="space-y-6 py-4 animate-in slide-in-from-right duration-300">
                 <div className="text-center space-y-2">
-                  <h3 className="text-xl font-semibold text-foreground">What's your expected monthly salary?</h3>
-                  <p className="text-muted-foreground">This helps track your budget and automate your income.</p>
+                  <h3 className="text-xl font-semibold text-foreground">{t("budgetQuestion")}</h3>
+                  <p className="text-muted-foreground">{t("budgetHint")}</p>
                 </div>
                 
                 <div className="space-y-4">
@@ -208,7 +208,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
                   {monthlyBudget && parseFloat(monthlyBudget) > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-4 duration-300 space-y-2 pt-2">
-                       <h4 className="text-sm font-medium text-foreground/80">What day of the month do you receive it? (1-28)</h4>
+                       <h4 className="text-sm font-medium text-foreground/80">{t("salaryDateQuestion")}</h4>
                        <Input
                          type="number"
                          min="1"
@@ -220,7 +220,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                          className="h-12 text-lg text-center bg-muted border-border focus:bg-background transition-colors"
                        />
                        {salaryDate !== "" && (parseInt(salaryDate) < 1 || parseInt(salaryDate) > 28) && (
-                         <p className="text-xs text-red-500 text-center">Please enter a day between 1 and 28.</p>
+                         <p className="text-xs text-red-500 text-center">{t("salaryDateError")}</p>
                        )}
                     </div>
                   )}
@@ -245,7 +245,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   disabled={!canProceed() || loading} 
                   className="w-full h-12 rounded-xl text-lg font-semibold gap-2 transition-all active:scale-95"
                 >
-                  {loading ? t("saving") : (monthlyBudget ? t("finish") : "Skip & Finish")}
+                  {loading ? t("saving") : (monthlyBudget ? t("finish") : t("skipFinish"))}
                   {!loading && <Check className="h-5 w-5" />}
                 </Button>
               )}

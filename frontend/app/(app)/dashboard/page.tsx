@@ -20,7 +20,7 @@ const CashFlowForecast = dynamic(
   () => import("@/components/dashboard/CashFlowForecast").then(m => ({ default: m.CashFlowForecast })),
   { ssr: false, loading: () => <div className="h-[180px] w-full rounded-xl border bg-card animate-pulse" /> }
 )
-import { AIChatDrawer } from "@/components/dashboard/AIChatDrawer";
+const AIChatDrawer = dynamic(() => import("@/components/dashboard/AIChatDrawer").then(m => ({ default: m.AIChatDrawer })), { ssr: false });
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SectionErrorBoundary } from "@/components/dashboard/SectionErrorBoundary";
 import { TransactionFilters, type TransactionFilterCriteria } from "@/components/dashboard/TransactionFilters";

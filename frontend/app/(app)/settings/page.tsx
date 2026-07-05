@@ -61,7 +61,7 @@ export default function SettingsPage() {
   const t = useTranslations("settings")
   const th = useTranslations("household.manage")
   const tCommon = useTranslations("common")
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const router = useRouter()
   const { tier, subscription, loading: subscriptionLoading } = useSubscription()
   const { refreshCurrency } = useCurrency()
@@ -296,6 +296,9 @@ export default function SettingsPage() {
     setDeleteError(null)
     try {
       await deleteUserData(user.uid)
+      // The CF deleted the Auth account server-side; the local session still
+      // holds a cached token, so sign out or AuthGuard bounces back to /dashboard
+      await logout()
       router.push("/auth/login")
     } catch (err: any) {
       logger.error("Account deletion failed", err)

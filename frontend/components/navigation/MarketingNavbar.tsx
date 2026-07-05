@@ -236,9 +236,9 @@ export const MarketingNavbar = () => {
                 <Link
                   href="/auth/register"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors duration-150"
+                  className="flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors duration-150"
                 >
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 shrink-0">
                     <UserPlus className="h-4 w-4" />
                   </div>
                   <span className="flex-1">{t("getStarted")}</span>

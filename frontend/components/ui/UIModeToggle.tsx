@@ -23,7 +23,9 @@ export function UIModeToggle({ variant = "pill" }: UIModeToggleProps) {
         <div className="flex items-center gap-2.5">
           <div className={cn(
             "flex items-center justify-center h-7 w-7 rounded-lg transition-colors",
-            isSimple ? "bg-emerald-100 text-emerald-600" : "bg-purple-100 text-purple-600"
+            isSimple
+              ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+              : "bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
           )}>
             {isSimple ? <Layers className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
           </div>
