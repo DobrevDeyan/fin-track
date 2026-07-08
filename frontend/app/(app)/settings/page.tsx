@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/contexts/AuthContext"
-import { useCurrency } from "@/contexts/CurrencyContext"
+import { useUserProfile } from "@/contexts/UserProfileContext"
 import { deleteUserData, resetFinancialData, updateUserDisplayName } from "@/lib/firestore-users"
 import { httpsCallable } from "firebase/functions"
 import { functions } from "@/lib/firebase"
@@ -63,18 +63,18 @@ export default function SettingsPage() {
   const { user, logout } = useAuth()
   const router = useRouter()
   const { tier, subscription, loading: subscriptionLoading } = useSubscription()
-  const { refreshCurrency } = useCurrency()
+  const { profile } = useUserProfile()
   const { count: scanCount, limit: scanLimit, resetAt: scanResetAt } = useScanQuota()
 
   // Display name editing
   const [editingName, setEditingName] = useState(false)
-  const [nameValue, setNameValue] = useState(user?.displayName ?? "")
+  const [nameValue, setNameValue] = useState(profile?.displayName ?? "")
   const [savingName, setSavingName] = useState(false)
 
-  // Keep nameValue in sync when Firebase Auth user object updates (e.g. after setup wizard)
+  // Keep nameValue in sync with the live profile (e.g. after setup wizard)
   useEffect(() => {
-    if (!editingName) setNameValue(user?.displayName ?? "")
-  }, [user?.displayName, editingName])
+    if (!editingName) setNameValue(profile?.displayName ?? "")
+  }, [profile?.displayName, editingName])
 
   // Stripe upgrade
   const [checkoutLoading, setCheckoutLoading] = useState(false)
@@ -99,15 +99,8 @@ export default function SettingsPage() {
   }, [])
 
   // Leaderboard opt-in
-  const [leaderboardOptIn, setLeaderboardOptInState] = useState(false)
+  const leaderboardOptIn = profile?.leaderboardOptIn === true
   const [leaderboardToggling, setLeaderboardToggling] = useState(false)
-  useEffect(() => {
-    if (!user) return
-    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      setLeaderboardOptInState(snap.data()?.leaderboardOptIn === true)
-    })
-    return unsub
-  }, [user])
 
   const handleLeaderboardToggle = async () => {
     if (!user || leaderboardToggling) return
@@ -727,15 +720,15 @@ export default function SettingsPage() {
                 <Button size="sm" onClick={handleSaveName} disabled={savingName || !nameValue.trim()}>
                   {savingName ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => { setEditingName(false); setNameValue(user.displayName ?? "") }} disabled={savingName}>
+                <Button size="sm" variant="ghost" onClick={() => { setEditingName(false); setNameValue(profile?.displayName ?? "") }} disabled={savingName}>
                   Cancel
                 </Button>
               </div>
             ) : (
               <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-sm font-medium">{user.displayName || <span className="text-muted-foreground italic">Not set</span>}</p>
+                <p className="text-sm font-medium">{profile?.displayName || <span className="text-muted-foreground italic">Not set</span>}</p>
                 <button
-                  onClick={() => { setNameValue(user.displayName ?? ""); setEditingName(true) }}
+                  onClick={() => { setNameValue(profile?.displayName ?? ""); setEditingName(true) }}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   aria-label="Edit display name"
                 >
@@ -952,7 +945,6 @@ export default function SettingsPage() {
         onComplete={async (data) => {
           if (!user) return
           await completeOnboarding(user.uid, data)
-          await refreshCurrency()
           setSetupWizardOpen(false)
           toast.success("Settings updated successfully.")
         }}

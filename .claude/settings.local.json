@@ -172,7 +172,21 @@
       "WebFetch(domain:getfinny.app)",
       "WebFetch(domain:getlaunchlist.com)",
       "Bash(npx --version)",
-      "Bash(curl -s -i http://localhost:3001/firebase-messaging-sw.js)"
+      "Bash(curl -s -i http://localhost:3001/firebase-messaging-sw.js)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list)",
+      "Bash(firebase firestore:get leaderboardProfiles --project fin-track-adc2c)",
+      "Bash(gcloud config *)",
+      "Bash(gcloud auth *)",
+      "Bash(curl -s -H 'Authorization: Bearer __TRACKED_VAR__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardProfiles')",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardProfiles')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}\\\\n' -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardProfiles')",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardProfiles/JHZEIuQ6dNNNmwQ2Tx0pb26yGKq2')",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardStats/current')",
+      "Bash(gcloud scheduler jobs describe *)",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardProfiles/vypZJj6zukUSrzPf1N7xUiIoeXP2')",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/users/vypZJj6zukUSrzPf1N7xUiIoeXP2?mask.fieldPaths=leaderboardOptIn&mask.fieldPaths=leaderboardOptInAt')",
+      "Bash(curl -s -o /dev/null -w 'DELETE status: %{http_code}\\\\n' -X DELETE -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'https://firestore.googleapis.com/v1/projects/fin-track-adc2c/databases/\\(default\\)/documents/leaderboardStats/current')"
     ]
   }
 }

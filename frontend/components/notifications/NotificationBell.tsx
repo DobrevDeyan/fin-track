@@ -29,7 +29,7 @@ function Badge({ count }: { count: number }) {
 
 /** Desktop variant — bell opens a Popover */
 function DesktopBell() {
-  const { notifications, unreadCount, loading, markAllRead } = useInAppNotifications()
+  const { notifications, unreadCount, loading, markAllRead, deleteNotification, clearAll } = useInAppNotifications()
   const [open, setOpen] = useState(false)
 
   const handleOpen = (v: boolean) => {
@@ -58,6 +58,8 @@ function DesktopBell() {
           unreadCount={unreadCount}
           loading={loading}
           onMarkAllRead={markAllRead}
+          onDelete={deleteNotification}
+          onClearAll={clearAll}
           onClose={() => setOpen(false)}
         />
       </PopoverContent>

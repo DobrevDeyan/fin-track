@@ -11,6 +11,9 @@ import { DashboardProvider } from "@/contexts/dashboard/DashboardProvider"
 import { GlobalQuickAdd } from "@/components/dashboard/GlobalQuickAdd"
 import { InstallPrompt } from "@/components/InstallPrompt"
 import { UIComplexityProvider } from "@/contexts/UIComplexityContext"
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
+import { ScanQuotaProvider } from "@/contexts/ScanQuotaContext"
+import { NotificationsProvider } from "@/contexts/NotificationsContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -18,6 +21,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <UIComplexityProvider>
+      <SubscriptionProvider>
+      <ScanQuotaProvider>
+      <NotificationsProvider>
       <DashboardProvider>
       <NotificationListener />
       <SwipeBackNavigator>
@@ -41,6 +47,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <InstallPrompt />
       </SwipeBackNavigator>
       </DashboardProvider>
+      </NotificationsProvider>
+      </ScanQuotaProvider>
+      </SubscriptionProvider>
       </UIComplexityProvider>
     </AuthGuard>
   )

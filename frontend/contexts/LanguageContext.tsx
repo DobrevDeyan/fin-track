@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { NextIntlClientProvider } from "next-intl"
 import { useAuth } from "./AuthContext"
-import { getUserDocument } from "@/lib/firestore-users"
+import { useUserProfile } from "./UserProfileContext"
 import { type Locale, defaultLocale, locales } from "@/i18n/config"
 
 interface LanguageContextType {
@@ -16,6 +16,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children, initialLocale }: { children: React.ReactNode, initialLocale: Locale }) {
   const { user } = useAuth()
+  const { profile, loading: profileLoading } = useUserProfile()
   const [locale, setLocaleState] = useState<Locale>(initialLocale)
   const [messages, setMessages] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,37 +34,16 @@ export function LanguageProvider({ children, initialLocale }: { children: React.
 
   // Load user's saved language preference or use initialLocale
   useEffect(() => {
-    const loadUserLanguage = async () => {
-      if (!user) {
-        // If no user, use the initialLocale (from server) and load messages
-        setLocaleState(initialLocale)
-        await loadMessages(initialLocale)
-        setLoading(false)
-        return
-      }
+    // Mirrors the old getDoc await — don't resolve a locale (and thus load messages)
+    // until the profile listener has settled, or we get a flash of the wrong locale.
+    if (user && profileLoading) return
 
-      try {
-        const userDoc = await getUserDocument(user.uid)
-        const savedLang = userDoc?.language as Locale
-        if (savedLang && locales.includes(savedLang)) {
-          setLocaleState(savedLang)
-          await loadMessages(savedLang)
-        } else {
-          // If user but no saved lang, use initialLocale
-          setLocaleState(initialLocale)
-          await loadMessages(initialLocale)
-        }
-      } catch {
-        // On error, use initialLocale
-        setLocaleState(initialLocale)
-        await loadMessages(initialLocale)
-      } finally {
-        setLoading(false)
-      }
-    }
+    const savedLang = profile?.language as Locale | undefined
+    const loc = user && savedLang && locales.includes(savedLang) ? savedLang : initialLocale
 
-    loadUserLanguage()
-  }, [user, loadMessages, initialLocale]) // Add initialLocale to dependencies
+    setLocaleState(loc)
+    loadMessages(loc).finally(() => setLoading(false))
+  }, [user, profile, profileLoading, loadMessages, initialLocale])
 
   const setLocale = useCallback(async (newLocale: Locale) => {
     setLocaleState(newLocale)

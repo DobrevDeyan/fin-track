@@ -97,7 +97,7 @@ function DashboardInnerContent() {
     const tHousehold = useTranslations("household");
     const { user } = useAuth();
     const { mode } = useUIMode();
-    const { userCurrency, displayName, monthlyBudget, onboardingCompleted, refreshCurrency, loading: currencyLoading } = useCurrency();
+    const { userCurrency, displayName, monthlyBudget, onboardingCompleted, loading: currencyLoading } = useCurrency();
     const { format: formatMoney } = useMoney();
     const { householdId, household, isHouseholdMode, setIsHouseholdMode, householdEntries, householdEntriesLoading, householdEntriesError, refreshHouseholdEntries } = useHousehold();
 
@@ -610,7 +610,6 @@ function DashboardInnerContent() {
                     <OnboardingScreen
                         onComplete={async (data) => {
                             await completeOnboarding(user.uid, data);
-                            await refreshCurrency();
                             // Refresh all dashboard data to pick up the new salary entry & recurring transaction
                             await refreshSummary();
                             await entriesHook.loadEntries();

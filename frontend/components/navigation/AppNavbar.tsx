@@ -34,11 +34,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import { updateUserCurrency, updateUserLanguage } from "@/lib/firestore-users"
+import { updateUserCurrency } from "@/lib/firestore-users"
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@/lib/constants/currency.constants"
 import { useCurrency } from "@/contexts/CurrencyContext"
-import { useLanguage } from "@/contexts/LanguageContext"
-import { locales, localeNames, type Locale } from "@/i18n/config"
+// Language switcher disabled for now — see LanguageContext/i18n config, kept intact for re-enable
+// import { useLanguage } from "@/contexts/LanguageContext"
+// import { locales, localeNames, type Locale } from "@/i18n/config"
 import { ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -55,8 +56,7 @@ export const AppNavbar = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [currencyLoading, setCurrencyLoading] = useState(false)
   const { user, logout } = useAuth()
-  const { userCurrency, refreshCurrency, displayName } = useCurrency()
-  const { locale, setLocale } = useLanguage()
+  const { userCurrency, displayName } = useCurrency()
   const { mode } = useUIMode()
 
   // Optimistic active path — immediately reflects clicks without waiting for pathname
@@ -83,7 +83,6 @@ export const AppNavbar = () => {
     try {
       setCurrencyLoading(true)
       await updateUserCurrency(user.uid, currency)
-      await refreshCurrency()
       setTimeout(() => {
         window.location.reload()
       }, 100)
@@ -95,17 +94,18 @@ export const AppNavbar = () => {
     }
   }
 
-  const handleLanguageChange = async (newLocale: string) => {
-    const loc = newLocale as Locale
-    setLocale(loc)
-    if (user) {
-      try {
-        await updateUserLanguage(user.uid, loc)
-      } catch (error) {
-        logger.error("Error saving language", error)
-      }
-    }
-  }
+  // Language switcher disabled for now
+  // const handleLanguageChange = async (newLocale: string) => {
+  //   const loc = newLocale as Locale
+  //   setLocale(loc)
+  //   if (user) {
+  //     try {
+  //       await updateUserLanguage(user.uid, loc)
+  //     } catch (error) {
+  //       logger.error("Error saving language", error)
+  //     }
+  //   }
+  // }
 
   const handleLogout = async () => {
     try {
@@ -135,7 +135,7 @@ export const AppNavbar = () => {
 
   const [showFloatingMenu, setShowFloatingMenu] = useState(false)
   const [showNotifs, setShowNotifs] = useState(false)
-  const { notifications, unreadCount, loading: notifsLoading, markAllRead } = useInAppNotifications()
+  const { notifications, unreadCount, loading: notifsLoading, markAllRead, deleteNotification, clearAll } = useInAppNotifications()
 
   const handleOpenNotifs = () => {
     setShowNotifs(true)
@@ -302,7 +302,7 @@ export const AppNavbar = () => {
               </div>
             </div>
 
-            {/* Currency + Language pills */}
+            {/* Currency pill */}
             <div className="flex gap-2 mt-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -325,6 +325,7 @@ export const AppNavbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Language pill disabled for now
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
@@ -345,6 +346,7 @@ export const AppNavbar = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+              */}
             </div>
           </div>
 
@@ -359,6 +361,8 @@ export const AppNavbar = () => {
                 unreadCount={unreadCount}
                 loading={notifsLoading}
                 onMarkAllRead={markAllRead}
+                onDelete={deleteNotification}
+                onClearAll={clearAll}
                 onClose={() => { setIsOpen(false); setShowNotifs(false) }}
               />
             </div>
@@ -629,6 +633,7 @@ export const AppNavbar = () => {
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
+                {/* Language switcher disabled for now
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal pb-1">Language</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={locale} onValueChange={handleLanguageChange}>
@@ -638,6 +643,7 @@ export const AppNavbar = () => {
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
+                */}
               </DropdownMenuContent>
             </DropdownMenu>
 

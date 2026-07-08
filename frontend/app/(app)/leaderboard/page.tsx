@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { useUserProfile } from "@/contexts/UserProfileContext"
 import { getMyLeaderboardProfile } from "@/lib/firestore-leaderboard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -109,11 +110,12 @@ function ScoreRow({
 
 export default function LeaderboardPage() {
   const { user, loading: authLoading } = useAuth()
+  const { profile: userProfile } = useUserProfile()
   const router = useRouter()
 
   const [stats, setStats] = useState<LeaderboardStats | null>(null)
   const [profile, setProfile] = useState<LeaderboardProfile | null>(null)
-  const [optedIn, setOptedIn] = useState(false)
+  const optedIn = userProfile?.leaderboardOptIn === true
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -150,17 +152,6 @@ export default function LeaderboardPage() {
     )
     return unsub
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading])
-
-  // Live listener on user doc for opt-in state
-  useEffect(() => {
-    if (authLoading || !user) return
-    const unsub = onSnapshot(
-      doc(db, "users", user.uid),
-      (snap) => setOptedIn(snap.data()?.leaderboardOptIn === true),
-      () => {}
-    )
-    return unsub
   }, [user, authLoading])
 
   // Load personal profile when opted in

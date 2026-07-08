@@ -6,6 +6,7 @@ import Script from "next/script"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemeContextProvider } from "@/contexts/ThemeContext"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { UserProfileProvider } from "@/contexts/UserProfileContext"
 import { CurrencyProvider } from "@/contexts/CurrencyContext"
 import { LanguageProvider } from "@/contexts/LanguageContext"
 import { RegisterSW } from "./register-sw"
@@ -108,6 +109,7 @@ export default function RootLayout({
         >
           <ThemeContextProvider>
           <AuthProvider>
+            <UserProfileProvider>
             <HouseholdProvider>
             <CurrencyProvider>
               <LanguageProvider initialLocale={defaultLocale}>
@@ -117,6 +119,7 @@ export default function RootLayout({
               </LanguageProvider>
             </CurrencyProvider>
             </HouseholdProvider>
+            </UserProfileProvider>
           </AuthProvider>
           </ThemeContextProvider>
         </ThemeProvider>

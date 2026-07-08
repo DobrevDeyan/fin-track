@@ -462,7 +462,13 @@
     "justNow": "преди момент",
     "minutesAgo": "преди {count} мин",
     "hoursAgo": "преди {count} ч",
-    "daysAgo": "преди {count} дни"
+    "daysAgo": "преди {count} дни",
+    "clearAll": "Изчисти всички",
+    "clearAllConfirmTitle": "Изчистване на всички известия?",
+    "clearAllConfirmDesc": "Това ще изтрие всичките ви известия завинаги. Действието не може да бъде отменено.",
+    "today": "Днес",
+    "thisWeek": "Тази седмица",
+    "earlier": "По-рано"
   },
   "landing": {
     "hero": {

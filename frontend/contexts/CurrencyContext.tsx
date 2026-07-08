@@ -7,8 +7,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react"
-import { useAuth } from "./AuthContext"
-import { getUserDocument } from "@/lib/firestore-users"
+import { useUserProfile } from "./UserProfileContext"
 import { type SupportedCurrency, DEFAULT_CURRENCY, BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { fetchExchangeRates, convertAmount as _convertAmount, type ExchangeRates } from "@/lib/exchange-rate"
 import { formatCurrency, type CurrencyFormatOptions } from "@/lib/currency-utils"
@@ -18,7 +17,6 @@ import { logger } from "@/lib/utils/logger"
 interface CurrencyContextType {
   userCurrency: SupportedCurrency
   loading: boolean
-  refreshCurrency: () => Promise<void>
   displayName?: string
   monthlyBudget?: number
   onboardingCompleted?: boolean
@@ -44,12 +42,12 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
-  const [userCurrency, setUserCurrency] = useState<SupportedCurrency>(DEFAULT_CURRENCY)
-  const [loading, setLoading] = useState(true)
-  const [displayName, setDisplayName] = useState<string | undefined>()
-  const [monthlyBudget, setMonthlyBudget] = useState<number | undefined>()
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | undefined>()
+  const { profile, loading } = useUserProfile()
+  const userCurrency: SupportedCurrency =
+    profile?.currency === "EUR" || profile?.currency === "USD" ? profile.currency : DEFAULT_CURRENCY
+  const displayName = profile?.displayName
+  const monthlyBudget = profile?.monthlyBudget
+  const onboardingCompleted = profile?.onboardingCompleted ?? false
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null)
 
   // Fetch live fixing once on mount
@@ -91,50 +89,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     [exchangeRates, userCurrency]
   )
 
-  const loadUserCurrency = async () => {
-    if (!user) {
-      setUserCurrency(DEFAULT_CURRENCY)
-      setDisplayName(undefined)
-      setMonthlyBudget(undefined)
-      setOnboardingCompleted(undefined)
-      setLoading(false)
-      return
-    }
-
-    try {
-      const userDoc = await getUserDocument(user.uid)
-      if (userDoc?.currency) {
-        // Validate currency is supported
-        const currency = userDoc.currency as SupportedCurrency
-        if (currency === "EUR" || currency === "USD") {
-          setUserCurrency(currency)
-        } else {
-          setUserCurrency(DEFAULT_CURRENCY)
-        }
-      } else {
-        setUserCurrency(DEFAULT_CURRENCY)
-      }
-      setDisplayName(userDoc?.displayName)
-      setMonthlyBudget(userDoc?.monthlyBudget)
-      setOnboardingCompleted(userDoc?.onboardingCompleted ?? false)
-    } catch (error) {
-      logger.error("Error loading user currency", error)
-      setUserCurrency(DEFAULT_CURRENCY)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadUserCurrency()
-  }, [user])
-
-  const refreshCurrency = async () => {
-    await loadUserCurrency()
-  }
-
   return (
-    <CurrencyContext.Provider value={{ userCurrency, loading, refreshCurrency, displayName, monthlyBudget, onboardingCompleted, exchangeRates, convertAmount, formatMoney, toBaseCurrency, convertFromBase }}>
+    <CurrencyContext.Provider value={{ userCurrency, loading, displayName, monthlyBudget, onboardingCompleted, exchangeRates, convertAmount, formatMoney, toBaseCurrency, convertFromBase }}>
       {children}
     </CurrencyContext.Provider>
   )

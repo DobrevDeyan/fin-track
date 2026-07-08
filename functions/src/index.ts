@@ -650,6 +650,26 @@ export const deleteMyNotifications = onCall(
   }
 );
 
+/**
+ * Callable function to delete a single notification for the authenticated user.
+ * Uses Admin SDK so it bypasses Firestore security rules (which only allow
+ * Cloud Functions to delete notifications).
+ */
+export const deleteNotification = onCall(
+  { region: "europe-west4" },
+  async (request) => {
+    const userId = request.auth?.uid;
+    if (!userId) throw new HttpsError("unauthenticated", "Not authenticated");
+
+    const notificationId = request.data?.notificationId as string;
+    if (!notificationId) throw new HttpsError("invalid-argument", "notificationId required");
+
+    await db.collection("users").doc(userId).collection("notifications").doc(notificationId).delete();
+
+    return { ok: true };
+  }
+);
+
 // ─── Audit Log Triggers ───────────────────────────────────────────────────────
 
 /**
@@ -897,7 +917,19 @@ export const aggregateLeaderboard = onSchedule(
     }
 
     if (profiles.length === 0) {
-      logger.info("No profiles scored — skipping leaderboardStats write");
+      // Write an explicit zero-state so the page reflects reality instead of
+      // showing whatever the last non-empty snapshot happened to be.
+      await db.collection("leaderboardStats").doc("current").set({
+        totalParticipants: 0,
+        medianScore: 0,
+        meanScore: 0,
+        tierDistribution: { critical: 0, "needs-work": 0, good: 0, excellent: 0, outstanding: 0 },
+        scorePercentileBands: { top10: 0, top25: 0, top50: 0 },
+        topScores: [],
+        generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        monthKey,
+      });
+      logger.info("No profiles scored — wrote zero-state leaderboardStats");
       return;
     }
 
@@ -1014,7 +1046,19 @@ export const triggerLeaderboardAggregation = onCall(
       }));
     }
 
-    if (profiles.length === 0) return { ok: true, participants: 0 };
+    if (profiles.length === 0) {
+      await db.collection("leaderboardStats").doc("current").set({
+        totalParticipants: 0,
+        medianScore: 0,
+        meanScore: 0,
+        tierDistribution: { critical: 0, "needs-work": 0, good: 0, excellent: 0, outstanding: 0 },
+        scorePercentileBands: { top10: 0, top25: 0, top50: 0 },
+        topScores: [],
+        generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        monthKey,
+      });
+      return { ok: true, participants: 0 };
+    }
 
     const scores = profiles.map((p) => p.score).sort((a, b) => a - b);
     const tierDist: Record<HealthTier, number> = { critical: 0, "needs-work": 0, good: 0, excellent: 0, outstanding: 0 };

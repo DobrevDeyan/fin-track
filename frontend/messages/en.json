@@ -462,7 +462,13 @@
     "justNow": "just now",
     "minutesAgo": "{count}m ago",
     "hoursAgo": "{count}h ago",
-    "daysAgo": "{count}d ago"
+    "daysAgo": "{count}d ago",
+    "clearAll": "Clear all",
+    "clearAllConfirmTitle": "Clear all notifications?",
+    "clearAllConfirmDesc": "This permanently deletes all your notifications. This can't be undone.",
+    "today": "Today",
+    "thisWeek": "This week",
+    "earlier": "Earlier"
   },
   "landing": {
     "hero": {

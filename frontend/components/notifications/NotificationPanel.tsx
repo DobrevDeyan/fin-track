@@ -1,10 +1,23 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { Bell, TriangleAlert, FlaskConical, CheckCheck } from "lucide-react"
+import { Bell, TriangleAlert, FlaskConical, CheckCheck, X, Loader2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import type { AppNotification } from "@/lib/hooks/useInAppNotifications"
 
 interface Props {
@@ -12,6 +25,8 @@ interface Props {
   unreadCount: number
   loading: boolean
   onMarkAllRead: () => void
+  onDelete: (id: string) => Promise<void>
+  onClearAll: () => Promise<void>
   onClose?: () => void
 }
 
@@ -42,14 +57,43 @@ function TypeIcon({ type }: { type: AppNotification["type"] }) {
   )
 }
 
-export function NotificationPanel({ notifications, unreadCount, loading, onMarkAllRead, onClose }: Props) {
+export function NotificationPanel({ notifications, unreadCount, loading, onMarkAllRead, onDelete, onClearAll, onClose }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const isOnPage = pathname === "/notifications"
+  const tCommon = useTranslations("common")
+  const t = useTranslations("notifications")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [clearAllOpen, setClearAllOpen] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   const handleClick = (_n: AppNotification) => {
     onClose?.()
     router.push("/notifications")
+  }
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    setDeletingId(id)
+    try {
+      await onDelete(id)
+    } catch {
+      toast.error("Something went wrong. Please try again.")
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleClearAll = async () => {
+    setClearing(true)
+    try {
+      await onClearAll()
+      setClearAllOpen(false)
+    } catch {
+      toast.error("Something went wrong. Please try again.")
+    } finally {
+      setClearing(false)
+    }
   }
 
   return (
@@ -68,17 +112,30 @@ export function NotificationPanel({ notifications, unreadCount, loading, onMarkA
             </Link>
           )}
         </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-            onClick={onMarkAllRead}
-          >
-            <CheckCheck className="h-3.5 w-3.5" />
-            Mark all read
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+              onClick={onMarkAllRead}
+            >
+              <CheckCheck className="h-3.5 w-3.5" />
+              Mark all read
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+              onClick={() => setClearAllOpen(true)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("clearAll")}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* List */}
@@ -97,12 +154,12 @@ export function NotificationPanel({ notifications, unreadCount, loading, onMarkA
             {notifications.map((n, i) => (
               <li key={n.id}>
                 {i > 0 && <div className="h-px bg-border/40 mx-4" />}
-                <button
-                  onClick={() => handleClick(n)}
+                <div
                   className={cn(
-                    "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60",
+                    "group relative w-full flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/60 cursor-pointer",
                     !n.read && "bg-primary/5"
                   )}
+                  onClick={() => handleClick(n)}
                 >
                   <TypeIcon type={n.type} />
                   <div className="flex-1 min-w-0">
@@ -110,7 +167,10 @@ export function NotificationPanel({ notifications, unreadCount, loading, onMarkA
                       <p className={cn("text-sm leading-snug line-clamp-1", !n.read ? "font-semibold text-foreground" : "font-medium text-foreground/80")}>
                         {n.title}
                       </p>
-                      <span className="text-[11px] text-muted-foreground shrink-0 mt-0.5">
+                      <span
+                        className="text-[11px] text-muted-foreground shrink-0 mt-0.5 group-hover:opacity-0 transition-opacity"
+                        title={n.createdAt?.toDate().toLocaleString()}
+                      >
                         {relativeTime(n.createdAt)}
                       </span>
                     </div>
@@ -119,14 +179,41 @@ export function NotificationPanel({ notifications, unreadCount, loading, onMarkA
                     </p>
                   </div>
                   {!n.read && (
-                    <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                    <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0 group-hover:opacity-0 transition-opacity" />
                   )}
-                </button>
+                  <button
+                    onClick={(e) => handleDelete(e, n.id)}
+                    disabled={deletingId === n.id}
+                    aria-label={tCommon("delete")}
+                    className="absolute right-3 top-2.5 h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950/50 transition-opacity"
+                  >
+                    {deletingId === n.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      <AlertDialog open={clearAllOpen} onOpenChange={setClearAllOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("clearAllConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("clearAllConfirmDesc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={clearing}>{tCommon("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearAll}
+              disabled={clearing}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {clearing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("clearAll")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

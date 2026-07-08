@@ -21,8 +21,9 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { PocketLogo } from "@/components/PocketLogo"
-import { useLanguage } from "@/contexts/LanguageContext"
-import { locales, localeNames, type Locale } from "@/i18n/config"
+// Language switcher disabled for now — see LanguageContext/i18n config, kept intact for re-enable
+// import { useLanguage } from "@/contexts/LanguageContext"
+// import { locales, localeNames, type Locale } from "@/i18n/config"
 import { cn } from "@/lib/utils"
 import { motion, type Variants } from "framer-motion"
 
@@ -38,11 +39,12 @@ const itemVariants: Variants = {
 export const MarketingNavbar = () => {
   const t = useTranslations("nav")
   const [isOpen, setIsOpen] = useState(false)
-  const { locale, setLocale } = useLanguage()
 
-  const handleLanguageChange = (newLocale: string) => {
-    setLocale(newLocale as Locale)
-  }
+  // Language switcher disabled for now
+  // const { locale, setLocale } = useLanguage()
+  // const handleLanguageChange = (newLocale: string) => {
+  //   setLocale(newLocale as Locale)
+  // }
 
   const handleNavClick = (href: string, e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -106,6 +108,7 @@ export const MarketingNavbar = () => {
 
         {/* Desktop right */}
         <div className="hidden md:flex items-center gap-2">
+          {/* Language switcher disabled for now
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 border border-transparent hover:border-border/50">
@@ -126,6 +129,7 @@ export const MarketingNavbar = () => {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          */}
 
           <Link href="/auth/login">
             <Button variant="outline" size="sm">{t("login")}</Button>
@@ -162,7 +166,7 @@ export const MarketingNavbar = () => {
               </button>
             </div>
 
-            {/* Language pill */}
+            {/* Language pill disabled for now
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
@@ -183,6 +187,7 @@ export const MarketingNavbar = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            */}
           </div>
 
           <div className="h-px bg-border/50" />
