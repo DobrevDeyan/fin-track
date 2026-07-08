@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
-import { getMyLeaderboardProfile, setLeaderboardOptIn } from "@/lib/firestore-leaderboard"
+import { getMyLeaderboardProfile } from "@/lib/firestore-leaderboard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -172,7 +172,7 @@ export default function LeaderboardPage() {
   const handleToggleOptIn = async () => {
     if (!user || toggling) return
     setToggling(true)
-    try { await setLeaderboardOptIn(user.uid, !optedIn) }
+    try { await httpsCallable(functions, "updateLeaderboardOptIn")({ optIn: !optedIn }) }
     finally { setToggling(false) }
   }
 
@@ -332,10 +332,10 @@ export default function LeaderboardPage() {
       )}
 
       {/* Opt-in card */}
-      <Card className={cn("border", optedIn ? "border-emerald-200 bg-emerald-50/20 dark:bg-emerald-950/10" : "")}>
+      <Card className={cn("border", optedIn ? "border-primary/20 bg-primary/5" : "")}>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <ShieldCheck className="h-4 w-4 text-primary" />
             Privacy &amp; Participation
           </CardTitle>
           <CardDescription className="text-xs leading-relaxed">
@@ -348,7 +348,7 @@ export default function LeaderboardPage() {
             size="sm"
             onClick={handleToggleOptIn}
             disabled={toggling}
-            className={cn("gap-2", optedIn && "border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950")}
+            className={cn("gap-2", optedIn && "border-primary/30 text-primary hover:bg-primary/10")}
           >
             {optedIn
               ? <><CheckCircle2 className="h-4 w-4" /> Opted in — click to opt out</>

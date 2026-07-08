@@ -5,7 +5,7 @@
  * leaderboardProfiles/{uid} — owner-read only
  */
 
-import { doc, getDoc, getDocFromServer, updateDoc } from "firebase/firestore"
+import { doc, getDoc, getDocFromServer } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { LeaderboardStats, LeaderboardProfile } from "@/lib/firestore-types"
 
@@ -19,9 +19,4 @@ export async function getLeaderboardStats(bypassCache = false): Promise<Leaderbo
 export async function getMyLeaderboardProfile(userId: string): Promise<LeaderboardProfile | null> {
   const snap = await getDocFromServer(doc(db, "leaderboardProfiles", userId))
   return snap.exists() ? (snap.data() as LeaderboardProfile) : null
-}
-
-/** Update opt-in preference directly on the user document. */
-export async function setLeaderboardOptIn(userId: string, optIn: boolean): Promise<void> {
-  await updateDoc(doc(db, "users", userId), { leaderboardOptIn: optIn })
 }

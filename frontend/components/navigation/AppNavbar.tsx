@@ -284,13 +284,13 @@ export const AppNavbar = () => {
             {/* User info */}
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Avatar className="h-12 w-12 ring-2 ring-emerald-400/30">
+                <Avatar className="h-12 w-12 ring-2 ring-primary/30">
                   <AvatarImage src={user?.photoURL || undefined} />
-                  <AvatarFallback className="bg-emerald-500/20 text-emerald-700 font-semibold text-base">
+                  <AvatarFallback className="bg-primary/20 text-primary font-semibold text-base">
                     {getUserInitials(user)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-background" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-primary border-2 border-background" />
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-foreground font-semibold text-sm truncate leading-tight">
@@ -307,7 +307,7 @@ export const AppNavbar = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
-                    <DollarSign className="h-3 w-3 text-emerald-600" />
+                    <DollarSign className="h-3 w-3 text-primary" />
                     {userCurrency}
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </button>
@@ -328,7 +328,7 @@ export const AppNavbar = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors text-foreground text-xs font-medium">
-                    <Globe className="h-3 w-3 text-emerald-600" />
+                    <Globe className="h-3 w-3 text-primary" />
                     {localeNames[locale as Locale] ?? locale.toUpperCase()}
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </button>
@@ -388,13 +388,13 @@ export const AppNavbar = () => {
                         onClick={() => { setIsOpen(false); setOptimisticPath(href) }}
                         className={cn(
                           "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
-                          isActive ? "text-emerald-700 dark:text-emerald-400" : "text-foreground/65 hover:text-foreground"
+                          isActive ? "text-primary" : "text-foreground/65 hover:text-foreground"
                         )}
                       >
                         <div className={cn(
                           "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
                           isActive
-                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+                            ? "bg-primary/10 text-primary"
                             : "bg-background text-muted-foreground"
                         )}>
                           <Icon className="h-4 w-4" />
@@ -402,7 +402,7 @@ export const AppNavbar = () => {
                         <span className="flex-1">{label}</span>
                         <ChevronRight className={cn(
                           "h-4 w-4 shrink-0",
-                          isActive ? "text-emerald-600/40" : "text-muted-foreground/30"
+                          isActive ? "text-primary/40" : "text-muted-foreground/30"
                         )} />
                       </Link>
                     </div>
@@ -470,13 +470,13 @@ export const AppNavbar = () => {
                   onClick={() => { setIsOpen(false); setOptimisticPath("/settings") }}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3.5 text-[14px] font-medium transition-colors duration-150",
-                    activePath === "/settings" ? "text-emerald-700 dark:text-emerald-400" : "text-foreground/65 hover:text-foreground"
+                    activePath === "/settings" ? "text-primary" : "text-foreground/65 hover:text-foreground"
                   )}
                 >
                   <div className={cn(
                     "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-colors",
                     activePath === "/settings"
-                      ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+                      ? "bg-primary/10 text-primary"
                       : "bg-background text-muted-foreground"
                   )}>
                     <Settings className="h-4 w-4" />
@@ -484,7 +484,7 @@ export const AppNavbar = () => {
                   <span className="flex-1">{t("accountSettings")}</span>
                   <ChevronRight className={cn(
                     "h-4 w-4 shrink-0",
-                    activePath === "/settings" ? "text-emerald-600/40" : "text-muted-foreground/30"
+                    activePath === "/settings" ? "text-primary/40" : "text-muted-foreground/30"
                   )} />
                 </Link>
                 <div className="h-px bg-border/60 mx-4" />
@@ -580,12 +580,12 @@ export const AppNavbar = () => {
                             : "text-muted-foreground hover:text-foreground hover:bg-background/70"
                         )}
                       >
-                        <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-emerald-600")} />
+                        <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
                         <span className="hidden xl:inline whitespace-nowrap">{label}</span>
                         {isActive && (
                           <motion.div
                             layoutId="desktopActiveBar"
-                            className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-emerald-500"
+                            className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-primary"
                           />
                         )}
                       </Link>
@@ -644,9 +644,9 @@ export const AppNavbar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                  <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-emerald-200 dark:hover:ring-emerald-800 transition-all">
+                  <Avatar className="h-9 w-9 ring-2 ring-transparent hover:ring-primary/30 transition-all">
                     <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || user?.email || "User"} />
-                    <AvatarFallback className="bg-emerald-600 text-white text-sm font-semibold">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
                       {getUserInitials(user)}
                     </AvatarFallback>
                   </Avatar>
@@ -657,7 +657,7 @@ export const AppNavbar = () => {
                   <div className="flex items-center gap-2.5">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.photoURL || undefined} />
-                      <AvatarFallback className="bg-emerald-600 text-white text-xs font-semibold">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                         {getUserInitials(user)}
                       </AvatarFallback>
                     </Avatar>

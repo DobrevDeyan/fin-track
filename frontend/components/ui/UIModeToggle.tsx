@@ -24,8 +24,8 @@ export function UIModeToggle({ variant = "pill" }: UIModeToggleProps) {
           <div className={cn(
             "flex items-center justify-center h-7 w-7 rounded-lg transition-colors",
             isSimple
-              ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
-              : "bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
+              ? "bg-muted text-muted-foreground"
+              : "bg-primary/10 text-primary"
           )}>
             {isSimple ? <Layers className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
           </div>
@@ -41,7 +41,7 @@ export function UIModeToggle({ variant = "pill" }: UIModeToggleProps) {
         {/* Toggle track */}
         <div className={cn(
           "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200",
-          isSimple ? "bg-muted-foreground/30" : "bg-emerald-500"
+          isSimple ? "bg-muted-foreground/30" : "bg-primary"
         )}>
           <span className={cn(
             "inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200",
@@ -64,7 +64,7 @@ export function UIModeToggle({ variant = "pill" }: UIModeToggleProps) {
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200",
               isSimple
                 ? "bg-muted text-muted-foreground border-border/50 hover:text-foreground hover:border-border"
-                : "bg-emerald-50 text-emerald-700 border-emerald-200/60 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50"
+                : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
             )}
           >
             {isSimple ? (

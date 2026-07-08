@@ -361,7 +361,7 @@ export default function DebtPage() {
                 </div>
               </div>
               <div className="flex gap-1 shrink-0">
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700"
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary hover:text-primary/80"
                   title={t("recordPayment")}
                   onClick={() => { setPaymentDebt(d); setPaymentAmount("") }}>
                   <CreditCard className="h-3.5 w-3.5" />

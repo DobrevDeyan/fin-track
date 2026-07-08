@@ -29,7 +29,6 @@ import {
   callLeaveHousehold,
   callRemoveHouseholdMember,
 } from "@/lib/firestore-household"
-import { setLeaderboardOptIn } from "@/lib/firestore-leaderboard"
 import { collection, addDoc, doc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { ThemeControls } from "@/components/ThemeControls"
@@ -114,7 +113,7 @@ export default function SettingsPage() {
     if (!user || leaderboardToggling) return
     setLeaderboardToggling(true)
     try {
-      await setLeaderboardOptIn(user.uid, !leaderboardOptIn)
+      await httpsCallable(functions, "updateLeaderboardOptIn")({ optIn: !leaderboardOptIn })
     } catch {
       toast.error("Failed to update leaderboard preference.")
     } finally {
@@ -387,7 +386,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             {notifPermission === "granted" ? (
-              <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <div className="flex items-center gap-2 text-sm text-primary">
                 <Check className="h-4 w-4" />
                 Notifications are enabled
               </div>
@@ -453,7 +452,7 @@ export default function SettingsPage() {
             {leaderboardToggling ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : leaderboardOptIn ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <CheckCircle2 className="h-4 w-4 text-primary" />
             ) : (
               <Circle className="h-4 w-4" />
             )}
@@ -503,7 +502,7 @@ export default function SettingsPage() {
                 <ul className="text-xs text-muted-foreground space-y-0.5 mt-1">
                   {household.members.map((m) => (
                     <li key={m.uid} className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                       <span className="flex-1">
                         {m.displayName}
                         {m.uid === user?.uid ? ` ${th("you")}` : ""}
@@ -829,7 +828,7 @@ export default function SettingsPage() {
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                 {PRO_FEATURES.map((f) => (
                   <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                    <Check className="h-3.5 w-3.5 text-primary shrink-0" />
                     {f}
                   </li>
                 ))}

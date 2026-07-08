@@ -168,7 +168,11 @@
       "Bash(npx serve *)",
       "Bash(timeout 20 bash -c 'until curl -sf http://localhost:3005 >/dev/null; do sleep 1; done')",
       "Bash(node step7-offline.js)",
-      "Bash(pkill -f \"serve out\")"
+      "Bash(pkill -f \"serve out\")",
+      "WebFetch(domain:getfinny.app)",
+      "WebFetch(domain:getlaunchlist.com)",
+      "Bash(npx --version)",
+      "Bash(curl -s -i http://localhost:3001/firebase-messaging-sw.js)"
     ]
   }
 }
