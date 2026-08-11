@@ -1,6 +1,8 @@
+// MUST stay in sync with ml-service/src/firestore-quota.ts SCAN_LIMITS —
+// the server is authoritative; this copy only drives UI copy and gating.
 export const SCAN_LIMITS = {
-  free: 3,   // teaser: 3 free scans so users experience the feature
-  pro: 10,   // 10 scans = $1.00 Doc AI cost, leaves margin at 2.99 EUR/month
+  free: 0,   // paid feature — Document AI costs $0.10/scan, see firestore-quota.ts
+  pro: 10,
   business: 50,
 } as const
 

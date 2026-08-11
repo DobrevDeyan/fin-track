@@ -429,8 +429,8 @@ All custom functions are in `functions/src/index.ts`.
 | **Cloud Functions v2** | Backend logic (Blaze required) | 2M invocations/month |
 | **Firebase Cloud Messaging** | Push notifications | Free, unlimited |
 | **Cloud Run** | ML service (`europe-west1`) | ~$1-2/month (EU not free) |
-| **Document AI** | Receipt OCR (Expense Parser, `eu`) | ~$0.01/page |
-| **Gemini AI** | AI digest + chat | Free tier via AI Studio (15 RPM, 1500 RPD) |
+| **Document AI** | Receipt OCR (Expense Parser, `eu`) | **$0.10 per scan** — no free tier, see `MONETIZATION.md` |
+| **Gemini AI** | AI digest + chat | Free tier via AI Studio (15 RPM, 1500 RPD **shared across all users**) |
 | **Cloud Scheduler** | Trigger scheduled functions | 3 free jobs/month |
 | **Artifact Registry** | Docker images (30-day cleanup policy set) | 0.5 GB/month |
 | **Cloud Build** | ML service Docker builds | 120 min/day |

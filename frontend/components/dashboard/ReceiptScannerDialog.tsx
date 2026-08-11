@@ -95,7 +95,9 @@ export function ReceiptScannerDialog({
 
   // True once the user has used up their monthly scan quota — block scanning
   // before the round-trip rather than burning a doomed request (RCP-3).
-  const atLimit = limit > 0 && remaining <= 0
+  // limit === 0 means the tier has no scanning entitlement at all (free tier),
+  // which is also a blocked state — not an "unset" one.
+  const atLimit = remaining <= 0
 
   // Abort controller for an in-flight scan so it can be cancelled on
   // close/unmount and never hang the dialog (RCP-4).

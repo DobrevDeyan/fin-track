@@ -17,10 +17,13 @@ const db = admin.firestore();
 
 export type PlanTier = 'free' | 'pro' | 'business';
 
+// Document AI Expense parser bills $0.10 per scan (1 count = 1-10 page document),
+// confirmed against actual GCP billing. Scanning is therefore PAID-ONLY: a free
+// scan is a direct cash loss with no revenue against it.
 export const SCAN_LIMITS: Record<PlanTier, number> = {
-  free: 3,   // teaser: 3 free scans so users experience the feature
-  pro: 10,   // 10 scans = $1.00 Doc AI cost, leaves margin at 2.99 EUR/month
-  business: 50,
+  free: 0,   // paid feature — free users get the upsell, not a teaser scan
+  pro: 10,   // $1.00 cost against ~$2.88 net of 2.99 EUR/month
+  business: 50, // $5.00 cost against ~$20.89 net of 19.99 EUR/month
 };
 
 // Per-user DAILY cap on AI insight calls (digest + chat combined). The IP-based
@@ -84,7 +87,8 @@ export async function checkAndIncrementScanQuota(
   const docRef = db.collection('scanUsage').doc(uid);
   const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
-  // Zero limit = fully blocked (shouldn't happen with current config, kept as safety net)
+  // Zero limit = fully blocked. This is the free tier's normal path: scanning is
+  // a paid feature, and api-server.ts turns this into the upgrade prompt.
   if (limit === 0) {
     return { allowed: false, count: 0, limit: 0 };
   }

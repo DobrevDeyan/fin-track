@@ -1,11 +1,17 @@
 /**
  * Gemini Handler
  *
- * Integrates Google Gemini 2.5 Flash (free tier) for AI-powered
- * financial insights. Uses the @google/generative-ai SDK with an
- * API key from Google AI Studio (aistudio.google.com).
+ * Integrates Google Gemini Flash-Lite for AI-powered financial insights.
+ * Uses the @google/generative-ai SDK with an API key from Google AI Studio
+ * (aistudio.google.com).
  *
- * Free tier: 1,500 requests/day, 15 RPM — no credit card required.
+ * Model: gemini-3.5-flash-lite (GA). Migrated from gemini-2.5-flash, which
+ * Google shuts down 2026-10-16; this is their named migration target.
+ * NOTE: the 3.x models dropped temperature/top_p/top_k and prefilled model
+ * turns — we use none of them, so the swap is model-string only.
+ *
+ * The free tier's 1,500 requests/day is PER PROJECT, shared across all users,
+ * not per user. See docs/MONETIZATION.md for when this ceiling bites.
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -20,7 +26,7 @@ function getModel() {
   if (!genAI) {
     genAI = new GoogleGenerativeAI(apiKey);
   }
-  return genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  return genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
 }
 
 // ── Input Sanitisation ─────────────────────────────────────────────────────

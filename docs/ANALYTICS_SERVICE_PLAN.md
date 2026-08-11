@@ -99,7 +99,11 @@ Recorded so it is not relitigated:
 
 Per the [official pricing page](https://cloud.google.com/document-ai/pricing), the **Expense parser is $0.10 per count**, where 1 count = a document of 1–10 pages. A single-image receipt is 1 page = 1 count = **$0.10 per scan**.
 
+**Confirmed empirically** (August 2026): the GCP console Cost tab for `documentai.googleapis.com` shows May 2026 = **$0.10 total for a single `ProcessDocument` call**. Billing is 100% variable — the processor is pretrained, so there is no deployed-version hourly charge (the "$438/year per deployed version" line on the pricing page applies to **custom** processors only). There is also no volume discount at this scale: the 10,000th scan costs the same $0.10 as the first, so margin pressure grows linearly with success.
+
 The `$0.01/page` figure in `docs/ARCHITECTURE.md:432` is **wrong and should be corrected**. The comment at `ml-service/src/firestore-quota.ts:22` (`10 scans = $1.00`) is correct.
+
+Observed latency for comparison against any replacement: **3.71s avg, 4.17s p99**.
 
 | Tier | Price | Scans | Doc AI cost | Net after Stripe | OCR as % of net |
 |---|---|---|---|---|---|
@@ -520,12 +524,12 @@ Discovered while scoping this service. **Not part of this plan** — tracked her
 
 | # | Item | Severity |
 |---|---|---|
-| 1 | `ml-service/src/gemini-handler.ts:23` pins `gemini-2.5-flash`, [deprecated 2026-10-16](https://ai.google.dev/gemini-api/docs/pricing). Breaks the AI digest and chat. Migrate to Gemini 3 Flash or 3.1 Flash-Lite. | **Urgent — ~2 months** |
-| 2 | Evaluate replacing Document AI with Gemini vision for receipt extraction: ~$0.10 → ~$0.002/scan (~50x). Must use **Vertex AI in `europe-west`**, not AI Studio — free-tier content is used to improve products, and receipt images are PII. Mitigate hallucination by returning `rawText` and asserting the extracted amount appears in it; this also replaces the confidence signal used at `ReceiptScannerDialog.tsx:661`. | High — margin |
-| 3 | Free tier gives 3 scans = **$0.30/user/month of pure loss** with zero revenue. At 1,000 free users that is $300/month. Either cut to 1 scan, or gate behind item 2. | High — margin |
-| 4 | `docs/ARCHITECTURE.md:432` states `~$0.01/page` for Document AI. Actual is **$0.10/count**. Correct it. | Medium |
+| 1 | ~~`gemini-handler.ts:23` pins `gemini-2.5-flash`, deprecated 2026-10-16.~~ **Done** — migrated to `gemini-3.5-flash-lite` (GA). | ~~Urgent~~ closed |
+| 2 | Evaluate replacing Document AI with Gemini vision: ~$0.10 → ~$0.002/scan (~50x). **Open decision, own document: `docs/GEMINI_VISION_EVALUATION.md`.** Blocks per-scan pricing. | **High — margin** |
+| 3 | ~~Free tier gives 3 scans = $0.30/user/month of pure loss.~~ **Done** — `free: 0`, scanning is Pro-only. See `docs/MONETIZATION.md`. | ~~High~~ closed |
+| 4 | ~~`docs/ARCHITECTURE.md:432` states `~$0.01/page`.~~ **Done** — corrected to $0.10/scan. | ~~Medium~~ closed |
 | 5 | `SCAN_LIMITS` is duplicated in `ml-service/src/firestore-quota.ts:20-24` and `frontend/lib/constants/subscription.constants.ts:1-5`, both carrying the same comment. Two sources of truth for a billing-relevant limit — they will drift. | Medium |
-| 6 | Marketing copy contradicts code in four places: `messages/en.json` advertises "50 transactions/month" (code: `transactions: 100`), "3 budgets" (code: `budgets: 5`), "2 savings goals" (code: `goals: 3`), "3 recurring transactions" (code: `recurringTransactions: 5`). The app is more generous than the landing page claims. | Low |
+| 6 | ~~Marketing copy contradicts code in four places.~~ **Done** — `en.json` and `bg.json` corrected to match `FREE_TIER_LIMITS`. | ~~Low~~ closed |
 | 7 | Gemini insights currently ride the AI Studio free tier (1,500 RPD **shared across all users**). At ~50 Pro users hitting the daily cap this breaks, and on the paid tier costs up to ~$1.43/user/month — which on top of item 2 would put Pro at ~84% cost. | Medium — scale |
 
 ---
