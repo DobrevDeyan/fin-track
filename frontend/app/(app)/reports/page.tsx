@@ -300,7 +300,7 @@ export default function ReportsPage() {
         </div>
 
         {/* 1. Controls — date filter + presets + export */}
-        <Card className="mb-6">
+        <Card className="mb-6 overflow-hidden">
           <CardContent className="pt-5 pb-5">
             <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-4">
               <div className="col-span-2 md:col-span-1 space-y-2">
@@ -315,7 +315,7 @@ export default function ReportsPage() {
                   <option value="custom">{t("customRange")}</option>
                 </select>
               </div>
-              <div className="space-y-2 min-w-0">
+              <div className="col-span-2 md:col-span-1 space-y-2 min-w-0">
                 <Label htmlFor="startDate">{t("startDate")}</Label>
                 <Input
                   id="startDate"
@@ -325,7 +325,7 @@ export default function ReportsPage() {
                   className="min-w-0 [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
-              <div className="space-y-2 min-w-0">
+              <div className="col-span-2 md:col-span-1 space-y-2 min-w-0">
                 <Label htmlFor="endDate">{t("endDate")}</Label>
                 <Input
                   id="endDate"
