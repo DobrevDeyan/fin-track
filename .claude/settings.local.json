@@ -204,7 +204,8 @@
       "Bash(firebase functions:secrets:access SMTP_USER --project pavli-ta)",
       "Bash(git symbolic-ref *)",
       "Bash(git branch *)",
-      "Bash(git -C \"D:/personal/code/dotfiles\" status)"
+      "Bash(git -C \"D:/personal/code/dotfiles\" status)",
+      "Bash(git mv *)"
     ]
   }
 }
