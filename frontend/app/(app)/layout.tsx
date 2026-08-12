@@ -1,7 +1,9 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
+import { ROUTE_FEATURE, FEATURES } from "@/lib/constants/features"
 import { AppNavbar } from "@/components/navigation/AppNavbar"
 import { BottomNav } from "@/components/navigation/BottomNav"
 import { AuthGuard } from "@/components/auth/AuthGuard"
@@ -17,6 +19,16 @@ import { NotificationsProvider } from "@/contexts/NotificationsContext"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Guard direct navigation to a disabled feature's route (nav entries are hidden
+  // via FEATURES, but the URL is still reachable by hand) — bounce to dashboard.
+  useEffect(() => {
+    const feature = ROUTE_FEATURE[pathname]
+    if (feature && !FEATURES[feature]) {
+      router.replace("/dashboard")
+    }
+  }, [pathname, router])
 
   return (
     <AuthGuard>

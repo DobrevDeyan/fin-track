@@ -61,6 +61,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   "Other":              CircleDot,
 }
 import { useUIMode } from "@/contexts/UIComplexityContext";
+import { FEATURES } from "@/lib/constants/features";
 
 // Tabs
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -130,10 +131,13 @@ function DashboardInnerContent() {
     // Achievement card share
     const [shareCardOpen, setShareCardOpen] = useState(false);
 
-    // Tabs state with direction tracking
-    const TAB_ORDER = ["savings", "budgets", "recurring"] as const;
-    type TabValue = typeof TAB_ORDER[number];
-    const [activeTab, setActiveTab] = useState<TabValue>("savings");
+    // Tabs state with direction tracking. The Savings (accounts) tab is gated by
+    // the feature switch; when off, tabs collapse and default to the first visible.
+    type TabValue = "savings" | "budgets" | "recurring";
+    const VISIBLE_TABS = (["savings", "budgets", "recurring"] as TabValue[]).filter(
+        (tab) => tab !== "savings" || FEATURES.savingsAccounts
+    );
+    const [activeTab, setActiveTab] = useState<TabValue>(VISIBLE_TABS[0]);
 
     const handleTabChange = useCallback((val: string) => {
         setActiveTab(val as TabValue);
@@ -296,7 +300,7 @@ function DashboardInnerContent() {
                     </div>
                     {mode === "full" && (
                     <div className="flex items-center gap-2">
-                        {householdId && (
+                        {FEATURES.family && householdId && (
                             <div className="flex items-center rounded-lg border bg-muted p-0.5 gap-0.5">
                                 <button
                                     onClick={() => setIsHouseholdMode(false)}
@@ -382,8 +386,8 @@ function DashboardInnerContent() {
                     </div>
                 )}
 
-                {/* Cash Flow Forecast — full mode only */}
-                {mode === "full" && (
+                {/* Cash Flow Forecast — full mode only, gated by feature switch */}
+                {FEATURES.cashFlowForecast && mode === "full" && (
                 <div className="mb-8">
                     <SectionErrorBoundary label="Cash Flow Forecast">
                         <CashFlowForecast userCurrency={userCurrency} />
@@ -392,7 +396,7 @@ function DashboardInnerContent() {
                 )}
 
                 {/* Transactions — Personal or Family view */}
-                {isHouseholdMode && householdId ? (
+                {FEATURES.family && isHouseholdMode && householdId ? (
                     <SectionErrorBoundary label="Family Transactions">
                         <div className="rounded-xl border bg-card">
                             <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -505,7 +509,7 @@ function DashboardInnerContent() {
                 )}
 
                 {/* Household shared budget + goals — family mode, full mode only */}
-                {mode === "full" && isHouseholdMode && householdId && (
+                {FEATURES.family && mode === "full" && isHouseholdMode && householdId && (
                 <div className="mt-8 space-y-8">
                     <div className="rounded-xl border bg-card">
                         <div className="flex items-center gap-2 px-4 py-3 border-b">
@@ -544,10 +548,12 @@ function DashboardInnerContent() {
                 {mode === "full" && (
                 <div className="mt-8" ref={tabsRef}>
                     <Tabs value={activeTab} onValueChange={handleTabChange}>
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className={`grid w-full ${FEATURES.savingsAccounts ? "grid-cols-3" : "grid-cols-2"}`}>
+                            {FEATURES.savingsAccounts && (
                             <TabsTrigger value="savings" className="text-xs md:text-sm px-1 md:px-3">
                                 {tSavings("tabLabel")} ({savingsAccounts.length})
                             </TabsTrigger>
+                            )}
                             <TabsTrigger value="budgets" className="text-xs md:text-sm px-1 md:px-3">
                                 {tBudgets("tabLabel")} ({budgets.length})
                             </TabsTrigger>
@@ -555,11 +561,13 @@ function DashboardInnerContent() {
                                 {tRecurring("tabLabel")} ({recurringTransactions.length})
                             </TabsTrigger>
                         </TabsList>
+                        {FEATURES.savingsAccounts && (
                         <TabsContent value="savings" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
                             <SectionErrorBoundary label="Savings">
                                 <SavingsSection />
                             </SectionErrorBoundary>
                         </TabsContent>
+                        )}
                         <TabsContent value="budgets" className="mt-2 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:duration-200">
                             <SectionErrorBoundary label="Budgets">
                                 <BudgetsSection categories={expenseCategories} />

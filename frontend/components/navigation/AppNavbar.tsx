@@ -48,6 +48,7 @@ import { ThemeControls } from "@/components/ThemeControls"
 import { useUIMode } from "@/contexts/UIComplexityContext"
 import { UIModeToggle } from "@/components/ui/UIModeToggle"
 import { logger } from "@/lib/utils/logger"
+import { FEATURES, type FeatureKey } from "@/lib/constants/features"
 
 
 export const AppNavbar = () => {
@@ -65,18 +66,21 @@ export const AppNavbar = () => {
   useEffect(() => { setOptimisticPath(null) }, [pathname])
   const activePath = optimisticPath ?? pathname
 
-  const appRoutes = [
-    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard, tier: "simple" as const },
-    { href: "/calendar", label: t("calendar"), icon: CalendarIcon, tier: "full" as const },
-    { href: "/reports", label: t("reports"), icon: FileText, tier: "full" as const },
-    { href: "/receipts", label: t("receipts"), icon: Receipt, tier: "full" as const },
-    { href: "/subscriptions", label: "Subscriptions", icon: Repeat, tier: "full" as const },
-    { href: "/debt", label: "Debt Planner", icon: TrendingDown, tier: "full" as const },
-    { href: "/leaderboard", label: "Leaderboard", icon: Trophy, tier: "full" as const },
+  const appRoutes: { href: string; label: string; icon: typeof LayoutDashboard; tier: "simple" | "full"; feature?: FeatureKey }[] = [
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard, tier: "simple" },
+    { href: "/calendar", label: t("calendar"), icon: CalendarIcon, tier: "full" },
+    { href: "/reports", label: t("reports"), icon: FileText, tier: "full" },
+    { href: "/receipts", label: t("receipts"), icon: Receipt, tier: "full" },
+    { href: "/subscriptions", label: "Subscriptions", icon: Repeat, tier: "full", feature: "subscriptions" },
+    { href: "/debt", label: "Debt Planner", icon: TrendingDown, tier: "full", feature: "debt" },
+    { href: "/leaderboard", label: "Leaderboard", icon: Trophy, tier: "full", feature: "leaderboard" },
     // { href: "/net-worth", label: t("netWorth"), icon: Landmark }, // disabled
   ]
 
-  const visibleRoutes = mode === "simple" ? appRoutes.filter(r => r.tier === "simple") : appRoutes
+  const visibleRoutes = appRoutes.filter(r =>
+    (!r.feature || FEATURES[r.feature]) &&
+    (mode !== "simple" || r.tier === "simple")
+  )
 
   const handleCurrencyChange = async (currency: SupportedCurrency) => {
     if (!user || currencyLoading) return

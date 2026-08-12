@@ -43,6 +43,7 @@ import { toast } from "sonner"
 import { useUIMode } from "@/contexts/UIComplexityContext"
 import { UIModeToggle } from "@/components/ui/UIModeToggle"
 import { logger } from "@/lib/utils/logger"
+import { FEATURES } from "@/lib/constants/features"
 
 
 const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? null
@@ -421,8 +422,8 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      {/* Community Leaderboard — full mode only */}
-      {mode === "full" && (
+      {/* Community Leaderboard — full mode only, gated by feature switch */}
+      {FEATURES.leaderboard && mode === "full" && (
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -460,8 +461,8 @@ export default function SettingsPage() {
       </Card>
       )}
 
-      {/* Family / Household — full mode only */}
-      {mode === "full" && (
+      {/* Family / Household — full mode only, gated by feature switch */}
+      {mode === "full" && FEATURES.family && (
       <><Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
