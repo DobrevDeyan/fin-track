@@ -1,262 +1,321 @@
-# Pocket — Beta Launch Strategy
+# Pocket — Launch & Marketing Plan
+
+**Last Updated:** August 2026
+
+> Consolidates the former *Beta Launch Strategy* and *Public Launch & Marketing Plan*
+> into one canonical doc. For what's built see [ROADMAP.md](ROADMAP.md); for what's
+> deferred/next see [FUTURE_FEATURES.md](FUTURE_FEATURES.md).
+
+---
 
 ## Product Summary
 
-**Pocket** is a privacy-first personal finance PWA with:
-- Manual expense tracking (no bank linking — this is the pitch, not a weakness)
-- AI budget coach, receipt scanning, anomaly detection, health score
-- Freemium model (Free → €7.99 Pro → €19.99 Business)
+**Pocket** is a privacy-first personal finance PWA:
+- Manual expense tracking — **no bank linking** (this is the pitch, not a weakness)
+- AI insights: health score, anomaly detection, monthly digest, budget-coach chat
+- AI receipt scanning (Gemini vision backend, alpha — see [GEMINI_VISION_EVALUATION.md](GEMINI_VISION_EVALUATION.md))
+- Freemium tiers (Free / Pro / Business — exact prices in `MONETIZATION.md` / `subscription.constants.ts`)
 - PWA with offline support, English + Bulgarian
 
-**Core differentiator** vs Mint/YNAB/Revolut: **Privacy + No bank linking + AI insights**
+**Core differentiator** vs Mint/YNAB/Revolut/Monarch: **privacy + no bank linking + AI insights.**
 
-**Core Pitch:**
-> "Pocket: Budget smarter without giving your bank password to anyone. Privacy-first expense tracking with AI insights — free to start, no bank linking required."
+**Positioning sentence** (put it at the top of the landing page — specific converts 2–3× better than vague):
+> "Pocket is a privacy-first budgeting app with an AI coach — snap a receipt, AI sorts it, see where your money goes. No bank login required, free to start."
 
----
-
-## Phase 1: Pre-Launch Prep (1–2 weeks)
-
-### Must-Fix Before Going Public
-
-**A. Enable the Cash Flow Forecast**
-The 90-day forecast component is built but the toggle is commented out on the dashboard. Enable it — it's a key Pro differentiator that justifies the €7.99/month.
-
-**B. Raise the Free Tier for Beta**
-50 transactions/month is too tight for onboarding. Bump to 100 for beta or remove the limit temporarily. First impressions matter more than conversion rate at this stage. Tighten it later.
-
-**C. Add a "Beta" Badge to the Landing Page**
-Sets expectations and creates a sense of exclusivity.
-
-**D. Set Up Error Tracking (Sentry)**
-Add [Sentry](https://sentry.io) (free tier) before going public. You'll receive crash reports automatically without users having to report them manually. Without this, you're flying blind.
-
-**E. Add an In-App Feedback Widget**
-Embed [Tally.so](https://tally.so) or [Canny.io](https://canny.io) (both free) directly in the app — a "Send Feedback" button in the sidebar. Frictionless feedback is critical in beta.
-
-**F. Set Up Privacy-Respecting Analytics**
-You market "zero tracking" as a feature, but you still need to understand your own funnel. Use [Plausible](https://plausible.io) (privacy-first, you can honestly mention it to users) or self-hosted [Umami](https://umami.is).
-
-Track these funnel events:
-- Signup
-- Onboarding completion
-- First transaction added
-- 5 transactions added (activation hypothesis)
-- Subscription upgrade
+> **Positioning note:** the strongest wedge candidate is *couples/roommates who split money* (Households + receipt scan + AI — most budget apps are single-user). **However, Household/Family budgeting is deferred for this launch** (see Launch Scope below), so lead with the privacy + AI-coach angle now and hold the "split money with your partner" wedge for when Family is re-enabled.
 
 ---
 
-## Phase 2: Getting Your First 100 Beta Users
+## Launch Scope (August 2026)
 
-### Channel 1: Reddit (Highest ROI, Free)
+The app was deliberately narrowed for launch via the feature power-switch
+(`frontend/lib/constants/features.ts`). Ship the core loop + AI differentiator;
+defer the breadth until the core is proven. **Deferred (hidden, not deleted):**
+Subscription Tracker, Debt Planner, Leaderboard, Family/Household, Savings-accounts
+tab, Cash Flow Forecast — see [FUTURE_FEATURES.md](FUTURE_FEATURES.md) Tier 1 for
+each feature's re-enable trigger.
 
-Personal finance Reddit communities are massive and love privacy-first tools. Post authentically, not as spam.
+Implication for marketing: **market the narrow product you're shipping**, not the
+full feature list. A sharp "privacy-first AI expense tracker" story lands far better
+on Product Hunt / HN / Reddit than a muddy "budgeting + debt + subscriptions + family
++ leaderboard" pitch.
 
-**Target subreddits:**
+---
+
+## Guiding Principles (from 2026 launch research)
+
+The playbook for a solo-built consumer app: **build a waitlist + landing page first,
+spend ~6–8 weeks building minimal public presence and validating messaging in niche
+communities, then launch simultaneously on Product Hunt + Hacker News + Reddit with a
+pre-warmed audience.** Cold "post it and see" launches underperform; 60%+ of a winning
+PH launch's traffic comes from a pre-built list, and successful indie pre-launches hit
+500–1,000 engaged signups before day one ([LaunchList](https://getlaunchlist.com/blog/saas-pre-launch-marketing-playbook)).
+
+For a *financial* app, **trust/privacy messaging is not optional** — it's the top
+predictor of whether a stranger connects real transaction data to an unknown alpha
+product ([FinTech Weekly](https://www.fintechweekly.com/magazine/articles/build-trust-fintech-app-security-compliance-user-experience)).
+Reddit is the highest-intent channel: 70% of finance-app shoppers use it as their
+research layer ([ALM Corp](https://almcorp.com/blog/reddit-financial-services-research-trends-2026/)),
+and the current wave of budget-app interest is driven by Mint refugees and people who
+dislike sharing bank credentials — both angles Pocket owns. Skip paid ads entirely
+until organic conversion is proven.
+
+**Honest label:** call it **beta** publicly (Stripe billing is live; "alpha" scares
+off everyone except developers), but be explicit that features are still rolling out
+and feedback is wanted.
+
+---
+
+## Phase 0 — Positioning & Trust Groundwork (this week)
+
+Highest-leverage, cheapest fixes. Everything downstream depends on them.
+
+1. **Write the one-sentence positioning** (above) and put it above the fold.
+2. **Trust page, not just a landing page.** Publish a plain-language `/trust` page: what
+   data you store, that you're in beta and things may break, how to delete your
+   account/data (`deleteUserData` exists), and "beta — we'd love your feedback."
+   Radical transparency about limitations beats polished copy for fintech trust.
+3. **Feedback loop before launch** — an in-app "Send Feedback" button (Tally.so/Canny)
+   or a Google Form. You can't learn from strangers you can't hear from.
+
+### Pre-Launch Must-Fix — Status (updated Aug 2026)
+
+| Item | Status | Note |
+|---|---|---|
+| Error tracking (Sentry) | ✅ Done | `@sentry/nextjs`, `SentryProvider` in layout, DSN in `NEXT_PUBLIC_SENTRY_DSN` (set in `.env.production` too) |
+| Privacy analytics (Plausible) | ✅ Done | Set `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` in `.env.production` to activate |
+| In-app feedback widget | ⬜ Pending | Core feedback mechanism — do before public posts (~2h) |
+| "Beta" badge on landing page | ⬜ Pending | Sets expectations, adds exclusivity |
+| Raise free tier for beta | ⬜ Pending | Bump `FREE_TIER_LIMITS.transactions` (in `subscription.constants.ts`) to 100 for a better first impression |
+| ~~Enable Cash Flow Forecast~~ | ⏸ Deferred | Now intentionally off — renders empty without recurring data; re-enable with the analytics service ([FUTURE_FEATURES.md](FUTURE_FEATURES.md) Tier 2) |
+| Confirm billing alerts + rate limits | ⬜ Pending | A viral thread can spike new accounts hitting Gemini within minutes — verify Cloud Run / Gemini quota gates and billing alerts before Phase 3 |
+
+---
+
+## Phase 1 — Landing Page + Waitlist (weeks 1–2)
+
+Treat the *public launch* like a fresh pre-launch — a controlled ramp, not an
+uncontrolled Reddit pile-on to a Firebase project untested at scale.
+
+- Single landing page, **one above-the-fold CTA** ("Join the beta" / "Try it now"),
+  3 screenshots or a GIF of the real flow (receipt scan → AI category → dashboard),
+  and one line of trust copy ("Your data — exportable and deletable anytime").
+- Target **20–35% visitor→signup**. Below 20%, fix the headline/positioning, not the
+  design ([Unicorn Platform](https://unicornplatform.com/blog/waitlist-page-strategy-in-2026/)).
+- Ramp option: gate signup behind a waitlist for 1–2 weeks while finishing Phase 0/2,
+  or let people in — the **Pro-only receipt scanning** (free tier = 0 scans) already
+  caps your Gemini cost exposure from a signup flood.
+- Basic anti-abuse: confirm Firebase App Check / rate limiting on signup and the
+  scan endpoint before any public post.
+
+---
+
+## Phase 2 — Community-First Validation (weeks 2–5, no launch yet)
+
+The step most solo builders skip — it decides whether launch day is 5 signups or 500.
+
+### Reddit — the single highest-value channel
+
+Post authentically; **spend 2+ weeks being a genuinely helpful commenter before ever
+mentioning Pocket**, and check each subreddit's self-promo rules first (most enforce a
+90/10 rule; some, e.g. r/eupersonalfinance, ban self-promo outright — [rules research](https://redship.io/blog/reddit-self-promotion-rules)).
+Mention it only in threads already asking for app recommendations, as "I built this to
+solve X, happy to answer questions."
+
 | Subreddit | Members | Angle |
-|-----------|---------|-------|
+|---|---|---|
 | r/personalfinance | 17M+ | General budgeting |
-| r/financialindependence | 1.5M+ | FIRE crowd, love manual tracking |
-| r/FIRE | 300K+ | Hardcore savers |
-| r/Frugal | 2M+ | Budget-conscious |
+| r/ynab | 200K+ | Already doing manual budgeting — your perfect user |
+| r/budgeting / r/Frugal | large | Budget-conscious |
+| r/financialindependence, r/FIRE | 1.5M+/300K+ | FIRE crowd love manual tracking |
 | r/privacy | 1M+ | "I didn't want to give Mint my bank login" |
-| r/selfhosted | 300K+ | Tech-savvy, appreciate Firebase architecture |
-| r/bulgaria | Niche | Localization angle, loyal community |
+| r/selfhosted | 300K+ | Tech-savvy, appreciate the Firebase architecture |
+| r/bulgaria | niche | Localization + trust advantage (BG/Cyrillic support) |
 
-**Post strategy:**
-Write a "Show HN" style personal story — *"I built a privacy-first expense tracker because I was uncomfortable linking my bank account to Mint. Here's what I made."*
-- Tell the story, include screenshots
-- Ask for brutal feedback
-- Do NOT open with a promo link — share it only when asked or in comments
-- Engage every single comment in the first 2 hours (Reddit algorithm rewards early engagement)
+### Other channels
 
----
-
-### Channel 2: Product Hunt
-
-A well-executed Product Hunt launch can generate 200–500 beta signups in a single day.
-
-**Steps:**
-1. Create a **Ship page** now (beta waitlist) to build an audience before launch day
-2. Schedule launch for **Tuesday–Thursday** (highest traffic days)
-3. Coordinate 5–10 people to upvote within the first hour — early momentum is critical
-4. Prepare a **60-second demo GIF** showing: add transaction → AI receipt scan → budget coach chat
-5. Offer a **PH exclusive**: first 100 users get 3 months Pro free
-6. Write a genuine maker comment explaining the privacy motivation
+- **Build-in-public on X** — weekly posts: real screenshots, one metric, one lesson.
+  This fills the "first 200 supporters" bucket that makes launch day convert.
+- **Indie Hackers** — post milestones with real numbers; pure promotion gets downvoted,
+  honesty + numbers do not.
+- **Short-form video (TikTok/Reels/Shorts)** — optional, high-upside for consumer finance
+  ("why splitting bills with roommates never works"). Only commit if you'll post 4–6×/week
+  for 8+ weeks; inconsistent posting is worse than none.
+- **Directories (do once, now):** BetaList, Product Hunt "Coming Soon" page, Indie Hackers
+  Products, SaaS Hub — 20–100 signups each plus SEO backlinks.
 
 ---
 
-### Channel 3: Hacker News (Show HN)
+## Phase 3 — Launch Day (week 6)
 
-Post title: `Show HN: Pocket – Privacy-first expense tracker with AI budget coach (no bank linking)`
-
-HN users respond to:
-- Technical choices (Firebase, Gemini, Document AI — explain the architecture briefly)
-- Privacy motivation (your core pitch)
-- Business model transparency (freemium with clearly stated limits)
-
-Can drive 100–500 unique visits in a day if it hits the front page.
-
----
-
-### Channel 4: Twitter/X & LinkedIn
-
-**Twitter/X — Build in Public:**
-- Start a weekly thread: *"Day 1 of launching my finance app in public"*
-- Share metrics, screenshots, user feedback every week
-- Hashtags: `#buildinpublic` `#indiedev` `#personalfinance` `#privacy`
-- Engage with finance influencers' posts (don't cold pitch, add value to their threads)
-
-**LinkedIn:**
-Write a post: *"I quit using Mint because I didn't want them reading my bank statements. So I built my own privacy-first alternative. It's live. Here's the link."*
-- Works especially well for Bulgarian/Eastern European professional networks where privacy concerns are high
-- Professional networks share this kind of story
+- **Pick Tuesday or Wednesday.** PH momentum peaks 12:01am PT that day; HN favors
+  Tue–Thu 9am–12pm ET.
+- **Product Hunt:** reserve your maker profile ~30 days ahead (comment on other products
+  so it's not a brand-new account), prep a 30–60s demo GIF (add transaction → AI receipt
+  scan → budget coach chat), one-paragraph positioning, and a "first-hour supporters" list
+  of ~30–50 people you personally ask to *comment* (not just upvote — engagement is
+  weighted). Offer a PH exclusive (e.g. first 100 get 3 months Pro).
+- **Hacker News (Show HN):** title `Show HN: Pocket – privacy-first expense tracker with an
+  AI budget coach (no bank linking)`. Factual, no hype, no exclamation points. First 30–60
+  min matter most — answer every comment personally, including skeptical data-handling
+  questions (that thread builds more trust than the traffic).
+- **Reddit on launch day:** only in subreddits where you built standing in Phase 2, as an
+  "I built X, feedback welcome" thread — not a copy-paste of the PH post.
+- **Email your waitlist** the morning of, with a nudge to comment on PH/HN (concentrated
+  early engagement in the first ~6 hours matters more than total volume).
 
 ---
 
-### Channel 5: Niche Communities (High Quality Users)
+## Phase 4 — Post-Launch: Retention & Feedback (weeks 7–10)
 
-| Community | Why |
-|-----------|-----|
-| r/ynab + YNAB Facebook groups | Users already doing manual budgeting — your perfect customer |
-| Telegram personal finance groups (Bulgaria, Eastern Europe) | Your localization gives a trust advantage |
-| Indie Hackers Discord | Supportive early adopter community |
-| Personal finance Facebook Groups | Large, active, share-friendly |
+Launch-day traffic validates curiosity, not retention. What matters next:
 
----
+- **Week 1:** triage feedback, fix the loudest bugs, personally thank/respond to every
+  signup (a founder email massively increases activation at tiny scale).
+- **Activation hypothesis:** users who add **5+ transactions** and see the dashboard
+  populate are the ones who stick. Instrument the funnel:
+  1. Signup → onboarding completion
+  2. Onboarding → first transaction
+  3. First transaction → 5 transactions (activation gate)
+  4. Activation → 30-day retention
 
-### Channel 6: Direct Outreach — Your First 10 Design Partners
-
-DM 10–15 people you know personally who:
-- Are budget-conscious or talk about money
-- Have expressed privacy concerns about apps
-- Are tech-savvy enough to give useful feedback
-
-These first 10 users are your **design partners**. Treat them like gold:
-- Hop on a 30-min Zoom with each
-- Watch them use the app (screen share)
-- Ask: *"Where did you get confused?"* not *"What do you think?"*
-
-This feedback is worth more than 1,000 survey responses.
-
----
-
-## Phase 3: Retention & Feedback Loop
-
-### Activation Hypothesis
-
-Your "aha moment" hypothesis: users who add **5+ transactions** and see their **dashboard populate** are the ones who stick.
-
-Track and optimize:
-1. Signup → Onboarding completion
-2. Onboarding → First transaction added
-3. First transaction → 5 transactions (activation gate)
-4. Activation → 30-day retention
-
-### Weekly Drip Email Sequence
-
-Use [Resend](https://resend.com) (integrates cleanly with Firebase):
+### Weekly drip email (Resend — integrates cleanly with Firebase)
 
 | Day | Email | Goal |
-|-----|-------|------|
-| Day 1 | Welcome + how to add your first transaction | Activation |
-| Day 3 | "Have you tried the AI Budget Coach?" | Feature discovery / Pro teaser |
-| Day 7 | 1-question NPS: "How likely are you to recommend Pocket?" (0–10) | Feedback signal |
-| Day 14 | Personalized: "You've tracked X transactions this month" | Engagement / stickiness |
-| Day 30 | Upgrade to Pro pitch, tied to their specific usage | Conversion |
+|---|---|---|
+| 1 | Welcome + add your first transaction | Activation |
+| 3 | "Have you tried the AI Budget Coach?" | Feature discovery / Pro teaser |
+| 7 | 1-question NPS (0–10) | Feedback signal |
+| 14 | "You've tracked X transactions this month" | Engagement |
+| 30 | Upgrade-to-Pro pitch tied to their actual usage | Conversion |
 
-### In-App Feedback Form
+### In-app feedback form (Tally.so)
+1. What brought you to Pocket? 2. What's the one thing you wish it did better?
+3. Would you pay for Pro? Why / why not?
 
-Add a persistent feedback button in the sidebar routing to a Tally.so form:
-1. What brought you to Pocket?
-2. What's the one thing you wish it did better?
-3. Would you pay €7.99/month for the Pro features? Why / why not?
+Write a public **launch retro** in week 3–4 (what worked, what broke) — a second, smaller
+distribution moment on the same channels.
 
 ---
 
-## Phase 4: Content Marketing (Medium-term)
+## Phase 5 — Content Marketing (medium-term)
 
-### SEO Blog Posts
+**SEO posts** targeting alternative-seekers (rank for months/years):
+1. "Best Mint alternatives in 2026 (no bank linking required)"
+2. "How to track expenses without linking your bank account"
+3. "Privacy-first budgeting apps compared: 2026 edition"
+4. "AI expense tracker: smarter insights from your spending"
+5. "YNAB vs manual budgeting — is it worth it?"
 
-Write 5 posts targeting users who are searching for alternatives. These rank in Google and send warm traffic for months/years:
+**Demo video (3 min):** add a transaction → AI receipt scan → budget coach → health
+score. Post to YouTube (searchable), reuse on PH and the landing page.
 
-1. *"Best Mint alternatives in 2025 (no bank linking required)"*
-2. *"How to track expenses without linking your bank account"*
-3. *"Privacy-first budgeting apps compared: 2025 edition"*
-4. *"AI expense tracker: how to get smarter insights from your spending"*
-5. *"YNAB vs manual budgeting — is it worth it?"*
+---
 
-### Demo Video (High Impact)
+## Success Metrics for Beta
 
-A 3-minute app tour showing:
-1. Adding a transaction
-2. AI receipt scanning
-3. Budget coach conversation
-4. Dashboard health score
+| Metric | Target | 30 days | 90 days |
+|---|---|---|---|
+| Landing visitor → signup | 20%+ | — | — |
+| Registered users | — | 100 | 500 |
+| Activation (5+ tx / first scan) | 40–50% of signups | 40% | 50% |
+| Day-7 retention | 40%+ = ready to scale | — | — |
+| 30-day retention | — | 25% | 35% |
+| NPS | — | > 30 | > 40 |
+| Free → Pro conversion | don't over-index early | 3% | 5% |
+| MRR | — | €25 | €200 |
 
-Post to YouTube (searchable), include on Product Hunt page and landing page.
+500 engaged users who activate and return beats 5,000 who sign up and vanish — resist
+chasing raw signup counts.
 
 ---
 
 ## Launch Checklist
 
-| Priority | Action | Status | Effort | Impact |
-|----------|--------|--------|--------|--------|
-| 🔴 Critical | Add Sentry error tracking | ✅ Done | — | Catch bugs before users complain |
-| 🔴 Critical | Add in-app feedback button | ⬜ Pending | 2 hours | Core feedback mechanism |
-| 🔴 Critical | Set up Plausible/Umami analytics | ✅ Done (opt-in via env var) | — | Understand your funnel |
-| 🟠 High | Enable cash flow forecast | ⏸ Built, temporarily disabled | 5 min | Justifies Pro upgrade |
-| 🟠 High | Raise free tier to 100 tx for beta | ⬜ Pending | 5 min | Better first impression |
-| 🟠 High | **Family Budgeting invite flow** | ✅ Done (April 2026) | — | Viral loop — each user drags in a partner |
-| 🟠 High | **Subscription Tracker** | ✅ Done (April 2026) | — | "I found €X in forgotten subscriptions" virality |
-| 🟠 High | **Shareable Achievement Cards** | ✅ Done (April 2026) | — | Social sharing — free advertising |
-| 🟠 High | **Debt Payoff Planner** | ✅ Done (April 2026) | — | High-intent SEO target |
-| 🟠 High | Post on Reddit r/personalfinance | ⬜ Pending | 1 hour | First wave of real users |
-| 🟠 High | DM 10 people personally for feedback | ⬜ Pending | 2 hours | Highest quality early feedback |
-| 🟡 Medium | Product Hunt Ship page (waitlist) | ⬜ Pending | 1 hour | Build audience before launch day |
-| 🟡 Medium | "Build in public" Twitter/X thread | ⬜ Pending | 30 min | Low-cost community building |
-| 🟡 Medium | Show HN post | ⬜ Pending | 1 hour | Tech-savvy early adopters |
-| 🟢 Later | Drip email sequence (Resend) | ⬜ Pending | 4 hours | Retention |
-| 🟢 Later | 3 SEO blog posts | ⬜ Pending | 6 hours | Long-term organic traffic |
-| 🟢 Later | 3-minute YouTube demo video | ⬜ Pending | 3 hours | Product Hunt + landing page asset |
-
-### Pre-Launch Must-Fix — Status Update (April 15, 2026)
-
-**A. ~~Enable the Cash Flow Forecast~~** — Built and functional. Temporarily disabled on dashboard while UX is reviewed. Re-enable: uncomment `CashFlowForecast` in `frontend/app/(app)/dashboard/page.tsx`.
-
-**B. Raise the Free Tier for Beta** — Still pending. Change `FREE_TIER_LIMITS.transactions` in `frontend/lib/constants/subscription.constants.ts`.
-
-**C. Beta Badge on Landing Page** — Pending.
-
-**D. ~~Set Up Error Tracking (Sentry)~~** ✅ — `@sentry/nextjs` installed, `SentryProvider` in layout, DSN in `NEXT_PUBLIC_SENTRY_DSN`. Set the same var in Firebase Hosting env / `.env.production` for prod.
-
-**E. In-App Feedback Widget** — Pending. Add Tally.so or Canny embed.
-
-**F. ~~Set Up Privacy-Respecting Analytics~~** ✅ — Plausible script added to `layout.tsx`. Activate by setting `NEXT_PUBLIC_PLAUSIBLE_DOMAIN=your-domain.com` in `.env.production`. No code changes needed.
+| Priority | Action | Status |
+|---|---|---|
+| 🔴 Critical | Sentry error tracking | ✅ Done |
+| 🔴 Critical | Plausible analytics | ✅ Done (env-var opt-in) |
+| 🔴 Critical | In-app feedback button | ⬜ Pending |
+| 🟠 High | Trust/`/trust` page | ⬜ Pending |
+| 🟠 High | Beta badge on landing page | ⬜ Pending |
+| 🟠 High | Raise free tier to 100 tx for beta | ⬜ Pending |
+| 🟠 High | Confirm billing alerts + scan rate limits | ⬜ Pending |
+| 🟠 High | Product Hunt "Coming Soon" page + BetaList | ⬜ Pending |
+| 🟠 High | Reddit standing (helpful comments, 2+ weeks) | ⬜ Pending |
+| 🟠 High | DM 10 people personally for feedback | ⬜ Pending |
+| 🟡 Medium | Build-in-public X thread | ⬜ Pending |
+| 🟡 Medium | Show HN post | ⬜ Pending |
+| 🟢 Later | Drip email sequence (Resend) | ⬜ Pending |
+| 🟢 Later | 3 SEO blog posts | ⬜ Pending |
+| 🟢 Later | 3-min demo video | ⬜ Pending |
+| ⏸ Deferred | Family, Subscriptions, Debt, Leaderboard, Forecast | Hidden via power switch — [FUTURE_FEATURES.md](FUTURE_FEATURES.md) |
 
 ---
 
 ## Competitive Positioning
 
 | App | Bank Linking | AI Features | Price | Privacy |
-|-----|-------------|-------------|-------|---------|
+|---|---|---|---|---|
 | Mint | Required | Basic | Free (ads) | Low |
-| YNAB | Optional | None | $14.99/month | Medium |
-| Revolut | Required | Basic | Free–€45/month | Low |
-| Copilot | Required | Good | $13/month | Medium |
-| **Pocket** | **Not required** | **Strong (Gemini)** | **Free–€19.99/month** | **High** |
+| YNAB | Optional | None | $14.99/mo | Medium |
+| Revolut | Required | Basic | Free–€45/mo | Low |
+| Copilot | Required | Good | $13/mo | Medium |
+| **Pocket** | **Not required** | **Strong (Gemini)** | **Free–Business** | **High** |
 
-**Own the privacy angle.** Users who care about it will seek you out — they just need to know you exist.
+**Own the privacy angle.** Users who care about it will seek you out — they just need to
+know you exist.
 
 ---
 
-## Success Metrics for Beta
+## Trade-offs & Open Questions
 
-| Metric | Target at 30 days | Target at 90 days |
-|--------|-------------------|-------------------|
-| Registered users | 100 | 500 |
-| Activated users (5+ tx) | 40% of signups | 50% of signups |
-| 30-day retention | 25% | 35% |
-| NPS score | > 30 | > 40 |
-| Pro conversion rate | 3% | 5% |
-| MRR | €25 | €200 |
+- **Beta vs alpha framing:** "alpha" sets safer expectations but drives away the
+  non-technical users who are the actual target. Call it beta, be explicit about rough edges.
+- **Reddit self-promo risk:** several high-value subreddits ban self-promo and mods check
+  history — verify each subreddit's live rules before posting; a pre-launch ban burns the
+  relationship for good.
+- **Cost exposure:** the Gemini vision scan backend is on a **free-tier key** (1,500 req/day
+  per project, shared with insights) — a Reddit/HN spike could hit that ceiling. Confirm
+  quota gates + billing alerts before Phase 3, and plan the paid-key/rotation move.
+- **Short-form video** is the least certain-value channel: 60–90 days to show results, real
+  time cost. Optional, not core path.
+- **PH algorithm / Reddit enforcement** shift seasonally — check current rules directly
+  before launch day.
+
+---
+
+## Concrete First 3 Actions (today)
+
+1. Write the one-sentence positioning and put it above the fold on the landing page.
+2. Add a plain-language trust/limitations note (signup flow or `/trust` page).
+3. Create the Product Hunt "Coming Soon" page + submit to BetaList (each < 1 hour, compounds immediately).
+
+---
+
+## Sources
+
+- [Smol Launch — Launching on Product Hunt in 2026](https://smollaunch.com/guides/launching-on-product-hunt)
+- [LaunchList — SaaS Pre-Launch Playbook: 0→1,000 Beta Users in 90 Days](https://getlaunchlist.com/blog/saas-pre-launch-marketing-playbook)
+- [LaunchList — How to Launch on Product Hunt in 2026](https://getlaunchlist.com/blog/how-to-launch-on-product-hunt-2026)
+- [Unicorn Platform — Waitlist Page Strategy in 2026](https://unicornplatform.com/blog/waitlist-page-strategy-in-2026/)
+- [ALM Corp — 70% of Finance Shoppers Use Reddit for Research](https://almcorp.com/blog/reddit-financial-services-research-trends-2026/)
+- [Finny — Best Budget Apps Reddit Recommends in 2026](https://getfinny.app/blog/best-budget-apps-reddit-recommends-2026)
+- [Redship — Reddit Self-Promotion Rules (2026)](https://redship.io/blog/reddit-self-promotion-rules)
+- [StackMatix — TikTok Growth Strategies for Brands in 2026](https://www.stackmatix.com/blog/tiktok-growth-strategies-2026)
+- [Vested — TikTok for Finance Brands: A 2026 Guide](https://fullyvested.com/insights/tik-tok-for-finance-brands/)
+- [Prems AI — Indie Hacker Marketing Playbook 2026](https://prems.ai/blog/indie-hacker-marketing-playbook-2026)
+- [mean.ceo — Retention Metrics (2026)](https://blog.mean.ceo/retention-metrics-startup-guide/)
+- [FinTech Weekly — Build Trust in Your FinTech App](https://www.fintechweekly.com/magazine/articles/build-trust-fintech-app-security-compliance-user-experience)
+- [Influencers Time — Radical Transparency in Fintech](https://www.influencers-time.com/radical-transparency-boosts-fintech-trust-and-growth/)
+- [dev.to — How to Crush Your Hacker News Launch](https://dev.to/dfarrell/how-to-crush-your-hacker-news-launch-10jk)
+- [Syften — Hacker News Posting Guide](https://syften.com/blog/hacker-news-marketing/)
+
+---
+
+## Related Docs
+
+- [FUTURE_FEATURES.md](FUTURE_FEATURES.md) — deferred features + roadmap
+- [ROADMAP.md](ROADMAP.md) — what's built
+- [MONETIZATION.md](MONETIZATION.md) — pricing & unit economics
+- [GEMINI_VISION_EVALUATION.md](GEMINI_VISION_EVALUATION.md) — receipt OCR backend

@@ -5,7 +5,7 @@
 
 This is the "what's next / what could be" doc. For **what's already built**, see
 [ROADMAP.md](ROADMAP.md). For **how it goes to market**, see
-[LAUNCH.md](LAUNCH.md) and [LAUNCH_MARKETING_PLAN.md](LAUNCH_MARKETING_PLAN.md).
+[LAUNCH.md](LAUNCH.md).
 
 Everything here is filtered through one test, the same one that set the launch
 scope — a feature earns a place only if it:
@@ -131,5 +131,5 @@ dependencies. Ordered roughly by "reinforces the wedge" first.
 - [ROADMAP.md](ROADMAP.md) — what's already built
 - [ANALYTICS_SERVICE_PLAN.md](ANALYTICS_SERVICE_PLAN.md) — the Python service design
 - [GEMINI_VISION_EVALUATION.md](GEMINI_VISION_EVALUATION.md) — OCR backend decision (implemented)
-- [LAUNCH.md](LAUNCH.md) / [LAUNCH_MARKETING_PLAN.md](LAUNCH_MARKETING_PLAN.md) — go-to-market
+- [LAUNCH.md](LAUNCH.md) — go-to-market
 - `frontend/lib/constants/features.ts` — the power switch that gates Tier-1 features

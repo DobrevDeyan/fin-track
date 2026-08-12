@@ -46,8 +46,7 @@ cd ml-service && npm run dev      # http://localhost:8000 (optional)
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | End-user feature documentation |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Feature status, Q3 2026 plans, competitive analysis |
 | [docs/FUTURE_FEATURES.md](docs/FUTURE_FEATURES.md) | Deferred launch-scope features, planned analytics service, forward-looking proposals |
-| [docs/LAUNCH.md](docs/LAUNCH.md) | Beta launch strategy — channels, retention, metrics |
-| [docs/LAUNCH_MARKETING_PLAN.md](docs/LAUNCH_MARKETING_PLAN.md) | Public launch & marketing plan — phased, channel-by-channel, sourced |
+| [docs/LAUNCH.md](docs/LAUNCH.md) | Launch & marketing plan — positioning, phased channels, checklist, metrics, sources |
 | [docs/ANALYTICS_SERVICE_PLAN.md](docs/ANALYTICS_SERVICE_PLAN.md) | Python `fin-analytics` service design (recurring detection, forecast, anomalies) |
 | [docs/GEMINI_VISION_EVALUATION.md](docs/GEMINI_VISION_EVALUATION.md) | Receipt OCR backend decision — Document AI vs Gemini vision |
 
