@@ -2,6 +2,10 @@
 
 **Last Updated:** April 2026
 
+> This doc tracks **what's built**. For what's next — deferred launch-scope features,
+> the planned Python analytics service, and forward-looking proposals — see
+> [FUTURE_FEATURES.md](FUTURE_FEATURES.md).
+
 ---
 
 ## Current Status: Beta-Ready

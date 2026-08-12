@@ -1,7 +1,7 @@
 # Pocket — Python Analytics Service Plan (`fin-analytics`)
 
 **Last Updated:** August 2026
-**Status:** Planned — not started
+**Status:** Planned — offline-first (Python learning project); deployment deferred to post-launch. See [FUTURE_FEATURES.md](FUTURE_FEATURES.md) Tier 2 for how this ties into the current launch scope.
 **Owner:** Deyan Dobrev
 **Service Name:** `fin-analytics`
 **Runtime:** Python 3.12 / FastAPI on Cloud Run (`europe-west1`)
