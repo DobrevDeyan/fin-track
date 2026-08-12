@@ -3,7 +3,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
-import { processDocument } from './document-ai-handler';
+import { processDocument as processWithDocumentAI } from './document-ai-handler';
+import { processDocument as processWithGeminiVision } from './gemini-vision-handler';
 import insightsRouter from './insights-routes';
 import { requireAuth } from './middleware/auth';
 import { checkSubscriptionTier, checkAndIncrementScanQuota, refundScanQuota } from './firestore-quota';
@@ -107,14 +108,23 @@ const upload = multer({
 
 const PORT = process.env.PORT || 8000;
 
+// OCR backend toggle: 'document-ai' (default) or 'gemini-vision'. Both handlers
+// share the same signature and return shape, so this picks one at startup.
+const OCR_BACKEND = (process.env.OCR_BACKEND || 'document-ai').toLowerCase();
+const processReceipt = OCR_BACKEND === 'gemini-vision'
+    ? processWithGeminiVision
+    : processWithDocumentAI;
+
 // Health check endpoint — no auth required
 app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         environment: {
+            ocrBackend: OCR_BACKEND,
             hasProjectId: !!process.env.GCP_PROJECT_ID,
             hasProcessorId: !!process.env.GCP_PROCESSOR_ID,
+            hasGeminiKey: !!process.env.GEMINI_API_KEY,
             authMode: process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'key-file' : 'adc',
         },
     });
@@ -159,8 +169,8 @@ app.post('/api/upload-bill', uploadLimiter, requireAuth, upload.single('billFile
             return;
         }
 
-        // Process the document with Document AI
-        const extractedData = await processDocument(
+        // Process the document with the configured OCR backend
+        const extractedData = await processReceipt(
             req.file.path,
             req.file.mimetype,
             requestId ? String(requestId) : undefined,
@@ -230,6 +240,7 @@ app.use((_req: Request, res: Response) => {
 
 app.listen(PORT, () => {
     console.log(`ML Service running on http://localhost:${PORT}`);
+    console.log(`OCR backend: ${OCR_BACKEND}`);
     console.log(`Health check: http://localhost:${PORT}/api/health`);
     console.log(`Upload endpoint: POST http://localhost:${PORT}/api/upload-bill`);
     console.log(`AI Insights: POST http://localhost:${PORT}/api/insights/digest`);

@@ -70,7 +70,7 @@ function getClient(): DocumentProcessorServiceClient {
  * non-negative, finite value (receipt totals are positive expense amounts) and
  * 0 for anything unparseable or absurdly large (review RCP-6).
  */
-function parseAmount(amountStr: string): number {
+export function parseAmount(amountStr: string): number {
     if (!amountStr) return 0;
 
     // Strip currency symbols, ISO codes / words, and any remaining non-numeric
@@ -154,7 +154,7 @@ function todayISODate(): string {
  * dates (both fields <= 12) are interpreted as DD/MM. Falls back to today only
  * when nothing parses.
  */
-function parseDate(dateStr: string): string {
+export function parseDate(dateStr: string): string {
     if (!dateStr) return todayISODate();
     const s = dateStr.trim();
 
@@ -212,7 +212,7 @@ function parseDate(dateStr: string): string {
 /**
  * Normalize a raw currency string (symbol, ISO code or word) to an ISO-4217 code.
  */
-function normalizeCurrency(raw: string | undefined): string | undefined {
+export function normalizeCurrency(raw: string | undefined): string | undefined {
     if (!raw) return undefined;
     const s = raw.trim().toUpperCase();
     if (s.includes('€') || /\bEUR\b/.test(s)) return 'EUR';

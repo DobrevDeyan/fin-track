@@ -27,7 +27,12 @@ if [ -f "$SCRIPT_DIR/.env.deploy" ]; then
 fi
 GEMINI_API_KEY="${GEMINI_API_KEY:?Set GEMINI_API_KEY (export it, or put GEMINI_API_KEY=your_key in ml-service/.env.deploy) before deploying}"
 
-echo "Deploying $SERVICE_NAME to Google Cloud Run..."
+# OCR backend for receipt scanning: 'document-ai' (default) or 'gemini-vision'.
+# Override via .env.deploy or `OCR_BACKEND=gemini-vision bash deploy.sh`. Default
+# stays document-ai so a routine deploy never silently flips prod to Gemini.
+OCR_BACKEND="${OCR_BACKEND:-document-ai}"
+
+echo "Deploying $SERVICE_NAME to Google Cloud Run (OCR backend: $OCR_BACKEND)..."
 
 # Ensure we are in the correct directory
 cd "$(dirname "$0")"
@@ -72,7 +77,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --cpu 1 \
   --min-instances 0 \
   --max-instances 3 \
-  --set-env-vars "^@^GCP_PROJECT_ID=$PROJECT_ID@GCP_LOCATION=eu@GCP_PROCESSOR_ID=$PROCESSOR_ID@FRONTEND_URL=$FRONTEND_URL@GEMINI_API_KEY=$GEMINI_API_KEY"
+  --set-env-vars "^@^GCP_PROJECT_ID=$PROJECT_ID@GCP_LOCATION=eu@GCP_PROCESSOR_ID=$PROCESSOR_ID@FRONTEND_URL=$FRONTEND_URL@GEMINI_API_KEY=$GEMINI_API_KEY@OCR_BACKEND=$OCR_BACKEND"
 
 # 5. Get the service URL
 SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
