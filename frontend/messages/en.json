@@ -574,7 +574,7 @@
         "feature3": "Financial health score",
         "feature4": "Spending anomaly alerts",
         "feature5": "Receipt scanning not included — Pro only",
-        "feature6": "2 savings accounts · 5 recurring transactions"
+        "feature6": "5 recurring transactions"
       },
       "pro": {
         "name": "Pro",
@@ -584,7 +584,7 @@
         "feature2": "10 receipt scans/month",
         "feature3": "AI Budget Coach chat",
         "feature4": "AI monthly digest",
-        "feature5": "90-day cash flow forecast",
+        "feature5": "Receipt history & storage",
         "feature6": "PDF & CSV export"
       },
       "business": {
@@ -606,15 +606,15 @@
       "title": "Frequently Asked",
       "questions": "Questions",
       "q1": "What does Pro include?",
-      "a1": "Pro (€2.99/month) includes 10 receipt scans per month, an AI Budget Coach you can chat with about your own spending, an AI-generated monthly digest, a 90-day cash flow forecast, and unlimited transactions, budgets, goals, and accounts.",
+      "a1": "Pro (€2.99/month) includes 10 receipt scans per month, an AI Budget Coach you can chat with about your own spending, an AI-generated monthly digest, and unlimited transactions, budgets, and goals.",
       "q2": "Is my financial data secure?",
       "a2": "Yes. All data is stored encrypted in Firebase and transmitted over HTTPS. We never sell your data or share it with third parties.",
       "q3": "Can I use Pocket on mobile?",
       "a3": "Yes. Pocket is an installable PWA — add it to your home screen directly from the browser. No app store needed, works on iOS and Android.",
       "q4": "What are the free plan limits?",
-      "a4": "Free includes 100 transactions/month, 5 budgets, 3 savings goals, 2 savings accounts, 5 recurring transactions, a financial health score and anomaly alerts. Receipt scanning and the AI coach are not included — every scan costs us real money to process, so they are Pro features. Upgrade to Pro for €2.99/month to remove all limits and unlock both.",
+      "a4": "Free includes 100 transactions/month, 5 budgets, 3 savings goals, 5 recurring transactions, a financial health score and anomaly alerts. Receipt scanning and the AI coach are not included — every scan costs us real money to process, so they are Pro features. Upgrade to Pro for €2.99/month to remove all limits and unlock both.",
       "q5": "Why isn't receipt scanning free?",
-      "a5": "Each scan is processed by a paid document-AI service that charges us per receipt. We would rather charge a fair subscription than run ads or sell your data, so scanning lives on the paid plans. Pro includes 10 scans a month, Business includes 50."
+      "a5": "Each scan is processed by a paid AI vision service that charges us per receipt. We would rather charge a fair subscription than run ads or sell your data, so scanning lives on the paid plans. Pro includes 10 scans a month, Business includes 50."
     },
     "footer": {
       "tagline": "Money tracking that takes seconds, not evenings.",
