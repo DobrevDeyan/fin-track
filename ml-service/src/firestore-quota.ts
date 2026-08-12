@@ -17,13 +17,16 @@ const db = admin.firestore();
 
 export type PlanTier = 'free' | 'pro' | 'business';
 
-// Document AI Expense parser bills $0.10 per scan (1 count = 1-10 page document),
-// confirmed against actual GCP billing. Scanning is therefore PAID-ONLY: a free
-// scan is a direct cash loss with no revenue against it.
+// Receipt OCR runs on the Gemini vision backend (~$0.0005/scan, OCR_BACKEND),
+// ~200x cheaper than Document AI's $0.10. A small free allowance is now a cheap
+// acquisition hook (forms the habit, drives activation) rather than a cash loss;
+// paid tiers monetize volume + the AI coach. This module is AUTHORITATIVE — the
+// frontend copy in subscription.constants.ts mirrors it (no shared package across
+// the two deploys, so values are kept in sync by hand).
 export const SCAN_LIMITS: Record<PlanTier, number> = {
-  free: 0,   // paid feature — free users get the upsell, not a teaser scan
-  pro: 10,   // $1.00 cost against ~$2.88 net of 2.99 EUR/month
-  business: 50, // $5.00 cost against ~$20.89 net of 19.99 EUR/month
+  free: 5,    // ~$0.0025/user/month at Gemini rates — negligible; drives activation
+  pro: 10,
+  business: 50,
 };
 
 // Per-user DAILY cap on AI insight calls (digest + chat combined). The IP-based

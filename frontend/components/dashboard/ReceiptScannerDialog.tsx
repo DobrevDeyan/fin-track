@@ -587,12 +587,13 @@ export function ReceiptScannerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Free-tier gate */}
+        {/* Quota gate: every tier can scan; free users only hit the upgrade wall
+            once they've used their monthly allowance (SCAN_LIMITS.free). */}
         {subscriptionLoading ? (
           <div className="py-4">
             <div className="h-48 rounded-lg animate-pulse bg-muted" />
           </div>
-        ) : !isPro ? (
+        ) : !isPro && atLimit ? (
           <div className="py-4">
             <UpgradePrompt
               mode="card"

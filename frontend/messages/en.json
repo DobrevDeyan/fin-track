@@ -473,7 +473,7 @@
   "landing": {
     "hero": {
       "tagline": "Snap a receipt. We do the rest.",
-      "description": "Log an expense in seconds, snap receipts instead of typing them, and see exactly where your money goes. Free forever — Pro adds receipt scanning and an AI coach that knows your actual numbers.",
+      "description": "Log an expense in seconds, snap receipts instead of typing them, and see exactly where your money goes. Free forever, receipt scanning included — Pro adds an AI coach that knows your actual numbers.",
       "goToDashboard": "Go to Dashboard",
       "getStarted": "Get Started Free",
       "learnMore": "Learn More"
@@ -532,7 +532,7 @@
       "feature1Title": "Budgets, Goals & Tracking",
       "feature1Desc": "Log income and expenses, set budgets and savings goals, and watch your financial health score react in real time.",
       "feature2Title": "Receipt Scanning",
-      "feature2Desc": "Snap a photo or upload a PDF — AI pulls out the merchant, amount, and date for you. Stop typing receipts. Available on Pro.",
+      "feature2Desc": "Snap a photo or upload a PDF — AI pulls out the merchant, amount, and date for you. Stop typing receipts. 5 free scans a month, more on Pro.",
       "feature3Title": "AI Budget Coach",
       "feature3Desc": "Ask questions about your own money and get specific, data-backed answers — not generic advice. It reads your actual spending. Available on Pro."
     },
@@ -573,7 +573,7 @@
         "feature2": "5 budgets · 3 savings goals",
         "feature3": "Financial health score",
         "feature4": "Spending anomaly alerts",
-        "feature5": "Receipt scanning not included — Pro only",
+        "feature5": "5 receipt scans per month",
         "feature6": "5 recurring transactions"
       },
       "pro": {
@@ -599,7 +599,7 @@
     },
     "newsletter": {
       "title": "Start for Free Today",
-      "description": "Create your account in seconds. The free plan covers tracking, budgets, goals, and your health score — no credit card required. Receipt scanning is a Pro feature.",
+      "description": "Create your account in seconds. The free plan covers tracking, budgets, goals, your health score, and 5 receipt scans a month — no credit card required.",
       "cta": "Create Free Account"
     },
     "faq": {
@@ -612,9 +612,9 @@
       "q3": "Can I use Pocket on mobile?",
       "a3": "Yes. Pocket is an installable PWA — add it to your home screen directly from the browser. No app store needed, works on iOS and Android.",
       "q4": "What are the free plan limits?",
-      "a4": "Free includes 100 transactions/month, 5 budgets, 3 savings goals, 5 recurring transactions, a financial health score and anomaly alerts. Receipt scanning and the AI coach are not included — every scan costs us real money to process, so they are Pro features. Upgrade to Pro for €2.99/month to remove all limits and unlock both.",
-      "q5": "Why isn't receipt scanning free?",
-      "a5": "Each scan is processed by a paid AI vision service that charges us per receipt. We would rather charge a fair subscription than run ads or sell your data, so scanning lives on the paid plans. Pro includes 10 scans a month, Business includes 50."
+      "a4": "Free includes 100 transactions/month, 5 budgets, 3 savings goals, 5 recurring transactions, 5 receipt scans/month, a financial health score and anomaly alerts. The AI Budget Coach is the main Pro feature. Upgrade to Pro for €2.99/month to remove all limits and unlock the coach.",
+      "q5": "How many receipt scans do I get?",
+      "a5": "Every plan includes AI receipt scanning: Free gives you 5 scans a month, Pro 10, and Business 50. Higher volumes live on the paid plans, and Pro also unlocks the AI Budget Coach."
     },
     "footer": {
       "tagline": "Money tracking that takes seconds, not evenings.",

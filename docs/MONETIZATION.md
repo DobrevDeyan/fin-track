@@ -1,7 +1,7 @@
 # Pocket — Unit Economics & Monetization
 
 **Last Updated:** August 2026
-**Status:** Free-tier scanning removed (shipped). Paid-per-scan design below is **proposed, not implemented**.
+**Status:** OCR backend = **Gemini vision** (shipped, ~200× cheaper). Free tier now includes **5 scans/month** (shipped) — the cost collapse turned scanning from a cash loss into a cheap acquisition hook. Paid-per-scan design below is **proposed, likely unnecessary now** — see the update under "Scanning" and "Decision Order".
 
 ---
 
@@ -22,7 +22,8 @@ Every variable cost per user, as of August 2026.
 
 | Cost | Rate | Notes |
 |---|---|---|
-| **Document AI Expense parser** | **$0.10 / scan** | 1 count = 1–10 page document. A receipt image is 1 count. **No free tier.** |
+| **Gemini vision (receipt OCR)** | **~$0.0005 / scan** | **Active backend** (`OCR_BACKEND=gemini-vision`). ~1,200–1,350 input + ~300 output tokens. On the AI Studio free tier today ($0, shared 1,500 RPD). |
+| Document AI Expense parser | $0.10 / scan | Fallback backend, one env flip away. 1 count = 1–10 page document. **~200× more expensive.** |
 | Gemini digest / chat | ~$0.001 / call | Currently absorbed by the AI Studio free tier |
 | Cloud Run | ~$1–2 / month total | Fixed-ish, `min-instances 0` |
 | Firestore | Within free tier | 50k reads/day |
@@ -44,24 +45,40 @@ Observed latency: **3.71s avg, 4.17s p99.**
 
 Prices from `frontend/messages/en.json` → `landing.pricing`. EUR→USD at ~1.09.
 
-| Tier | Price | Scans | Doc AI cost | Net after Stripe | OCR as % of net |
+Now on the Gemini vision backend (~$0.0005/scan), OCR cost is effectively zero at every tier.
+
+| Tier | Price | Scans | OCR cost (Gemini) | Net after Stripe | OCR as % of net |
 |---|---|---|---|---|---|
-| Free | €0 | ~~3~~ **0** | ~~$0.30~~ **$0** | $0 | ~~**pure loss**~~ **n/a** |
-| Pro monthly | €2.99 | 10 | $1.00 | ~$2.88 | **~35%** |
-| Pro annual | €24.99/yr | 10/mo | $1.00/mo | ~$2.18/mo | **~46%** |
-| Business | €19.99 | 50 | $5.00 | ~$20.89 | ~24% |
+| Free | €0 | **5** | **~$0.0025** | $0 | negligible |
+| Pro monthly | €2.99 | 10 | ~$0.005 | ~$2.88 | **<1%** |
+| Pro annual | €24.99/yr | 10/mo | ~$0.005/mo | ~$2.18/mo | **<1%** |
+| Business | €19.99 | 50 | ~$0.025 | ~$20.89 | **<1%** |
 
-**Business is healthy. Pro is tight, and Pro annual is tighter** — the annual discount shrinks net revenue while scan cost stays flat.
+*(Prior Document AI figures: Free $0.30 loss, Pro ~35%, Business ~24% — see git history.)*
 
-Add Gemini at scale (see below) and worst-case Pro reaches ~84% cost. Pro has no room for a second variable cost on top of Document AI.
+**The picture inverted.** OCR was the dominant variable cost (~35% of Pro on Document AI); on Gemini it's a rounding error, so **every subscriber is ~99% margin**. This is why 5 free scans is now affordable — ~$0.0025/user/month — and why the monetization game shifts from *bounding scan cost* to *maximizing subscriber volume* (a generous free tier is now an asset, not a liability). The remaining cost to watch is Gemini's shared free-tier RPD ceiling (see below), not per-scan price.
 
 ---
 
-## Change: Scanning Is Now Paid-Only
+## Scanning: Paid-Only → Free Allowance (reversed)
 
-**Shipped.** Free tier scan quota went `3 → 0`.
+> **Update (Aug 2026): free-tier scanning restored to 5 scans/month.** The section
+> below documents the earlier `3 → 0` decision, which was **correct for Document AI**
+> and is now **superseded** by the Gemini vision switch. At ~$0.0005/scan, the entire
+> cash-loss argument evaporates: 5 free scans cost ~$0.0025/user/month. Scanning is
+> the app's "aha moment" and its best activation driver (fastest path to the 5+
+> transactions that predict retention), and free receipt scanning with no bank linking
+> is a wedge YNAB/Copilot can't match and Monarch only offers behind bank login. So it
+> flips from a paywall to an acquisition hook. **Shipped:** `SCAN_LIMITS.free` `0 → 5`
+> (server-authoritative in `firestore-quota.ts`, mirrored in `subscription.constants.ts`),
+> `ReceiptScannerDialog.tsx` gate changed from `!isPro` to `!isPro && atLimit`, and the
+> landing/FAQ copy updated in both languages. See `docs/GEMINI_VISION_EVALUATION.md`.
 
-Rationale: at $0.10/scan with zero revenue against it, three free scans is **$0.30/user/month of direct cash loss**. At 1,000 free users that is $300/month — an order of magnitude above the entire rest of the infrastructure bill. A free tier that loses money per active user gets *worse* as the app succeeds.
+### Historical: why it was `3 → 0` under Document AI
+
+**Shipped, then reversed.** Free tier scan quota went `3 → 0`.
+
+Rationale (Document AI era): at $0.10/scan with zero revenue against it, three free scans is **$0.30/user/month of direct cash loss**. At 1,000 free users that is $300/month — an order of magnitude above the entire rest of the infrastructure bill. A free tier that loses money per active user gets *worse* as the app succeeds.
 
 ### Code changed
 
@@ -226,13 +243,13 @@ So the migration is straightforward: **`gemini-2.5-flash` → `gemini-3-flash` o
 
 These interact. Taking them out of order means rework.
 
-1. ~~Remove free-tier scanning~~ — **done**
+1. ~~Remove free-tier scanning~~ — done, then **reversed**: `free: 5` again (Gemini made it ~free)
 2. ~~Migrate off `gemini-2.5-flash`~~ — **done**, now `gemini-3.5-flash-lite`
-3. **Decide the OCR backend** — Document AI at $0.10 vs Gemini vision at ~$0.002 via Vertex `europe-west`. Sets every margin below. **→ `docs/GEMINI_VISION_EVALUATION.md`**
-4. **Then** decide per-scan pricing — Option A (packs), B (metered), or C (just raise prices)
-5. Only then build billing code
+3. ~~Decide the OCR backend~~ — **done: Gemini vision** (`OCR_BACKEND=gemini-vision`, alpha), ~200× under Document AI, which stays as a one-flip fallback. **→ `docs/GEMINI_VISION_EVALUATION.md`**
+4. **Per-scan pricing — likely moot now.** At ~$0.0005/scan the whole "make each scan profitable" problem disappears; scan cost is no longer a margin driver. Options A/B/C below are retained only if a paid OCR backend (Vertex, at real volume) ever reintroduces meaningful per-scan cost.
+5. **Actual open lever:** subscriber volume + tier pricing. With ~99% margin per sub, the game is top-of-funnel (generous free tier) and possibly a modest Pro price test (€2.99 is ~⅕ of YNAB/Monarch/Copilot — real headroom, but raise only after retention is proven).
 
-Step 3 changes the answer to step 4 by a factor of 25. Do not invert them.
+The OCR decision (step 3) collapsed step 4 by ~200×, which is why the paid-per-scan design below is now mostly of historical interest.
 
 ---
 
