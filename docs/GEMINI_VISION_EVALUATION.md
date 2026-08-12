@@ -1,8 +1,17 @@
 # Should Receipt Scanning Move From Document AI to Gemini Vision?
 
 **Last Updated:** August 2026
-**Status:** 🟡 **OPEN DECISION — not started.** This document exists to make the call later, not to record one.
+**Status:** 🟢 **IMPLEMENTED (alpha) — Option D infra, running as `gemini-vision` in prod.** Both backends ship behind the `OCR_BACKEND` toggle (`ml-service/src/gemini-vision-handler.ts`); Document AI is untouched and one env-var flip away. **Accuracy still unproven** — the shadow-mode run below has not been completed, so this is not yet cleared for real users. See "Implementation Status" below.
 **Blocks:** per-scan pricing design in `docs/MONETIZATION.md`
+
+> ### Implementation Status (August 2026)
+> - ✅ `gemini-vision` backend built and deployed to Cloud Run; `OCR_BACKEND=gemini-vision` active in prod (alpha, no real users).
+> - ✅ Grounding-based confidence implemented — the extracted total must appear in the model's verbatim `rawText`, else confidence drops to 0.3 and trips the existing `< 0.7` warning.
+> - ✅ Two-step prompt/schema: transcribe `rawText` first (incl. curled/rotated edges + every number), then read fields from it; amount must be grounded or return 0 (never synthesised from line items). Hardened after a real curled Bulgarian fiscal receipt exposed a grounding false-alarm.
+> - ✅ Cost confirmed on real scans: ~1,200–1,350 input + 200–500 output tokens ≈ **$0.0005/scan** (~200× under Document AI). Currently on the free-tier AI Studio key ($0, but 1,500 req/day per-project shared with insights).
+> - ✅ Batch accuracy harness written (`ml-service/test-vision-batch.ts`) — run/score passes + grounding confusion matrix.
+> - ⏳ **NOT DONE:** the 30–50 receipt shadow-mode accuracy run. The key unknown is the *wrong-but-grounded* (silent bad data) rate — must be 0 before real users.
+> - ⏳ **NOT DONE:** EU residency. Still on AI Studio, not Vertex AI. Acceptable for alpha (own data only); a GDPR blocker before real EU user images.
 
 ---
 
@@ -205,14 +214,14 @@ Option D deserves attention. It keeps the cheap path as the default, keeps the a
 
 ## TODO
 
-- [ ] **Decide the OCR backend** — blocks per-scan pricing in `MONETIZATION.md`. *(this document)*
+- [x] ~~**Decide the OCR backend**~~ — proceeding with Gemini vision (alpha); running in prod behind the `OCR_BACKEND` toggle. Pricing math for `MONETIZATION.md` still owed.
 - [ ] Export 30–50 real receipts + user-confirmed ground-truth amounts as a test set
-- [ ] Write a throwaway shadow-mode script comparing Document AI vs Gemini on that set
-- [ ] Measure amount accuracy, hallucination rate, line-item quality, latency
-- [ ] Prototype the grounding validation (`rawText` substring check) and measure its catch rate
-- [ ] If proceeding: set up Vertex AI in `europe-west`, service account, EU residency verified
-- [ ] If proceeding: implement `gemini-vision-handler.ts` behind a feature flag, Document AI as fallback (Option D)
-- [ ] If proceeding: re-run the scan-pricing math in `MONETIZATION.md` at the new cost
+- [x] ~~Write a throwaway shadow-mode script~~ — `ml-service/test-vision-batch.ts` (run/score passes). Still comparing Gemini only; add a Document AI column for a true head-to-head.
+- [ ] Measure amount accuracy, hallucination rate, line-item quality, latency — **run the harness on the test set (blocking for real users)**
+- [x] ~~Prototype the grounding validation (`rawText` substring check)~~ — implemented (`isAmountGrounded`); measure its real catch rate via the harness.
+- [ ] Set up Vertex AI in `europe-west`, service account, EU residency verified — **required before real EU user images**
+- [x] ~~Implement `gemini-vision-handler.ts` behind a feature flag~~ — done (`OCR_BACKEND` toggle). Automatic Document AI fallback on failed grounding (full Option D) not yet wired — currently a manual toggle.
+- [ ] Re-run the scan-pricing math in `MONETIZATION.md` at the new cost (~$0.0005/scan measured)
 - [ ] Decide whether cheaper scans mean a free tier gets scans back, or margins simply improve
 
 ### Related open items

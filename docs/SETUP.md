@@ -96,18 +96,28 @@ cp .env.example .env
 ```
 
 ```env
+# Receipt OCR backend: document-ai (default) or gemini-vision
+OCR_BACKEND=document-ai
 GCP_PROJECT_ID=fin-track-adc2c
 GCP_PROCESSOR_ID=566b35e21d475435
 GCP_LOCATION=eu
 GOOGLE_APPLICATION_CREDENTIALS=./keys/your-service-account-key.json
 GEMINI_API_KEY=your_gemini_api_key
+GEMINI_VISION_MODEL=gemini-3.5-flash-lite
 PORT=8000
 FRONTEND_URL=http://localhost:3001
 ```
 
-`GOOGLE_APPLICATION_CREDENTIALS` is only needed for local dev. Cloud Run uses Application Default Credentials (ADC) automatically.
+`GOOGLE_APPLICATION_CREDENTIALS` is only needed for the `document-ai` backend in local dev. Cloud Run uses Application Default Credentials (ADC) automatically. The `gemini-vision` backend needs only `GEMINI_API_KEY`.
 
-**Gemini key:** Create one at https://aistudio.google.com → Get API key → Create API key in new project. Use the free tier — model must be `gemini-2.5-flash`.
+**Gemini key:** Create one at https://aistudio.google.com → Get API key → Create API key in new project. Free tier works. Used by both AI insights and the `gemini-vision` OCR backend; insights use `gemini-3.5-flash-lite`.
+
+**Testing the Gemini vision backend locally** (no server/auth needed):
+```bash
+npx ts-node test-vision.ts path/to/receipt.jpg          # single receipt
+npx ts-node test-vision-batch.ts run "C:/path/to/receipts"   # batch → then: score
+```
+See `docs/GEMINI_VISION_EVALUATION.md` for the accuracy-eval workflow.
 
 ### Cloud Functions
 

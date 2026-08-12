@@ -1,6 +1,6 @@
 # Pocket — Deployment Guide
 
-**Last Updated:** April 2026
+**Last Updated:** August 2026
 
 Complete step-by-step guide to deploy the entire Pocket application. For local development setup and environment variables see [SETUP.md](SETUP.md).
 
@@ -55,7 +55,23 @@ Deployed functions (see [ARCHITECTURE.md](ARCHITECTURE.md#cloud-functions-invent
 
 The ML service URL is needed for the frontend build in Step 4 — deploy this first.
 
-### 3a. Grant Document AI Permission (One-Time)
+### 3a. Choose the OCR backend
+
+Receipt scanning has two interchangeable backends, selected by the `OCR_BACKEND` env
+var (read once at startup). Both ship in every image, so switching is an env-var flip
++ redeploy — no code change.
+
+| `OCR_BACKEND` | Backend | Cost/scan | Notes |
+|---|---|---|---|
+| `document-ai` (default) | Google Document AI Expense parser | ~$0.10 | Calibrated per-field confidence, EU-resident |
+| `gemini-vision` | Gemini vision (`gemini-3.5-flash-lite`) | ~$0.0005 | ~200× cheaper; confidence computed by grounding the total against the model's `rawText`. **Uses the AI Studio key — not EU-resident; alpha only until moved to Vertex AI.** See [GEMINI_VISION_EVALUATION.md](GEMINI_VISION_EVALUATION.md). |
+
+**Current production setting:** `gemini-vision` (alpha).
+
+### 3b. Grant Document AI Permission (One-Time)
+
+Needed for the `document-ai` backend (harmless to grant even when running `gemini-vision`,
+so you can switch back without re-granting):
 
 ```bash
 gcloud projects add-iam-policy-binding fin-track-adc2c \
@@ -63,19 +79,42 @@ gcloud projects add-iam-policy-binding fin-track-adc2c \
   --role='roles/documentai.apiUser'
 ```
 
-### 3b. Deploy
+### 3c. Configure `ml-service/.env.deploy` (gitignored, local deploy helper)
+
+`deploy.sh` sources this file. It is **not** committed and **not** read at runtime:
+
+```bash
+GEMINI_API_KEY=AIza...                 # required (also used by the gemini-vision backend)
+OCR_BACKEND=gemini-vision              # optional; defaults to document-ai if unset
+CLOUDSDK_PYTHON="C:/.../google-cloud-sdk/platform/bundledpython/python.exe"  # Windows/Git Bash only
+```
+
+> `CLOUDSDK_PYTHON` must be **quoted** if the path contains a space (e.g. `Cloud SDK`),
+> or sourcing the file will fail with "No such file or directory".
+
+### 3d. Deploy
+
+On Windows, run this under **Git Bash** (MINGW64) — *not* WSL. In Cmder/PowerShell the
+bare `bash` resolves to WSL, which fails with `Logon failure … 0x80070569`. Open a Git
+Bash terminal (or call `"…/Git/bin/bash.exe" deploy.sh`) and run from the directory:
 
 ```bash
 cd ml-service
 npm install
-bash deploy.sh
+./deploy.sh          # or: bash deploy.sh
+```
+
+Override the backend for a one-off deploy without editing `.env.deploy`:
+
+```bash
+OCR_BACKEND=document-ai ./deploy.sh   # switch prod back to Document AI
 ```
 
 The script:
 1. Enables required GCP APIs (Cloud Build, Cloud Run, Artifact Registry, Document AI)
 2. Creates Artifact Registry Docker repository (if needed)
-3. Builds Docker image via Cloud Build
-4. Deploys to Cloud Run (`europe-west1`)
+3. Builds Docker image via Cloud Build (runs `npm run build` inside the container — no local build needed)
+4. Deploys to Cloud Run (`europe-west1`) with `OCR_BACKEND`, `GEMINI_API_KEY`, and Document AI config set
 
 After deployment it prints the **Service URL** — copy it for Step 4.
 
@@ -83,19 +122,21 @@ After deployment it prints the **Service URL** — copy it for Step 4.
 Service URL: https://ml-service-xxxxxxxxxx-ew.a.run.app
 ```
 
-### 3c. Verify
+### 3e. Verify
 
 ```bash
 curl https://ml-service-xxxxxxxxxx-ew.a.run.app/api/health
 ```
 
-Expected:
+Expected (`ocrBackend` reflects the active backend):
 ```json
 {
   "status": "healthy",
   "environment": {
+    "ocrBackend": "gemini-vision",
     "hasProjectId": true,
     "hasProcessorId": true,
+    "hasGeminiKey": true,
     "authMode": "adc"
   }
 }
@@ -204,6 +245,11 @@ gcloud run services describe ml-service --region europe-west1 --project fin-trac
 # Update a single Cloud Run env var without wiping others
 gcloud run services update ml-service \
   --update-env-vars GEMINI_API_KEY=new_key \
+  --region europe-west1 --project fin-track-adc2c
+
+# Switch OCR backend on the live service without a rebuild (new revision restarts)
+gcloud run services update ml-service \
+  --update-env-vars OCR_BACKEND=document-ai \
   --region europe-west1 --project fin-track-adc2c
 
 # Test receipt scanning endpoint

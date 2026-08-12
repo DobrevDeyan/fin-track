@@ -429,8 +429,9 @@ All custom functions are in `functions/src/index.ts`.
 | **Cloud Functions v2** | Backend logic (Blaze required) | 2M invocations/month |
 | **Firebase Cloud Messaging** | Push notifications | Free, unlimited |
 | **Cloud Run** | ML service (`europe-west1`) | ~$1-2/month (EU not free) |
-| **Document AI** | Receipt OCR (Expense Parser, `eu`) | **$0.10 per scan** — no free tier, see `MONETIZATION.md` |
-| **Gemini AI** | AI digest + chat | Free tier via AI Studio (15 RPM, 1500 RPD **shared across all users**) |
+| **Document AI** | Receipt OCR (Expense Parser, `eu`) — *default* backend | **$0.10 per scan** — no free tier, see `MONETIZATION.md` |
+| **Gemini vision** | Receipt OCR (`gemini-3.5-flash-lite`) — **active backend (alpha)** via `OCR_BACKEND=gemini-vision` | ~$0.0005/scan (~200× cheaper); free-tier AI Studio for now, **not EU-resident** — see `GEMINI_VISION_EVALUATION.md` |
+| **Gemini AI** | AI digest + chat | Free tier via AI Studio (15 RPM, 1500 RPD **shared across all users AND the vision OCR backend**) |
 | **Cloud Scheduler** | Trigger scheduled functions | 3 free jobs/month |
 | **Artifact Registry** | Docker images (30-day cleanup policy set) | 0.5 GB/month |
 | **Cloud Build** | ML service Docker builds | 120 min/day |
@@ -438,8 +439,8 @@ All custom functions are in `functions/src/index.ts`.
 **Document AI Processor:** `expense_parser` — ID `566b35e21d475435`, region `eu`
 
 **Gemini Setup Notes:**
-- Model must be `gemini-2.5-flash` — `gemini-1.5-flash` returns 404 on new projects, `gemini-2.0-flash` has 0 free quota
-- API key in `ml-service/.env` and baked into `deploy.sh`
+- Insights + vision OCR both use `gemini-3.5-flash-lite` (migrated off `gemini-2.5-flash`, shut down 2026-10-16). Verify model availability on the project before trusting a swap — prior 404 / zero-quota surprises on new model IDs.
+- API key lives in `ml-service/.env` (local) and `ml-service/.env.deploy` (deploy, gitignored) — **no longer hardcoded in `deploy.sh`**. `deploy.sh` reads `GEMINI_API_KEY` + `OCR_BACKEND` from `.env.deploy`.
 - Always use `--update-env-vars` on Cloud Run updates (not `--set-env-vars` — the latter wipes all env vars)
 
 **Node.js Runtime:** Cloud Functions run on Node.js 22 (`functions/package.json` `engines.node: "22"`). Node.js 20 was deprecated 2026-04-30 and will be decommissioned 2026-10-30 — do not downgrade.
@@ -463,7 +464,7 @@ Express.js server on Cloud Run (`europe-west1`, 512 MB RAM, 1 CPU, 0–3 instanc
 | Method | Path | Auth | Rate Limit | Description |
 |--------|------|------|------------|-------------|
 | `GET` | `/api/health` | None | — | Service health check |
-| `POST` | `/api/upload-bill` | Firebase token | 10/day/user | Receipt scanning via Document AI |
+| `POST` | `/api/upload-bill` | Firebase token | 10/day/user | Receipt scanning via the active OCR backend (`OCR_BACKEND`: Document AI or Gemini vision) |
 | `POST` | `/api/insights/digest` | Firebase token | 50/day/user | Generate AI monthly digest |
 | `POST` | `/api/insights/chat` | Firebase token | 50/day/user | AI budget coach chat |
 
@@ -472,9 +473,13 @@ All sensitive endpoints require `Authorization: Bearer <firebase-id-token>`.
 ### Receipt Scan Flow
 
 1. Frontend sends image via `POST /api/upload-bill` with Firebase ID token
-2. ML service calls Document AI Expense Parser
-3. Returns `{ merchant, amount, date, items, rawText, confidence }`
+2. ML service routes to the backend selected by `OCR_BACKEND` (read once at startup):
+   - `document-ai` (default) → Document AI Expense Parser; confidence is the amount field's calibrated score
+   - `gemini-vision` (active in alpha) → Gemini vision one-shot JSON; confidence is **computed** by grounding the total against the model's verbatim `rawText` (absent → 0.3)
+3. Both return the same shape `{ merchant, amount, currency, date, items, rawText, confidence }`, so the frontend is backend-agnostic
 4. Frontend stores receipt in Firebase Storage (`receipts/{userId}/`) and saves URL on the entry
+
+Handlers: `ml-service/src/document-ai-handler.ts` and `ml-service/src/gemini-vision-handler.ts` share the same signature; the toggle lives in `api-server.ts`.
 
 ---
 
@@ -491,7 +496,8 @@ All sensitive endpoints require `Authorization: Bearer <firebase-id-token>`.
 | `frontend/components/dashboard/CashFlowForecast.tsx` | 90-day Recharts AreaChart |
 | `frontend/components/dashboard/AIDigest.tsx` | Gemini monthly narrative |
 | `frontend/components/dashboard/AIChatDrawer.tsx` | Floating chat button + Sheet |
-| `ml-service/src/gemini-handler.ts` | Gemini 2.5 Flash integration |
+| `ml-service/src/gemini-handler.ts` | Gemini `gemini-3.5-flash-lite` integration (insights digest + chat) |
+| `ml-service/src/gemini-vision-handler.ts` | Gemini vision receipt OCR backend (`OCR_BACKEND=gemini-vision`) |
 | `ml-service/src/insights-routes.ts` | POST /api/insights/digest + chat |
 
 ### Client-Side (Free, Zero Cost)
