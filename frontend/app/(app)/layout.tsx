@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
+import { MotionConfig } from "framer-motion"
 import { ROUTE_FEATURE, FEATURES } from "@/lib/constants/features"
 import { AppNavbar } from "@/components/navigation/AppNavbar"
 import { BottomNav } from "@/components/navigation/BottomNav"
@@ -32,6 +32,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGuard>
+      {/* reducedMotion="always" disables framer-motion's transform/layout animations
+          app-wide (the per-card whileHover springs and staggered entrance slides that a
+          Performance trace showed running the animation frame loop at ~68% of main-thread
+          time and freezing rapid tab switches). Opacity fades still animate — they're
+          GPU-composited and cheap. Marketing pages use a separate layout and stay animated. */}
+      <MotionConfig reducedMotion="always">
       <UIComplexityProvider>
       <SubscriptionProvider>
       <ScanQuotaProvider>
@@ -41,18 +47,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SwipeBackNavigator>
         <AppNavbar />
         {/* pb-24 on mobile gives space above the floating BottomNav pill; none on desktop */}
+        {/* No keyed motion wrapper here. `key={pathname}` forced React to tear down and
+            rebuild the entire page subtree on every navigation — a Performance trace showed
+            react-dom commit work at 65% of main-thread time, remounting the charts/health
+            gauge each tap and thrashing layout until the UI froze. Let App Router swap route
+            segments and let React reconcile normally; navigation is now cheap. */}
         <div className="pb-24 md:pb-0">
-          <AnimatePresence mode="sync" initial={false}>
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.08, ease: "easeOut" }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {children}
         </div>
         <BottomNav />
         <GlobalQuickAdd />
@@ -63,6 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </ScanQuotaProvider>
       </SubscriptionProvider>
       </UIComplexityProvider>
+      </MotionConfig>
     </AuthGuard>
   )
 }
