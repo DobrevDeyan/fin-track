@@ -3,10 +3,32 @@
  *
  * Manages entry state and CRUD operations for the dashboard.
  * All mutations atomically update the financial summary.
+ *
+ * Reads are backed by TanStack Query rather than useState/useEffect. What the
+ * library now owns, and this file no longer hand-rolls:
+ *   - the cache (keyed per user, shared across every mounted copy of this hook)
+ *   - loading / error / "is fetching another page" flags
+ *   - request deduplication (three components, one Firestore read)
+ *   - invalidation on write
+ *
+ * The public API is unchanged, deliberately: loadEntries/loadMore/hasMore/
+ * isLoadingMore/loadAllEntries all still exist with the same signatures, so
+ * dashboard, calendar and GlobalQuickAdd needed no edits.
+ *
+ * The read profile is unchanged too. Both queries stay disabled until a
+ * consumer explicitly asks for the data — GlobalQuickAdd is mounted in the
+ * (app) layout on every page and must never trigger a fetch, which an
+ * unconditionally-enabled query would do.
  */
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useEffect, useMemo, useRef } from "react"
 import { Timestamp } from "firebase/firestore"
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query"
 import {
   createEntry,
   getUserEntries,
@@ -19,10 +41,36 @@ import { deleteReceipt } from "@/lib/receipt-utils"
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from "@/lib/constants/validation.constants"
 import { toast } from "sonner"
 import { toISOString } from "@/lib/utils/timestamp"
+import { entryKeys } from "@/lib/query-keys"
+import type { EntryDocument } from "@/lib/firestore-types"
 import type { Entry, EntryFormData } from "./types"
 import { useCurrency } from "@/contexts/CurrencyContext"
 import { BASE_CURRENCY } from "@/lib/constants/currency.constants"
 import { logger } from "@/lib/utils/logger"
+
+const PAGE_SIZE = 20
+
+interface EntriesPage {
+  entries: Entry[]
+  /** Firestore snapshot used as the startAfter cursor for the next page. */
+  cursor: unknown
+}
+
+/** Firestore document to view model. Was duplicated in three places. */
+function toEntry(doc: EntryDocument & { id: string }): Entry {
+  return {
+    id: doc.id,
+    description: doc.description,
+    amount: doc.amount,
+    category: doc.category,
+    date: toISOString(doc.date) || "",
+    type: doc.type,
+    currency: doc.currency,
+    notes: doc.notes,
+    tags: doc.tags,
+    receiptUrl: doc.receiptUrl,
+  }
+}
 
 interface UseEntriesOptions {
   userId: string | undefined
@@ -33,142 +81,97 @@ interface UseEntriesOptions {
 
 export function useEntries({
   userId,
-  userCurrency,
   onSavingsReload,
   onSummaryRefresh
 }: UseEntriesOptions) {
-  const [entries, setEntries] = useState<Entry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+  const queryClient = useQueryClient()
+
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null)
 
-  const [lastVisible, setLastVisible] = useState<unknown>(null)
-  const [hasMore, setHasMore] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  // Both queries are opt-in. The *Requested state is the enabled flag; the
+  // matching ref keeps the imperative loaders referentially stable, since they
+  // sit in consumer effect dependency arrays.
+  const [listRequested, setListRequested] = useState(false)
+  const listRequestedRef = useRef(false)
+  const [historyRequested, setHistoryRequested] = useState(false)
 
-  // Full entry history, loaded lazily only when the transactions filter/search
-  // is active so that filtering covers the whole dataset, not just the first
-  // paginated page (see review M1). `null` = not loaded yet.
-  const [allEntries, setAllEntries] = useState<Entry[] | null>(null)
-  const [loadingAllEntries, setLoadingAllEntries] = useState(false)
-  // Guards the lazy full-history load so a failed fetch doesn't get retried in a
-  // tight loop by the caller's effect. Reset to false only on cache invalidation
-  // (a create/edit), which lets the next active-filter render refetch.
-  const allEntriesAttemptedRef = useRef(false)
-
-  // Stored amounts are canonical EUR; the form works in the user's display currency.
-  // Convert display → EUR on the way into Firestore.
+  // Stored amounts are canonical EUR; the form works in the user display
+  // currency. Convert display to EUR on the way into Firestore.
   const { toBaseCurrency } = useCurrency()
 
-  const loadEntries = useCallback(async (refresh = false) => {
+  // Paginated list for the transactions table. The cursor that used to live in
+  // useState is now the query pageParam; hasMore is derived, not tracked.
+  const listQuery = useInfiniteQuery({
+    queryKey: entryKeys.list(userId),
+    queryFn: async ({ pageParam }): Promise<EntriesPage> => {
+      const { entries: docs, lastVisible } = await getUserEntries(userId!, pageParam, PAGE_SIZE)
+      return { entries: docs.map(toEntry), cursor: lastVisible }
+    },
+    initialPageParam: null as unknown,
+    // A short final page means the collection is exhausted. Returning undefined
+    // is what makes hasNextPage false.
+    getNextPageParam: (lastPage: EntriesPage) =>
+      lastPage.entries.length === PAGE_SIZE ? lastPage.cursor : undefined,
+    enabled: !!userId && listRequested,
+  })
+
+  // Full entry history, fetched only when the transactions filter/search is
+  // active so filtering covers the whole dataset rather than the first page
+  // (see review M1). The old attempted-ref retry guard is gone: a failed query
+  // settles into an error state and is not re-fired by a consumer effect
+  // calling loadAllEntries() again, because enabling is idempotent.
+  const historyQuery = useQuery({
+    queryKey: entryKeys.history(userId),
+    queryFn: async () => (await getAllUserEntries(userId!)).map(toEntry),
+    enabled: !!userId && historyRequested,
+  })
+
+  const entries = useMemo(
+    () => listQuery.data?.pages.flatMap((page) => page.entries) ?? [],
+    [listQuery.data]
+  )
+
+  const listError = listQuery.error
+  useEffect(() => {
+    if (!listError) return
+    logger.error("Error loading entries", listError)
+    toast.error("Failed to load transactions. Pull to refresh or try again.")
+  }, [listError])
+
+  const historyError = historyQuery.error
+  useEffect(() => {
+    if (!historyError) return
+    // The view falls back to the paginated list; no toast, as before.
+    logger.error("Error loading full entry history for filtering", historyError)
+  }, [historyError])
+
+  const { refetch: refetchList } = listQuery
+
+  // The first call mounts the query, which performs the initial fetch; later
+  // calls are real refreshes. Without that distinction the dashboard mount
+  // effect would fire a second read on top of the initial fetch.
+  const loadEntries = useCallback(async () => {
     if (!userId) return
-
-    try {
-      setError(null)
-      if (refresh) {
-        setLoading(true)
-        setLastVisible(null)
-      }
-
-      const { entries: firestoreEntries, lastVisible: newLastVisible } = await getUserEntries(userId, null, 20)
-
-      const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
-        id: entry.id,
-        description: entry.description,
-        amount: entry.amount,
-        category: entry.category,
-        date: entry.date instanceof Timestamp
-          ? entry.date.toDate().toISOString()
-          : typeof entry.date === "string"
-          ? entry.date
-          : new Date(entry.date as unknown as string | number | Date).toISOString(),
-        type: entry.type,
-        currency: entry.currency,
-        notes: entry.notes,
-        tags: entry.tags,
-        receiptUrl: entry.receiptUrl,
-      }))
-
-      setEntries(convertedEntries)
-      setLastVisible(newLastVisible)
-      setHasMore(firestoreEntries.length === 20)
-    } catch (err) {
-      logger.error("Error loading entries", err)
-      setError(err instanceof Error ? err : new Error("Failed to load entries"))
-      toast.error("Failed to load transactions. Pull to refresh or try again.")
-    } finally {
-      setLoading(false)
+    if (!listRequestedRef.current) {
+      listRequestedRef.current = true
+      setListRequested(true)
+      return
     }
-  }, [userId])
+    await refetchList()
+  }, [userId, refetchList])
+
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = listQuery
 
   const loadMore = useCallback(async () => {
-    if (!userId || !lastVisible || isLoadingMore) return
+    if (!hasNextPage || isFetchingNextPage) return
+    await fetchNextPage()
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
-    try {
-      setIsLoadingMore(true)
-      const { entries: firestoreEntries, lastVisible: newLastVisible } = await getUserEntries(userId, lastVisible, 20)
-
-      const convertedEntries: Entry[] = firestoreEntries.map((entry) => ({
-        id: entry.id,
-        description: entry.description,
-        amount: entry.amount,
-        category: entry.category,
-        date: toISOString(entry.date) || "",
-        type: entry.type,
-        currency: entry.currency,
-        notes: entry.notes,
-        tags: entry.tags,
-        receiptUrl: entry.receiptUrl,
-      }))
-
-      setEntries((prev) => [...prev, ...convertedEntries])
-
-      setLastVisible(newLastVisible)
-      setHasMore(firestoreEntries.length === 20)
-    } catch (error) {
-      logger.error("Error loading more entries", error)
-    } finally {
-      setIsLoadingMore(false)
-    }
-  }, [userId, lastVisible, isLoadingMore])
-
-  // Invalidate the cached full history so the next active-filter render refetches.
-  const invalidateAllEntries = useCallback(() => {
-    allEntriesAttemptedRef.current = false
-    setAllEntries(null)
-  }, [])
-
-  // Load the full entry history for filtering/search. Lazy + cached + self-
-  // guarding: safe to call on every render while a filter is active. It fetches
-  // at most once per cache generation (success OR failure) so a failed fetch is
-  // not retried in a loop; a create/edit invalidates the cache to allow a fresh
-  // attempt. A delete mirrors the removal in-place (see handleDelete).
+  // Idempotent: safe to call on every render while a filter is active.
   const loadAllEntries = useCallback(async () => {
-    if (!userId || allEntriesAttemptedRef.current) return
-    allEntriesAttemptedRef.current = true
-    setLoadingAllEntries(true)
-    try {
-      const firestoreEntries = await getAllUserEntries(userId)
-      const converted: Entry[] = firestoreEntries.map((entry) => ({
-        id: entry.id,
-        description: entry.description,
-        amount: entry.amount,
-        category: entry.category,
-        date: toISOString(entry.date) || "",
-        type: entry.type,
-        currency: entry.currency,
-        notes: entry.notes,
-        tags: entry.tags,
-        receiptUrl: entry.receiptUrl,
-      }))
-      setAllEntries(converted)
-    } catch (err) {
-      logger.error("Error loading full entry history for filtering", err)
-      // Leave allEntries as-is; the view falls back to the paginated list.
-    } finally {
-      setLoadingAllEntries(false)
-    }
+    if (!userId) return
+    setHistoryRequested(true)
   }, [userId])
 
   const handleAdd = useCallback(async (data: EntryFormData) => {
@@ -197,8 +200,9 @@ export function useEntries({
           userId,
         })
 
-        await loadEntries()
-        invalidateAllEntries() // full-history cache is stale after an edit
+        // One call replaces the old pair of "refetch the list" plus
+        // "hand-invalidate the full-history cache".
+        await queryClient.invalidateQueries({ queryKey: entryKeys.all })
         if (onSummaryRefresh) await onSummaryRefresh()
         toast.success(SUCCESS_MESSAGES.ENTRY_UPDATED)
         setEditingEntry(null)
@@ -232,8 +236,7 @@ export function useEntries({
           }
         }
 
-        await loadEntries()
-        invalidateAllEntries() // full-history cache is stale after a new entry
+        await queryClient.invalidateQueries({ queryKey: entryKeys.all })
         if (onSummaryRefresh) await onSummaryRefresh()
         toast.success(SUCCESS_MESSAGES.ENTRY_ADDED(data.type))
       }
@@ -243,7 +246,7 @@ export function useEntries({
       toast.error(errorMessage)
       throw error
     }
-  }, [userId, editingEntry, loadEntries, invalidateAllEntries, onSavingsReload, onSummaryRefresh, toBaseCurrency])
+  }, [userId, editingEntry, queryClient, onSavingsReload, onSummaryRefresh, toBaseCurrency])
 
   const handleEdit = useCallback((id: string) => {
     const entry = entries.find((e) => e.id === id)
@@ -283,15 +286,33 @@ export function useEntries({
         }
       }
 
-      setEntries((prev) => prev.filter((e) => e.id !== id))
-      setAllEntries((prev) => (prev ? prev.filter((e) => e.id !== id) : prev))
+      // Drop the row from both caches in place, exactly as the old code spliced
+      // it out of component state. No refetch: it costs no extra reads and the
+      // pagination cursors stay valid.
+      queryClient.setQueryData<InfiniteData<EntriesPage, unknown>>(
+        entryKeys.list(userId),
+        (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((page) => ({
+                  ...page,
+                  entries: page.entries.filter((e) => e.id !== id),
+                })),
+              }
+            : old
+      )
+      queryClient.setQueryData<Entry[]>(entryKeys.history(userId), (old) =>
+        old ? old.filter((e) => e.id !== id) : old
+      )
+
       if (onSummaryRefresh) await onSummaryRefresh()
       toast.success("Entry deleted successfully!")
     } catch (error) {
       logger.error("Error deleting entry", error)
       toast.error(ERROR_MESSAGES.DELETE_FAILED)
     }
-  }, [userId, entries, onSummaryRefresh])
+  }, [userId, entries, queryClient, onSummaryRefresh])
 
   const handleDialogClose = useCallback((open: boolean) => {
     setDialogOpen(open)
@@ -302,18 +323,18 @@ export function useEntries({
 
   return {
     entries,
-    allEntries,
+    allEntries: historyQuery.data ?? null,
     loadAllEntries,
-    loadingAllEntries,
-    loading,
-    error,
+    loadingAllEntries: historyQuery.isFetching,
+    loading: listQuery.isPending,
+    error: listQuery.error,
     dialogOpen,
     setDialogOpen,
     editingEntry,
     loadEntries,
     loadMore,
-    hasMore,
-    isLoadingMore,
+    hasMore: hasNextPage,
+    isLoadingMore: isFetchingNextPage,
     handleAdd,
     handleEdit,
     handleDelete,

@@ -13,6 +13,7 @@ import { RegisterSW } from "./register-sw"
 import { HouseholdProvider } from "@/contexts/HouseholdContext"
 import { defaultLocale } from "@/i18n/config"
 import { Toaster } from "sonner"
+import { QueryProvider } from "@/components/providers/QueryProvider"
 
 const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN
 
@@ -108,6 +109,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ThemeContextProvider>
+          <QueryProvider>
           <AuthProvider>
             <UserProfileProvider>
             <HouseholdProvider>
@@ -121,6 +123,7 @@ export default function RootLayout({
             </HouseholdProvider>
             </UserProfileProvider>
           </AuthProvider>
+          </QueryProvider>
           </ThemeContextProvider>
         </ThemeProvider>
       </body>
