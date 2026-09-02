@@ -1,5 +1,5 @@
 /**
- * Gemini Vision Handler — alternative receipt OCR backend.
+ * Gemini Vision Handler — active receipt OCR backend (Document AI is the fallback).
  *
  * Sends the receipt image directly to Gemini with a JSON `responseSchema` and
  * gets structured fields back in one call, replacing the Document AI Expense
@@ -12,13 +12,17 @@
  * the structured amount against it (grounding check). A total that does not
  * physically appear in the OCR text is treated as a likely hallucination and
  * dumped to a low confidence, which drives the existing `< 0.7` warning in
- * ReceiptScannerDialog.tsx:663. See docs/GEMINI_VISION_EVALUATION.md.
+ * ReceiptScannerDialog.tsx:664. See docs/GEMINI_VISION_EVALUATION.md.
  *
  * EU RESIDENCY CAVEAT: this uses the AI Studio SDK (GEMINI_API_KEY), same as the
  * insights handler. For an EU-facing paid app, receipt images (PII) should go via
  * Vertex AI in europe-west, not the AI Studio free tier — see the evaluation doc,
- * "The EU Residency Problem". This handler is wired for evaluation/shadow mode;
- * swap the client to @google-cloud/vertexai before sending real user images.
+ * "The EU Residency Problem".
+ *
+ * STATUS: this is the ACTIVE production backend
+ * (OCR_BACKEND=gemini-vision in ml-service/.env.deploy), running as alpha with no
+ * real users. Swapping the client to @google-cloud/vertexai is a hard gate before
+ * real EU user images reach it.
  */
 
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
