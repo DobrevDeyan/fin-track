@@ -51,7 +51,7 @@
 - [x] Financial Health Score — algorithmic 0–100 (SVG ring + 5 sub-score breakdown)
 - [x] Spending Anomaly Detection — Z-score based category spike detection, dismissible banner
 - [x] Cash Flow Forecast — 90-day Recharts AreaChart *(component intact; toggle on in `dashboard/page.tsx`)*
-- [x] AI Monthly Digest — Gemini 2.5 Flash narrative, Firestore-cached per month
+- [x] AI Monthly Digest — Gemini 3.5 Flash-Lite narrative, Firestore-cached per month
 - [x] AI Budget Coach Chat — floating drawer, multi-turn, aggregated data only
 
 ### Subscriptions & Payments

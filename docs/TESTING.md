@@ -5,21 +5,37 @@
 ## Part 1: Feature Module Map
 
 > Use this to work on one feature at a time without touching the rest of the app.
-> Each module lists every file it owns, what's already tested, and what to test next.
+> Each module lists every file it owns, what's planned first, and what to test next.
 
-### How to Run Tests
+### Test Infrastructure — NOT YET SET UP
+
+> **Status:** the frontend has **no test runner installed**, no `test` script in
+> `package.json`, and no `__tests__/` directory. Everything in this document is a
+> plan, not a record of existing coverage. Nothing below has been written yet.
+
+To set it up:
 
 ```bash
 cd frontend
-npm test                  # run all tests once
-npm run test:watch        # watch mode — re-runs on save
-npm run test:coverage     # coverage report in /coverage
-npm run test:ci           # CI mode (no watch, exits with code)
+npm install -D vitest @vitejs/plugin-react @testing-library/react @testing-library/jest-dom jsdom
 ```
 
-Test files live in `frontend/__tests__/` mirroring the source tree:
+Then add to `package.json`:
+
+```json
+"test": "vitest run",
+"test:watch": "vitest",
+"test:coverage": "vitest run --coverage"
+```
+
+Test files would live in `frontend/__tests__/` mirroring the source tree:
 - `__tests__/components/` → component tests
 - `__tests__/lib/` → utility/hook tests
+
+**What does exist today:** the ml-service evaluation harnesses —
+`ml-service/test-vision-batch.ts` (batch OCR accuracy scoring plus a grounding
+confusion matrix) and `ml-service/test-vision.ts`. These are run-and-inspect
+scripts, not an assertion-based test suite.
 
 ---
 
@@ -39,7 +55,7 @@ frontend/components/auth/AuthGuard.tsx  — wraps protected routes, redirects un
 frontend/lib/firestore-users.ts     — createUserDocument, updateUserDisplayName, deleteUserData, etc.
 ```
 
-**Already tested:** None
+**Planned first (not yet written):** None
 
 **Test targets (priority order):**
 1. `AuthContext` — mock `firebase/auth`; test signIn sets user, signOut clears it, Google flow works
@@ -77,9 +93,9 @@ frontend/contexts/dashboard/FinancialSummaryContext.tsx
 - `onEntryDeleted` — fires on entry delete, writes audit log
 - `onLargeEntryCreated` — fires on large entry create
 
-**Already tested:**
-- `AddTransactionDialog.test.tsx` ✅
-- `TransactionsTable.test.tsx` ✅
+**Planned first (not yet written):**
+- `AddTransactionDialog.test.tsx`
+- `TransactionsTable.test.tsx`
 
 **Test targets (priority order):**
 1. `transaction-filters.ts` — filter by date range, category, type, amount range
@@ -110,9 +126,9 @@ frontend/components/dashboard/
 **Cloud Functions triggered:**
 - `checkBudgetOnEntry` — sends FCM notification when budget threshold crossed
 
-**Already tested:**
-- `BudgetCard.test.tsx` ✅
-- `sections/BudgetsSection.test.tsx` ✅
+**Planned first (not yet written):**
+- `BudgetCard.test.tsx`
+- `sections/BudgetsSection.test.tsx`
 
 **Test targets (priority order):**
 1. `BudgetProgressBar` — correct % fill, correct color at >80%, >100%
@@ -138,8 +154,8 @@ frontend/components/dashboard/
   sections/GoalsSection.tsx
 ```
 
-**Already tested:**
-- `GoalCard.test.tsx` ✅
+**Planned first (not yet written):**
+- `GoalCard.test.tsx`
 
 **Test targets (priority order):**
 1. `GoalsContext` — mock Firestore; add/update/delete goal lifecycle
@@ -274,8 +290,8 @@ frontend/components/dashboard/
 frontend/contexts/dashboard/FinancialSummaryContext.tsx
 ```
 
-**Already tested:**
-- `metrics-utils.test.ts` ✅
+**Planned first (not yet written):**
+- `metrics-utils.test.ts`
 
 **Test targets (priority order):**
 1. `metrics-utils` — edge cases: zero income, negative net, 100% savings rate
@@ -480,12 +496,12 @@ frontend/lib/utils/
   timestamp.ts
 ```
 
-**Already tested:**
-- `date-utils.test.ts` ✅
-- `currency-utils.test.ts` ✅
-- `metrics-utils.test.ts` ✅
-- `export-utils.test.ts` ✅
-- `validation.test.ts` ✅
+**Planned first (not yet written):**
+- `date-utils.test.ts`
+- `currency-utils.test.ts`
+- `metrics-utils.test.ts`
+- `export-utils.test.ts`
+- `validation.test.ts`
 
 **Test targets (remaining gaps):**
 1. `date-range-utils` — month boundary edge cases, leap years

@@ -17,7 +17,7 @@
 
 ## TL;DR
 
-Replacing Google Document AI's Expense parser with a Gemini vision call would cut the cost of a receipt scan by roughly **50x** — from **$0.10** to **~$0.002** — and would probably improve line-item extraction. It would also give up per-field confidence scores, introduce hallucination risk on financial data, and require moving to Vertex AI to preserve EU data residency.
+Replacing Google Document AI's Expense parser with a Gemini vision call would cut the cost of a receipt scan by **50-200x** — from **$0.10** to **~$0.002** on Gemini 3.6 Flash (or **~$0.0005** on the `gemini-3.5-flash-lite` model actually shipped) — and would probably improve line-item extraction. It would also give up per-field confidence scores, introduce hallucination risk on financial data, and require moving to Vertex AI to preserve EU data residency.
 
 **The cost argument is strong enough that this should be seriously evaluated, but not so strong that it should be done carelessly.** Receipt amounts feed a budgeting app; a silently wrong number is worse than a failed scan.
 
@@ -113,7 +113,7 @@ This is the single largest margin lever in the product.
 
 ## Pros
 
-**1. Cost — 50x, and it compounds.** Document AI has no volume discount at our scale; the 10,000th scan costs the same as the first. Gemini turns receipt scanning from the dominant unit cost into a rounding error, and makes generous scan limits (or a genuinely free tier) affordable again.
+**1. Cost - 50-200x, and it compounds.** Document AI has no volume discount at our scale; the 10,000th scan costs the same as the first. Gemini turns receipt scanning from the dominant unit cost into a rounding error, and makes generous scan limits (or a genuinely free tier) affordable again.
 
 **2. Line items actually work.** `extractItems:313` currently scrapes any entity key containing `line_item` and produces near-useless output. An LLM with a JSON schema returns properly structured items with names and prices. This is a real feature unlock, not just parity.
 

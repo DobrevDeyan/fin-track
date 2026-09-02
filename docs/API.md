@@ -46,7 +46,7 @@ Service health check. No auth required.
 
 ### `POST /api/upload-bill`
 
-Scan a receipt/bill via Google Document AI.
+Scan a receipt/bill via the configured OCR backend — Gemini vision (`gemini-3.5-flash-lite`) in production, Google Document AI Expense Parser as the fallback, selected by `OCR_BACKEND`.
 
 **Rate limit:** 10/day per user
 
@@ -74,7 +74,7 @@ Scan a receipt/bill via Google Document AI.
 
 ### `POST /api/insights/digest`
 
-Generate an AI monthly spending digest (Gemini 2.5 Flash).
+Generate an AI monthly spending digest (Gemini 3.5 Flash-Lite).
 
 **Rate limit:** 50/day per user
 
@@ -110,7 +110,7 @@ Generate an AI monthly spending digest (Gemini 2.5 Flash).
 
 ### `POST /api/insights/chat`
 
-Multi-turn AI budget coaching (Gemini 2.5 Flash).
+Multi-turn AI budget coaching (Gemini 3.5 Flash-Lite).
 
 **Rate limit:** 50/day per user
 

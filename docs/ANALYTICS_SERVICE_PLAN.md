@@ -81,7 +81,7 @@ This project is also a deliberate portfolio piece for a PHP/Laravel → Python m
 
 | Not doing | Why |
 |---|---|
-| Receipt OCR in Python | Evaluated and rejected — see analysis below. Self-hosted OCR loses to Gemini vision on both cost and accuracy. Note that **replacing Document AI with Gemini vision is separately worthwhile** and tracked as its own action item. |
+| Receipt OCR in Python | Evaluated and rejected — see analysis below. Self-hosted OCR loses to Gemini vision on both cost and accuracy. Note that **replacing Document AI with Gemini vision is separately worthwhile** and was tracked as its own action item. **Since shipped:** `OCR_BACKEND=gemini-vision` is the active backend (alpha) — see `GEMINI_VISION_EVALUATION.md`. |
 | Porting the Gemini insights to Python | Rewriting working TypeScript teaches syntax, not engineering. `ml-service/src/gemini-handler.ts` stays as-is. |
 | Replacing any existing `ml-service` endpoint | This service is **strictly additive**. `ml-service` keeps `/api/upload-bill` and `/api/insights/*`. |
 | Bolting on sklearn for its own sake | Recurring detection is signal processing and robust statistics. Reaching for a classifier where arithmetic suffices is a negative signal. |
@@ -95,7 +95,7 @@ Recorded so it is not relitigated:
 - Self-hosting PaddleOCR on Cloud Run needs ~2GB RAM and either 20–60s cold starts or ~$50–110/month of `min-instances=1` — against a current ML service bill of ~$1–2/month.
 - Gemini vision beats self-hosted OCR on both cost and accuracy, so if Document AI is ever replaced, it is replaced by Gemini, not by Python.
 
-#### Confirmed: Document AI receipt scanning is the app's dominant unit cost
+#### Confirmed (since superseded): Document AI receipt scanning was the app's dominant unit cost
 
 Per the [official pricing page](https://cloud.google.com/document-ai/pricing), the **Expense parser is $0.10 per count**, where 1 count = a document of 1–10 pages. A single-image receipt is 1 page = 1 count = **$0.10 per scan**.
 

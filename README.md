@@ -9,8 +9,8 @@ A privacy-first personal finance PWA with AI-powered insights, receipt scanning,
 ## Key Features
 
 - **Privacy-first** — manual entry only, no bank linking required
-- **AI insights** — health score, anomaly detection, cash flow forecast (client-side); AI digest & chat (Gemini 2.5 Flash)
-- **Receipt scanning** — Google Document AI OCR with confidence scoring
+- **AI insights** — health score, anomaly detection, cash flow forecast (client-side); AI digest & chat (Gemini 3.5 Flash-Lite)
+- **Receipt scanning** — Gemini vision OCR with grounding-based confidence (alpha); Document AI Expense Parser available as a fallback backend
 - **Family budgeting** — household invite flow, merged family transaction view
 - **PWA / Offline** — installable, works without internet
 - **Multi-currency** — EUR, USD, BGN, GBP, CHF, JPY, CAD, AUD
@@ -69,8 +69,8 @@ Sentry (`@sentry/nextjs`) is fully configured. Critical errors are automatically
 | Auth | Firebase Authentication (Email + Google OAuth) |
 | Backend | Firebase Cloud Functions (Node.js 20) |
 | ML Service | Express.js on Google Cloud Run (`europe-west1`) |
-| Receipt OCR | Google Document AI (Expense Parser) |
-| AI | Google Gemini 2.5 Flash |
+| Receipt OCR | Gemini vision `gemini-3.5-flash-lite` (active, alpha); Document AI Expense Parser fallback via `OCR_BACKEND` |
+| AI | Google Gemini 3.5 Flash-Lite |
 | Subscriptions | Stripe via Firebase Extension |
 | Hosting | Firebase Hosting |
 

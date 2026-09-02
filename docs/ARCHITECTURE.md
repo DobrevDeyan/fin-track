@@ -42,8 +42,8 @@ Pocket is a monorepo with three independently deployed services:
     │   Firebase    │  │  Firestore   │  │   ML Service     │
     │   Auth        │  │  (Database)  │  │   (Cloud Run)    │
     └──────────────┘  └──────────────┘  │                  │
-                             ▲          │  - Document AI   │
-                             │          │  - Gemini 2.5    │
+                             ▲          │  - Gemini 3.5    │
+                             │          │  - Document AI   │
                       ┌──────────────┐  └──────────────────┘
                       │   Cloud      │
                       │   Functions  │
@@ -89,8 +89,8 @@ Pocket is a monorepo with three independently deployed services:
 | **Storage** | Firebase Storage (receipt images) |
 | **Backend** | Firebase Cloud Functions (Node.js 20) |
 | **ML Service** | Express.js on Google Cloud Run (`europe-west1`) |
-| **Receipt Scanning** | Google Document AI (Expense Parser, `eu`) |
-| **AI Digest & Chat** | Google Gemini 2.5 Flash (free tier) |
+| **Receipt Scanning** | Gemini vision `gemini-3.5-flash-lite` (active, alpha); Google Document AI Expense Parser (`eu`) as fallback via `OCR_BACKEND` |
+| **AI Digest & Chat** | Google Gemini 3.5 Flash-Lite (free tier) |
 | **Subscriptions** | Stripe via `firestore-stripe-payments` Firebase Extension |
 | **Hosting** | Firebase Hosting (CDN) |
 | **i18n** | next-intl (English, Bulgarian) |
@@ -161,9 +161,12 @@ fin-track/
 ├── ml-service/                     # AI/ML microservice (Cloud Run)
 │   ├── src/
 │   │   ├── api-server.ts           # Express entry point + rate limiting
-│   │   ├── document-ai-handler.ts  # Receipt scanning
-│   │   ├── gemini-handler.ts       # Digest + chat (Gemini 2.5 Flash)
+│   │   ├── document-ai-handler.ts  # Receipt OCR (fallback backend)
+│   │   ├── gemini-vision-handler.ts # Receipt OCR (ACTIVE backend, alpha)
+│   │   ├── gemini-handler.ts       # Digest + chat (Gemini 3.5 Flash-Lite)
 │   │   ├── insights-routes.ts      # POST /api/insights/digest|chat
+│   │   ├── firestore-quota.ts      # Per-user scan + insights quota (transactional)
+│   │   ├── logging.ts              # Structured per-request processing logs
 │   │   └── middleware/auth.ts      # Firebase Auth token verification
 │   ├── Dockerfile
 │   └── deploy.sh
@@ -429,7 +432,7 @@ All custom functions are in `functions/src/index.ts`.
 | **Cloud Functions v2** | Backend logic (Blaze required) | 2M invocations/month |
 | **Firebase Cloud Messaging** | Push notifications | Free, unlimited |
 | **Cloud Run** | ML service (`europe-west1`) | ~$1-2/month (EU not free) |
-| **Document AI** | Receipt OCR (Expense Parser, `eu`) — *default* backend | **$0.10 per scan** — no free tier, see `MONETIZATION.md` |
+| **Document AI** | Receipt OCR (Expense Parser, `eu`) - *fallback* backend (Gemini vision is active) | **$0.10 per scan** — no free tier, see `MONETIZATION.md` |
 | **Gemini vision** | Receipt OCR (`gemini-3.5-flash-lite`) — **active backend (alpha)** via `OCR_BACKEND=gemini-vision` | ~$0.0005/scan (~200× cheaper); free-tier AI Studio for now, **not EU-resident** — see `GEMINI_VISION_EVALUATION.md` |
 | **Gemini AI** | AI digest + chat | Free tier via AI Studio (15 RPM, 1500 RPD **shared across all users AND the vision OCR backend**) |
 | **Cloud Scheduler** | Trigger scheduled functions | 3 free jobs/month |
@@ -590,8 +593,8 @@ gcloud run services update ml-service \
 ```
 
 **Gemini 404 / quota errors**
-- 404 on `gemini-1.5-flash` — deprecated on v1beta for new projects; use `gemini-2.5-flash`
-- `limit:0` on `gemini-2.0-flash` — no free quota on new projects; use `gemini-2.5-flash`
+- 404 on `gemini-1.5-flash` — deprecated on v1beta for new projects; use `gemini-3.5-flash-lite`
+- `limit:0` on `gemini-2.0-flash` — no free quota on new projects; use `gemini-3.5-flash-lite`
 
 **ML service CORS error**
 Verify `FRONTEND_URL` on Cloud Run includes all required origins:

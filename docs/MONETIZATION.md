@@ -213,7 +213,7 @@ Google removed **Pro** models from the free tier in April 2026, but **Flash and 
 | Gemini 3.1 Flash-Lite | Yes | 15 RPM |
 | Gemini 3.1 Pro | **No** | paid only since April 2026 |
 
-So the migration is straightforward: **`gemini-2.5-flash` → `gemini-3-flash` or `gemini-3.1-flash-lite`**, one string at `gemini-handler.ts:23`, and the free tier continues.
+So the migration was straightforward: **`gemini-2.5-flash` → `gemini-3.5-flash-lite`**, one string at `gemini-handler.ts:23`, and the free tier continues. **Done — August 2026.**
 
 ### Three caveats that will eventually force a paid tier
 
